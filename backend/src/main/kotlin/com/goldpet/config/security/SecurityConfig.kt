@@ -1,0 +1,43 @@
+package com.goldpet.config.security
+
+import com.goldpet.config.jwt.JwtAuthenticationFilter
+import com.goldpet.service.oauth2.CustomOAuth2UserService
+import com.goldpet.service.oauth2.OAuth2AuthenticationSuccessHandler
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+
+@Configuration
+@EnableWebSecurity
+class SecurityConfig(
+    private val customOAuth2UserService: CustomOAuth2UserService,
+    private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
+    private val jwtAuthenticationFilter: JwtAuthenticationFilter
+) {
+
+    @Bean
+    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http
+            .csrf { it.disable() } // Disable CSRF for API
+            .sessionManagement { session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS) } // Use stateless sessions
+            .authorizeHttpRequests { auth ->
+                auth
+                    .requestMatchers("/api/v1/pets/**").permitAll() // Allow access to pet API for now
+                    .requestMatchers("/api/v1/walks/**").permitAll() // Allow access to walk API for now
+                    .requestMatchers("/oauth2/**").permitAll() // Allow access to OAuth2 endpoints
+                    .anyRequest().permitAll() // All other requests require authentication
+            }
+            // .oauth2Login { oauth2Login ->
+            //     oauth2Login
+            //         .userInfoEndpoint { userInfo -> userInfo.userService(customOAuth2UserService) } // Use custom OAuth2 user service
+            //         .successHandler(oAuth2AuthenticationSuccessHandler) // Use custom success handler
+            // }
+            // .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java) // Add JWT filter
+
+        return http.build()
+    }
+}

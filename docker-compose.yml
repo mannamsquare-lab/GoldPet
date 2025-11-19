@@ -1,0 +1,85 @@
+version: "3.9"
+
+services:
+  api:
+    build: ./backend
+    container_name: goldpet-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: goldpet-s3-access-key
+      S3_SECRET_KEY: goldpet-s3-secret-key
+      S3_BUCKET_NAME: goldpet-bucket
+      GOOGLE_CLIENT_ID: your_google_client_id
+      GOOGLE_CLIENT_SECRET: your_google_client_secret
+      JWT_SECRET: your_very_long_and_secure_jwt_secret_that_is_at_least_64_characters_long
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ai:
+    build: ./ai-server
+    container_name: goldpet-ai
+    ports:
+      - "8000:8000"
+
+  minio:
+    image: minio/minio:latest
+    container_name: goldpet-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: goldpet-s3-access-key
+      MINIO_ROOT_PASSWORD: goldpet-s3-secret-key
+    command: server /data --console-address ":9001"
+    volumes:
+      - miniodata:/data
+
+  postgres:
+    image: postgis/postgis:15-3.4
+    container_name: goldpet-postgres
+    environment:
+      POSTGRES_DB: goldpet
+      POSTGRES_USER: goldpet
+      POSTGRES_PASSWORD: goldpet123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U goldpet -d goldpet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: goldpet-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    build: ./nginx
+    container_name: goldpet-nginx
+    ports:
+      - "8088:80"
+      - "443:443"
+    depends_on:
+      - api
+      - ai
+
+volumes:
+  pgdata:
+  miniodata:
