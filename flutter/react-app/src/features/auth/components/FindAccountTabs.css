@@ -1,0 +1,61 @@
+.find-account-tabs {
+    display: flex;
+    width: 100%;
+    padding: 24px 24px 0 24px;
+    /* Match p-6 from design, but 0 bottom for tabs */
+    position: relative;
+    background-color: transparent;
+    gap: 2px;
+    /* margin-top: 24px; Removed to rely on padding for spacing */
+    /* Restore spacing from header */
+    /* Adjust spacing from header */
+    align-items: flex-end;
+    /* Align tabs to bottom */
+}
+
+.find-account-tab {
+    flex: 1;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #EFE1C4;
+    border: none;
+    border-radius: 16px 16px 0 0;
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    color: #614108;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.find-account-tab.active {
+    height: 48px;
+    /* Slightly taller */
+    background-color: #FFF7E6;
+    border: 2px solid #614108;
+    border-bottom: none;
+    /* Open at bottom */
+    font-weight: 700;
+    z-index: 2;
+    margin-bottom: -2px;
+    /* Overlap the bottom line */
+    padding-top: 2px;
+    /* Compensate for height change to keep text centered */
+}
+
+/* The bottom line */
+/* The bottom line */
+.find-account-tabs::after {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 0;
+    height: 2px;
+    background-color: #614108;
+    z-index: 1;
+}

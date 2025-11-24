@@ -1,0 +1,102 @@
+.signup-complete-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #FFF7E6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.signup-complete-content {
+  width: 100%;
+  max-width: 360px;
+  padding: 40px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.signup-complete-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #614008;
+  color: #FFFFFF;
+  font-size: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.signup-complete-title {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.3;
+  color: #614108;
+  letter-spacing: -0.56px;
+  text-align: center;
+  margin: 0;
+}
+
+.signup-complete-subtitle {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #505050;
+  letter-spacing: -0.32px;
+  text-align: center;
+  margin: 0;
+}
+
+.signup-complete-button-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.signup-complete-button {
+  width: 100%;
+  height: 48px;
+  background-color: #614008;
+  border: none;
+  border-radius: 1000px;
+  color: #FFFFFF;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: -0.32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 20px;
+  transition: background-color 0.2s ease;
+}
+
+.signup-complete-button:hover {
+  background-color: #4A3206;
+}
+
+.signup-complete-button:active {
+  transform: scale(0.98);
+}
+
+/* 반응형 */
+@media (max-width: 375px) {
+  .signup-complete-content {
+    width: 100%;
+    max-width: 360px;
+  }
+}
+

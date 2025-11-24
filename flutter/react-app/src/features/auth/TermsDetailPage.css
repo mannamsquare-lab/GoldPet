@@ -1,0 +1,48 @@
+/* Header styles removed - using shared Header component */
+/* Page container and title styles moved to page-layout.css */
+
+/* Body */
+.terms-detail-body {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.terms-detail-content {
+  width: 100%;
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  padding: 24px 20px;
+  min-height: 400px;
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+}
+
+.terms-detail-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #1A1A1A;
+  letter-spacing: -0.28px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+/* 반응형 */
+@media (max-width: 375px) {
+  .terms-detail-page {
+    padding: 0;
+  }
+
+  .terms-detail-header,
+  .terms-detail-title-section,
+  .terms-detail-body {
+    width: 100%;
+    max-width: 360px;
+  }
+}

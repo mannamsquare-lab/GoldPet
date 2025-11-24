@@ -1,0 +1,167 @@
+.permissions-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #FFF7E6;
+  position: relative;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Header - 로고 (온보딩 화면과 동일한 위치와 크기) */
+.permissions-header {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  height: 80px;
+  background-color: #FFF7E6;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  padding-top: 24px;
+  z-index: 10;
+}
+
+.permissions-logo-area {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.permissions-logo {
+  height: 20px;
+  width: 75px;
+  display: flex;
+  align-items: center;
+}
+
+.permissions-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Title Section (온보딩 화면과 동일한 위치) */
+.permissions-title-section {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  padding: 24px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 20;
+}
+
+.permissions-title {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 32px;
+  line-height: 1;
+  color: #614108;
+  letter-spacing: -0.64px;
+  margin: 0;
+}
+
+.permissions-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  gap: 40px;
+  margin-top: 192px;
+}
+
+.permissions-list {
+  width: 100%;
+  max-width: 328px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.permission-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.permission-icon-item {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.permission-text {
+  flex: 1;
+}
+
+.permission-text h3 {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.4;
+  color: #614108;
+  margin: 0 0 4px 0;
+}
+
+.permission-text p {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666666;
+  margin: 0;
+}
+
+.permissions-footer {
+  width: 100%;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.permissions-button {
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 1000px;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: -0.32px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.permissions-button.primary {
+  background-color: #614108;
+  color: #FFFFFF;
+}
+
+.permissions-button.primary:hover {
+  background-color: #4A3206;
+}
+
+.permissions-button.secondary {
+  background-color: transparent;
+  color: #614108;
+  border: 1px solid #614108;
+}
+
+.permissions-button.secondary:hover {
+  background-color: rgba(97, 65, 8, 0.05);
+}
+
+.permissions-button:active {
+  transform: scale(0.98);
+}
+

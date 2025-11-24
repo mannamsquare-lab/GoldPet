@@ -1,0 +1,298 @@
+.login-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #FFF7E6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  position: relative;
+}
+
+/* Title Section */
+.login-title-section {
+  width: 100%;
+  max-width: 360px;
+  padding: 24px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 80px;
+}
+
+.login-logo-container {
+  width: 100%;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-logo {
+  height: 27px;
+  width: 100.45px;
+  object-fit: contain;
+}
+
+.login-subtitle {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #505050;
+  letter-spacing: -0.32px;
+  margin: 0;
+}
+
+/* Body */
+.login-body {
+  width: 100%;
+  max-width: 360px;
+  padding: 16px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Login Form */
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-input-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.login-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.login-input {
+  width: 100%;
+  height: 48px;
+  background-color: #FFFFFF;
+  border: none;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #727272;
+  letter-spacing: -0.32px;
+  padding: 0 16px;
+  outline: none;
+}
+
+.login-input-top {
+  border-radius: 16px 16px 0 0;
+}
+
+.login-input-bottom {
+  border-radius: 0 0 16px 16px;
+  padding-right: 48px;
+}
+
+.login-input::placeholder {
+  color: #727272;
+}
+
+.login-password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.login-password-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.login-button-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-button {
+  width: 100%;
+  height: 48px;
+  background-color: #614108;
+  border: none;
+  border-radius: 1000px;
+  color: #FFFFFF;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: -0.32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 20px;
+  transition: background-color 0.2s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  background-color: #4A3206;
+}
+
+.login-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-options {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.login-auto-login {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.login-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #614108;
+}
+
+.login-checkbox-label {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #614108;
+  letter-spacing: -0.24px;
+  cursor: pointer;
+}
+
+.login-links {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.login-link {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #614108;
+  letter-spacing: -0.24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+/* SNS Login */
+.login-sns {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.login-sns-title {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #505050;
+  letter-spacing: -0.28px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.login-sns-buttons {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.login-sns-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.login-sns-button:hover {
+  transform: scale(1.1);
+}
+
+.login-sns-button-apple {
+  background-color: #FFFFFF;
+}
+
+.login-sns-button-google {
+  background-color: #FFFFFF;
+}
+
+.login-sns-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 반응형 */
+@media (max-width: 375px) {
+  .login-page {
+    padding: 0;
+  }
+  
+  .login-title-section,
+  .login-body {
+    max-width: 100%;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
