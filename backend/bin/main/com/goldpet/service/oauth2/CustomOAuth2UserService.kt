@@ -6,7 +6,12 @@ import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserServ
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Service
+import com.goldpet.config.security.UserPrincipal
 import org.springframework.transaction.annotation.Transactional
+
+import com.nimbusds.jwt.JWTParser
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 
 @Service
 class CustomOAuth2UserService(
@@ -15,13 +20,107 @@ class CustomOAuth2UserService(
 
     @Transactional
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {
-        val oAuth2User = super.loadUser(userRequest)
         val registrationId = userRequest.clientRegistration.registrationId
         val userNameAttributeName = userRequest.clientRegistration.providerDetails.userInfoEndpoint.userNameAttributeName
 
-        val oauth2Id = oAuth2User.attributes[userNameAttributeName]?.toString() ?: throw IllegalStateException("OAuth2 ID not found")
-        val email = oAuth2User.attributes["email"]?.toString()
-        val name = oAuth2User.attributes["name"]?.toString()
+        val oAuth2User: OAuth2User
+        val oauth2Id: String
+
+        if (registrationId == "apple") {
+            // Apple does not support the UserInfo endpoint. We must parse the id_token.
+            val idToken = userRequest.additionalParameters["id_token"] as? String
+                ?: throw IllegalStateException("No id_token found for Apple login")
+            
+            try {
+                val jwt = JWTParser.parse(idToken)
+                val claims = jwt.jwtClaimsSet.claims
+                
+                // Apple's unique user ID is in the 'sub' claim
+                oauth2Id = claims["sub"]?.toString() 
+                    ?: throw IllegalStateException("No 'sub' claim in Apple id_token")
+                
+                oAuth2User = DefaultOAuth2User(
+                    listOf(SimpleGrantedAuthority("ROLE_USER")),
+                    claims,
+                    "sub" // Apple uses 'sub' as the name attribute
+                )
+            } catch (e: Exception) {
+                throw IllegalStateException("Failed to parse Apple id_token", e)
+            }
+        } else {
+            // For other providers (Naver, Kakao, Google), use the default loading (UserInfo endpoint)
+            oAuth2User = super.loadUser(userRequest)
+            
+            // Extract the provider‑specific OAuth2 ID
+            oauth2Id = when (registrationId) {
+                "naver" -> {
+                    val resp = oAuth2User.attributes["response"] as? Map<*, *>
+                    resp?.get("id")?.toString()
+                }
+                "kakao" -> {
+                    oAuth2User.attributes["id"]?.toString()
+                }
+                else -> {
+                    oAuth2User.attributes[userNameAttributeName]?.toString()
+                }
+            } ?: throw IllegalStateException("OAuth2 ID not found")
+        }
+
+        // ---------- provider‑specific attribute extraction ----------
+        val (email, nickname, profileImage) = when (registrationId) {
+            "naver" -> {
+                val resp = oAuth2User.attributes["response"] as? Map<*, *>
+                Triple(
+                    resp?.get("email")?.toString(),
+                    resp?.get("name")?.toString(),
+                    resp?.get("profile_image")?.toString()
+                )
+            }
+            "kakao" -> {
+                // Kakao structure:
+                // id (top level)
+                // kakao_account { email, profile { nickname, profile_image_url } }
+                // properties { nickname, profile_image, ... } (sometimes used)
+                
+                val account = oAuth2User.attributes["kakao_account"] as? Map<*, *>
+                val profile = account?.get("profile") as? Map<*, *>
+                val props = oAuth2User.attributes["properties"] as? Map<*, *>
+                
+                val kakaoEmail = account?.get("email")?.toString()
+                val kakaoNickname = profile?.get("nickname")?.toString() 
+                    ?: props?.get("nickname")?.toString()
+                val kakaoImage = profile?.get("profile_image_url")?.toString()
+                    ?: props?.get("profile_image")?.toString()
+                    ?: account?.get("profile_image_url")?.toString() // Fallback
+                
+                Triple(kakaoEmail, kakaoNickname, kakaoImage)
+            }
+            "google" -> {
+                Triple(
+                    oAuth2User.attributes["email"]?.toString(),
+                    oAuth2User.attributes["name"]?.toString(),
+                    oAuth2User.attributes["picture"]?.toString()
+                )
+            }
+            "apple" -> {
+                // Apple provides email in the id_token.
+                // Name is ONLY provided in the 'user' field of the authorization response (POST body) on the FIRST login.
+                // It is NOT in the id_token. Handling that requires a custom filter or interceptor.
+                // Here we extract what we can from the id_token.
+                Triple(
+                    oAuth2User.attributes["email"]?.toString(),
+                    null, // Name not available in id_token
+                    null  // No profile image
+                )
+            }
+            else -> {
+                Triple(
+                    oAuth2User.attributes["email"]?.toString(),
+                    oAuth2User.attributes["name"]?.toString(),
+                    null
+                )
+            }
+        }
 
         var user = userRepository.findByOauthProviderAndOauthId(registrationId, oauth2Id).orElse(null)
 
@@ -30,21 +129,30 @@ class CustomOAuth2UserService(
                 oauthProvider = registrationId,
                 oauthId = oauth2Id,
                 email = email,
-                nickname = name ?: "User_${oauth2Id.substring(0, 5)}", // Generate a default nickname
+                nickname = nickname,
                 gender = null,
                 birthYear = null,
                 mainLocationText = null,
                 mainLocationGeom = null,
-                profileImageUrl = null
+                profileImageUrl = profileImage,
+                username = null,
+                password = null,
+                name = null,
+                birthDate = null,
+                phoneNumber = null
             )
-            userRepository.save(user)
+            user = userRepository.save(user)
         } else {
             // Update user details if necessary
-            user.email = email
-            user.nickname = name ?: user.nickname
-            userRepository.save(user)
+            user.email = email ?: user.email
+            user.nickname = nickname ?: user.nickname
+            user.profileImageUrl = profileImage ?: user.profileImageUrl
+            user = userRepository.save(user)
         }
 
-        return oAuth2User
+        println("DEBUG: User saved. ID: ${user.id}, OAuthID: ${user.oauthId}")
+
+        return UserPrincipal.create(user, oAuth2User.attributes)
     }
+
 }

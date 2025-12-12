@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './TermsAgreementPage.css';
 
-import { Header } from '../../components/common/Header';
+// import { Header } from '../../components/common/Header';
 
 export const TermsAgreementPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [allAgreed, setAllAgreed] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
@@ -59,18 +60,20 @@ export const TermsAgreementPage = () => {
 
   const handleNext = () => {
     if (termsAgreed && privacyAgreed) {
-      navigate('/signup/form');
+      if (location.state?.isSns) {
+        navigate('/signup/sns', { state: location.state });
+      } else {
+        navigate('/signup/form');
+      }
     }
   };
 
   return (
-    <div className="page-container">
-      {/* Header - 뒤로가기 버튼 */}
-      <Header />
-
+    <div style={{ padding: '22.22vw 4.44vw 0' }}>
+      
       {/* Title Section */}
       <div className="page-title-section">
-        <h1 className="page-title">약관 동의</h1>
+        <h2 className="page-title">약관 동의</h2>
         <p className="page-subtitle">서비스 이용을 위해 약관에 동의해주세요.</p>
       </div>
 

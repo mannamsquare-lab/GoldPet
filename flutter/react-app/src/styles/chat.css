@@ -1,0 +1,353 @@
+/* Chat List Styles */
+#chatOne {
+  padding: 2.78vw 0 0;
+}
+#chatOne .group_tab {
+  width: 91.11vw;
+  margin: 0 0 0 4.44vw;
+  position: relative;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  gap: 0.56vw;
+}
+#chatOne .group_tab:after {
+  width: 100%;
+  height: 2px;
+  display: block;
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background-color: #614108;
+}
+#chatOne .group_tab button {
+  width: 28.33vw;
+  height: 12.78vw;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  position: relative;
+  background-color: #EFE1C4;
+  font-size: 4.44vw;
+  font-weight: 500;
+  color: #614108;
+  border-top-left-radius: 2.78vw;
+  border-top-right-radius: 2.78vw;
+}
+#chatOne .group_tab button.active {
+  z-index: 1;
+  border: 2px solid #614108;
+  border-bottom: 0;
+  background-color: #FFF7E6;
+  font-weight: 700;
+}
+#chatOne .chat_list {
+  padding: 6.94vw 4.44vw 0;
+}
+#chatOne .chat_list li {
+  padding: 4.44vw 0;
+  border-top: 1px solid #EFE1C4;
+}
+#chatOne .chat_list li:first-child {
+  border-top: 0;
+}
+#chatOne .chat_list button {
+  width: 100%;
+  padding: 0 5.56vw 0 0;
+  display: grid;
+  -webkit-column-gap: 2.22vw;
+     -moz-column-gap: 2.22vw;
+          column-gap: 2.22vw;
+  grid-template-columns: 13.33vw 1fr auto;
+  grid-template-rows: auto auto;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  position: relative;
+}
+#chatOne .chat_list button:after {
+  width: 4.44vw;
+  height: 4.44vw;
+  display: block;
+  content: "";
+  background-image: url(/assets/images/common/more_btn.svg);
+  position: absolute;
+  top: 50%;
+  right: 0;
+  translate: 0 -50%;
+  -ms-background-position-x: 50%;
+  background-position-x: 50%;
+  -ms-background-position-y: 50%;
+  background-position-y: 50%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+#chatOne .chat_list .profile_img {
+  width: 13.33vw;
+  height: 13.33vw;
+  border-radius: 57% 50% 58% 49%/38% 40% 43% 48%;
+  overflow: hidden;
+  grid-row: 1/span 2;
+}
+#chatOne .chat_list .profile_img img {
+  width: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+
+/* Group Chat Profile Images - Stacked */
+#chatOne .chat_list .profile_img_group {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0;
+}
+
+#chatOne .chat_list .profile_img_group .profile_img_item {
+  width: 100%;
+  height: 100%;
+  border-radius: 57% 50% 58% 49%/38% 40% 43% 48%;
+  overflow: hidden;
+  position: relative;
+  border: 0.28vw solid #FFF7E6;
+  box-sizing: border-box;
+}
+
+#chatOne .chat_list .profile_img_group .profile_img_item:first-child {
+  border-top-left-radius: 57% 50%;
+}
+
+#chatOne .chat_list .profile_img_group .profile_img_item:nth-child(2) {
+  border-top-right-radius: 58% 49%;
+}
+
+#chatOne .chat_list .profile_img_group .profile_img_item:nth-child(3) {
+  border-bottom-left-radius: 58% 49%;
+}
+
+#chatOne .chat_list .profile_img_group .profile_img_item:nth-child(4) {
+  border-bottom-right-radius: 57% 50%;
+}
+
+#chatOne .chat_list .profile_img_group .profile_img_item img {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+#chatOne .chat_list .txt_wrap {
+  width: 55.56vw;
+  text-align: left;
+}
+#chatOne .chat_list .txt_wrap strong {
+  font-size: 5vw;
+  color: #614108;
+}
+#chatOne .chat_list .txt_wrap p {
+  font-size: 3.89vw;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#chatOne .chat_list .day_txt {
+  height: 90%;
+  margin-left: auto;
+  text-align: right;
+  grid-column: 3;
+  grid-row: 1/span 2;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: end;
+      -ms-flex-align: end;
+          align-items: flex-end;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+}
+#chatOne .chat_list .day_txt .count_num {
+  padding: 0.56vw 1.67vw;
+  background-color: #ff5005;
+  border-radius: 6.11vw;
+  color: #fff;
+  font-weight: 700;
+  font-size: 3.33vw;
+}
+#chatOne .chat_list .day_txt .last_day {
+  font-size: 3.33vw;
+  font-weight: 500;
+}
+
+/* Chat Request (Contact List) Styles */
+#chatOne .contact_list {
+  padding: 6.94vw 4.44vw 0;
+}
+#chatOne .contact_list li {
+  width: 100%;
+  padding: 4.44vw 0;
+  border-top: 1px solid #EFE1C4;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-column-gap: 2.22vw;
+     -moz-column-gap: 2.22vw;
+          column-gap: 2.22vw;
+  -webkit-box-pack: start;
+      -ms-flex-pack: start;
+          justify-content: start;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+}
+#chatOne .contact_list li:first-child {
+  border-top: 0;
+}
+#chatOne .contact_list .profile_img {
+  width: 13.33vw;
+  height: 13.33vw;
+  border-radius: 57% 50% 58% 49%/38% 40% 43% 48%;
+  overflow: hidden;
+  grid-row: 1/span 2;
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 auto;
+          flex: 0 0 auto;
+}
+#chatOne .contact_list .profile_img img {
+  width: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+#chatOne .contact_list .txt_wrap {
+  width: 41.67vw;
+  text-align: left;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+}
+#chatOne .contact_list .txt_wrap strong {
+  font-size: 5vw;
+  color: #614108;
+}
+#chatOne .contact_list .txt_wrap p {
+  font-size: 3.89vw;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#chatOne .contact_list .contact_btn_wrap {
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 auto;
+          flex: 0 0 auto;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  gap: 2.22vw;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+#chatOne .contact_list .contact_btn_wrap button {
+  width: 15.28vw;
+  height: 11.67vw;
+  background-color: #614108;
+  color: #fff;
+  border-radius: 5vw;
+  font-size: 3.61vw;
+  font-weight: 600;
+  transition: transform 0.1s ease, opacity 0.2s ease;
+  cursor: pointer;
+}
+#chatOne .contact_list .contact_btn_wrap button:active {
+  transform: scale(0.95);
+}
+#chatOne .contact_list .contact_btn_wrap button:hover {
+  opacity: 0.9;
+}
+#chatOne .contact_list .contact_btn_wrap button:first-child {
+  background-color: #EFE1C4;
+  color: #614108;
+}
+#chatOne .contact_list .last_day {
+  -ms-flex-preferred-size: 100%;
+      flex-basis: 100%;
+  text-align: right;
+  font-size: 3.33vw;
+  font-weight: 500;
+  color: #727272;
+}
+
+/* Chat Empty State */
+.chat_empty_state {
+  width: 100%;
+  padding: 25vw 4.44vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}
+
+.chat_empty_content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2.22vw;
+}
+
+.chat_empty_icon {
+  width: 12vw;
+  height: 12vw;
+  position: relative;
+}
+
+.chat_empty_icon_bg {
+  width: 9vw;
+  height: 9vw;
+  left: 1.5vw;
+  top: 1.5vw;
+  position: absolute;
+  background: #D5BE8F;
+  border-radius: 50%;
+}
+
+.chat_empty_text {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.56vw;
+}
+
+.chat_empty_title {
+  width: 100%;
+  text-align: center;
+  color: #81662D;
+  font-size: 6vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 700;
+  line-height: 8.4vw;
+  word-wrap: break-word;
+}
+
+.chat_empty_description {
+  width: 100%;
+  text-align: center;
+  color: #81662D;
+  font-size: 3.5vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 500;
+  line-height: 4.9vw;
+  word-wrap: break-word;
+}

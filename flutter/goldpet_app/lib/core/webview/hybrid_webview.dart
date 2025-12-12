@@ -3,18 +3,16 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../bridge/bridge_message_handler.dart';
 import '../bridge/native_bridge.dart';
 import '../services/location_service.dart';
+import 'dart:io';
+import 'package:url_launcher/url_launcher.dart';
 
 /// React 앱을 로드하는 WebView 래퍼
 class HybridWebView extends StatefulWidget {
   final String initialUrl;
   final VoidCallback? onAppLoaded;
-  
-  const HybridWebView({
-    super.key,
-    required this.initialUrl,
-    this.onAppLoaded,
-  });
-  
+
+  const HybridWebView({super.key, required this.initialUrl, this.onAppLoaded});
+
   @override
   State<HybridWebView> createState() => _HybridWebViewState();
 }
@@ -24,17 +22,24 @@ class _HybridWebViewState extends State<HybridWebView> {
   late final LocationService _locationService;
   late final NativeBridge _bridge;
   late final BridgeMessageHandler _bridgeController;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeWebView();
   }
-  
-  void _initializeWebView() {
+
+  Future<void> _initializeWebView() async {
+    // Google Login 403 에러 방지를 위한 User Agent 설정
+    // "wv" 또는 "Version/4.0" 등의 식별자를 제거하여 일반 브라우저처럼 보이게 함
+    final String userAgent = Platform.isIOS
+        ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
+        : 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36';
+
     // WebView 컨트롤러 생성
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent(userAgent)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
@@ -49,29 +54,129 @@ class _HybridWebViewState extends State<HybridWebView> {
           onWebResourceError: (WebResourceError error) {
             debugPrint('WebView error: ${error.description}');
           },
+          onNavigationRequest: (NavigationRequest request) async {
+            final url = request.url;
+            debugPrint('NavigationRequest: $url'); // 디버깅 로그 추가
+            final uri = Uri.parse(url);
+
+            // 1. Android Intent URL 처리
+            if (Platform.isAndroid && url.startsWith('intent://')) {
+              debugPrint('Detected Intent URL: $url');
+              try {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                return NavigationDecision.prevent;
+              } catch (e) {
+                debugPrint('Failed to launch Intent: $e');
+                // 앱이 설치되어 있지 않은 경우 fallback URL 처리
+                final fallbackUrl = _extractFallbackUrl(url);
+                if (fallbackUrl != null) {
+                  debugPrint('Launching Fallback URL: $fallbackUrl');
+                  await launchUrl(
+                    Uri.parse(fallbackUrl),
+                    mode: LaunchMode.externalApplication,
+                  );
+                }
+                return NavigationDecision.prevent;
+              }
+            }
+
+            // 2. Custom Schemes (Kakao, Naver, etc.) 처리
+            // http/https가 아닌 경우 외부 앱 실행 시도
+            if (uri.scheme != 'http' && uri.scheme != 'https') {
+              debugPrint('Detected Custom Scheme: ${uri.scheme}');
+              try {
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  return NavigationDecision.prevent;
+                } else {
+                  debugPrint('Cannot launch URL: $url');
+                }
+              } catch (e) {
+                debugPrint('Failed to launch Custom Scheme: $e');
+              }
+              // 처리할 수 없는 스킴이라도 WebView에서 로드하지 않도록 차단 (보안/오류 방지)
+              return NavigationDecision.prevent;
+            }
+
+            // 3. HTTP/HTTPS는 WebView에서 로드
+            // 단, 특정 도메인(예: App Link)은 예외 처리가 필요할 수 있음
+            return NavigationDecision.navigate;
+          },
         ),
       )
-      ..loadRequest(Uri.parse(widget.initialUrl));
-    
+      ..setOnJavaScriptAlertDialog((
+        JavaScriptAlertDialogRequest request,
+      ) async {
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Alert'),
+              content: Text(request.message),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      })
+      ..setOnConsoleMessage((JavaScriptConsoleMessage message) {
+        debugPrint('JS Console: ${message.message}');
+      });
+
     // Bridge 초기화 (서비스는 Bridge 내부에서 생성됨)
     _bridge = NativeBridge(_controller);
-    
+
     // 서비스 참조 가져오기
     _locationService = _bridge.locationService;
-    
-    // Bridge Controller 초기화
+
+    // Bridge Controller 초기화 (JavaScript Channel 등록)
     _bridgeController = BridgeMessageHandler(_controller, _bridge);
+    await _bridgeController.setup();
+
+    // 마지막으로 페이지 로드
+    _controller.loadRequest(Uri.parse(widget.initialUrl));
+
+    // 화면 갱신을 위해 setState 호출 (필요한 경우)
+    if (mounted) {
+      setState(() {});
+    }
   }
-  
+
+  String? _extractFallbackUrl(String intentUrl) {
+    try {
+      final parts = intentUrl.split(';');
+      for (final part in parts) {
+        if (part.startsWith('S.browser_fallback_url=')) {
+          return Uri.decodeFull(
+            part.substring('S.browser_fallback_url='.length),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to extract fallback URL: $e');
+    }
+    return null;
+  }
+
   @override
   void dispose() {
     _locationService.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    return WebViewWidget(controller: _controller);
+    return Scaffold(
+      backgroundColor: const Color(
+        0xFFFFF7E6,
+      ), // React App의 메인 배경색 (#FFF7E6)과 일치시킴
+      body: SafeArea(child: WebViewWidget(controller: _controller)),
+    );
   }
 }
-

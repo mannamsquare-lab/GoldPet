@@ -45,9 +45,9 @@
 
 4.  **서비스 확인:**
     -   **Backend API Server:** `http://localhost:8080`
-    -   **AI Server:** `http://localhost:8000`
+    -   **AI Server:** `http://localhost:8001` (Docker mapped port)
     -   **PostgreSQL:** `localhost:5432`
-    -   **Redis:** `localhost:6379`
+    -   **Redis:** `localhost:6380` (Docker mapped port)
 
 ---
 

@@ -1,14 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import './PermissionsPage.css';
 
 export const PermissionsPage = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRequestPermissions = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
     try {
       const results: { [key: string]: any } = {};
-      
+
       // 위치 권한 요청
       try {
         console.log('위치 권한 요청 중...');
@@ -18,7 +22,7 @@ export const PermissionsPage = () => {
         console.error('위치 권한 요청 실패:', error);
         results.location = { granted: false, error: error };
       }
-      
+
       // 카메라 권한 요청
       try {
         console.log('카메라 권한 요청 중...');
@@ -28,7 +32,7 @@ export const PermissionsPage = () => {
         console.error('카메라 권한 요청 실패:', error);
         results.camera = { granted: false, error: error };
       }
-      
+
       // 사진 권한 요청
       try {
         console.log('사진 권한 요청 중...');
@@ -38,7 +42,7 @@ export const PermissionsPage = () => {
         console.error('사진 권한 요청 실패:', error);
         results.photo = { granted: false, error: error };
       }
-      
+
       // 권한 요청 완료 후 혜택 안내 화면으로 이동
       console.log('모든 권한 요청 완료:', results);
       navigate('/benefits');
@@ -46,6 +50,8 @@ export const PermissionsPage = () => {
       console.error('권한 요청 중 오류 발생:', error);
       // 권한 거부 시에도 다음 화면으로 이동 (선택적)
       navigate('/benefits');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,26 +60,10 @@ export const PermissionsPage = () => {
   };
 
   return (
-    <div className="permissions-page">
-      {/* Header - 로고 */}
-      <div className="permissions-header">
-        <div className="permissions-logo-area">
-          <div className="permissions-logo">
-            <img 
-              src="/assets/images/common/logo.svg" 
-              alt="GoldPet" 
-              className="permissions-logo-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
+    <div className="permissions-page" style={{ padding: '22.22vw 4.44vw 0' }}>
       {/* Title Section */}
       <div className="permissions-title-section">
-        <h1 className="permissions-title">앱 접근 권한 안내</h1>
+        <h2 className="permissions-title">앱 접근 권한 안내</h2>
       </div>
 
       <div className="permissions-content">
@@ -105,13 +95,14 @@ export const PermissionsPage = () => {
       </div>
 
       <div className="permissions-footer">
-        <button 
+        <button
           className="permissions-button primary"
           onClick={handleRequestPermissions}
+          disabled={isLoading}
         >
-          권한 허용하기
+          {isLoading ? '요청 중...' : '권한 허용하기'}
         </button>
-        <button 
+        <button
           className="permissions-button secondary"
           onClick={handleSkip}
         >

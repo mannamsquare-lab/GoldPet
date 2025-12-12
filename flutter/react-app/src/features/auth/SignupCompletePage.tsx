@@ -6,20 +6,20 @@ export const SignupCompletePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 3초 후 자동으로 로그인 화면으로 이동
+    // 3초 후 자동으로 홈 화면으로 이동
     const timer = setTimeout(() => {
-      navigate('/login');
+      navigate('/home');
     }, 3000);
 
     return () => clearTimeout(timer);
   }, [navigate]);
 
-  const handleGoToLogin = () => {
-    navigate('/login');
+  const handleGoToHome = () => {
+    navigate('/home');
   };
 
   return (
-    <div className="signup-complete-page">
+    <div style={{ padding: '0 4.44vw' }}>
       <div className="signup-complete-content">
         <div className="signup-complete-icon">✓</div>
         <h1 className="signup-complete-title">회원가입이 완료되었습니다</h1>
@@ -31,9 +31,9 @@ export const SignupCompletePage = () => {
           <button
             type="button"
             className="signup-complete-button"
-            onClick={handleGoToLogin}
+            onClick={handleGoToHome}
           >
-            로그인하기
+            홈으로 가기
           </button>
         </div>
       </div>

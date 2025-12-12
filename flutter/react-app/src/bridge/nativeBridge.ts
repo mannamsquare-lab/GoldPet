@@ -22,7 +22,11 @@ class NativeBridge {
 
   private setupBridge() {
     // Flutter WebView에서 호출할 수 있는 전역 함수 등록
+    // Flutter WebView에서 호출할 수 있는 전역 함수 등록
+    // 기존 window.nativeBridge가 있으면 handleResponse만 연결하고, 없으면 생성
+    const existingBridge = (window as any).nativeBridge || {};
     (window as any).nativeBridge = {
+      ...existingBridge,
       handleResponse: (response: BridgeResponse) => {
         this.handleResponse(response);
       },

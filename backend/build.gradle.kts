@@ -19,6 +19,10 @@ repositories {
     mavenCentral()
 }
 
+configurations.all {
+    exclude(group = "commons-logging", module = "commons-logging")
+}
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")

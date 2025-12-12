@@ -18,7 +18,17 @@ class User(
 
     var oauthId: String,
 
+    var username: String?,
+
+    var password: String?,
+
     var nickname: String?,
+    
+    var name: String?,
+    
+    var birthDate: String?,
+    
+    var phoneNumber: String?,
 
     var gender: String?,
 

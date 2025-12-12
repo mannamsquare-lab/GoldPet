@@ -1,0 +1,415 @@
+.div-wrapper {
+  width: 360px;
+  height: 740px;
+  display: flex;
+  justify-content: center;
+  background-color: var(--secondaryfff-7e-6);
+}
+
+.div-wrapper .body {
+  display: flex;
+  z-index: 1;
+  margin-top: 88px;
+  width: 360px;
+  height: 644px;
+  position: relative;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 16px 40px;
+}
+
+.div-wrapper .row {
+  padding: 0px 40px 0px 0px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.div-wrapper .img-small {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  aspect-ratio: 1;
+  background-image: url(./img/mask-group-3.png);
+  background-size: 100% 100%;
+}
+
+.div-wrapper .frame {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+}
+
+.div-wrapper .div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: var(--secondaryefe-1c-4);
+  border-radius: 16px;
+}
+
+.div-wrapper .text-wrapper {
+  align-self: stretch;
+  margin-top: -1.00px;
+  font-family: "Pretendard-Medium", Helvetica;
+  font-weight: 500;
+  color: var(--primary-614108);
+  font-size: 16px;
+  letter-spacing: -0.32px;
+  line-height: 22.4px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.div-wrapper .text-wrapper-2 {
+  width: fit-content;
+  font-family: "Pretendard-Medium", Helvetica;
+  font-weight: 500;
+  color: var(--black-727272);
+  font-size: 12px;
+  letter-spacing: -0.24px;
+  line-height: 16.8px;
+  white-space: nowrap;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.div-wrapper .frame-wrapper {
+  justify-content: flex-end;
+  padding: 0px 0px 0px 80px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.div-wrapper .frame-2 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: var(--whiteffffff);
+  border-radius: 16px;
+}
+
+.div-wrapper .p {
+  align-self: stretch;
+  margin-top: -1.00px;
+  font-family: "Pretendard-Medium", Helvetica;
+  font-weight: 500;
+  color: var(--black-505050);
+  font-size: 16px;
+  letter-spacing: -0.32px;
+  line-height: 22.4px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.div-wrapper .img-small-2 {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  aspect-ratio: 1;
+  background-image: url(./img/mask-group-2.png);
+  background-size: 100% 100%;
+}
+
+.div-wrapper .img-small-3 {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  aspect-ratio: 1;
+  background-image: url(./img/mask-group.png);
+  background-size: 100% 100%;
+}
+
+.div-wrapper .textfield {
+  z-index: 2;
+  flex-direction: column;
+  width: 360px;
+  position: fixed;
+  left: calc(50.00% - 180px);
+  bottom: 0;
+  background-color: var(--secondaryefe-1c-4);
+  display: flex;
+  align-items: center;
+}
+
+.div-wrapper .comments {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 8px 8px 56px;
+  align-self: stretch;
+  width: 100%;
+  background-color: var(--secondaryfff-7e-6);
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.div-wrapper .tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1.5px solid;
+  border-color: #a48a53;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.div-wrapper .text-wrapper-3 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: -1.50px;
+  font-family: "Pretendard-Medium", Helvetica;
+  font-weight: 500;
+  color: var(--primary-614108);
+  font-size: 12px;
+  letter-spacing: -0.24px;
+  line-height: 16.8px;
+  white-space: nowrap;
+}
+
+.div-wrapper .tag-2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 8px;
+  position: relative;
+  flex: 0 0 auto;
+  margin-right: -66.00px;
+  border-radius: 999px;
+  border: 1.5px solid;
+  border-color: #a48a53;
+}
+
+.div-wrapper .textfield-2 {
+  gap: 8px;
+  padding: 8px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: var(--secondaryefe-1c-4);
+  display: flex;
+  align-items: center;
+}
+
+.div-wrapper .btn {
+  gap: 10px;
+  padding: 8px;
+  background-color: var(--secondaryfff-7e-6);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.div-wrapper .icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.div-wrapper .textfield-3 {
+  height: 36px;
+  gap: 12px;
+  padding: 0px 12px;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+  background-color: var(--whiteffffff);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+}
+
+.div-wrapper .text-wrapper-4 {
+  flex: 1;
+  font-family: "Pretendard-Medium", Helvetica;
+  font-weight: 500;
+  color: var(--blackaaaaaa);
+  font-size: 16px;
+  letter-spacing: -0.32px;
+  line-height: 22.4px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.div-wrapper .button {
+  all: unset;
+  box-sizing: border-box;
+  height: 40px;
+  border-radius: 800px;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.div-wrapper .vector {
+  position: relative;
+  width: 16px;
+  height: 42px;
+  margin-top: -1.00px;
+  margin-bottom: -1.00px;
+}
+
+.div-wrapper .frame-3 {
+  display: inline-flex;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  flex: 0 0 auto;
+  margin-top: -1.00px;
+  margin-bottom: -1.00px;
+  background-color: var(--primary-614108);
+}
+
+.div-wrapper .text-wrapper-5 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  font-family: "Pretendard-SemiBold", Helvetica;
+  font-weight: 600;
+  color: var(--whiteffffff);
+  font-size: 13px;
+  letter-spacing: -0.26px;
+  line-height: 18.2px;
+  white-space: nowrap;
+}
+
+.div-wrapper .header {
+  display: flex;
+  z-index: 3;
+  flex-direction: column;
+  width: 360px;
+  align-items: flex-start;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #fff7e6;
+}
+
+.div-wrapper .top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+  backdrop-filter: blur(10px) brightness(100%);
+  -webkit-backdrop-filter: blur(10px) brightness(100%);
+}
+
+.div-wrapper .status-bar {
+  position: relative;
+  width: 360px;
+  height: 24px;
+}
+
+.div-wrapper .profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px 16px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.div-wrapper .frame-4 {
+  display: flex;
+  height: 64px;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0px;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+}
+
+.div-wrapper .row-2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  flex: 1;
+  flex-grow: 1;
+}
+
+.div-wrapper .img-small-4 {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  aspect-ratio: 1;
+  background-image: url(./img/image.png);
+  background-size: 100% 100%;
+}
+
+.div-wrapper .text-wrapper-6 {
+  flex: 1;
+  font-family: "Pretendard-Bold", Helvetica;
+  font-weight: 700;
+  color: var(--primary-614108);
+  font-size: 18px;
+  letter-spacing: -0.36px;
+  line-height: 25.2px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.div-wrapper .divider {
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  height: 1px;
+  background-color: var(--secondaryefe-1c-4);
+}

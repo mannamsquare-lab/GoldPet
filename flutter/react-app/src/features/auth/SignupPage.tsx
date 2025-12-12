@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../../services/api/client';
+import { authService } from '../../services/authService';
 import './SignupPage.css';
-import { Header } from '../../components/common/Header';
+// import { Header } from '../../components/common/Header';
 
 export const SignupPage = () => {
   const navigate = useNavigate();
@@ -13,6 +13,10 @@ export const SignupPage = () => {
     passwordConfirm: '',
     email: '',
     nickname: '',
+    name: '',
+    birthDate: '',
+    gender: '',
+    phoneNumber: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
@@ -42,7 +46,7 @@ export const SignupPage = () => {
     return '';
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
@@ -100,11 +104,9 @@ export const SignupPage = () => {
 
     setIsCheckingUsername(true);
     try {
-      const response = await apiClient.post('/auth/check-username', {
-        username: formData.username,
-      });
-      setIsUsernameAvailable(response.data.available);
-      if (!response.data.available) {
+      const response = await authService.checkUsername(formData.username);
+      setIsUsernameAvailable(response.available);
+      if (!response.available) {
         setErrors(prev => ({ ...prev, username: '이미 사용 중인 아이디입니다.' }));
       } else {
         setErrors(prev => {
@@ -130,11 +132,9 @@ export const SignupPage = () => {
 
     setIsCheckingNickname(true);
     try {
-      const response = await apiClient.post('/auth/check-nickname', {
-        nickname: formData.nickname,
-      });
-      setIsNicknameAvailable(response.data.available);
-      if (!response.data.available) {
+      const response = await authService.checkNickname(formData.nickname);
+      setIsNicknameAvailable(response.available);
+      if (!response.available) {
         setErrors(prev => ({ ...prev, nickname: '이미 사용 중인 닉네임입니다.' }));
       } else {
         setErrors(prev => {
@@ -168,10 +168,17 @@ export const SignupPage = () => {
       return false;
     }
 
-    // 이메일: 유효한 형식
-    if (!formData.email || !formData.email.includes('@')) {
-      return false;
-    }
+    // 이름
+    if (!formData.name) return false;
+
+    // 생년월일
+    if (!formData.birthDate) return false;
+
+    // 성별
+    if (!formData.gender) return false;
+
+    // 휴대폰 번호
+    if (!formData.phoneNumber) return false;
 
     // 닉네임: 2-10자, 중복확인 완료
     if (!formData.nickname || formData.nickname.length < 2 || formData.nickname.length > 10 || isNicknameAvailable !== true) {
@@ -204,8 +211,24 @@ export const SignupPage = () => {
       newErrors.passwordConfirm = '비밀번호가 일치하지 않습니다.';
     }
 
-    if (!formData.email || !formData.email.includes('@')) {
-      newErrors.email = '올바른 이메일을 입력해주세요.';
+    // 이름
+    if (!formData.name) {
+      newErrors.name = '이름을 입력해주세요.';
+    }
+
+    // 생년월일
+    if (!formData.birthDate) {
+      newErrors.birthDate = '생년월일을 입력해주세요.';
+    }
+
+    // 성별
+    if (!formData.gender) {
+      newErrors.gender = '성별을 선택해주세요.';
+    }
+
+    // 휴대폰 번호
+    if (!formData.phoneNumber) {
+      newErrors.phoneNumber = '휴대폰 번호를 입력해주세요.';
     }
 
     if (!formData.nickname || formData.nickname.length < 2) {
@@ -227,13 +250,20 @@ export const SignupPage = () => {
 
     setIsLoading(true);
     try {
-      await apiClient.post('/auth/signup', {
+      const response = await authService.signup({
         username: formData.username,
         password: formData.password,
-        email: formData.email,
+        email: formData.email, // Optional
         nickname: formData.nickname,
+        name: formData.name,
+        birthDate: formData.birthDate,
+        gender: formData.gender as 'MALE' | 'FEMALE',
+        phoneNumber: formData.phoneNumber,
       });
-
+      // Store tokens
+      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      // Navigate after successful signup
       navigate('/signup/complete');
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -244,12 +274,11 @@ export const SignupPage = () => {
   };
 
   return (
-    <div className="page-container">
-      <Header />
-
+    <div style={{ padding: '22.22vw 4.44vw 0' }}>
+      
       {/* Title Section */}
       <div className="page-title-section">
-        <h1 className="page-title">회원가입</h1>
+        <h2 className="page-title">회원가입</h2>
         <p className="page-subtitle">서비스 이용을 위해 필요한 정보를 입력해주세요.</p>
       </div>
 
@@ -346,8 +375,96 @@ export const SignupPage = () => {
             )}
           </div>
 
+          {/* 이름 */}
           <div className="signup-input-group">
-            <label className="signup-input-label">이메일</label>
+            <label className="signup-input-label">이름</label>
+            <input
+              type="text"
+              name="name"
+              className={`signup-input signup-input-rounded ${errors.name ? 'error' : ''}`}
+              placeholder="이름을 입력해주세요"
+              value={formData.name}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+            {errors.name && (
+              <span className="signup-error-message">{errors.name}</span>
+            )}
+          </div>
+
+          {/* 생년월일 */}
+          <div className="signup-input-group">
+            <label className="signup-input-label">생년월일</label>
+            <div className="signup-input-wrapper">
+              <input
+                type="date"
+                name="birthDate"
+                className={`signup-input signup-input-rounded ${errors.birthDate ? 'error' : ''}`}
+                value={formData.birthDate}
+                onChange={handleChange}
+                disabled={isLoading}
+              />
+              <div className="signup-input-icon-wrapper">
+                <img
+                  src="/assets/images/auth/ic_calendar.svg"
+                  alt="달력"
+                  className="signup-input-icon"
+                />
+              </div>
+            </div>
+            {errors.birthDate && (
+              <span className="signup-error-message">{errors.birthDate}</span>
+            )}
+          </div>
+
+          {/* 성별 */}
+          <div className="signup-input-group">
+            <label className="signup-input-label">성별</label>
+            <div className="signup-input-wrapper">
+              <select
+                name="gender"
+                className={`signup-input signup-input-rounded signup-select ${errors.gender ? 'error' : ''}`}
+                value={formData.gender}
+                onChange={handleChange}
+                disabled={isLoading}
+              >
+                <option value="">성별을 선택해주세요</option>
+                <option value="MALE">남성</option>
+                <option value="FEMALE">여성</option>
+              </select>
+              <div className="signup-input-icon-wrapper">
+                <img
+                  src="/assets/images/common/ic_arrow_down.svg"
+                  alt="선택"
+                  className="signup-input-icon"
+                />
+              </div>
+            </div>
+            {errors.gender && (
+              <span className="signup-error-message">{errors.gender}</span>
+            )}
+          </div>
+
+          {/* 휴대폰 번호 */}
+          <div className="signup-input-group">
+            <label className="signup-input-label">휴대폰 번호</label>
+            <input
+              type="tel"
+              name="phoneNumber"
+              className={`signup-input signup-input-rounded ${errors.phoneNumber ? 'error' : ''}`}
+              placeholder="휴대폰 번호를 입력해주세요 (- 제외)"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+            {errors.phoneNumber && (
+              <span className="signup-error-message">{errors.phoneNumber}</span>
+            )}
+          </div>
+
+          {/* 이메일 (Optional) */}
+          <div className="signup-input-group">
+            <label className="signup-input-label">이메일 (선택)</label>
             <input
               type="email"
               name="email"
@@ -362,6 +479,7 @@ export const SignupPage = () => {
             )}
           </div>
 
+          {/* 닉네임 */}
           <div className="signup-input-group">
             <label className="signup-input-label">닉네임</label>
             <div className="signup-input-row">

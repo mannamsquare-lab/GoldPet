@@ -1,69 +1,34 @@
 .permissions-page {
   width: 100%;
   min-height: 100vh;
-  background-color: #FFF7E6;
+  background-color: transparent; /* Background handled by TypeALayout */
   position: relative;
-  padding: 0;
+  /* padding handled inline or via common styles */
   overflow-x: hidden;
-}
-
-/* Header - 로고 (온보딩 화면과 동일한 위치와 크기) */
-.permissions-header {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 360px;
-  height: 80px;
-  background-color: #FFF7E6;
-  padding: 0 16px;
   display: flex;
-  align-items: center;
-  padding-top: 24px;
-  z-index: 10;
+  flex-direction: column;
 }
 
-.permissions-logo-area {
-  width: 100%;
-  display: flex;
-  align-items: center;
-}
+/* Header styles removed */
 
-.permissions-logo {
-  height: 20px;
-  width: 75px;
-  display: flex;
-  align-items: center;
-}
-
-.permissions-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* Title Section (온보딩 화면과 동일한 위치) */
+/* Title Section */
 .permissions-title-section {
-  position: absolute;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 360px;
-  padding: 24px 16px;
+  height: 32.22vw;
+  padding: 0;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  z-index: 20;
+  justify-content: center;
+  align-items: center;
 }
 
 .permissions-title {
   font-family: 'Pretendard', sans-serif;
-  font-weight: 800;
-  font-size: 32px;
-  line-height: 1;
+  font-weight: 700;
+  font-size: 8.89vw;
+  line-height: 1.2;
   color: #614108;
-  letter-spacing: -0.64px;
+  letter-spacing: -0.08vw;
   margin: 0;
 }
 
@@ -72,10 +37,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 40px 16px;
   gap: 40px;
-  margin-top: 192px;
+  margin-top: 0; /* Removed fixed margin */
 }
 
 .permissions-list {

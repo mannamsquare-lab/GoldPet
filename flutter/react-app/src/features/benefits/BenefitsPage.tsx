@@ -9,26 +9,11 @@ export const BenefitsPage = () => {
   };
 
   return (
-    <div className="benefits-page" data-name="Benefit" data-node-id="4017:20935">
-      {/* Header - 로고 */}
-      <div className="benefits-header" data-name="Header" data-node-id="4017:21053">
-        <div className="benefits-logo-area">
-          <div className="benefits-logo">
-            <img 
-              src="/assets/images/common/logo.svg" 
-              alt="GoldPet" 
-              className="benefits-logo-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
+    <div className="benefits-page" data-name="Benefit" data-node-id="4017:20935" style={{ padding: '22.22vw 4.44vw 0' }}>
+      
       {/* Title Section */}
       <div className="benefits-title-section" data-name="Title" data-node-id="4017:21050">
-        <h1 className="benefits-title">골드펫 혜택</h1>
+        <h2 className="benefits-title">골드펫 혜택</h2>
         <p className="benefits-subtitle">다양한 맞춤형 혜택을 누려보세요!</p>
       </div>
 

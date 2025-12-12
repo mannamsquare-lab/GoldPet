@@ -2,6 +2,7 @@
 /* Page container and title styles moved to page-layout.css */
 
 /* Body */
+/* Body */
 .signup-body {
   width: 100%;
   max-width: 360px;
@@ -25,6 +26,37 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Page Title Section */
+.page-title-section {
+  height: 32.22vw;
+  padding: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.page-title {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 700;
+  font-size: 8.89vw;
+  line-height: 1.2;
+  color: #614108;
+  letter-spacing: -0.08vw;
+  margin: 0;
+}
+
+.page-subtitle {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 4.44vw;
+  line-height: 1.4;
+  color: #505050;
+  letter-spacing: -0.32px;
+  margin: 0;
 }
 
 .signup-input-label {
@@ -151,6 +183,45 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+/* Generic Input Icon Wrapper (Calendar, Arrow) */
+.signup-input-icon-wrapper {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* Click passes through to input */
+}
+
+.signup-input-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Select Box Styling */
+.signup-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #FFFFFF; /* Ensure background covers default arrow if any */
+}
+
+/* Date Input Styling Override (optional, to ensure text doesn't overlap icon) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0; /* Hide default calendar icon but keep functionality if clicked there */
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 }
 
 .signup-error-message {

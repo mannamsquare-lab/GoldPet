@@ -8,6 +8,8 @@ import java.util.Optional
 
 interface UserRepository : JpaRepository<User, Long> {
     fun findByOauthProviderAndOauthId(oauthProvider: String, oauthId: String): Optional<User>
+    fun findByUsername(username: String): Optional<User>
+    fun findByNickname(nickname: String): Optional<User>
 
     @Query(value = "SELECT * FROM users u WHERE ST_Intersects(u.main_location_geom, ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326))", nativeQuery = true)
     fun findUsersWithinBoundingBox(

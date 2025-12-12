@@ -16,6 +16,16 @@ class UserService(
         return userRepository.findById(userId).orElse(null)
     }
 
+    fun findUserByUsername(username: String): User? {
+        return userRepository.findByUsername(username).orElse(null)
+    }
+
+    fun getUserIdFromPrincipal(principal: org.springframework.security.core.userdetails.UserDetails): Long {
+        val user = userRepository.findByUsername(principal.username)
+            .orElseThrow { IllegalArgumentException("User not found") }
+        return user.id
+    }
+
     @Transactional
     fun createUser(oauthProvider: String, oauthId: String, nickname: String?): User {
         val user = User(
@@ -27,7 +37,13 @@ class UserService(
             birthYear = null,
             mainLocationText = null,
             mainLocationGeom = null,
-            profileImageUrl = null
+
+            profileImageUrl = null,
+            username = null,
+            password = null,
+            name = null,
+            birthDate = null,
+            phoneNumber = null
         )
         return userRepository.save(user)
     }

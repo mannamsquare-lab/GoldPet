@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true, // 외부 접근 허용 (Flutter WebView에서 접근 가능하도록)
+    allowedHosts: ['*.ciccosoft.com', 'www.ciccosoft.com', 'app.ciccosoft.com', '10.80.1.59'],
   },
   build: {
     outDir: 'dist',

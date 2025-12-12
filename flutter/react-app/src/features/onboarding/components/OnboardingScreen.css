@@ -5,6 +5,8 @@
   position: relative;
   padding: 0;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header */
@@ -14,12 +16,12 @@
   left: 50%;
   transform: translateX(-50%);
   width: 360px;
-  height: 80px;
+  height: calc(56px + env(safe-area-inset-top));
   background-color: #FFF7E6;
   padding: 0 16px;
   display: flex;
   align-items: center;
-  padding-top: 24px;
+  padding-top: env(safe-area-inset-top);
   z-index: 10;
 }
 
@@ -27,6 +29,8 @@
   width: 100%;
   display: flex;
   align-items: center;
+  margin-left: -8px;
+  /* Match Back button alignment */
 }
 
 .onboarding-logo {
@@ -44,11 +48,13 @@
 
 /* Title Section */
 .onboarding-title-section {
-  position: absolute;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 360px;
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: 360px;
+  margin: calc(56px + env(safe-area-inset-top)) auto 0;
   padding: 24px 16px;
   text-align: center;
   display: flex;
@@ -89,7 +95,7 @@
   align-items: center;
   z-index: 5;
   padding-bottom: 0;
-  margin: 192px auto 0;
+  margin: 24px auto 0;
   overflow: visible;
 }
 
@@ -98,11 +104,11 @@
   position: absolute;
   width: 100%;
   height: 500px;
-  top: 192px;
+  top: 0;
   left: 0;
   right: 0;
   overflow: hidden;
-  z-index: 1;
+  z-index: -1;
   /* 상단, 하단, 좌우 그라데이션 마스크로 자연스러운 블렌딩 */
   /* 타원형 그라데이션으로 상하좌우 모두 매우 부드럽게 처리 - 인디케이터 영역까지 포함 */
   /* 하단 페이드아웃을 극도로 부드럽게 하기 위해 중심점을 위로 올리고 타원형 세로 크기 최대 확대 */
@@ -240,7 +246,7 @@
   .onboarding-screen {
     padding: 0;
   }
-  
+
   .onboarding-header,
   .onboarding-title-section,
   .onboarding-content,

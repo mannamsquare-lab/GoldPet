@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuthStore } from './stores/authStore';
+// import { useAuthStore } from './stores/authStore';
 import './App.css';
 
 // Pages
@@ -16,8 +16,15 @@ import { FindUsernamePage } from './features/auth/FindUsernamePage';
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage';
 import { SignupCompletePage } from './features/auth/SignupCompletePage';
 import { SnsSignupPage } from './features/auth/SnsSignupPage';
+import { LoginSuccessPage } from './features/auth/LoginSuccessPage';
+import HomePage from './features/home/HomePage';
+import { FriendFindPage } from './features/friend/FriendFindPage';
+import { FriendsListPage } from './features/friend/FriendsListPage';
+import ChatListPage from './features/chat/ChatListPage';
+import ChatDetailPage from './features/chat/ChatDetailPage';
+import WalkPage from './features/walk/WalkPage';
 
-const HomePage = () => <div>Home Page</div>;
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,29 +35,53 @@ const queryClient = new QueryClient({
   },
 });
 
+import { TypeALayout } from './components/layout/TypeALayout';
+import { TypeBLayout } from './components/layout/TypeBLayout';
+
 function App() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  // const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
           <Route path="/splash" element={<SplashPage />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/permissions" element={<PermissionsPage />} />
-          <Route path="/benefits" element={<BenefitsPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<TermsAgreementPage />} />
-          <Route path="/signup/form" element={<SignupPage />} />
-          <Route path="/signup/sns" element={<SnsSignupPage />} />
-          <Route path="/signup/complete" element={<SignupCompletePage />} />
-          <Route path="/terms/:type" element={<TermsDetailPage />} />
-          <Route path="/find-username" element={<FindUsernamePage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route
-            path="/home"
-            element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />}
-          />
+
+          {/* Type A Layout (Logo Only): Onboarding, Permissions, Benefits, Terms Agreement */}
+          <Route element={<TypeALayout variant="logo-only" />}>
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/permissions" element={<PermissionsPage />} />
+            <Route path="/benefits" element={<BenefitsPage />} />
+            <Route path="/signup" element={<TermsAgreementPage />} />
+          </Route>
+
+          {/* Type A Layout (Back Only): Signup Form, Find Account */}
+          <Route element={<TypeALayout variant="back-only" />}>
+            <Route path="/signup/form" element={<SignupPage />} />
+            <Route path="/signup/sns" element={<SnsSignupPage />} />
+            <Route path="/loginSuccess" element={<LoginSuccessPage />} />
+            <Route path="/signup/complete" element={<SignupCompletePage />} />
+            <Route path="/terms/:type" element={<TermsDetailPage />} />
+            <Route path="/find-username" element={<FindUsernamePage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+          </Route>
+          
+          {/* Type B Layout (Logo + Icons): Home, Main Features */}
+          <Route element={<TypeBLayout variant="logo-with-icons" />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/friend-find" element={<FriendFindPage />} />
+            <Route path="/friend-list" element={<FriendsListPage />} />
+            <Route path="/chat" element={<ChatListPage />} />
+            <Route path="/walk" element={<WalkPage />} />
+            {/* Add other main routes here, e.g., /community */}
+            {/* <Route path="/community" element={<CommunityPage />} /> */}
+          </Route>
+
+          {/* Chat Detail - No Layout */}
+          <Route path="/chat/:chatId" element={<ChatDetailPage />} />
+          <Route path="/chat/group/:chatId" element={<ChatDetailPage />} />
+
           <Route path="/" element={<Navigate to="/splash" replace />} />
         </Routes>
       </BrowserRouter>

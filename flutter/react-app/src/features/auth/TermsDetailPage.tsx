@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import './TermsDetailPage.css';
-import { Header } from '../../components/common/Header';
+// import { Header } from '../../components/common/Header';
 
 const TERMS_CONTENT: { [key: string]: { title: string; content: string } } = {
   service: {
@@ -166,8 +166,7 @@ export const TermsDetailPage = () => {
 
   if (!termsData) {
     return (
-      <div className="terms-detail-page">
-        <Header />
+      <div style={{ padding: '0 4.44vw' }}>
         <div className="terms-detail-content">
           <p>약관을 찾을 수 없습니다.</p>
         </div>
@@ -176,12 +175,11 @@ export const TermsDetailPage = () => {
   }
 
   return (
-    <div className="page-container">
-      <Header />
-
+    <div style={{ padding: '22.22vw 4.44vw 0' }}>
+      
       {/* Title Section */}
       <div className="page-title-section">
-        <h1 className="page-title">{termsData.title}</h1>
+        <h2 className="page-title">{termsData.title}</h2>
       </div>
 
       {/* Content */}

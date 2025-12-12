@@ -1,0 +1,376 @@
+/* Walk Page */
+#walkPage {
+  width: 100%;
+  min-height: 100vh;
+  background: #FFF7E6;
+  padding-bottom: 10vw;
+}
+
+/* Header - talk_wrap과 동일 */
+.walk_header {
+  padding: 0 4.44vw;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  position: relative;
+  z-index: 10;
+}
+
+.walk_header p {
+  font-size: 3.61vw;
+  font-weight: 500;
+}
+
+.walk_header button {
+  padding: 2.22vw 4.44vw;
+  background-color: #fff;
+  gap: 1.11vw;
+  border-radius: 2.78vw;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  font-size: 3.61vw;
+  font-weight: 600;
+  color: #614108;
+  border: none;
+  cursor: pointer;
+}
+
+.walk_header button img {
+  width: 4.44vw;
+}
+
+/* Content */
+.walk_content {
+  width: 100%;
+  padding: 4.44vw;
+  padding-bottom: 10vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 11.11vw;
+}
+
+/* Today Stats Section */
+.walk_today_section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6.67vw;
+}
+
+.walk_today_card {
+  width: 91.11vw;
+  padding: 6.67vw 4.44vw;
+  background: #D9FFA7;
+  background-image: url('/assets/images/walk/BG.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 4.44vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 6.67vw;
+}
+
+.walk_today_title {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1.11vw;
+  color: #614108;
+  font-size: 4.5vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 700;
+  line-height: 4.5vw;
+}
+
+.walk_today_stats {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 6.67vw;
+}
+
+.walk_stat_item {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.56vw;
+}
+
+.walk_stat_content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 2.22vw;
+}
+
+.walk_stat_label {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  color: #505050;
+  font-size: 3.5vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 500;
+  line-height: 3.5vw;
+}
+
+.walk_stat_value {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  color: #614108;
+  font-size: 6.67vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 700;
+  line-height: 6.67vw;
+}
+
+.walk_stat_item svg {
+  width: 6.67vw;
+  height: 6.67vw;
+  flex-shrink: 0;
+}
+
+/* Start Walk Button */
+.walk_start_btn {
+  width: 100%;
+  height: 13.33vw;
+  padding: 0 5.56vw;
+  background: #614108;
+  border-radius: 1000px;
+  border: none;
+  color: white;
+  font-size: 4.44vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 600;
+  line-height: 6.22vw;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Records Section */
+.walk_records_section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 6.67vw;
+}
+
+.walk_tabs {
+  width: 100%;
+  padding: 0 4.44vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 6.67vw;
+}
+
+.walk_tab {
+  height: 12.78vw;
+  padding: 0 4.44vw;
+  border-top-left-radius: 4.44vw;
+  border-top-right-radius: 4.44vw;
+  border: none;
+  background: transparent;
+  color: #727272;
+  font-size: 4.44vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 500;
+  line-height: 6.22vw;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.78vw;
+  position: relative;
+}
+
+.walk_tab.active {
+  border-bottom: 0.56vw solid #614108;
+  color: #614108;
+  font-weight: 700;
+}
+
+.walk_records_list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4.44vw;
+}
+
+.walk_records_card {
+  width: 100%;
+  padding: 6.67vw 4.44vw;
+  background: white;
+  border-radius: 4.44vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 4.44vw;
+}
+
+.walk_record_item {
+  width: 100%;
+  padding: 1.11vw 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2.22vw;
+}
+
+.walk_record_header {
+  width: 100%;
+  padding: 1.11vw 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2.22vw;
+}
+
+.walk_record_icon {
+  width: 4.44vw;
+  height: 4.44vw;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.walk_record_icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.walk_record_date {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  color: #505050;
+  font-size: 3.5vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 500;
+  line-height: 3.5vw;
+}
+
+.walk_record_info {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2.22vw;
+}
+
+.walk_record_stats {
+  padding-left: 6.67vw;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2.22vw;
+}
+
+.walk_record_stats > span {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  color: #614108;
+  font-size: 4.44vw;
+  font-family: Pretendard, sans-serif;
+  font-weight: 700;
+  line-height: 4.44vw;
+}
+
+.walk_record_stats svg {
+  width: 0.83vw;
+  height: 0.83vw;
+  flex-shrink: 0;
+}
+
+.walk_record_actions {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2.22vw;
+}
+
+.walk_record_action_btn {
+  width: 6.67vw;
+  height: 6.67vw;
+  background: #FFE5FA;
+  border-radius: 100px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.walk_record_action_btn svg {
+  width: 6.67vw;
+  height: 6.67vw;
+}
+
+.walk_record_action_btn svg path {
+  stroke: #8A497D;
+}
+
+.walk_record_divider {
+  width: 100%;
+  height: 0.28vw;
+  position: relative;
+  background: #EFE1C4;
+}
+
+.walk_record_divider::before {
+  content: '';
+  width: 82.22vw;
+  height: 0.28vw;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: #EFE1C4;
+}
+
+.walk_ranking_placeholder {
+  width: 100%;
+  padding: 11.11vw;
+  text-align: center;
+  color: #727272;
+  font-size: 4.44vw;
+  font-family: Pretendard, sans-serif;
+}
+

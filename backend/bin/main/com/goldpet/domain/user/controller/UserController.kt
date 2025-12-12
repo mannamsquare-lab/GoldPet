@@ -8,6 +8,9 @@ import com.goldpet.domain.user.service.UserService
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
+import com.goldpet.domain.user.entity.User
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -15,19 +18,25 @@ class UserController(
     private val userService: UserService
 ) {
     // TODO: 실제 인증 구현 시 @AuthenticationPrincipal 등을 사용하여 userId를 가져오도록 변경
-    private val currentUserId: Long = 1L // 임시 사용자 ID
 
     @GetMapping("/me")
-    fun getMyProfile(): ResponseEntity<UserResponse> {
-        val user = userService.findUserById(currentUserId)
-            ?: return ResponseEntity.notFound().build()
-        return ResponseEntity.ok(UserResponse.from(user))
+    fun getMyProfile(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<UserResponse> {
+        val user = userService.findUserByUsername(principal.username)
+        return if (user != null) {
+            ResponseEntity.ok(UserResponse.from(user))
+        } else {
+            ResponseEntity.notFound().build()
+        }
     }
 
     @PutMapping("/me")
-    fun updateMyProfile(@RequestBody request: UserProfileUpdateRequest): ResponseEntity<UserResponse> {
+    fun updateMyProfile(
+        @AuthenticationPrincipal principal: UserDetails,
+        @RequestBody request: UserProfileUpdateRequest
+    ): ResponseEntity<UserResponse> {
+        val userId = userService.getUserIdFromPrincipal(principal)
         val updatedUser = userService.updateUserProfile(
-            currentUserId,
+            userId,
             request.nickname,
             request.gender,
             request.birthYear,
@@ -37,9 +46,13 @@ class UserController(
     }
 
     @PutMapping("/me/profile-image")
-    fun updateMyProfileImage(@RequestBody request: ProfileImageUpdateRequest): ResponseEntity<UserResponse> {
+    fun updateMyProfileImage(
+        @AuthenticationPrincipal principal: UserDetails,
+        @RequestBody request: ProfileImageUpdateRequest
+    ): ResponseEntity<UserResponse> {
+        val userId = userService.getUserIdFromPrincipal(principal)
         val updatedUser = userService.updateUserProfileImageUrl(
-            currentUserId,
+            userId,
             request.profileImageUrl
         )
         return ResponseEntity.ok(UserResponse.from(updatedUser))

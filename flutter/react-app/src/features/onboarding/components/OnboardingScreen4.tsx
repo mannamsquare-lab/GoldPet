@@ -21,9 +21,9 @@ export const OnboardingScreen4 = ({ onNext }: OnboardingScreen4Props) => {
       <div className="onboarding-header" data-name="Header" data-node-id="4017:20933">
         <div className="onboarding-logo-area">
           <div className="onboarding-logo">
-            <img 
-              src="/assets/images/common/logo.svg" 
-              alt="GoldPet" 
+            <img
+              src="/assets/images/common/logo.svg"
+              alt="GoldPet"
               className="onboarding-logo-img"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -39,27 +39,27 @@ export const OnboardingScreen4 = ({ onNext }: OnboardingScreen4Props) => {
         <p className="onboarding-subtitle">반려동물과의 산책을 기록해보세요.</p>
       </div>
 
-      {/* Background - 화면 전체 너비 */}
-      <div className="onboarding-card-bg" data-name="BG" data-node-id="4017:20914">
-        <img 
-          src="/assets/images/onboarding/body/onboarding_body_bg.png" 
-          alt="Background" 
-          className="onboarding-bg-image"
-          onError={() => {
-            console.error('Background image failed to load');
-          }}
-        />
-      </div>
-
       {/* Main Content */}
       <div className="onboarding-content" data-name="Body" data-node-id="4017:20912">
+        {/* Background - 화면 전체 너비 */}
+        <div className="onboarding-card-bg" data-name="BG" data-node-id="4017:20914">
+          <img
+            src="/assets/images/onboarding/body/onboarding_body_bg.png"
+            alt="Background"
+            className="onboarding-bg-image"
+            onError={() => {
+              console.error('Background image failed to load');
+            }}
+          />
+        </div>
+
         {/* Card: Img 오버레이 */}
         <div className="onboarding-card" data-name="Card" data-node-id="4017:20913">
           {/* Main Image (오버레이) */}
           <div className="onboarding-card-img" data-name="Img" data-node-id="4017:20916">
-            <img 
-              src="/assets/images/onboarding/body/onboarding_4_body.png" 
-              alt="Onboarding Content" 
+            <img
+              src="/assets/images/onboarding/body/onboarding_4_body.png"
+              alt="Onboarding Content"
               className="onboarding-main-image"
               onError={() => {
                 console.error('Main image failed to load');
@@ -79,7 +79,7 @@ export const OnboardingScreen4 = ({ onNext }: OnboardingScreen4Props) => {
 
       {/* Button */}
       <div className="onboarding-button-section" data-name="Btn" data-node-id="4017:20910">
-        <button 
+        <button
           className="onboarding-button"
           onClick={handleStart}
           data-name="Property 1=Full, Property 2=Primary"

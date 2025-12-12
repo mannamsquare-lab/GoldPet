@@ -4,7 +4,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.Authentication
-import org.springframework.security.oauth2.core.user.OAuth2User
+import com.goldpet.config.security.UserPrincipal
 import org.springframework.stereotype.Component
 import java.util.Date
 import javax.crypto.SecretKey
@@ -20,13 +20,13 @@ class JwtTokenProvider(
     private val key: SecretKey = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
 
     fun generateToken(authentication: Authentication): String {
-        val userPrincipal = authentication.principal as OAuth2User
-
+        val userPrincipal = authentication.principal as UserPrincipal
+        
         val now = Date()
         val expiryDate = Date(now.time + jwtExpirationMs)
 
         return Jwts.builder()
-            .subject(userPrincipal.name) // Use OAuth2User's name attribute as subject
+            .subject(userPrincipal.id.toString()) // Use User ID as subject
             .issuedAt(now)
             .expiration(expiryDate)
             .signWith(key)

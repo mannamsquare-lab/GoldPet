@@ -6,10 +6,12 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler
 import org.springframework.stereotype.Component
+import org.springframework.beans.factory.annotation.Value
 
 @Component
 class OAuth2AuthenticationSuccessHandler(
-    private val jwtTokenProvider: JwtTokenProvider
+    private val jwtTokenProvider: JwtTokenProvider,
+    @Value("\${app.frontend.url}") private val frontendUrl: String
 ) : SimpleUrlAuthenticationSuccessHandler() {
 
     override fun onAuthenticationSuccess(
@@ -18,10 +20,7 @@ class OAuth2AuthenticationSuccessHandler(
         authentication: Authentication
     ) {
         val token = jwtTokenProvider.generateToken(authentication)
-        // For now, just redirect with the token in a query parameter.
-        // In a real application, this would typically involve a more secure way
-        // of sending the token to the client (e.g., through a dedicated endpoint
-        // or a more sophisticated redirect strategy).
-        redirectStrategy.sendRedirect(request, response, "/loginSuccess?token=$token")
+        // Redirect to the frontend URL with the token
+        redirectStrategy.sendRedirect(request, response, "$frontendUrl/loginSuccess?token=$token")
     }
 }

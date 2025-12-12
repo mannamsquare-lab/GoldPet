@@ -13,12 +13,15 @@
 .login-title-section {
   width: 100%;
   max-width: 360px;
-  padding: 24px 16px;
+  /* margin-top: 22.22vw; removed */
+  height: 32.22vw;
+  padding: 0;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 80px;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
 }
 
 .login-logo-container {

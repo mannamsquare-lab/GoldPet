@@ -2,6 +2,23 @@
 /* Page container and title styles moved to page-layout.css */
 
 /* Body */
+.page-title-section {
+  height: 32.22vw;
+  padding: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.page-title {
+  font-size: 8.89vw;
+  font-weight: 700;
+  color: #614108;
+  margin-bottom: 0;
+}
+
 .terms-detail-body {
   width: 100%;
   max-width: 360px;

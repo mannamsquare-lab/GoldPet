@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import apiClient from '../../services/api/client';
+import { authService } from '../../services/authService';
+import { useAuthStore } from '../../stores/authStore';
 import './SnsSignupPage.css';
-import { Header } from '../../components/common/Header';
+// import { Header } from '../../components/common/Header';
 
 export const SnsSignupPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const login = useAuthStore((state) => state.login);
 
   // URL 파라미터나 location state에서 SNS 제공자 정보 가져오기
   const snsProvider = location.state?.provider || 'SNS';
 
   const [formData, setFormData] = useState({
     nickname: '',
-    petName: '',
-    petType: '',
-    petBirthday: '',
-    petGender: '',
+    name: '',
+    birthDate: '',
+    gender: '',
+    phoneNumber: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingNickname, setIsCheckingNickname] = useState(false);
@@ -44,11 +46,9 @@ export const SnsSignupPage = () => {
 
     setIsCheckingNickname(true);
     try {
-      const response = await apiClient.post('/auth/check-nickname', {
-        nickname: formData.nickname,
-      });
-      setIsNicknameAvailable(response.data.available);
-      if (!response.data.available) {
+      const response = await authService.checkNickname(formData.nickname);
+      setIsNicknameAvailable(response.available);
+      if (!response.available) {
         setErrors(prev => ({ ...prev, nickname: '이미 사용 중인 닉네임입니다.' }));
       } else {
         setErrors(prev => {
@@ -71,22 +71,15 @@ export const SnsSignupPage = () => {
     if (!formData.nickname || formData.nickname.length < 2 || formData.nickname.length > 10 || isNicknameAvailable !== true) {
       return false;
     }
-    // 반려동물 이름
-    if (!formData.petName) {
-      return false;
-    }
-    // 반려동물 종류
-    if (!formData.petType) {
-      return false;
-    }
-    // 반려동물 생년월일
-    if (!formData.petBirthday) {
-      return false;
-    }
-    // 반려동물 성별
-    if (!formData.petGender) {
-      return false;
-    }
+    // 이름
+    if (!formData.name) return false;
+    // 생년월일
+    if (!formData.birthDate) return false;
+    // 성별
+    if (!formData.gender) return false;
+    // 휴대폰 번호
+    if (!formData.phoneNumber) return false;
+
     return true;
   };
 
@@ -100,32 +93,33 @@ export const SnsSignupPage = () => {
       } else if (isNicknameAvailable !== true) {
         newErrors.nickname = '닉네임 중복확인을 해주세요.';
       }
-      if (!formData.petName) {
-        newErrors.petName = '반려동물 이름을 입력해주세요.';
-      }
-      if (!formData.petType) {
-        newErrors.petType = '반려동물 종류를 선택해주세요.';
-      }
-      if (!formData.petBirthday) {
-        newErrors.petBirthday = '반려동물 생년월일을 입력해주세요.';
-      }
-      if (!formData.petGender) {
-        newErrors.petGender = '반려동물 성별을 선택해주세요.';
-      }
+      if (!formData.name) newErrors.name = '이름을 입력해주세요.';
+      if (!formData.birthDate) newErrors.birthDate = '생년월일을 입력해주세요.';
+      if (!formData.gender) newErrors.gender = '성별을 선택해주세요.';
+      if (!formData.phoneNumber) newErrors.phoneNumber = '휴대폰 번호를 입력해주세요.';
+
       setErrors(newErrors);
       return;
     }
 
     setIsLoading(true);
     try {
-      await apiClient.post('/auth/sns-signup', {
+      const response = await authService.snsSignup({
         provider: snsProvider,
         nickname: formData.nickname,
-        petName: formData.petName,
-        petType: formData.petType,
-        petBirthday: formData.petBirthday,
-        petGender: formData.petGender,
+        name: formData.name,
+        birthDate: formData.birthDate,
+        gender: formData.gender as 'MALE' | 'FEMALE',
+        phoneNumber: formData.phoneNumber,
       });
+
+      // Auto login after signup
+      const { user, accessToken, refreshToken } = response;
+      const currentToken = localStorage.getItem('accessToken') || accessToken;
+
+      if (currentToken) {
+        login(currentToken, refreshToken || '', user);
+      }
 
       navigate('/signup/complete');
     } catch (error: any) {
@@ -137,9 +131,8 @@ export const SnsSignupPage = () => {
   };
 
   return (
-    <div className="page-container">
-      <Header />
-
+    <div style={{ padding: '0 4.44vw' }}>
+      
       {/* Title Section */}
       <div className="page-title-section">
         <h1 className="page-title">추가 정보 입력</h1>
@@ -178,76 +171,72 @@ export const SnsSignupPage = () => {
             )}
           </div>
 
-          {/* 반려동물 이름 입력 */}
+          {/* 이름 */}
           <div className="sns-signup-input-group">
-            <label className="sns-signup-input-label">반려동물 이름</label>
+            <label className="sns-signup-input-label">이름</label>
             <input
               type="text"
-              name="petName"
-              className={`sns-signup-input sns-signup-input-rounded ${errors.petName ? 'error' : ''}`}
-              placeholder="반려동물 이름을 입력해주세요"
-              value={formData.petName}
+              name="name"
+              className={`sns-signup-input sns-signup-input-rounded ${errors.name ? 'error' : ''}`}
+              placeholder="이름을 입력해주세요"
+              value={formData.name}
               onChange={handleChange}
               disabled={isLoading}
             />
-            {errors.petName && (
-              <span className="sns-signup-error-message">{errors.petName}</span>
+            {errors.name && (
+              <span className="sns-signup-error-message">{errors.name}</span>
             )}
           </div>
 
-          {/* 반려동물 종류 선택 */}
+          {/* 생년월일 */}
           <div className="sns-signup-input-group">
-            <label className="sns-signup-input-label">반려동물 종류</label>
-            <select
-              name="petType"
-              className={`sns-signup-input sns-signup-input-rounded sns-signup-select ${errors.petType ? 'error' : ''}`}
-              value={formData.petType}
-              onChange={handleChange}
-              disabled={isLoading}
-            >
-              <option value="">반려동물 종류를 선택해주세요</option>
-              <option value="dog">강아지</option>
-              <option value="cat">고양이</option>
-              <option value="other">기타</option>
-            </select>
-            {errors.petType && (
-              <span className="sns-signup-error-message">{errors.petType}</span>
-            )}
-          </div>
-
-          {/* 반려동물 생년월일 입력 */}
-          <div className="sns-signup-input-group">
-            <label className="sns-signup-input-label">반려동물 생년월일</label>
+            <label className="sns-signup-input-label">생년월일</label>
             <input
               type="date"
-              name="petBirthday"
-              className={`sns-signup-input sns-signup-input-rounded ${errors.petBirthday ? 'error' : ''}`}
-              value={formData.petBirthday}
+              name="birthDate"
+              className={`sns-signup-input sns-signup-input-rounded ${errors.birthDate ? 'error' : ''}`}
+              value={formData.birthDate}
               onChange={handleChange}
               disabled={isLoading}
             />
-            {errors.petBirthday && (
-              <span className="sns-signup-error-message">{errors.petBirthday}</span>
+            {errors.birthDate && (
+              <span className="sns-signup-error-message">{errors.birthDate}</span>
             )}
           </div>
 
-          {/* 반려동물 성별 선택 */}
+          {/* 성별 */}
           <div className="sns-signup-input-group">
-            <label className="sns-signup-input-label">반려동물 성별</label>
+            <label className="sns-signup-input-label">성별</label>
             <select
-              name="petGender"
-              className={`sns-signup-input sns-signup-input-rounded sns-signup-select ${errors.petGender ? 'error' : ''}`}
-              value={formData.petGender}
+              name="gender"
+              className={`sns-signup-input sns-signup-input-rounded sns-signup-select ${errors.gender ? 'error' : ''}`}
+              value={formData.gender}
               onChange={handleChange}
               disabled={isLoading}
             >
-              <option value="">반려동물 성별을 선택해주세요</option>
-              <option value="male">수컷</option>
-              <option value="female">암컷</option>
-              <option value="neutralized">중성화</option>
+              <option value="">성별을 선택해주세요</option>
+              <option value="MALE">남성</option>
+              <option value="FEMALE">여성</option>
             </select>
-            {errors.petGender && (
-              <span className="sns-signup-error-message">{errors.petGender}</span>
+            {errors.gender && (
+              <span className="sns-signup-error-message">{errors.gender}</span>
+            )}
+          </div>
+
+          {/* 휴대폰 번호 */}
+          <div className="sns-signup-input-group">
+            <label className="sns-signup-input-label">휴대폰 번호</label>
+            <input
+              type="tel"
+              name="phoneNumber"
+              className={`sns-signup-input sns-signup-input-rounded ${errors.phoneNumber ? 'error' : ''}`}
+              placeholder="휴대폰 번호를 입력해주세요 (- 제외)"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+            {errors.phoneNumber && (
+              <span className="sns-signup-error-message">{errors.phoneNumber}</span>
             )}
           </div>
 

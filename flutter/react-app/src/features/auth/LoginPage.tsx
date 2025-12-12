@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import apiClient from '../../services/api/client';
+import { authService } from '../../services/authService';
 import './LoginPage.css';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,7 +17,7 @@ export const LoginPage = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username || !password) {
       alert('아이디와 비밀번호를 입력해주세요.');
       return;
@@ -31,7 +32,7 @@ export const LoginPage = () => {
 
       const { accessToken, refreshToken, user } = response.data;
       login(accessToken, refreshToken, user);
-      
+
       // 자동 로그인 설정
       if (autoLogin) {
         localStorage.setItem('autoLogin', 'true');
@@ -46,19 +47,34 @@ export const LoginPage = () => {
     }
   };
 
-  const handleSnsLogin = (provider: 'naver' | 'kakao' | 'apple' | 'google') => {
-    // SNS 로그인 처리 (추후 구현)
-    console.log(`${provider} 로그인`);
+  const handleSnsLogin = async (provider: 'naver' | 'kakao' | 'apple' | 'google') => {
+    try {
+      const result = await authService.openLoginPopup(provider);
+
+      if (result.type === 'LOGIN_SUCCESS') {
+        const { token, user } = result;
+        login(token, '', user);
+        navigate('/home');
+      } else if (result.type === 'SIGNUP_REQUIRED') {
+        const { token, provider } = result;
+        // Store temp token for signup process
+        localStorage.setItem('accessToken', token);
+        navigate('/signup', { state: { isSns: true, provider } });
+      }
+    } catch (error) {
+      console.error('SNS Login failed:', error);
+      // alert('SNS 로그인에 실패했습니다.'); // Optional: Show error to user
+    }
   };
 
   return (
-    <div className="login-page" data-name="로그인_텍스트홀더" data-node-id="4017:22523">
+    <div className='login-page-container' style={{ padding: '22.22vw 4.44vw 0' }} data-name="로그인_텍스트홀더" data-node-id="4017:22523">
       {/* Title Section */}
       <div className="login-title-section" data-name="Title" data-node-id="4017:22554">
         <div className="login-logo-container">
-          <img 
-            src="/assets/images/common/logo.svg" 
-            alt="GoldPet" 
+          <img
+            src="/assets/images/common/logo.svg"
+            alt="GoldPet"
             className="login-logo"
           />
         </div>
@@ -93,7 +109,7 @@ export const LoginPage = () => {
                 data-name="ic_invisible"
                 data-node-id="4017:22532"
               >
-                <img 
+                <img
                   src={showPassword ? "/assets/images/auth/ic_eye_off.svg" : "/assets/images/auth/ic_eye.svg"}
                   alt={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
                   className="login-password-icon"
@@ -113,7 +129,7 @@ export const LoginPage = () => {
           <div className="login-button-group" data-name="btn" data-node-id="4017:22536">
             <button
               type="submit"
-              className="login-button"
+              className="login-button btn-effect"
               disabled={isLoading}
               data-name="Btn/Basic/Full"
               data-node-id="4017:22539"
@@ -135,21 +151,21 @@ export const LoginPage = () => {
             <div className="login-links">
               <button
                 type="button"
-                className="login-link"
+                className="login-link btn-effect"
                 onClick={() => navigate('/find-username')}
               >
                 아이디 찾기
               </button>
               <button
                 type="button"
-                className="login-link"
+                className="login-link btn-effect"
                 onClick={() => navigate('/reset-password')}
               >
                 비밀번호 변경
               </button>
               <button
                 type="button"
-                className="login-link"
+                className="login-link btn-effect"
                 onClick={() => navigate('/signup')}
               >
                 회원가입
@@ -164,12 +180,12 @@ export const LoginPage = () => {
           <div className="login-sns-buttons" data-name="Logo" data-node-id="4017:22549">
             <button
               type="button"
-              className="login-sns-button"
+              className="login-sns-button btn-effect"
               onClick={() => handleSnsLogin('naver')}
               aria-label="네이버 로그인"
             >
-              <img 
-                src="/assets/images/auth/naver_logo.svg" 
+              <img
+                src="/assets/images/auth/naver_logo.svg"
                 alt="네이버"
                 className="login-sns-logo"
                 onError={(e) => {
@@ -187,12 +203,12 @@ export const LoginPage = () => {
             </button>
             <button
               type="button"
-              className="login-sns-button"
+              className="login-sns-button btn-effect"
               onClick={() => handleSnsLogin('kakao')}
               aria-label="카카오 로그인"
             >
-              <img 
-                src="/assets/images/auth/kakao_logo.svg" 
+              <img
+                src="/assets/images/auth/kakao_logo.svg"
                 alt="카카오"
                 className="login-sns-logo"
                 onError={(e) => {
@@ -210,12 +226,12 @@ export const LoginPage = () => {
             </button>
             <button
               type="button"
-              className="login-sns-button login-sns-button-apple"
+              className="login-sns-button login-sns-button-apple btn-effect"
               onClick={() => handleSnsLogin('apple')}
               aria-label="애플 로그인"
             >
-              <img 
-                src="/assets/images/auth/apple_logo.svg" 
+              <img
+                src="/assets/images/auth/apple_logo.svg"
                 alt="애플"
                 className="login-sns-logo"
                 onError={(e) => {
@@ -231,12 +247,12 @@ export const LoginPage = () => {
             </button>
             <button
               type="button"
-              className="login-sns-button login-sns-button-google"
+              className="login-sns-button login-sns-button-google btn-effect"
               onClick={() => handleSnsLogin('google')}
               aria-label="구글 로그인"
             >
-              <img 
-                src="/assets/images/auth/google_logo.svg" 
+              <img
+                src="/assets/images/auth/google_logo.svg"
                 alt="구글"
                 className="login-sns-logo"
                 onError={(e) => {
