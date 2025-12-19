@@ -1,57 +1,117 @@
-# .gitignore for GoldPet Project
+# GoldPet .gitignore
 
-# Operating System (macOS)
+# -----------------
+# 1. Global / OS / IDE
+# -----------------
 .DS_Store
 .localized
+Thumbs.db
+Desktop.ini
 
-# IDE (IntelliJ / VS Code)
+# IDEs
 .idea/
 .vscode/
 *.iml
 *.ipr
 *.iws
-out/
-target/
 
-# Backend (Kotlin / Gradle)
-.gradle/
-backend/build/
-backend/.gradle/
-
-# AI (Python)
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-.venv/
-venv/
-env/
-*.egg-info/
-.mypy_cache/
-.ipynb_checkpoints/
-ai-server/build/
-
-# App (Flutter)
-.flutter/
-.dart_tool/
-.packages
-build/
-android/.gradle
-android/local.properties
-ios/.symlinks
-ios/.generated
-ios/Flutter/Generated.xcconfig
-ios/Flutter/App.framework
-ios/Flutter/flutter_assets
-
-# General / Temporary
+# -----------------
+# 2. Logs & Temporary Files
+# -----------------
 *.log
 *.tmp
 *.swp
-/coverage
-*.pem
+*.bak
+/coverage/
 
-# Environment Variables
+# -----------------
+# 3. Environment & Secrets
+# -----------------
 .env
-.env*.local
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+id_rsa
+# Specific sensitive directories
+keys/*.json
+
+# -----------------
+# 4. Backend (API) - Java / Spring Boot / Gradle
+# -----------------
+api/.gradle/
+api/build/
+api/out/
+api/target/
+api/bin/
+api/logs/
+# Keep gradle-wrapper.jar usually, but exclude if user wants completely clean. Assuming standard practice: Keep wrapper.
+
+# -----------------
+# 5. Mobile App (Flutter)
+# -----------------
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/.pub-cache/
+app/.pub/
+app/build/
+# Android
+app/android/.gradle/
+app/android/local.properties
+app/android/app/build/
+app/android/.idea/
+app/android/.cxx/
+# iOS
+app/ios/.symlinks/
+app/ios/Pods/
+app/ios/Flutter/Flutter.framework
+app/ios/Flutter/App.framework
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/flutter_export_environment.sh
+# macOS
+app/macos/Flutter/ephemeral/
+
+# -----------------
+# 6. Frontend (React) & Admin (React/Vite)
+# -----------------
+# Dependencies
+frontend/node_modules/
+admin/node_modules/
+
+# Build Outputs
+frontend/dist/
+frontend/build/
+admin/dist/
+admin/build/
+
+# Cache & Misc
+frontend/.cache/
+admin/.cache/
+frontend/.eslintcache
+admin/.eslintcache
+
+# -----------------
+# 7. Infrastructure & Docker
+# -----------------
+# Docker volumes (data persistence)
+infra/data/
+infra/postgres_data/
+infra/redis_data/
+infra/minio_data/
+infra/jenkins_home/
+
+# -----------------
+# 8. Python / AI (Scripts)
+# -----------------
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+env/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
