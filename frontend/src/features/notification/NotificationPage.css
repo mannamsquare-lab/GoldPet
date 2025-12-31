@@ -1,0 +1,146 @@
+/* Notification Page Styles */
+
+#notificationPage {
+  min-height: 100vh;
+  background: #FAFAFA;
+  padding-bottom: 80px;
+}
+
+.notification_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #FFF;
+  border-bottom: 1px solid #F0F0F0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.notification_header h1 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.back_btn {
+  background: none;
+  border: none;
+  padding: 4px;
+}
+
+.mark_all_btn {
+  background: none;
+  border: none;
+  color: #FF8AF5;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Notification List */
+.notification_list {
+  padding: 8px 0;
+}
+
+.notification_item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: #FFF;
+  border: none;
+  border-bottom: 1px solid #F5F5F5;
+  text-align: left;
+  position: relative;
+}
+
+.notification_item.unread {
+  background: #FFF5FC;
+}
+
+.notification_icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #F5F5F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.notification_icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notification_icon span {
+  font-size: 24px;
+}
+
+.notification_content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification_content h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.notification_content p {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification_time {
+  font-size: 11px;
+  color: #999;
+}
+
+.unread_dot {
+  width: 8px;
+  height: 8px;
+  background: #FF8AF5;
+  border-radius: 50%;
+  position: absolute;
+  top: 18px;
+  right: 16px;
+}
+
+/* Empty State */
+.empty_state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty_icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.empty_state p {
+  font-size: 14px;
+  color: #999;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  color: #999;
+}

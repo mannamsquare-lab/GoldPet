@@ -115,4 +115,21 @@ class AuthService(
             )
         )
     }
+    @Transactional
+    fun devLogin(user: User): AuthResponse {
+        val userPrincipal = UserPrincipal.create(user)
+        val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
+        val token = jwtTokenProvider.generateToken(auth)
+        
+        return AuthResponse(
+            accessToken = token,
+            refreshToken = "", // No refresh token needed for dev login
+            user = AuthResponse.UserInfo(
+                id = user.id,
+                username = user.username ?: user.oauthId,
+                nickname = user.nickname ?: "Test User",
+                email = user.email
+            )
+        )
+    }
 }

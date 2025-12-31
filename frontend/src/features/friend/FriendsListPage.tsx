@@ -28,87 +28,64 @@ export const FriendsListPage = () => {
             </div>
 
             {/* Sub-tab Filter Section */}
-            {/* Reusing filter styles from FriendFindPage to match alignment */}
-            <style>{`
-                .filter-container {
-                    display: grid;
-                    opacity: 1;
-                    margin-bottom: 0;
-                    grid-template-rows: 1fr;
-                }
-                
-                .find_filter_inner {
-                    overflow: hidden;
-                    min-height: 0;
-                }
-            `}</style>
-            
-            <div className="filter-container expanded">
-                <div className="find_filter_inner">
-                    <div className="find_filter" style={{paddingBottom: '16px'}}>
-                        <div style={{
-                            width: '100%', 
-                            justifyContent: 'flex-start', 
-                            alignItems: 'flex-start', 
-                            gap: '8px', 
-                            display: 'inline-flex',
-                            boxSizing: 'border-box'
-                        }}>
-                            {/* Tab 1: Mutual */}
-                            <div 
-                                onClick={() => setActiveSubTab('mutual')} 
-                                style={{flex: '1 1 0', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex', cursor: 'pointer'}}
-                            >
-                                <div style={activeSubTab === 'mutual' ? {
-                                    flex: '1 1 0', height: '42px', paddingLeft: '16px', paddingRight: '16px', background: '#FFFDF1', overflow: 'hidden', borderRadius: '16px', outline: '1.50px #614108 solid', outlineOffset: '-1.50px', justifyContent: 'center', alignItems: 'center', gap: '4px', display: 'flex'
-                                } : {
-                                    flex: '1 1 0', height: '42px', paddingLeft: '16px', paddingRight: '16px', background: '#F9ECD2', borderRadius: '16px', justifyContent: 'center', alignItems: 'center', gap: '4px', display: 'flex'
-                                }}>
-                                    <div style={{
-                                        textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#614108', fontSize: '14px', fontFamily: 'Pretendard', fontWeight: activeSubTab === 'mutual' ? 600 : 500, lineHeight: '19.60px', wordWrap: 'break-word'
-                                    }}>
-                                        서로 좋아해
-                                    </div>
-                                </div>
-                            </div>
+            <div className="find_filter" style={{ paddingBottom: '16px' }}>
+                 <div className="filter_list" style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    {/* Tab 1: Mutual */}
+                    <button 
+                        type="button" 
+                        onClick={() => setActiveSubTab('mutual')}
+                        style={{
+                            flex: 1,
+                            height: '42px',
+                            background: activeSubTab === 'mutual' ? '#FFFDF1' : '#F9ECD2',
+                            border: activeSubTab === 'mutual' ? '1.5px solid #614108' : 'none',
+                            borderRadius: '16px',
+                            color: '#614108',
+                            fontWeight: activeSubTab === 'mutual' ? 600 : 500,
+                            fontSize: '14px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        서로 좋아해
+                    </button>
 
-                            {/* Tab 2: I Like */}
-                            <div 
-                                onClick={() => setActiveSubTab('i_like')} 
-                                style={{flex: '1 1 0', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex', cursor: 'pointer'}}
-                            >
-                                <div style={activeSubTab === 'i_like' ? {
-                                    flex: '1 1 0', height: '42px', paddingLeft: '16px', paddingRight: '16px', background: '#FFFDF1', overflow: 'hidden', borderRadius: '16px', outline: '1.50px #614108 solid', outlineOffset: '-1.50px', justifyContent: 'center', alignItems: 'center', gap: '4px', display: 'flex'
-                                } : {
-                                    flex: '1 1 0', height: '42px', paddingLeft: '16px', paddingRight: '16px', background: '#F9ECD2', borderRadius: '16px', justifyContent: 'center', alignItems: 'center', gap: '4px', display: 'flex'
-                                }}>
-                                    <div style={{
-                                        textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#614108', fontSize: '14px', fontFamily: 'Pretendard', fontWeight: activeSubTab === 'i_like' ? 600 : 500, lineHeight: '19.60px', wordWrap: 'break-word'
-                                    }}>
-                                        내가 좋아해
-                                    </div>
-                                </div>
-                            </div>
+                    {/* Tab 2: I Like */}
+                    <button 
+                        type="button" 
+                        onClick={() => setActiveSubTab('i_like')}
+                        style={{
+                            flex: 1,
+                            height: '42px',
+                            background: activeSubTab === 'i_like' ? '#FFFDF1' : '#F9ECD2',
+                            border: activeSubTab === 'i_like' ? '1.5px solid #614108' : 'none',
+                            borderRadius: '16px',
+                            color: '#614108',
+                            fontWeight: activeSubTab === 'i_like' ? 600 : 500,
+                            fontSize: '14px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        내가 좋아해
+                    </button>
 
-                            {/* Tab 3: Likes Me */}
-                            <div 
-                                onClick={() => setActiveSubTab('likes_me')} 
-                                style={{flex: '1 1 0', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex', cursor: 'pointer'}}
-                            >
-                                <div style={activeSubTab === 'likes_me' ? {
-                                    flex: '1 1 0', height: '42px', paddingLeft: '16px', paddingRight: '16px', background: '#FFFDF1', overflow: 'hidden', borderRadius: '16px', outline: '1.50px #614108 solid', outlineOffset: '-1.50px', justifyContent: 'center', alignItems: 'center', gap: '4px', display: 'flex'
-                                } : {
-                                    flex: '1 1 0', height: '42px', paddingLeft: '16px', paddingRight: '16px', background: '#F9ECD2', borderRadius: '16px', justifyContent: 'center', alignItems: 'center', gap: '4px', display: 'flex'
-                                }}>
-                                    <div style={{
-                                        textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#614108', fontSize: '14px', fontFamily: 'Pretendard', fontWeight: activeSubTab === 'likes_me' ? 600 : 500, lineHeight: '19.60px', wordWrap: 'break-word'
-                                    }}>
-                                        나를 좋아해
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {/* Tab 3: Likes Me */}
+                    <button 
+                         type="button" 
+                         onClick={() => setActiveSubTab('likes_me')}
+                         style={{
+                            flex: 1,
+                            height: '42px',
+                            background: activeSubTab === 'likes_me' ? '#FFFDF1' : '#F9ECD2',
+                            border: activeSubTab === 'likes_me' ? '1.5px solid #614108' : 'none',
+                            borderRadius: '16px',
+                            color: '#614108',
+                            fontWeight: activeSubTab === 'likes_me' ? 600 : 500,
+                            fontSize: '14px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        나를 좋아해
+                    </button>
                 </div>
             </div>
 

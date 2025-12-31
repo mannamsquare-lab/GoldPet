@@ -1,0 +1,36 @@
+import { apiClient } from './apiClient';
+
+export interface SystemInfo {
+  version: string;
+  environment: string;
+  serverTime: string;
+  uptime: string;
+  dbStatus: string;
+  cacheStatus: string;
+  storageUsed: number;
+  storageTotal: number;
+}
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  lastLogin: string | null;
+}
+
+export const systemService = {
+  async getSystemInfo(): Promise<SystemInfo> {
+    const response = await apiClient.get('/system/info');
+    return response.data;
+  },
+
+  async getAdmins(): Promise<AdminUser[]> {
+    const response = await apiClient.get('/system/admins');
+    return response.data;
+  },
+
+  async setMaintenanceMode(enabled: boolean): Promise<void> {
+    await apiClient.post('/system/maintenance', { enabled });
+  },
+};

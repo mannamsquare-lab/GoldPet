@@ -1,5 +1,6 @@
 
-
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
 import type { Friend } from '../../services/friendService';
 
 interface FriendCardProps {
@@ -18,10 +19,25 @@ export const FriendCard = ({ data }: FriendCardProps) => {
                 {/* Icon Top Left based on some logic or random */}
                 <img src="/assets/images/main/main_slide_icon01.svg" className="icon_img" alt="" />
                 
-                {/* Pet Image Swiper (Simplified to single image for now if array has 1, or just first) */}
+                {/* 메인 반려동물 이미지 */}
                 <div className="pet_img_wrap">
-                    <img src={data.images[0] || "/assets/images/main/main_slide_img01.png"} className="pet_img" alt="" />
-                    {/* Navigation would go here if we implemented full swiper inside card */}
+                    <Swiper
+                        modules={[Navigation]}
+                        navigation={{
+                            prevEl: `.swiper-pet-prev-${data.id}`,
+                            nextEl: `.swiper-pet-next-${data.id}`,
+                        }}
+                        className="swiper-wrapper"
+                    >
+                        {data.images.length > 0 ? data.images.map((img, i) => (
+                             <SwiperSlide key={i}><img src={img} className="pet_img" alt="" /></SwiperSlide>
+                        )) : (
+                            // Fallback
+                            <SwiperSlide><img src="/assets/images/main/main_slide_img01.png" className="pet_img" alt="" /></SwiperSlide>
+                        )}
+                    </Swiper>
+                    <div className={`swiper-pet-prev swiper-pet-prev-${data.id}`}></div>
+                    <div className={`swiper-pet-next swiper-pet-next-${data.id}`}></div>
                 </div>
 
                 {/* Butler Image Bottom Right */}
@@ -48,11 +64,10 @@ export const FriendCard = ({ data }: FriendCardProps) => {
                     ))}
                 </div>
                 
-                {/* Like/Dislike Buttons */}
+                {/* class 없으면 default, active 추가 하면 좋아요 */}
                 <div className="like_wrap">
-                    {/* Logic for "Now Chat" vs Like/Dislike - purely visual state for demo */}
-                    <button type="button" className="dislike_btn btn-effect"><img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요</button>
-                    <button type="button" className="like_btn btn-effect"><img src="/assets/images/common/like_btn.svg" alt="" />좋아요</button>
+                    <button type="button" className="dislike_btn"><img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요</button>
+                    <button type="button" className="like_btn"><img src="/assets/images/common/like_btn.svg" alt="" />좋아요</button>
                 </div>
             </div>
         </div>

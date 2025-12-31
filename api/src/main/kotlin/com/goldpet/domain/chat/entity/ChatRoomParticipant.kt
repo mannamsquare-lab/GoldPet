@@ -1,6 +1,6 @@
 package com.goldpet.domain.chat.entity
 
-import com.goldpet.domain.common.entity.BaseTimeEntity
+
 import com.goldpet.domain.user.entity.User
 import jakarta.persistence.*
 import java.time.LocalDateTime
@@ -34,4 +34,4 @@ class ChatRoomParticipant(
     @Column
     var leftAt: LocalDateTime? = null
 
-) : BaseTimeEntity()
+)

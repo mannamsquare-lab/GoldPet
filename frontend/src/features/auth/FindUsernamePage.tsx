@@ -4,11 +4,13 @@ import apiClient from '../../services/api/client';
 import './FindUsernamePage.css';
 import { Header } from '../../components/common/Header';
 import { FindAccountTabs } from './components/FindAccountTabs';
+import { useAlert } from '../../contexts/AlertContext';
 
 type FindResultState = 'intro' | 'input' | 'not-found' | 'found-general' | 'found-sns';
 
 export const FindUsernamePage = () => {
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +22,7 @@ export const FindUsernamePage = () => {
     e.preventDefault();
 
     if (!email) {
-      alert('이메일을 입력해주세요.');
+      showAlert('이메일을 입력해주세요.');
       return;
     }
 
@@ -46,7 +48,7 @@ export const FindUsernamePage = () => {
       if (error.response?.status === 404) {
         setResultState('not-found');
       } else {
-        alert(error.response?.data?.message || '아이디 찾기에 실패했습니다.');
+        showAlert(error.response?.data?.message || '아이디 찾기에 실패했습니다.');
       }
     } finally {
       setIsLoading(false);

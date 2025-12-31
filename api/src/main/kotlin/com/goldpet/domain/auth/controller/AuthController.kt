@@ -54,6 +54,39 @@ class AuthController(
         val exists = userRepository.findByNickname(nickname).isPresent
         return ResponseEntity.ok(AvailabilityResponse(!exists))
     }
+    @PostMapping("/dev-login")
+    fun devLogin(): ResponseEntity<AuthResponse> {
+        val testEmail = "test@goldpet.com"
+        val existingUser = userRepository.findByEmail(testEmail).orElse(null)
+        
+        val user = if (existingUser == null) {
+            val newUser = com.goldpet.domain.user.entity.User(
+                 oauthProvider = "dev",
+                 oauthId = "dev-user-01",
+                 nickname = "테스트유저",
+                 email = testEmail,
+                 
+                 // Required fields as null/defaults
+                 gender = null,
+                 birthYear = null,
+                 mainLocationText = null,
+                 mainLocationGeom = null,
+                 profileImageUrl = null,
+                 username = null,
+                 password = null,
+                 name = null,
+                 birthDate = null,
+                 phoneNumber = null
+            )
+            userRepository.save(newUser)
+        } else {
+            existingUser
+        }
+        
+        val response = authService.devLogin(user)
+        return ResponseEntity.ok(response)
+    }
+
     @PostMapping("/login/{provider}")
     fun nativeLogin(
         @PathVariable provider: String,

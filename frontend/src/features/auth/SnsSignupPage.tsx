@@ -3,12 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
 import './SnsSignupPage.css';
+import { useAlert } from '../../contexts/AlertContext';
 // import { Header } from '../../components/common/Header';
 
 export const SnsSignupPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((state) => state.login);
+  const { showAlert } = useAlert();
 
   // URL 파라미터나 location state에서 SNS 제공자 정보 가져오기
   const snsProvider = location.state?.provider || 'SNS';
@@ -124,7 +126,7 @@ export const SnsSignupPage = () => {
       navigate('/signup/complete');
     } catch (error: any) {
       console.error('SNS signup error:', error);
-      alert(error.response?.data?.message || '회원가입에 실패했습니다.');
+      showAlert(error.response?.data?.message || '회원가입에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

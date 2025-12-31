@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import './SignupPage.css';
+import { useAlert } from '../../contexts/AlertContext';
 // import { Header } from '../../components/common/Header';
 
 export const SignupPage = () => {
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   const [formData, setFormData] = useState({
     username: '',
@@ -267,7 +269,7 @@ export const SignupPage = () => {
       navigate('/signup/complete');
     } catch (error: any) {
       console.error('Signup error:', error);
-      alert(error.response?.data?.message || '회원가입에 실패했습니다.');
+      showAlert(error.response?.data?.message || '회원가입에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

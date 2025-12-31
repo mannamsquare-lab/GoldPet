@@ -6,6 +6,7 @@ import com.goldpet.domain.chat.dto.ChatMessageResponse
 import com.goldpet.domain.chat.service.ChatService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -13,18 +14,27 @@ import org.springframework.web.bind.annotation.*
 class ChatRoomController(
     private val chatService: ChatService
 ) {
-    // TODO: 실제 인증 구현 시 @AuthenticationPrincipal 등을 사용하여 userId를 가져오도록 변경
-    private val currentUserId: Long = 1L // 임시 사용자 ID
-
     @PostMapping
-    fun createChatRoom(@RequestBody request: ChatRoomCreateRequest): ResponseEntity<ChatRoomResponse> {
-        val chatRoom = chatService.createChatRoom(request, currentUserId)
+    fun createChatRoom(
+        @RequestBody request: ChatRoomCreateRequest,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<ChatRoomResponse> {
+        val chatRoom = chatService.createChatRoom(request, userDetails.id)
         return ResponseEntity.status(HttpStatus.CREATED).body(ChatRoomResponse.from(chatRoom))
     }
 
     @GetMapping("/my")
-    fun getMyChatRooms(): ResponseEntity<List<ChatRoomResponse>> {
-        val chatRooms = chatService.getUserChatRooms(currentUserId)
+    fun getMyChatRooms(
+        @AuthenticationPrincipal principal: org.springframework.security.core.userdetails.UserDetails
+    ): ResponseEntity<List<ChatRoomResponse>> {
+        val userId = if (principal is com.goldpet.config.security.UserPrincipal) {
+            principal.id
+        } else {
+            // Fallback for other principal types if necessary
+            // For now, assuming username lookup or throwing helpful error
+             throw IllegalStateException("Unexpected principal type: ${principal::class.java}")
+        }
+        val chatRooms = chatService.getUserChatRooms(userId)
         return ResponseEntity.ok(chatRooms.map { ChatRoomResponse.from(it) })
     }
 

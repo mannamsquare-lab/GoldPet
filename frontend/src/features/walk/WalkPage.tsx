@@ -1,176 +1,194 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { walkService } from '../../services/walkService';
 import './WalkPage.css';
 
 export const WalkPage = () => {
-    const [activeTab, setActiveTab] = useState('records'); // 'records', 'ranking'
-    const [isWalking, setIsWalking] = useState(false);
-    // const [timer, setTimer] = useState(0); // Timer implementation planned for future
+    const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState<'records' | 'ranking'>('records');
 
     // Fetch Stats
     const { data: stats } = useQuery({
         queryKey: ['walk', 'stats'],
-        queryFn: walkService.getWalkStats,
+        queryFn: () => walkService.getWalkStats(),
     });
 
     // Fetch Records
-    const { data: walkRecords } = useQuery({
+    const { data: walkRecords = [] } = useQuery({
         queryKey: ['walk', 'records'],
-        queryFn: walkService.getWalkRecords,
+        queryFn: () => walkService.getWalkRecords(),
     });
 
-    const handleWalkToggle = async () => {
-        if (!isWalking) {
-            await walkService.startWalk();
-            setIsWalking(true);
-            alert('산책을 시작합니다!');
-            // In a real app, start a timer interval here
-        } else {
-            await walkService.stopWalk();
-            setIsWalking(false);
-            alert('산책을 종료합니다. 수고하셨어요!');
-        }
-    };
-
     return (
-        <div id="walkPage">
-            {/* Header - talk_wrap과 동일 */}
-            <div className="walk_header">
-                <p>골드펫과 함께<br/>즐거운 산책을 즐겨보세요.</p>
-                <button type="button" className="btn-effect">
+        <div id="walkContainer">
+            {/* Header / Talk Wrap */}
+            <div className="talk_wrap">
+                <p>
+                    골드펫과 함께 <br />
+                    즐거운 산책을 즐겨보세요.
+                </p>
+                <button type="button">
                     <img src="/assets/images/common/pin_icon.svg" alt="지도 마커" />
                     서울 강남구
                 </button>
             </div>
 
-            {/* Content */}
-            <div className="walk_content">
-                {/* Today Stats Card */}
-                <div className="walk_today_section">
-                    <div className="walk_today_card">
-                        {/* Stats Content */}
-                        <div className="walk_today_title">오늘</div>
-                        <div className="walk_today_stats">
-                            <div className="walk_stat_item">
-                                <div className="walk_stat_content">
-                                    <div className="walk_stat_label">산책 거리(km)</div>
-                                    <div className="walk_stat_value">{stats?.todayDistance || '0.0'}</div>
-                                </div>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M9 6L15 12L9 18" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
-                                </svg>
-                            </div>
-                            <div className="walk_stat_item">
-                                <div className="walk_stat_content">
-                                    <div className="walk_stat_label">소요 칼로리(Kcal)</div>
-                                    <div className="walk_stat_value">{stats?.todayCalories || '0'}</div>
-                                </div>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M9 6L15 12L9 18" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
-                                </svg>
-                            </div>
-                        </div>
+            {/* Top Card (Walk Stats) */}
+            <div className="walk_tit">
+                <div className="walk_card">
+                    <p>오늘</p>
+                    <div className="card_detail">
+                        <dl>
+                            <dt>산책 거리(km)</dt>
+                            <dd>{stats?.todayDistance || '0.0'}</dd>
+                        </dl>
+                        <dl>
+                            <dt>소요 칼로리(Kcal)</dt>
+                            <dd>{stats?.todayCalories || '0'}</dd>
+                        </dl>
                     </div>
-
-                    {/* Start Walk Button */}
-                    <button 
-                        type="button" 
-                        className={`walk_start_btn btn-effect ${isWalking ? 'active' : ''}`}
-                        onClick={handleWalkToggle}
-                        style={{ backgroundColor: isWalking ? '#FF8AF5' : undefined, color: isWalking ? '#FFF' : undefined }}
-                    >
-                        {isWalking ? '산책 종료' : '지금 바로 산책을 시작해볼까요?'}
-                    </button>
                 </div>
+                <button type="button" className="walk_go_link" onClick={() => navigate('/walk/map')}>
+                    지금 바로 산책을 시작해볼까요?
+                </button>
+            </div>
 
-                {/* Tabs and Records */}
-                <div className="walk_records_section">
-                    {/* Tabs */}
-                    <div className="walk_tabs">
-                        <button
-                            type="button"
-                            className={`walk_tab ${activeTab === 'records' ? 'active' : ''} btn-effect`}
+            <div className="record_wrap">
+                <ul className="record_tab">
+                    <li>
+                        <button 
+                            type="button" 
+                            className={activeTab === 'records' ? 'active' : ''}
                             onClick={() => setActiveTab('records')}
                         >
                             우리의 산책 기록
                         </button>
-                        <button
-                            type="button"
-                            className={`walk_tab ${activeTab === 'ranking' ? 'active' : ''} btn-effect`}
+                    </li>
+                    <li>
+                        <button 
+                            type="button" 
+                            className={activeTab === 'ranking' ? 'active' : ''}
                             onClick={() => setActiveTab('ranking')}
                         >
                             베스트 랭킹
                         </button>
-                    </div>
+                    </li>
+                </ul>
 
-                    {/* Records List */}
-                    {activeTab === 'records' && (
-                        <div className="walk_records_list">
-                            <div className="walk_records_card">
-                                {walkRecords?.map((record, index) => (
-                                    <div key={record.id}>
-                                        <div className="walk_record_item">
-                                            <div className="walk_record_header">
-                                                <div className="walk_record_icon">
-                                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                        <circle cx="8" cy="8" r="8" fill="#FF8AF5"/>
-                                                        <path d="M8.00391 11.4053C6.56568 11.4053 5.37331 12.8404 4.64941 11.25C4.63895 11.2166 3.95543 9.65193 6.08789 8.86523C6.81802 7.88297 7.07445 7.42969 8.00391 7.42969V11.4053ZM8.00684 7.42969C8.93594 7.42983 9.19284 7.88312 9.92285 8.86523C12.0579 9.65299 11.369 11.2206 11.3604 11.25C10.6365 12.8403 9.44486 11.4056 8.00684 11.4053V7.42969Z" fill="white" fillOpacity="0.7"/>
-                                                        <ellipse cx="6.66431" cy="5.71384" rx="1.06665" ry="1.71384" fill="white" fillOpacity="0.7"/>
-                                                        <ellipse cx="4.79999" cy="7.71336" rx="0.799991" ry="1.4282" fill="white" fillOpacity="0.7"/>
-                                                        <ellipse cx="11.2004" cy="7.71336" rx="0.799991" ry="1.4282" fill="white" fillOpacity="0.7"/>
-                                                        <ellipse cx="9.36646" cy="5.71384" rx="1.06665" ry="1.71384" fill="white" fillOpacity="0.7"/>
-                                                    </svg>
-                                                </div>
-                                                <div className="walk_record_date">{record.date}</div>
-                                            </div>
-                                            <div className="walk_record_info">
-                                                <div className="walk_record_stats">
-                                                    <span>{record.distance}</span>
-                                                    <svg width="3" height="3" viewBox="0 0 3 3" fill="none">
-                                                        <circle cx="1.5" cy="1.5" r="1.5" fill="#614108"/>
-                                                    </svg>
-                                                    <span>{record.duration}</span>
-                                                    <svg width="3" height="3" viewBox="0 0 3 3" fill="none">
-                                                        <circle cx="1.5" cy="1.5" r="1.5" fill="#614108"/>
-                                                    </svg>
-                                                    <span>{record.points}</span>
-                                                </div>
-                                                <div className="walk_record_actions">
-                                                    <button type="button" className="walk_record_action_btn btn-effect">
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                            <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
-                                                            <path fillRule="evenodd" clipRule="evenodd" d="M12 5C14.7614 5 17 7.50721 17 10.6C17 13.6928 14.1875 17.95 12 19C9.8125 17.95 7 13.6928 7 10.6C7 7.50721 9.23858 5 12 5ZM12 7.8C10.6193 7.8 9.5 9.0536 9.5 10.6C9.5 12.1464 10.6193 13.4 12 13.4C13.3807 13.4 14.5 12.1464 14.5 10.6C14.5 9.0536 13.3807 7.8 12 7.8Z" fill="#8A497D"/>
-                                                        </svg>
-                                                    </button>
-                                                    <button type="button" className="walk_record_action_btn btn-effect">
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                            <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
-                                                            <path d="M6 13.5V16C6 17.1046 6.89543 18 8 18H16C17.1046 18 18 17.1046 18 16V13.5" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
-                                                            <path d="M12 15V6M12 6L8.625 9.375M12 6L15.375 9.375" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {walkRecords && index < walkRecords.length - 1 && (
-                                            <div className="walk_record_divider"></div>
-                                        )}
+                {/* Records List Tab */}
+                {activeTab === 'records' && (
+                    <ul className="record_list">
+                        {walkRecords?.map((record) => (
+                            <li key={record.id} onClick={() => navigate(`/walk/detail/${record.id}`)}>
+                                <p className="date_txt">{record.date}</p>
+                                <div className="detail_txt">
+                                    <div className="list_txt">
+                                        <p>{record.distance}</p>
+                                        <p>{record.duration}</p>
+                                        <p>{record.points}</p>
                                     </div>
-                                ))}
+                                    <div className="btn_wrap">
+                                        <button type="button">
+                                            <img src="/assets/images/walk/map_icon.svg" alt="" />
+                                        </button>
+                                        <button type="button">
+                                            <img src="/assets/images/walk/upload_icon.svg" alt="" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                {/* Ranking Tab */}
+                {activeTab === 'ranking' && (
+                    <>
+                        <div className="best_rank">
+                            <div className="best_couple">
+                                <p className="tit">
+                                    <img src="/assets/images/walk/best_icon.svg" alt="" />
+                                    BEST 산책 커플
+                                </p>
+                                <div className="couple_img">
+                                    <div className="profile_img profile_img01">
+                                        <img src="/assets/images/main/main_slide_butler01.jpg" alt="" />
+                                    </div>
+                                    <div className="profile_img profile_img02">
+                                        <img src="/assets/images/main/main_slide_butler02.png" alt="" />
+                                    </div>
+                                </div>
+                                <button type="button" className="couple_btn">
+                                    망고
+                                    <img src="/assets/images/walk/best_icon02.svg" alt="" />
+                                    난완전멋쟁이
+                                </button>
+                                <div className="couple_detail">
+                                    <dl>
+                                        <dt>총 거리(km)</dt>
+                                        <dd>1.0</dd>
+                                    </dl>
+                                    <dl>
+                                        <dt>총 시간(분)</dt>
+                                        <dd>1,680</dd>
+                                    </dl>
+                                    <dl>
+                                        <dt>총 적립(Gold)</dt>
+                                        <dd>10</dd>
+                                    </dl>
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* Ranking - placeholder */}
-                    {activeTab === 'ranking' && (
-                        <div className="walk_ranking_placeholder">
-                            <p>베스트 랭킹 기능은 준비 중입니다.</p>
-                            <p style={{fontSize: '12px', color: '#999', marginTop: '8px'}}>열심히 산책해서 1등을 노려보세요!</p>
-                        </div>
-                    )}
-                </div>
+                        <ul className="ranking_list">
+                            {/* Static content for now based on HTML */}
+                            <li>
+                                <div className="ranking_img">
+                                    <div className="profile_img profile_img01">
+                                        <img src="/assets/images/main/main_slide_butler01.jpg" alt="" />
+                                    </div>
+                                    <div className="profile_img profile_img02">
+                                        <img src="/assets/images/main/main_slide_butler02.png" alt="" />
+                                    </div>
+                                    <p className="count_txt">2</p>
+                                </div>
+                                <div className="ranking_txt">
+                                    <strong>개똥이와 똥개</strong>
+                                    <div className="txt_wrap">
+                                        <div className="txt01">
+                                            <p>1.0 Km</p>
+                                            <p>총 30분</p>
+                                        </div>
+                                        <p>10G 적립</p>
+                                    </div>
+                                </div>
+                            </li>
+                            {/* Duplicate items for visual as per HTML */}
+                             <li>
+                                <div className="ranking_img">
+                                    <div className="profile_img profile_img01">
+                                        <img src="/assets/images/main/main_slide_butler01.jpg" alt="" />
+                                    </div>
+                                    <div className="profile_img profile_img02">
+                                        <img src="/assets/images/main/main_slide_butler02.png" alt="" />
+                                    </div>
+                                    <p className="count_txt">2</p>
+                                </div>
+                                <div className="ranking_txt">
+                                    <strong>개똥이와 똥개</strong>
+                                    <div className="txt_wrap">
+                                        <div className="txt01">
+                                            <p>1.0 Km</p>
+                                            <p>총 30분</p>
+                                        </div>
+                                        <p>10G 적립</p>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -21,6 +21,10 @@ class UserService(
     }
 
     fun getUserIdFromPrincipal(principal: org.springframework.security.core.userdetails.UserDetails): Long {
+        if (principal is com.goldpet.config.security.UserPrincipal) {
+            return principal.id
+        }
+        // Fallback or AdminUserPrincipal handling if needed
         val user = userRepository.findByUsername(principal.username)
             .orElseThrow { IllegalArgumentException("User not found") }
         return user.id

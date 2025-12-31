@@ -27,8 +27,8 @@ export const BottomNav = () => {
                         <img src="/assets/images/layout/b_fix_icon03.svg" alt="" />산책
                     </button>
                 </li>
-                <li>
-                    <button type="button" className="btn-effect">
+                <li className={location.pathname === '/community' ? 'active' : ''}>
+                    <button type="button" className="btn-effect" onClick={() => navigate('/community')}>
                         <img src="/assets/images/layout/b_fix_icon04.svg" alt="" />커뮤니티
                     </button>
                 </li>

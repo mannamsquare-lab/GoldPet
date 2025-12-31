@@ -7,19 +7,24 @@ import com.goldpet.domain.pet.service.PetService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.net.URI
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 
 @RestController
 @RequestMapping("/api/v1/pets")
 class PetController(
-    private val petService: PetService
+    private val petService: PetService,
+    private val userService: com.goldpet.domain.user.service.UserService
 ) {
 
-    // TODO: Replace with actual authenticated user ID
-    private val currentUserId: Long = 1
-
     @PostMapping
-    fun createPet(@RequestBody request: CreatePetRequest): ResponseEntity<PetResponse> {
-        val petResponse = petService.createPet(currentUserId, request)
+    fun createPet(
+        @AuthenticationPrincipal principal: UserDetails?,
+        @RequestBody request: CreatePetRequest
+    ): ResponseEntity<PetResponse> {
+        if (principal == null) return ResponseEntity.status(401).build()
+        val userId = userService.getUserIdFromPrincipal(principal)
+        val petResponse = petService.createPet(userId, request)
         return ResponseEntity.created(URI.create("/api/v1/pets/${petResponse.id}")).body(petResponse)
     }
 
@@ -30,19 +35,26 @@ class PetController(
     }
 
     @GetMapping("/my")
-    fun getMyPets(): ResponseEntity<List<PetResponse>> {
-        val petResponses = petService.getPetsByOwner(currentUserId)
+    fun getMyPets(@AuthenticationPrincipal principal: UserDetails?): ResponseEntity<List<PetResponse>> {
+        if (principal == null) return ResponseEntity.status(401).build()
+        val userId = userService.getUserIdFromPrincipal(principal)
+        val petResponses = petService.getPetsByOwner(userId)
         return ResponseEntity.ok(petResponses)
     }
 
     @PutMapping("/{petId}")
-    fun updatePet(@PathVariable petId: Long, @RequestBody request: UpdatePetRequest): ResponseEntity<PetResponse> {
+    fun updatePet(
+        @PathVariable petId: Long,
+        @RequestBody request: UpdatePetRequest
+    ): ResponseEntity<PetResponse> {
+        // TODO: Verify ownership?
         val petResponse = petService.updatePet(petId, request)
         return ResponseEntity.ok(petResponse)
     }
 
     @DeleteMapping("/{petId}")
     fun deletePet(@PathVariable petId: Long): ResponseEntity<Void> {
+        // TODO: Verify ownership?
         petService.deletePet(petId)
         return ResponseEntity.noContent().build()
     }

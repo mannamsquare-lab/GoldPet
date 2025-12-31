@@ -1,10 +1,10 @@
 package com.goldpet.domain.friend.service
 
 import com.goldpet.domain.friend.entity.Like
-import com.goldpet.domain.friend.entity.LikeStatus
 import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
+import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
@@ -28,6 +28,9 @@ class MatchServiceTest {
     private lateinit var matchRepository: MatchRepository
 
     @Mock
+    private lateinit var userBlockRepository: UserBlockRepository
+
+    @Mock
     private lateinit var userRepository: UserRepository
 
     @InjectMocks
@@ -46,6 +49,9 @@ class MatchServiceTest {
             username = null,
             password = null,
             nickname = "User1",
+            name = null,
+            birthDate = null,
+            phoneNumber = null,
             gender = null,
             birthYear = null,
             mainLocationText = null,
@@ -60,6 +66,9 @@ class MatchServiceTest {
             username = null,
             password = null,
             nickname = "User2",
+            name = null,
+            birthDate = null,
+            phoneNumber = null,
             gender = null,
             birthYear = null,
             mainLocationText = null,
@@ -73,6 +82,7 @@ class MatchServiceTest {
         // Given
         `when`(userRepository.findById(user1.id)).thenReturn(Optional.of(user1))
         `when`(userRepository.findById(user2.id)).thenReturn(Optional.of(user2))
+        `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(false)
         `when`(likeRepository.findByFromUserAndToUser(user1, user2)).thenReturn(Optional.empty())
         `when`(likeRepository.findByFromUserAndToUser(user2, user1)).thenReturn(Optional.empty())
         `when`(likeRepository.save(any(Like::class.java))).thenAnswer { it.arguments[0] }
@@ -91,6 +101,7 @@ class MatchServiceTest {
         // Given
         `when`(userRepository.findById(user1.id)).thenReturn(Optional.of(user1))
         `when`(userRepository.findById(user2.id)).thenReturn(Optional.of(user2))
+        `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(false)
         `when`(likeRepository.findByFromUserAndToUser(user1, user2)).thenReturn(Optional.empty())
         `when`(likeRepository.findByFromUserAndToUser(user2, user1)).thenReturn(Optional.of(Like(fromUser = user2, toUser = user1)))
         `when`(likeRepository.save(any(Like::class.java))).thenAnswer { it.arguments[0] }
@@ -111,6 +122,7 @@ class MatchServiceTest {
         // Given
         `when`(userRepository.findById(user1.id)).thenReturn(Optional.of(user1))
         `when`(userRepository.findById(user2.id)).thenReturn(Optional.of(user2))
+        `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(false)
         `when`(likeRepository.findByFromUserAndToUser(user1, user2)).thenReturn(Optional.of(Like(fromUser = user1, toUser = user2)))
 
         // When
@@ -133,5 +145,19 @@ class MatchServiceTest {
         }
         verify(likeRepository, never()).save(any(Like::class.java))
         verify(matchRepository, never()).save(any(Match::class.java))
+    }
+
+    @Test
+    fun `likeUser_shouldThrowException_whenBlocked`() {
+        // Given
+        `when`(userRepository.findById(user1.id)).thenReturn(Optional.of(user1))
+        `when`(userRepository.findById(user2.id)).thenReturn(Optional.of(user2))
+        `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(true)
+
+        // When / Then
+        assertThrows<IllegalStateException> {
+            matchService.likeUser(user1.id, user2.id)
+        }
+        verify(likeRepository, never()).save(any(Like::class.java))
     }
 }

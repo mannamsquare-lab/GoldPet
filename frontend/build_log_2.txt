@@ -1,0 +1,105 @@
+
+> react-app@0.0.0 build
+> tsc -b && vite build
+
+vite v7.2.4 building client environment for production...
+transforming...
+
+/assets/images/benefits/foot_icon.svg referenced in /assets/images/benefits/foot_icon.svg didn't resolve at build time, it will remain unchanged to be resolved at runtime
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+60 │ @import "animate/_helpers";
+   │         ^^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 60:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+73 │ @import "animate/_bounce";
+   │         ^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 73:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+75 │ @import "animate/_bounceIn";
+   │         ^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 75:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+76 │ @import "animate/_bounceInDown";
+   │         ^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 76:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+77 │ @import "animate/_bounceInLeft";
+   │         ^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 77:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+✓ 252 modules transformed.
+✗ Build failed in 820ms
+error during build:
+[vite:css] [sass] Undefined mixin.
+   ╷
+53 │         @include transition(background-image, .2s);
+   │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+  src/assets/scss/_main.scss 53:3  @use
+  src/assets/scss/common.scss 4:1  root stylesheet
+file: /Users/jioabang/Works/MANNAM/GoldPet/frontend/src/assets/scss/common.scss
+
+[sass] Undefined mixin.
+   ╷
+53 │         @include transition(background-image, .2s);
+   │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+  src/assets/scss/_main.scss 53:3  @use
+  src/assets/scss/common.scss 4:1  root stylesheet
+
+Error: Undefined mixin.
+   ╷
+53 │         @include transition(background-image, .2s);
+   │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+  src/assets/scss/_main.scss 53:3  @use
+  src/assets/scss/common.scss 4:1  root stylesheet
+    at Object.wrapException (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:2337:47)
+    at /Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:89531:25
+    at _wrapJsFunctionForAsync_closure.$protected (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:5005:15)
+    at _wrapJsFunctionForAsync_closure.call$2 (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:38505:12)
+    at Object._asyncStartSync (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:4969:20)
+    at _EvaluateVisitor2._applyMixin$body$_EvaluateVisitor0 (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:89589:16)
+    at _EvaluateVisitor2._async_evaluate0$_applyMixin$5 (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:89517:19)
+    at /Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:89609:48
+    at _wrapJsFunctionForAsync_closure.$protected (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:5005:15)
+    at _wrapJsFunctionForAsync_closure.call$2 (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:38505:12)

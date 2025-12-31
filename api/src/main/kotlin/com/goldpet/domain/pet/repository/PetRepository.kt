@@ -5,4 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface PetRepository : JpaRepository<Pet, Long> {
     fun findByOwnerId(userId: Long): List<Pet>
+    fun findAllByOwnerId(userId: Long): List<Pet>
+    fun countByOwnerId(userId: Long): Long
 }
+

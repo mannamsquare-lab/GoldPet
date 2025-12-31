@@ -1,0 +1,105 @@
+
+> react-app@0.0.0 build
+> tsc -b && vite build
+
+vite v7.2.4 building client environment for production...
+transforming...
+
+/assets/images/benefits/foot_icon.svg referenced in /assets/images/benefits/foot_icon.svg didn't resolve at build time, it will remain unchanged to be resolved at runtime
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+60 │ @import "animate/_helpers";
+   │         ^^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 60:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+73 │ @import "animate/_bounce";
+   │         ^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 73:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+75 │ @import "animate/_bounceIn";
+   │         ^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 75:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+76 │ @import "animate/_bounceInDown";
+   │         ^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 76:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+More info and automated migrator: https://sass-lang.com/d/import
+
+   ╷
+77 │ @import "animate/_bounceInLeft";
+   │         ^^^^^^^^^^^^^^^^^^^^^^^
+   ╵
+    src/assets/scss/_common/lib/_animate.scss 77:9  @use
+    src/assets/scss/_common/_base.scss 4:1          @use
+    src/assets/scss/common.scss 3:1                 root stylesheet
+
+✓ 252 modules transformed.
+✗ Build failed in 911ms
+error during build:
+[vite:css] [sass] Can't find stylesheet to import.
+  ╷
+1 │ @use "../config" as *;
+  │ ^^^^^^^^^^^^^^^^^^^^^
+  ╵
+  src/assets/scss/_main.scss 1:1   @use
+  src/assets/scss/common.scss 4:1  root stylesheet
+file: /Users/jioabang/Works/MANNAM/GoldPet/frontend/src/assets/scss/common.scss
+
+[sass] Can't find stylesheet to import.
+  ╷
+1 │ @use "../config" as *;
+  │ ^^^^^^^^^^^^^^^^^^^^^
+  ╵
+  src/assets/scss/_main.scss 1:1   @use
+  src/assets/scss/common.scss 4:1  root stylesheet
+
+Error: Can't find stylesheet to import.
+  ╷
+1 │ @use "../config" as *;
+  │ ^^^^^^^^^^^^^^^^^^^^^
+  ╵
+  src/assets/scss/_main.scss 1:1   @use
+  src/assets/scss/common.scss 4:1  root stylesheet
+    at Object.wrapException (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:2337:47)
+    at /Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:89373:25
+    at _wrapJsFunctionForAsync_closure.$protected (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:5005:15)
+    at _wrapJsFunctionForAsync_closure.call$2 (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:38505:12)
+    at _awaitOnObject_closure.call$1 (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:38493:32)
+    at Object._rootRunUnary (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:5423:18)
+    at StaticClosure.<anonymous> (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:128564:16)
+    at _CustomZone.runUnary$2$2 (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:39936:39)
+    at _Future__propagateToListeners_handleValueCallback.call$0 (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:38994:51)
+    at Object._Future__propagateToListeners (/Users/jioabang/Works/MANNAM/GoldPet/frontend/node_modules/sass/sass.dart.js:5215:93)

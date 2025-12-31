@@ -4,11 +4,13 @@ import apiClient from '../../services/api/client';
 import './ResetPasswordPage.css';
 import { Header } from '../../components/common/Header';
 import { FindAccountTabs } from './components/FindAccountTabs';
+import { useAlert } from '../../contexts/AlertContext';
 
 type ResetPasswordState = 'intro' | 'input-username' | 'input-password' | 'complete';
 
 export const ResetPasswordPage = () => {
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   const [state, setState] = useState<ResetPasswordState>('intro');
   const [username, setUsername] = useState('');
@@ -43,7 +45,7 @@ export const ResetPasswordPage = () => {
     e.preventDefault();
 
     if (!username || !email) {
-      alert('아이디와 이메일을 입력해주세요.');
+      showAlert('아이디와 이메일을 입력해주세요.');
       return;
     }
 
@@ -56,7 +58,7 @@ export const ResetPasswordPage = () => {
       setState('input-password');
     } catch (error: any) {
       console.error('Verify account error:', error);
-      alert(error.response?.data?.message || '계정 확인에 실패했습니다.');
+      showAlert(error.response?.data?.message || '계정 확인에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +118,7 @@ export const ResetPasswordPage = () => {
       setState('complete');
     } catch (error: any) {
       console.error('Reset password error:', error);
-      alert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.');
+      showAlert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

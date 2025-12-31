@@ -1,0 +1,103 @@
+package com.goldpet.domain.admin.service
+
+import com.goldpet.domain.community.repository.CommunityCategoryRepository
+import com.goldpet.domain.pet.entity.PetBreed
+import com.goldpet.domain.pet.entity.PetSpecies
+import com.goldpet.domain.pet.repository.PetBreedRepository
+import com.goldpet.domain.pet.repository.PetSpeciesRepository
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+@Service
+class AdminDataService(
+    private val speciesRepository: PetSpeciesRepository,
+    private val breedRepository: PetBreedRepository,
+    private val categoryRepository: CommunityCategoryRepository
+) {
+    fun getSpecies(): List<Map<String, Any>> {
+        return speciesRepository.findAll().map { species ->
+            mapOf(
+                "id" to species.id,
+                "code" to species.code,
+                "name" to species.name,
+                "description" to (species.description ?: ""),
+                "breedCount" to breedRepository.countByPetSpeciesId(species.id)
+            )
+        }
+    }
+
+    @Transactional
+    fun createSpecies(request: Map<String, Any>): Map<String, Any> {
+        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
+        val code = request["code"] as? String ?: name.uppercase().replace(" ", "_")
+        val description = request["description"] as? String
+        val species = PetSpecies(code = code, name = name, description = description)
+        val saved = speciesRepository.save(species)
+        return mapOf("id" to saved.id, "code" to saved.code, "name" to saved.name, "breedCount" to 0)
+    }
+
+    @Transactional
+    fun deleteSpecies(id: Long) {
+        speciesRepository.deleteById(id.toInt())
+    }
+
+    fun getBreeds(speciesId: Long?): List<Map<String, Any>> {
+        val breeds = if (speciesId != null) {
+            breedRepository.findAllByPetSpeciesId(speciesId.toInt())
+        } else {
+            breedRepository.findAll()
+        }
+        return breeds.map { breed ->
+            mapOf(
+                "id" to breed.id,
+                "name" to breed.name,
+                "description" to (breed.description ?: ""),
+                "speciesId" to breed.petSpecies.id,
+                "speciesName" to breed.petSpecies.name
+            )
+        }
+    }
+
+    @Transactional
+    fun createBreed(request: Map<String, Any>): Map<String, Any> {
+        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
+        val speciesId = (request["speciesId"] as? Number)?.toInt() ?: throw IllegalArgumentException("speciesId is required")
+        val description = request["description"] as? String
+        val species = speciesRepository.findById(speciesId).orElseThrow { IllegalArgumentException("Species not found") }
+        val breed = PetBreed(name = name, petSpecies = species, description = description)
+        val saved = breedRepository.save(breed)
+        return mapOf("id" to saved.id, "name" to saved.name, "speciesId" to species.id, "speciesName" to species.name)
+    }
+
+    @Transactional
+    fun deleteBreed(id: Long) {
+        breedRepository.deleteById(id)
+    }
+
+    fun getCategories(): List<Map<String, Any>> {
+        return categoryRepository.findAll().map { category ->
+            mapOf(
+                "id" to category.id,
+                "code" to category.code,
+                "name" to category.name
+            )
+        }
+    }
+
+    @Transactional
+    fun createCategory(request: Map<String, Any>): Map<String, Any> {
+        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
+        val code = request["code"] as? String ?: name.uppercase().replace(" ", "_")
+        val category = com.goldpet.domain.community.entity.CommunityCategory(
+            name = name,
+            code = code
+        )
+        val saved = categoryRepository.save(category)
+        return mapOf("id" to saved.id, "code" to saved.code, "name" to saved.name)
+    }
+
+    @Transactional
+    fun deleteCategory(id: Long) {
+        categoryRepository.deleteById(id)
+    }
+}

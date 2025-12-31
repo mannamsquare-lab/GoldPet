@@ -5,6 +5,7 @@ import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.walk.service.WalkService
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.net.URI
 
@@ -14,12 +15,12 @@ class WalkController(
     private val walkService: WalkService
 ) {
 
-    // TODO: Replace with actual authenticated user ID
-    private val currentUserId: Long = 1
-
     @PostMapping
-    fun createWalk(@RequestBody request: CreateWalkRequest): ResponseEntity<WalkResponse> {
-        val walkResponse = walkService.createWalk(currentUserId, request)
+    fun createWalk(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal,
+        @RequestBody request: CreateWalkRequest
+    ): ResponseEntity<WalkResponse> {
+        val walkResponse = walkService.createWalk(userDetails.id, request)
         return ResponseEntity.created(URI.create("/api/v1/walks/${walkResponse.id}")).body(walkResponse)
     }
 
@@ -30,8 +31,10 @@ class WalkController(
     }
 
     @GetMapping("/my")
-    fun getMyWalks(): ResponseEntity<List<WalkResponse>> {
-        val walkResponses = walkService.getWalksByUser(currentUserId)
+    fun getMyWalks(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<List<WalkResponse>> {
+        val walkResponses = walkService.getWalksByUser(userDetails.id)
         return ResponseEntity.ok(walkResponses)
     }
 

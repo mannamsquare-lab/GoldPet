@@ -101,7 +101,8 @@ export const OnboardingPage = () => {
                     </Swiper>
                     <div className="swiper-pagination"></div>
                 </div>
-                <button type="button" className="start_btn" onClick={handleStart}>지금 골드펫 시작하기</button>
+                <button type="button" className="start_btn" onClick={handleStart} style={{ zIndex: 10 }}>지금 골드펫 시작하기</button>
+
             </section>
         </>
     );

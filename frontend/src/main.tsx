@@ -5,7 +5,8 @@ import './index.css';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
-import './styles/common.css';
+import './assets/css/common.css';
+
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

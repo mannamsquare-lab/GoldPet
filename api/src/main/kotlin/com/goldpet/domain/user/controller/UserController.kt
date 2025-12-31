@@ -21,7 +21,13 @@ class UserController(
 
     @GetMapping("/me")
     fun getMyProfile(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<UserResponse> {
-        val user = userService.findUserByUsername(principal.username)
+        val userId = if (principal is com.goldpet.config.security.UserPrincipal) {
+            principal.id
+        } else {
+            userService.getUserIdFromPrincipal(principal)
+        }
+        
+        val user = userService.findUserById(userId)
         return if (user != null) {
             ResponseEntity.ok(UserResponse.from(user))
         } else {

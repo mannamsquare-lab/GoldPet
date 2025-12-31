@@ -15,7 +15,8 @@ import java.io.IOException
 @Component
 class JwtAuthenticationFilter(
     private val tokenProvider: JwtTokenProvider,
-    private val customUserDetailsService: CustomUserDetailsService
+    private val customUserDetailsService: CustomUserDetailsService,
+    private val adminUserRepository: com.goldpet.domain.admin.repository.AdminUserRepository
 ) : OncePerRequestFilter() {
 
     @Throws(IOException::class, ServletException::class)
@@ -29,7 +30,15 @@ class JwtAuthenticationFilter(
 
             if (jwt != null && tokenProvider.validateToken(jwt)) {
                 val userId = tokenProvider.getUserIdFromJWT(jwt)
-                val userDetails = customUserDetailsService.loadUserById(userId.toLong())
+                val userType = tokenProvider.getUserTypeFromJWT(jwt)
+                
+                val userDetails = if (userType == "ADMIN") {
+                    val adminUser = adminUserRepository.findById(userId.toLong()).orElseThrow { Exception("Admin not found") }
+                    com.goldpet.config.security.AdminUserPrincipal(adminUser)
+                } else {
+                    customUserDetailsService.loadUserById(userId.toLong())
+                }
+                
                 val authentication = UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
                 authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
 

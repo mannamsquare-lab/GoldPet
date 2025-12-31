@@ -2,6 +2,8 @@ package com.goldpet.domain.pet.service
 
 import com.goldpet.domain.pet.dto.CreatePetRequest
 import com.goldpet.domain.pet.dto.PetResponse
+import com.goldpet.domain.pet.dto.SpeciesResponse
+import com.goldpet.domain.pet.dto.BreedResponse
 import com.goldpet.domain.pet.dto.UpdatePetRequest
 import com.goldpet.domain.pet.entity.Pet
 import com.goldpet.domain.pet.repository.PetBreedRepository
@@ -25,7 +27,7 @@ class PetService(
     fun createPet(userId: Long, request: CreatePetRequest): PetResponse {
         val owner = userRepository.findById(userId).orElseThrow { EntityNotFoundException("User not found") }
         val species = petSpeciesRepository.findById(request.speciesId).orElseThrow { EntityNotFoundException("PetSpecies not found") }
-        val breed = request.breedId?.let { petBreedRepository.findById(it).orElseThrow { EntityNotFoundException("PetBreed not found") } }
+        val breed = request.breedId?.let { petBreedRepository.findById(it.toLong()).orElseThrow { EntityNotFoundException("PetBreed not found") } }
 
         val pet = Pet(
             owner = owner,
@@ -53,6 +55,14 @@ class PetService(
         return pets.map { PetResponse.from(it) }
     }
 
+    fun getAllSpecies(): List<SpeciesResponse> {
+        return petSpeciesRepository.findAll().map { SpeciesResponse.from(it) }
+    }
+
+    fun getBreedsBySpecies(speciesId: Int): List<BreedResponse> {
+        return petBreedRepository.findAllByPetSpeciesId(speciesId).map { BreedResponse.from(it) }
+    }
+
 
 
     @Transactional
@@ -64,7 +74,7 @@ class PetService(
             pet.species = petSpeciesRepository.findById(it).orElseThrow { EntityNotFoundException("PetSpecies not found") }
         }
         request.breedId?.let {
-            pet.breed = petBreedRepository.findById(it).orElseThrow { EntityNotFoundException("PetBreed not found") }
+            pet.breed = petBreedRepository.findById(it.toLong()).orElseThrow { EntityNotFoundException("PetBreed not found") }
         }
         request.gender?.let { pet.gender = it }
         request.birthDate?.let { pet.birthDate = it }

@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import apiClient from '../../services/api/client';
 import { authService } from '../../services/authService';
+import { useAlert } from '../../contexts/AlertContext';
 import './LoginPage.css';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const { showAlert } = useAlert();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +21,7 @@ export const LoginPage = () => {
     e.preventDefault();
 
     if (!username || !password) {
-      alert('아이디와 비밀번호를 입력해주세요.');
+      showAlert('아이디와 비밀번호를 입력해주세요.');
       return;
     }
 
@@ -41,7 +43,7 @@ export const LoginPage = () => {
       navigate('/home');
     } catch (error: any) {
       console.error('Login error:', error);
-      alert(error.response?.data?.message || '로그인에 실패했습니다.');
+      showAlert(error.response?.data?.message || '로그인에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -50,20 +52,18 @@ export const LoginPage = () => {
   const handleSnsLogin = async (provider: 'naver' | 'kakao' | 'apple' | 'google') => {
     try {
       const result = await authService.openLoginPopup(provider);
-
-      if (result.type === 'LOGIN_SUCCESS') {
-        const { token, user } = result;
-        login(token, '', user);
+      
+      // AuthResponse type - login succeeded
+      if (result.accessToken) {
+        login(result.accessToken, result.refreshToken, result.user);
         navigate('/home');
-      } else if (result.type === 'SIGNUP_REQUIRED') {
-        const { token, provider } = result;
-        // Store temp token for signup process
-        localStorage.setItem('accessToken', token);
-        navigate('/signup', { state: { isSns: true, provider } });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('SNS Login failed:', error);
-      // alert('SNS 로그인에 실패했습니다.'); // Optional: Show error to user
+      // Check if signup is required (new user)
+      if (error.message?.includes('SIGNUP_REQUIRED') || error.signupRequired) {
+        navigate('/signup/sns', { state: { provider } });
+      }
     }
   };
 
