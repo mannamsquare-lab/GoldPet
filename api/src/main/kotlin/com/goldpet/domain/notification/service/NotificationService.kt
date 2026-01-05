@@ -17,8 +17,24 @@ class NotificationService(
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository
 ) {
-    fun getNotifications(userId: Long, pageable: Pageable): Page<NotificationResponse> {
-        return notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable)
+    fun getNotifications(userId: Long, category: String?, pageable: Pageable): Page<NotificationResponse> {
+        if (category == null || category == "ALL") {
+            return notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable)
+                .map { NotificationResponse.from(it) }
+        }
+
+        val types = when (category) {
+            "FRIEND" -> listOf(NotificationType.LIKE, NotificationType.MATCH)
+            "CHAT" -> listOf(NotificationType.MESSAGE)
+            "WALK" -> listOf(NotificationType.WALK)
+            "COMMUNITY" -> listOf(NotificationType.COMMENT, NotificationType.FOLLOW)
+            "NOTICE" -> listOf(NotificationType.NOTICE, NotificationType.SYSTEM)
+            "EVENT" -> listOf(NotificationType.EVENT)
+            else -> return notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable)
+                .map { NotificationResponse.from(it) }
+        }
+
+        return notificationRepository.findAllByUserIdAndTypeInOrderByCreatedAtDesc(userId, types, pageable)
             .map { NotificationResponse.from(it) }
     }
 

@@ -5,11 +5,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface User {
+export interface User {
   id: number;
   nickname: string;
   email?: string;
   profileImageUrl?: string;
+  profileImageUrls?: string[];
+  gender?: string;
+  birthYear?: number;
+  mainLocationText?: string;
+  goldBalance?: number;
+  phoneNumber?: string;
+  name?: string;
+  birthDate?: string;
+  mbti?: string;
+  interests?: string[];
+  hobbies?: string[];
+  intro?: string;
+  hasPet?: boolean;
+  isNotificationEnabled?: boolean;
 }
 
 interface AuthState {

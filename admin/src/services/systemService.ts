@@ -33,4 +33,19 @@ export const systemService = {
   async setMaintenanceMode(enabled: boolean): Promise<void> {
     await apiClient.post('/system/maintenance', { enabled });
   },
+
+  async getConfigs(): Promise<AppConfig[]> {
+    const response = await apiClient.get('/system/configs');
+    return response.data;
+  },
+
+  async updateConfig(key: string, value: string): Promise<void> {
+    await apiClient.post('/system/configs', { key, value });
+  },
 };
+
+export interface AppConfig {
+    key: string;
+    value: string;
+    description?: string;
+}

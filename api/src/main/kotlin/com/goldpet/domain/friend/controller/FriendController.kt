@@ -1,0 +1,70 @@
+package com.goldpet.domain.friend.controller
+
+import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.friend.dto.FriendResponse
+import com.goldpet.domain.friend.service.FriendService
+import com.goldpet.domain.user.repository.UserRepository
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.*
+
+@Tag(name = "Friend", description = "친구 찾기 API")
+@RestController
+@RequestMapping("/api/v1/friends")
+class FriendController(
+    private val friendService: FriendService,
+    private val userRepository: UserRepository
+) {
+    @Operation(summary = "친구 찾기", description = "주변의 친구를 검색합니다.")
+    @GetMapping
+    fun getFriends(
+        @AuthenticationPrincipal principal: UserPrincipal,
+        @RequestParam(required = false) distance: String?, // e.g., "1km", "3km"
+        @RequestParam(required = false) sort: String?, // "registered", "popular", "distance"
+        @RequestParam(required = false) petTypes: List<String>?,
+        @RequestParam(required = false) genders: List<String>?,
+        @RequestParam(required = false) lat: Double?,
+        @RequestParam(required = false) lng: Double?,
+        @PageableDefault(size = 20) pageable: Pageable
+    ): ResponseEntity<Page<FriendResponse>> {
+        // Parse distance string "1km" -> 1.0 (Double)
+        val distanceKm = distance?.replace("km", "")?.toDoubleOrNull()
+        
+        // Try to use provided lat/lng, otherwise lookup user's saved location
+        var userLat = lat ?: 0.0
+        var userLng = lng ?: 0.0
+
+        if (userLat == 0.0 && userLng == 0.0) {
+            // Lookup user's saved main location
+            val user = userRepository.findById(principal.id).orElse(null)
+            user?.mainLocationGeom?.let { geom ->
+                userLat = geom.y // latitude
+                userLng = geom.x // longitude
+            }
+        }
+
+        // If still no location, return empty page (serializable version)
+        if (userLat == 0.0 && userLng == 0.0) {
+            return ResponseEntity.ok(PageImpl(emptyList(), pageable, 0))
+        }
+
+        return ResponseEntity.ok(
+            friendService.getFriends(
+                myUserId = principal.id,
+                myLat = userLat,
+                myLng = userLng,
+                distanceKm = distanceKm,
+                sortBy = sort,
+                petTypes = petTypes,
+                genders = genders,
+                pageable = pageable
+            )
+        )
+    }
+}

@@ -31,7 +31,8 @@ class CommunityService(
     private val likeRepository: CommunityPostLikeRepository,
     private val commentLikeRepository: com.goldpet.domain.community.repository.CommunityCommentLikeRepository,
     private val userRepository: UserRepository,
-    private val fileRepository: com.goldpet.domain.common.repository.FileAttachmentRepository
+    private val fileRepository: com.goldpet.domain.common.repository.FileAttachmentRepository,
+    private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService
 ) {
     // Assuming UserRepository needs to be injected or used to fetch currentUser
     fun getPosts(categoryId: Long?, pageable: Pageable, currentUserId: Long?): Page<CommunityPostResponse> {
@@ -43,11 +44,19 @@ class CommunityService(
         }
 
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
+        val previewLength = systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100)
 
         return posts.map { post ->
             val isLiked = currentUser?.let { likeRepository.existsByPostAndUser(post, it) } ?: false
             val isCommented = currentUserId?.let { commentRepository.existsByPostIdAndUserId(post.id, it) } ?: false
             val commentCount = commentRepository.countByPostId(post.id)
+            
+            val contentPreview = if (post.content.length > previewLength) {
+                post.content.substring(0, previewLength) + "..."
+            } else {
+                post.content
+            }
+
             CommunityPostResponse(
                 id = post.id,
                 userId = post.user.id,
@@ -56,7 +65,7 @@ class CommunityService(
                 categoryId = post.category.id,
                 categoryName = post.category.name,
                 title = post.title,
-                content = post.content,
+                content = contentPreview,
                 visibility = post.visibility,
                 postType = post.postType,
                 viewCount = post.viewCount,
@@ -71,9 +80,12 @@ class CommunityService(
         }
     }
 
+    @Cacheable("community:categories")
     fun getCategories(): List<CommunityCategoryResponse> {
+        println("DEBUG: getCategories called (Cache Miss if seeing this)")
         return getCachedCategoryEntities().map { category ->
             val count = postRepository.countByCategory(category)
+            println("DEBUG: Category ${category.name} count: $count")
             CommunityCategoryResponse(
                 id = category.id,
                 name = category.name,
@@ -89,7 +101,9 @@ class CommunityService(
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = ["community:categories"], allEntries = true)
     fun createPost(userId: Long, request: CommunityPostCreateRequest): CommunityPostResponse {
+        println("DEBUG: createPost called for user $userId, category ${request.categoryId}")
         val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
         val category = categoryRepository.findById(request.categoryId).orElseThrow { IllegalArgumentException("Category not found") }
         
@@ -355,6 +369,7 @@ class CommunityService(
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = ["community:categories"], allEntries = true)
     fun deletePost(postId: Long, userId: Long) {
         val post = postRepository.findById(postId).orElseThrow { IllegalArgumentException("Post not found") }
         

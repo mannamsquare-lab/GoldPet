@@ -44,7 +44,13 @@ class CommunityPost(
     var adoptedComment: CommunityComment? = null,
 
     @OneToMany(mappedBy = "post", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var images: MutableList<CommunityPostImage> = mutableListOf()
+    var images: MutableList<CommunityPostImage> = mutableListOf(),
+
+    @OneToMany(mappedBy = "post", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var comments: MutableList<CommunityComment> = mutableListOf(),
+
+    @OneToMany(mappedBy = "post", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var likes: MutableList<CommunityPostLike> = mutableListOf()
 
 ) : BaseTimeEntity() {
     enum class Visibility {

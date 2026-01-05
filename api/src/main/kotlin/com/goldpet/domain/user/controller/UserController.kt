@@ -43,10 +43,7 @@ class UserController(
         val userId = userService.getUserIdFromPrincipal(principal)
         val updatedUser = userService.updateUserProfile(
             userId,
-            request.nickname,
-            request.gender,
-            request.birthYear,
-            request.mainLocationText
+            request
         )
         return ResponseEntity.ok(UserResponse.from(updatedUser))
     }
@@ -57,10 +54,21 @@ class UserController(
         @RequestBody request: ProfileImageUpdateRequest
     ): ResponseEntity<UserResponse> {
         val userId = userService.getUserIdFromPrincipal(principal)
-        val updatedUser = userService.updateUserProfileImageUrl(
+        val updatedUser = userService.updateUserProfileImages(
             userId,
-            request.profileImageUrl
+            request
         )
+        return ResponseEntity.ok(UserResponse.from(updatedUser))
+    }
+
+    @PatchMapping("/me/notification")
+    fun updateNotification(
+        @AuthenticationPrincipal principal: UserDetails,
+        @RequestBody request: Map<String, Boolean>
+    ): ResponseEntity<UserResponse> {
+        val userId = userService.getUserIdFromPrincipal(principal)
+        val enabled = request["enabled"] ?: throw IllegalArgumentException("enabled field is required")
+        val updatedUser = userService.updateNotification(userId, enabled)
         return ResponseEntity.ok(UserResponse.from(updatedUser))
     }
 
@@ -74,5 +82,21 @@ class UserController(
         val request = BoundingBoxRequest(minLat, minLon, maxLat, maxLon)
         val friendLocations = userService.findFriendsInArea(request)
         return ResponseEntity.ok(friendLocations)
+    }
+
+    @GetMapping("/interests")
+    fun getAllInterests(): ResponseEntity<List<com.goldpet.domain.user.entity.Interest>> {
+        return ResponseEntity.ok(userService.getAllInterests())
+    }
+
+    @GetMapping("/hobbies")
+    fun getAllHobbies(): ResponseEntity<List<com.goldpet.domain.user.entity.Hobby>> {
+        return ResponseEntity.ok(userService.getAllHobbies())
+    }
+
+    @GetMapping("/check-nickname")
+    fun checkNicknameAvailability(@RequestParam nickname: String): ResponseEntity<Map<String, Boolean>> {
+        val isAvailable = userService.isNicknameAvailable(nickname)
+        return ResponseEntity.ok(mapOf("available" to isAvailable))
     }
 }

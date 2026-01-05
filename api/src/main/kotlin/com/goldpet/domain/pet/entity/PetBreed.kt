@@ -15,10 +15,22 @@ class PetBreed(
     val petSpecies: PetSpecies,
 
     @Column(nullable = false)
-    val name: String,
+    var name: String,
 
-    val description: String?,
+    var description: String? = null,
+
+    @Column(nullable = true)
+    var category: String? = null,
 
     @Column(nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
-)
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    var updatedAt: LocalDateTime? = null
+) {
+    fun update(name: String, category: String?, description: String?) {
+        this.name = name
+        this.category = category
+        this.description = description
+        this.updatedAt = LocalDateTime.now()
+    }
+}

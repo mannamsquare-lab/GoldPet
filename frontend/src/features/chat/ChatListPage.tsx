@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
 import '../../styles/chat.css';
+import { Loading } from '../../components/common/Loading';
 
 // Empty state component
 const ChatEmptyState = () => {
@@ -40,7 +41,7 @@ const ChatListPage = () => {
         queryFn: chatService.getChatRooms,
     });
 
-    if (isLoading) return <div>Loading...</div>;
+    if (isLoading) return <Loading description="채팅 목록을 불러오고 있어요" />;
 
     // Filter chats based on tab
     const oneOnOneChats = chatRooms?.filter(room => !room.isGroup) || [];

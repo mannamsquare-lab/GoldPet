@@ -5,6 +5,7 @@ import com.goldpet.domain.pet.entity.PetBreed
 import com.goldpet.domain.pet.entity.PetSpecies
 import com.goldpet.domain.pet.repository.PetBreedRepository
 import com.goldpet.domain.pet.repository.PetSpeciesRepository
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -12,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional
 class AdminDataService(
     private val speciesRepository: PetSpeciesRepository,
     private val breedRepository: PetBreedRepository,
-    private val categoryRepository: CommunityCategoryRepository
+    private val categoryRepository: CommunityCategoryRepository,
+    private val interestRepository: com.goldpet.domain.user.repository.InterestRepository,
+    private val hobbyRepository: com.goldpet.domain.user.repository.HobbyRepository
 ) {
     fun getSpecies(): List<Map<String, Any>> {
         return speciesRepository.findAll().map { species ->
@@ -27,6 +30,7 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["pet:species"], allEntries = true)
     fun createSpecies(request: Map<String, Any>): Map<String, Any> {
         val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
         val code = request["code"] as? String ?: name.uppercase().replace(" ", "_")
@@ -37,6 +41,7 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["pet:species"], allEntries = true)
     fun deleteSpecies(id: Long) {
         speciesRepository.deleteById(id.toInt())
     }
@@ -59,6 +64,7 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["breeds"], allEntries = true)
     fun createBreed(request: Map<String, Any>): Map<String, Any> {
         val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
         val speciesId = (request["speciesId"] as? Number)?.toInt() ?: throw IllegalArgumentException("speciesId is required")
@@ -70,8 +76,9 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["breeds"], allEntries = true)
     fun deleteBreed(id: Long) {
-        breedRepository.deleteById(id)
+        breedRepository.deleteById(id.toInt())
     }
 
     fun getCategories(): List<Map<String, Any>> {
@@ -85,6 +92,7 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["community:categories", "community:categories:entities"], allEntries = true)
     fun createCategory(request: Map<String, Any>): Map<String, Any> {
         val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
         val code = request["code"] as? String ?: name.uppercase().replace(" ", "_")
@@ -97,7 +105,48 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["community:categories", "community:categories:entities"], allEntries = true)
     fun deleteCategory(id: Long) {
         categoryRepository.deleteById(id)
+    }
+
+    fun getInterests(): List<Map<String, Any>> {
+        return interestRepository.findAllByOrderByOrderIndexAsc().map {
+            mapOf("id" to it.id, "name" to it.name, "orderIndex" to it.orderIndex)
+        }
+    }
+
+    @Transactional
+    fun createInterest(request: Map<String, Any>): Map<String, Any> {
+        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
+        val orderIndex = (request["orderIndex"] as? Number)?.toInt() ?: 0
+        val interest = com.goldpet.domain.user.entity.Interest(name = name, orderIndex = orderIndex)
+        val saved = interestRepository.save(interest)
+        return mapOf("id" to saved.id, "name" to saved.name, "orderIndex" to saved.orderIndex)
+    }
+
+    @Transactional
+    fun deleteInterest(id: Long) {
+        interestRepository.deleteById(id)
+    }
+
+    fun getHobbies(): List<Map<String, Any>> {
+        return hobbyRepository.findAllByOrderByOrderIndexAsc().map {
+            mapOf("id" to it.id, "name" to it.name, "orderIndex" to it.orderIndex)
+        }
+    }
+
+    @Transactional
+    fun createHobby(request: Map<String, Any>): Map<String, Any> {
+        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
+        val orderIndex = (request["orderIndex"] as? Number)?.toInt() ?: 0
+        val hobby = com.goldpet.domain.user.entity.Hobby(name = name, orderIndex = orderIndex)
+        val saved = hobbyRepository.save(hobby)
+        return mapOf("id" to saved.id, "name" to saved.name, "orderIndex" to saved.orderIndex)
+    }
+
+    @Transactional
+    fun deleteHobby(id: Long) {
+        hobbyRepository.deleteById(id)
     }
 }

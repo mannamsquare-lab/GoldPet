@@ -37,6 +37,11 @@ class Pet(
 
     var profileImageUrl: String?,
 
+    @Column(columnDefinition = "TEXT")
     var temperamentTags: String?,
+
+    @OneToMany(mappedBy = "pet", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
+    var profileImages: MutableList<PetProfileImage> = mutableListOf()
 
 ) : BaseTimeEntity()

@@ -24,4 +24,9 @@ class PetMetadataController(
     fun getBreeds(@RequestParam(required = true) speciesId: Int): ResponseEntity<List<BreedResponse>> {
         return ResponseEntity.ok(petService.getBreedsBySpecies(speciesId))
     }
+
+    @GetMapping("/attributes")
+    fun getPetAttributes(): ResponseEntity<List<com.goldpet.domain.admin.dto.PetAttributeResponse>> {
+        return ResponseEntity.ok(petService.getPetAttributes())
+    }
 }

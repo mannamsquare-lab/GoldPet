@@ -14,6 +14,9 @@ import GamificationPage from './pages/gamification/GamificationPage';
 import LBSPage from './pages/lbs/LBSPage';
 import MarketingPage from './pages/marketing/MarketingPage';
 import DataPage from './pages/data/DataPage';
+import BreedsPage from './pages/data/BreedsPage';
+import AttributesPage from './pages/data/AttributesPage';
+import UserAttributesPage from './pages/data/UserAttributesPage';
 import SystemPage from './pages/system/SystemPage';
 
 function App() {
@@ -39,6 +42,9 @@ function App() {
             <Route path="lbs" element={<LBSPage />} />
             <Route path="gamification" element={<GamificationPage />} />
             <Route path="data" element={<DataPage />} />
+            <Route path="data/breeds" element={<BreedsPage />} />
+            <Route path="data/attributes" element={<AttributesPage />} />
+            <Route path="data/user-attributes" element={<UserAttributesPage />} />
             <Route path="system" element={<SystemPage />} />
           </Route>
 

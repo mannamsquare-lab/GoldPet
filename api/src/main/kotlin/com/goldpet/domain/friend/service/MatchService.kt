@@ -64,7 +64,7 @@ class MatchService(
                 partnerId = partner.id,
                 partnerNickname = partner.nickname,
                 partnerProfileImage = partner.profileImageUrl,
-                matchedAt = match.createdAt?.format(formatter)
+                matchedAt = match.createdAt.format(formatter)
             )
         }
     }
@@ -82,7 +82,7 @@ class MatchService(
             partnerId = partner.id,
             partnerNickname = partner.nickname,
             partnerProfileImage = partner.profileImageUrl,
-            matchedAt = match.createdAt?.format(formatter)
+            matchedAt = match.createdAt.format(formatter)
         )
     }
 
@@ -136,7 +136,7 @@ class MatchService(
                 blockId = block.id,
                 blockedUserId = block.blocked.id,
                 blockedNickname = block.blocked.nickname,
-                blockedAt = block.createdAt?.format(formatter)
+                blockedAt = block.createdAt.format(formatter)
             )
         }
     }

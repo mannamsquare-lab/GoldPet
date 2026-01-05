@@ -1,139 +1,43 @@
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { profileService } from '../../services/profileService';
-import './ProfilePage.css';
+import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { LocationStatus } from '../../components/common/LocationStatus';
+import ProfileOwnerTab from './ProfileOwnerTab';
+import ProfilePetTab from './ProfilePetTab';
 
-export default function ProfilePage() {
-  const navigate = useNavigate();
-
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile'],
-    queryFn: profileService.getMyProfile,
-  });
-
-  const { data: pets } = useQuery({
-    queryKey: ['myPets'],
-    queryFn: profileService.getMyPets,
-  });
-
-  if (profileLoading) {
-    return <div className="loading">로딩 중...</div>;
-  }
-
-  if (!profile) return null;
+const ProfilePage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'owner' | 'pet'>(tabParam === 'pet' ? 'pet' : 'owner');
 
   return (
-    <div id="profilePage">
-      {/* Header */}
-      <div className="profile_header">
-        <h1>마이페이지</h1>
-        <button 
-          type="button" 
-          className="settings_btn btn-effect"
-          onClick={() => navigate('/settings')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="#333" strokeWidth="2"/>
-            <path d="M19.4 15C19.1277 15.6171 19.2583 16.3378 19.73 16.82L19.79 16.88C20.1656 17.2551 20.3766 17.7642 20.3766 18.295C20.3766 18.8258 20.1656 19.3349 19.79 19.71C19.4149 20.0856 18.9058 20.2966 18.375 20.2966C17.8442 20.2966 17.3351 20.0856 16.96 19.71L16.9 19.65C16.4178 19.1783 15.6971 19.0477 15.08 19.32C14.4755 19.5791 14.0826 20.1724 14.08 20.83V21C14.08 22.1046 13.1846 23 12.08 23C10.9754 23 10.08 22.1046 10.08 21V20.91C10.0642 20.2327 9.63587 19.6339 9 19.4C8.38291 19.1277 7.66219 19.2583 7.18 19.73L7.12 19.79C6.74486 20.1656 6.23582 20.3766 5.705 20.3766C5.17418 20.3766 4.66514 20.1656 4.29 19.79C3.91445 19.4149 3.70343 18.9058 3.70343 18.375C3.70343 17.8442 3.91445 17.3351 4.29 16.96L4.35 16.9C4.82167 16.4178 4.95233 15.6971 4.68 15.08C4.42093 14.4755 3.82764 14.0826 3.17 14.08H3C1.89543 14.08 1 13.1846 1 12.08C1 10.9754 1.89543 10.08 3 10.08H3.09C3.76733 10.0642 4.36613 9.63587 4.6 9C4.87233 8.38291 4.74167 7.66219 4.27 7.18L4.21 7.12C3.83445 6.74486 3.62343 6.23582 3.62343 5.705C3.62343 5.17418 3.83445 4.66514 4.21 4.29C4.58514 3.91445 5.09418 3.70343 5.625 3.70343C6.15582 3.70343 6.66486 3.91445 7.04 4.29L7.1 4.35C7.58219 4.82167 8.30291 4.95233 8.92 4.68H9C9.60447 4.42093 9.99738 3.82764 10 3.17V3C10 1.89543 10.8954 1 12 1C13.1046 1 14 1.89543 14 3V3.09C14.0026 3.74764 14.3955 4.34093 15 4.6C15.6171 4.87233 16.3378 4.74167 16.82 4.27L16.88 4.21C17.2551 3.83445 17.7642 3.62343 18.295 3.62343C18.8258 3.62343 19.3349 3.83445 19.71 4.21C20.0856 4.58514 20.2966 5.09418 20.2966 5.625C20.2966 6.15582 20.0856 6.66486 19.71 7.04L19.65 7.1C19.1783 7.58219 19.0477 8.30291 19.32 8.92V9C19.5791 9.60447 20.1724 9.99738 20.83 10H21C22.1046 10 23 10.8954 23 12C23 13.1046 22.1046 14 21 14H20.91C20.2524 14.0026 19.6591 14.3955 19.4 15Z" stroke="#333" strokeWidth="2"/>
-          </svg>
-        </button>
-      </div>
+    <>
+      <div id="profileContainer">
+            <LocationStatus className="talk_wrap">
+                반려동물과 함께하는 <br />
+                행복한 일상을 같이 공유하고 싶어요
+            </LocationStatus>
 
-      {/* Profile Card */}
-      <div className="profile_card">
-        <div className="profile_avatar">
-          <img src={profile.profileImageUrl || '/assets/images/home/profile_placeholder_s.svg'} alt="" />
-          <button type="button" className="edit_avatar_btn btn-effect">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M11.5 2.5L13.5 4.5M2 14L2.5 11.5L11 3L13 5L4.5 13.5L2 14Z" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+        <div className="group_tab">
+          <button 
+            type="button" 
+            className={activeTab === 'owner' ? 'active' : ''}
+            onClick={() => setActiveTab('owner')}
+          >
+            반려인
+          </button>
+          <button 
+            type="button" 
+            className={activeTab === 'pet' ? 'active' : ''}
+            onClick={() => setActiveTab('pet')}
+          >
+            반려동물
           </button>
         </div>
-        <h2 className="profile_nickname">{profile.nickname}</h2>
-        <p className="profile_location">📍 {profile.location}</p>
-        {profile.introduce && <p className="profile_introduce">{profile.introduce}</p>}
 
-        {/* Stats */}
-        <div className="profile_stats">
-          <div className="stat_item">
-            <span className="stat_value">{profile.walkCount}</span>
-            <span className="stat_label">산책</span>
-          </div>
-          <div className="stat_divider" />
-          <div className="stat_item">
-            <span className="stat_value">{profile.totalDistance.toFixed(1)}km</span>
-            <span className="stat_label">총 거리</span>
-          </div>
-          <div className="stat_divider" />
-          <div className="stat_item">
-            <span className="stat_value">{profile.friendCount}</span>
-            <span className="stat_label">친구</span>
-          </div>
-          <div className="stat_divider" />
-          <div className="stat_item">
-            <span className="stat_value">{profile.badgeCount}</span>
-            <span className="stat_label">뱃지</span>
-          </div>
-        </div>
+        {activeTab === 'owner' ? <ProfileOwnerTab /> : <ProfilePetTab />}
       </div>
-
-      {/* Gold Balance */}
-      <div className="gold_card">
-        <div className="gold_info">
-          <span className="gold_label">보유 골드</span>
-          <span className="gold_value">🪙 {profile.goldBalance.toLocaleString()}G</span>
-        </div>
-        <button type="button" className="charge_btn btn-effect">충전</button>
-      </div>
-
-      {/* My Pets */}
-      <div className="pets_section">
-        <div className="section_header">
-          <h3>나의 반려동물</h3>
-          <button type="button" className="add_pet_btn btn-effect" onClick={() => navigate('/pet/register')}>+ 추가</button>
-        </div>
-        <div className="pets_list">
-          {pets?.map((pet) => (
-            <div 
-              key={pet.id} 
-              className="pet_card btn-effect" 
-              onClick={() => navigate(`/pet/edit/${pet.id}`)}
-              style={{ cursor: 'pointer' }}
-            >
-              <img src={pet.imageUrl || '/assets/images/main/main_slide_img01.png'} alt={pet.name} className="pet_image" />
-              <div className="pet_info">
-                <h4>{pet.name}</h4>
-                <p>{pet.breed} · {pet.gender === 'MALE' ? '♂' : '♀'}</p>
-                <p className="pet_detail">{pet.isNeutered && '중성화 ✓'}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Menu List */}
-      <div className="menu_list">
-        <button type="button" className="menu_item btn-effect" onClick={() => navigate('/my-walks')}>
-          <span>🚶 내 산책 기록</span>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7.5 15L12.5 10L7.5 5" stroke="#999" strokeWidth="1.5"/></svg>
-        </button>
-        <button type="button" className="menu_item btn-effect" onClick={() => navigate('/my-badges')}>
-          <span>🏅 획득한 뱃지</span>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7.5 15L12.5 10L7.5 5" stroke="#999" strokeWidth="1.5"/></svg>
-        </button>
-        <button type="button" className="menu_item btn-effect" onClick={() => navigate('/challenges')}>
-          <span>🎯 챌린지</span>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7.5 15L12.5 10L7.5 5" stroke="#999" strokeWidth="1.5"/></svg>
-        </button>
-        <button type="button" className="menu_item btn-effect" onClick={() => navigate('/my-posts')}>
-          <span>📝 내가 쓴 글</span>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7.5 15L12.5 10L7.5 5" stroke="#999" strokeWidth="1.5"/></svg>
-        </button>
-        <button type="button" className="menu_item btn-effect" onClick={() => navigate('/blocked-users')}>
-          <span>🚫 차단 관리</span>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7.5 15L12.5 10L7.5 5" stroke="#999" strokeWidth="1.5"/></svg>
-        </button>
-      </div>
-    </div>
+    </>
   );
-}
+};
+
+export default ProfilePage;

@@ -30,11 +30,14 @@ import CommunityListPage from './features/community/CommunityListPage';
 import CommunityDetailPage from './features/community/CommunityDetailPage';
 import CommunityWritePage from './features/community/CommunityWritePage';
 import ProfilePage from './features/profile/ProfilePage';
-import SettingsPage from './features/profile/SettingsPage';
+import ProfileOwnerWritePage from './features/profile/ProfileOwnerWritePage';
+import ProfilePetWritePage from './features/profile/ProfilePetWritePage';
 import PetRegisterPage from './features/pet/PetRegisterPage';
 import BadgesPage from './features/gamification/BadgesPage';
 import ChallengesPage from './features/gamification/ChallengesPage';
 import NotificationPage from './features/notification/NotificationPage';
+import { ProfileTermsPage } from './features/profile/ProfileTermsPage';
+import ScrollToTop from './components/common/ScrollToTop';
 
 
 
@@ -50,69 +53,82 @@ const queryClient = new QueryClient({
 import { TypeALayout } from './components/layout/TypeALayout';
 import { TypeBLayout } from './components/layout/TypeBLayout';
 
+import { LoadingProvider } from './contexts/LoadingContext';
+import { ToastProvider } from './contexts/ToastContext';
+
+/* ... imports ... */
+
 function App() {
   // const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AlertProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/splash" element={<SplashPage />} />
-            <Route path="/login" element={<LoginPage />} />
+        <LoadingProvider>
+          <ToastProvider>
+           <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              {/* ... routes ... */}
+              <Route path="/splash" element={<SplashPage />} />
+              <Route path="/login" element={<LoginPage />} />
 
-            {/* Type A Layout (Logo Only): Onboarding, Permissions, Benefits, Terms Agreement */}
-            <Route element={<TypeALayout variant="logo-only" />}>
-              <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route path="/permissions" element={<PermissionsPage />} />
-              <Route path="/benefits" element={<BenefitsPage />} />
-              <Route path="/signup" element={<TermsAgreementPage />} />
-            </Route>
+              {/* Type A Layout (Logo Only): Onboarding, Permissions, Benefits, Terms Agreement */}
+              <Route element={<TypeALayout variant="logo-only" />}>
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route path="/permissions" element={<PermissionsPage />} />
+                <Route path="/benefits" element={<BenefitsPage />} />
+                <Route path="/signup" element={<TermsAgreementPage />} />
+              </Route>
 
-            {/* Type A Layout (Back Only): Signup Form, Find Account */}
-            <Route element={<TypeALayout variant="back-only" />}>
-              <Route path="/signup/form" element={<SignupPage />} />
-              <Route path="/signup/sns" element={<SnsSignupPage />} />
-              <Route path="/loginSuccess" element={<LoginSuccessPage />} />
-              <Route path="/signup/complete" element={<SignupCompletePage />} />
-              <Route path="/terms/:type" element={<TermsDetailPage />} />
-              <Route path="/find-username" element={<FindUsernamePage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-            </Route>
+              {/* Type A Layout (Back Only): Signup Form, Find Account */}
+              <Route element={<TypeALayout variant="back-only" />}>
+                <Route path="/signup/form" element={<SignupPage />} />
+                <Route path="/signup/sns" element={<SnsSignupPage />} />
+                <Route path="/loginSuccess" element={<LoginSuccessPage />} />
+                <Route path="/signup/complete" element={<SignupCompletePage />} />
+                <Route path="/terms/:type" element={<TermsDetailPage />} />
+                <Route path="/find-username" element={<FindUsernamePage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+              </Route>
             
-            {/* Type B Layout (Logo + Icons): Home, Main Features */}
-            <Route element={<TypeBLayout variant="logo-with-icons" />}>
-              <Route path="/home" element={<HomePage />} />
-              <Route path="/friend-find" element={<FriendFindPage />} />
-              <Route path="/friend-list" element={<FriendsListPage />} />
-              <Route path="/chat" element={<ChatListPage />} />
-              <Route path="/walk" element={<WalkPage />} />
-              <Route path="/walk/map" element={<WalkMapPage />} />
-              <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
-              {/* <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} /> */ /* Already there */ }
-              <Route path="/community" element={<CommunityListPage />} />
-              <Route path="/community/:postId" element={<CommunityDetailPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-            </Route>
+              {/* Type B Layout (Logo + Icons): Home, Main Features */}
+              <Route element={<TypeBLayout variant="logo-with-icons" />}>
+                <Route path="/home" element={<HomePage />} />
+                <Route path="/friend-find" element={<FriendFindPage />} />
+                <Route path="/friend-list" element={<FriendsListPage />} />
+                <Route path="/chat" element={<ChatListPage />} />
+                <Route path="/walk" element={<WalkPage />} />
+                <Route path="/walk/map" element={<WalkMapPage />} />
+                <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
+                <Route path="/community" element={<CommunityListPage />} />
+                <Route path="/community/:postId" element={<CommunityDetailPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+              </Route>
+              
+              <Route path="/profile/owner/edit" element={<ProfileOwnerWritePage />} />
+              <Route path="/profile/pet/edit" element={<ProfilePetWritePage />} />
+              <Route path="/profile/terms" element={<ProfileTermsPage />} />
 
-            {/* Chat Detail - No Layout */}
-            <Route path="/chat/:chatId" element={<ChatDetailPage />} />
-            <Route path="/chat/group/:chatId" element={<ChatDetailPage />} />
+              {/* Chat Detail - No Layout */}
+              <Route path="/chat/:chatId" element={<ChatDetailPage />} />
+              <Route path="/chat/group/:chatId" element={<ChatDetailPage />} />
 
-            {/* Settings etc */}
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/community/write" element={<CommunityWritePage />} />
-            <Route path="/pet/register" element={<PetRegisterPage />} />
-            <Route path="/pet/edit/:petId" element={<PetRegisterPage />} />
-            <Route path="/my-badges" element={<BadgesPage />} />
-            <Route path="/challenges" element={<ChallengesPage />} />
-            <Route path="/notifications" element={<NotificationPage />} />
-
+              {/* Settings etc */}
+              <Route path="/community/write" element={<CommunityWritePage />} />
+              <Route path="/pet/register" element={<PetRegisterPage />} />
+              <Route path="/pet/edit/:petId" element={<PetRegisterPage />} />
+              <Route path="/my-badges" element={<BadgesPage />} />
+              <Route path="/challenges" element={<ChallengesPage />} />
+              <Route path="/notifications" element={<NotificationPage />} />
 
 
-            <Route path="/" element={<Navigate to="/splash" replace />} />
-          </Routes>
-        </BrowserRouter>
+
+              <Route path="/" element={<Navigate to="/splash" replace />} />
+            </Routes>
+          </BrowserRouter>
+          </ToastProvider>
+        </LoadingProvider>
       </AlertProvider>
     </QueryClientProvider>
   );

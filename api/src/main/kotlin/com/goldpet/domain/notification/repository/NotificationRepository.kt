@@ -10,6 +10,13 @@ import org.springframework.data.repository.query.Param
 
 interface NotificationRepository : JpaRepository<Notification, Long> {
     fun findAllByUserIdOrderByCreatedAtDesc(userId: Long, pageable: Pageable): Page<Notification>
+    
+    fun findAllByUserIdAndTypeInOrderByCreatedAtDesc(
+        userId: Long, 
+        types: List<com.goldpet.domain.notification.entity.NotificationType>, 
+        pageable: Pageable
+    ): Page<Notification>
+
     fun countByUserIdAndIsReadFalse(userId: Long): Long
     
     @Modifying

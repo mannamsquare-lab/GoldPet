@@ -18,7 +18,7 @@ class AdminEconomyService(
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
     fun getStats(): EconomyStatsResponse {
-        val totalGold = userRepository.findAll().sumOf { it.goldBalance ?: 0 }
+        val totalGold = userRepository.findAll().sumOf { it.goldBalance }
         
         return EconomyStatsResponse(
             totalGoldCirculation = totalGold.toLong(),
@@ -44,7 +44,7 @@ class AdminEconomyService(
         val user = userRepository.findById(request.userId)
             .orElseThrow { NoSuchElementException("User not found: ${request.userId}") }
         
-        val currentBalance = user.goldBalance ?: 0
+        val currentBalance = user.goldBalance
         user.goldBalance = currentBalance + request.amount
         userRepository.save(user)
         

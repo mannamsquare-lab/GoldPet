@@ -17,7 +17,7 @@ class FileController(
     private val fileService: FileService
 ) {
 
-    @PostMapping
+    @PostMapping("/upload")
     fun uploadFile(
         @RequestParam("file") file: MultipartFile,
         @AuthenticationPrincipal principal: UserPrincipal

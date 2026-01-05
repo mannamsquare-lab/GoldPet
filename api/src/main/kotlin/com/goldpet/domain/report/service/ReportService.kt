@@ -58,7 +58,7 @@ class ReportService(
             targetId = saved.targetId,
             reason = saved.reason,
             status = saved.status.name,
-            createdAt = saved.createdAt?.format(formatter)
+            createdAt = saved.createdAt.format(formatter)
         )
     }
 
@@ -70,7 +70,7 @@ class ReportService(
                 targetId = report.targetId,
                 reason = report.reason,
                 status = report.status.name,
-                createdAt = report.createdAt?.format(formatter)
+                createdAt = report.createdAt.format(formatter)
             )
         }
     }

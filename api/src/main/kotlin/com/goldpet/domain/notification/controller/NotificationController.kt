@@ -23,9 +23,10 @@ class NotificationController(
     @GetMapping
     fun getNotifications(
         @AuthenticationPrincipal principal: UserPrincipal,
+        @RequestParam(required = false) category: String?,
         @PageableDefault(size = 20) pageable: Pageable
     ): ResponseEntity<Page<NotificationResponse>> {
-        return ResponseEntity.ok(notificationService.getNotifications(principal.id, pageable))
+        return ResponseEntity.ok(notificationService.getNotifications(principal.id, category, pageable))
     }
 
     @Operation(summary = "읽지 않은 알림 수")

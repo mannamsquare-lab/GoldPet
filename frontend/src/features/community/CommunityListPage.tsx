@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { communityService } from '../../services/communityService';
+import { systemService } from '../../services/systemService';
 import './CommunityPage.css';
 
 export default function CommunityListPage() {
@@ -22,6 +23,17 @@ export default function CommunityListPage() {
     queryKey: ['community', 'totalCount'],
     queryFn: () => communityService.getPosts(undefined, 0, 1),
   });
+
+  const { data: publicSettings } = useQuery({
+      queryKey: ['system', 'publicSettings'],
+      queryFn: systemService.getPublicSettings,
+      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  const truncateContent = (content: string, maxLength: number) => {
+      if (content.length <= maxLength) return content;
+      return content.substring(0, maxLength) + '...';
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -78,57 +90,66 @@ export default function CommunityListPage() {
       </div>
 
       {/* Post List */}
-      <ul className="community_list">
+      {/* Post List */}
+      <div className="post_list">
         {isLoading ? (
           <div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>
+        ) : postsData?.posts.length === 0 ? (
+          <div className="comment_none">
+             <img src="/assets/images/common/comment_icon03.svg" alt="" />
+             등록된 게시글이 없어요.
+          </div>
         ) : (
-          postsData?.posts.map((post) => (
-            <li key={post.id} onClick={() => navigate(`/community/${post.id}`)}>
-              <div className="list_profile">
-                <div className="profile_img">
-                    <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" />
-                </div>
-                <div className="txt_wrap">
-                    <strong>{post.authorNickname}</strong>
-                    <p>{formatDate(post.createdAt)}</p>
-                </div>
-              </div>
-              
-              <strong className="list_tit">{post.title}</strong>
-              <p className="list_txt">
-                  {post.content}
-              </p>
-              
-              {post.thumbnailUrl && (
-                  <div className="list_img">
-                      <img src={post.thumbnailUrl.startsWith('http') ? post.thumbnailUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${post.thumbnailUrl}`} alt="" />
+          <ul className="community_list">
+            {postsData?.posts.map((post) => (
+              <li key={post.id} onClick={() => navigate(`/community/${post.id}`)}>
+                <div className="list_profile">
+                  <div className="profile_img">
+                      <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" />
                   </div>
-              )}
+                  <div className="txt_wrap">
+                      <strong>{post.authorNickname}</strong>
+                      <p>{formatDate(post.createdAt)}</p>
+                  </div>
+                </div>
+                
+                <strong className="list_tit">{post.title}</strong>
+                <p className="list_txt">
+                    {truncateContent(post.content, publicSettings?.communityPostPreviewLength || 100)}
+                </p>
+                
+                {post.imageUrls && post.imageUrls.length > 0 && (
+                    <div className="list_img">
+                        <img src={post.imageUrls[0].startsWith('http') ? post.imageUrls[0] : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${post.imageUrls[0]}`} alt="" />
+                    </div>
+                )}
 
-              {/* Like & Comment Counts */}
-              <div className="like_comment_count">
-                  <div className="count_wrap">
-                      <div 
-                        className={`icon_img like_icon ${post.isLiked ? 'active' : ''}`}
-                        onClick={(e) => handleLike(e, post.id)}
-                      ></div> 
-                      {post.likeCount}
-                  </div>
-                  <div className="count_wrap">
-                      <div 
-                        className={`icon_img comment_icon ${post.isCommentedByMe ? 'active' : ''}`}
-                        onClick={(e) => e.stopPropagation()}
-                      ></div> 
-                      {post.commentCount}
-                  </div>
-              </div>
-            </li>
-          ))
+                {/* Like & Comment Counts */}
+                <div className="like_comment_count">
+                    <div className="count_wrap">
+                        <div 
+                          className={`icon_img like_icon ${post.isLiked ? 'active' : ''}`}
+                          onClick={(e) => handleLike(e, post.id)}
+                        ></div> 
+                        {post.likeCount}
+                    </div>
+                    <div className="count_wrap">
+                        <div 
+                          className={`icon_img comment_icon ${post.isCommentedByMe ? 'active' : ''}`}
+                          onClick={(e) => e.stopPropagation()}
+                        ></div> 
+                        {post.commentCount}
+                    </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
-      </ul>
+      </div>
 
       {/* Write Button */}
-      <button type="button" id="writeBtn" onClick={() => navigate('/community/write')}>글쓰기</button>
+      {/* Write Button */}
+      <button type="button" id="writeBtn" onClick={() => navigate('/community/write', { state: { initialCategoryId: selectedCategory } })}>글쓰기</button>
     </div>
   );
 }

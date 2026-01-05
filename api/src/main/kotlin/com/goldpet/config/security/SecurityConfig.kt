@@ -45,6 +45,7 @@ class SecurityConfig(
                     .requestMatchers("/ws/**").permitAll() // Allow WebSocket connection
                     .requestMatchers("/api/v1/chat/**").permitAll() // Allow chat API
                     .requestMatchers("/uploads/**").permitAll() // Allow static file access
+                    .requestMatchers("/api/v1/settings/**").permitAll() // Allow public settings
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger
                     .requestMatchers("/error").permitAll() // Allow Error dispatch
                     .anyRequest().authenticated()
@@ -66,7 +67,7 @@ class SecurityConfig(
     fun corsConfigurationSource(): org.springframework.web.cors.CorsConfigurationSource {
         val configuration = org.springframework.web.cors.CorsConfiguration()
         configuration.allowedOriginPatterns = listOf("*") // Allow all origins for dev
-        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true
         val source = org.springframework.web.cors.UrlBasedCorsConfigurationSource()

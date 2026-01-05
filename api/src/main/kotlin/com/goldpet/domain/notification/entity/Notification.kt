@@ -10,7 +10,10 @@ enum class NotificationType {
     LIKE,       // 좋아요 받음
     COMMENT,    // 댓글 알림
     FOLLOW,     // 팔로우 알림
-    SYSTEM      // 시스템 공지
+    WALK,       // 산책 알림
+    NOTICE,     // 공지사항
+    EVENT,      // 이벤트
+    SYSTEM      // 시스템 알림
 }
 
 @Entity

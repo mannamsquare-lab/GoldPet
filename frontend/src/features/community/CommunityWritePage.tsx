@@ -3,21 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
 import type { CreatePostRequest } from '../../services/communityService';
-import { nativeBridge } from '../../bridge/nativeBridge';
 import { useAlert } from '../../contexts/AlertContext';
-
-// Helper to convert base64 to File
-const base64ToFile = (base64: string, filename: string): File => {
-  const arr = base64.split(',');
-  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new File([u8arr], filename, { type: mime });
-};
+import ImageUploadSlider from '../../components/common/ImageUploadSlider';
 
 export default function CommunityWritePage() {
   const navigate = useNavigate();
@@ -25,9 +12,10 @@ export default function CommunityWritePage() {
   const { showAlert } = useAlert();
   const editMode = location.state?.mode === 'EDIT';
   const initialPost = location.state?.post;
+  const initialCategoryId = location.state?.initialCategoryId;
 
   const [formData, setFormData] = useState<CreatePostRequest>({
-    categoryId: initialPost?.categoryId || 1,
+    categoryId: initialPost?.categoryId || initialCategoryId || 1,
     title: initialPost?.title || '',
     content: initialPost?.content || '',
     postType: initialPost?.postType || 'GENERAL',
@@ -35,7 +23,8 @@ export default function CommunityWritePage() {
 
   /* Image State */
   type MediaItem = { file?: File; url?: string; previewUrl: string };
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  // Initialize 10 slots with nulls
+  const [mediaSlots, setMediaSlots] = useState<(MediaItem | null)[]>(Array(10).fill(null));
 
   const { data: categories } = useQuery({
     queryKey: ['community', 'categories'],
@@ -45,18 +34,27 @@ export default function CommunityWritePage() {
   // Initialize Edit Mode
   useEffect(() => {
       if (editMode && initialPost?.imageUrls) {
-          const items = initialPost.imageUrls.map((url: string) => ({
+          const items: (MediaItem | null)[] = initialPost.imageUrls.map((url: string) => ({
               url: url,
               previewUrl: url
           }));
-          setMediaItems(items);
+          // Pad to 10 slots
+          if (items.length < 10) {
+              const padding = Array(10 - items.length).fill(null);
+              setMediaSlots([...items, ...padding]);
+          } else {
+              setMediaSlots(items.slice(0, 10));
+          }
       }
   }, [editMode, initialPost]);
 
   // Set default category when loaded
   useEffect(() => {
-    if (categories && categories.length > 0 && formData.categoryId === 1 && !editMode) {
-       const exists = categories.find(c => c.id === formData.categoryId);
+    // ... (existing category logic)
+    if (categories && categories.length > 0 && !editMode) {
+       const currentId = formData.categoryId;
+       const exists = categories.find(c => c.id === currentId);
+       
        if (!exists) {
            setFormData(prev => ({ ...prev, categoryId: categories[0].id }));
        }
@@ -81,8 +79,11 @@ export default function CommunityWritePage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
+        // Filter out null slots
+        const validItems = mediaSlots.filter((item): item is MediaItem => !!item);
+
         // Upload new files
-        const uploadPromises = mediaItems.map(async (item) => {
+        const uploadPromises = validItems.map(async (item) => {
             if (item.file) {
                 return await communityService.uploadFile(item.file);
             }
@@ -106,43 +107,56 @@ export default function CommunityWritePage() {
   });
 
   /* Image Handling */
-  const handleImageAction = async () => {
-      if (nativeBridge.isAvailable()) {
-          try {
-              // Call Native File/Image Picker
-              const result = await nativeBridge.callMethod('pickImage');
-              if (result && result.base64) {
-                  const file = base64ToFile(`data:${result.mimeType || 'image/jpeg'};base64,${result.base64}`, result.name || 'uploaded_image.jpg');
-                  
-                  if (mediaItems.length < 10) {
-                      const newItem = { file, previewUrl: URL.createObjectURL(file) };
-                      setMediaItems(prev => [...prev, newItem]);
-                  }
-              }
-          } catch (e) {
-              console.error("Native bridge error:", e);
-              document.getElementById('image_input')?.click();
+  const handleImageUpload = (files: File[], targetIndex: number) => {
+      const maxCount = 10;
+      const currentCount = mediaSlots.filter(Boolean).length;
+
+      if (currentCount >= maxCount) {
+          showAlert(`최대 ${maxCount}장을 초과할 수 없습니다.`);
+          return;
+      }
+
+      const availableSlotsCount = maxCount - currentCount;
+      const filesToUpload = files.slice(0, availableSlotsCount);
+      
+      if (filesToUpload.length < files.length) {
+           showAlert(`최대 ${maxCount}장까지 등록 가능합니다. ${filesToUpload.length}장만 업로드됩니다.`);
+      }
+
+      setMediaSlots(prev => {
+          const newSlots = [...prev];
+          let fileIndex = 0;
+
+          // First fill targetIndex if empty
+          if (!newSlots[targetIndex] && fileIndex < filesToUpload.length) {
+              const file = filesToUpload[fileIndex++];
+              newSlots[targetIndex] = {
+                  file,
+                  previewUrl: URL.createObjectURL(file)
+              };
           }
-      } else {
-          // Web Fallback
-          document.getElementById('image_input')?.click();
-      }
+
+          // Then fill subsequent empty slots
+          for (let i = 0; i < maxCount; i++) {
+              if (fileIndex >= filesToUpload.length) break;
+              if (!newSlots[i]) {
+                  const file = filesToUpload[fileIndex++];
+                  newSlots[i] = {
+                      file,
+                      previewUrl: URL.createObjectURL(file)
+                  };
+              }
+          }
+          return newSlots;
+      });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files) {
-          const filesArray = Array.from(e.target.files);
-          const newItems = filesArray.map(file => ({
-              file,
-              previewUrl: URL.createObjectURL(file)
-          }));
-          
-          setMediaItems(prev => [...prev, ...newItems].slice(0, 10));
-      }
-  };
-
-  const handleRemoveImage = (index: number) => {
-      setMediaItems(prev => prev.filter((_, i) => i !== index));
+  const handleImageDelete = (index: number) => {
+      setMediaSlots(prev => {
+          const newSlots = [...prev];
+          newSlots[index] = null;
+          return newSlots;
+      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,7 +170,11 @@ export default function CommunityWritePage() {
         updateMutation.mutate(formData);
     } else {
         // Prepare files for create
-        const filesToUpload = mediaItems.map(item => item.file).filter((f): f is File => !!f);
+        const validItems = mediaSlots.filter((item): item is MediaItem => !!item);
+        const filesToUpload = validItems.map(item => item.file).filter((f): f is File => !!f);
+        // Note: Logic allows mixed content? Create usually implies new uploads only, but if re-using existing logic...
+        // Actually createPost expects `images: File[]`. What if we edited a draft? 
+        // Assuming fresh create only has files.
         createMutation.mutate({ ...formData, images: filesToUpload });
     }
   };
@@ -203,41 +221,14 @@ export default function CommunityWritePage() {
             </select>
          </div>
 
-        <div className="img_upload_wrap">
-            <p>이미지 <span>({mediaItems.length}/10)</span></p>
-            <input 
-                type="file" 
-                id="image_input" 
-                multiple 
-                accept="image/*" 
-                style={{ display: 'none' }} 
-                onChange={handleFileChange}
+        {/* Replaced Custom UI with ImageUploadSlider */}
+        <div style={{ marginTop: '20px' }}> {/* Add some spacing wrapper if needed */}
+            <ImageUploadSlider 
+                images={mediaSlots.map(s => s?.previewUrl || null)}
+                onUpload={handleImageUpload}
+                onDelete={handleImageDelete}
+                maxCount={10}
             />
-            <ul>
-                {/* Upload Button (Camera Icon) */}
-
-                
-                {/* Preview List */}
-                {mediaItems.map((item, index) => (
-                    <li key={index}>
-                        <div className="img_upload_btn" style={{ backgroundImage: `url(${item.previewUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                            <button 
-                                type="button" 
-                                className="delete_btn" 
-                                onClick={() => handleRemoveImage(index)}
-                                style={{ display: 'block' }} 
-                            ></button>
-                        </div>
-                    </li>
-                ))}
-
-                {/* More Button (+ Icon) - Only show if less than 10 images */}
-                {mediaItems.length < 10 && (
-                     <li>
-                        <button type="button" className="more_btn" onClick={handleImageAction}></button>
-                    </li>
-                )}
-            </ul>
         </div>
         
         {/* ... Submit Button & Close ... */}

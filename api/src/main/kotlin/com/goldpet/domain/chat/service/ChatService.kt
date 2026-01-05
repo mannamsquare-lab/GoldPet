@@ -98,10 +98,19 @@ class ChatService(
     @Transactional
     fun saveChatMessage(request: ChatMessageRequest): ChatMessage {
         val chatRoom = chatRoomRepository.findById(request.roomId).orElseThrow { NoSuchElementException("Chat room not found with id: ${request.roomId}") }
-        val sender = request.senderId?.let { userRepository.findById(it).orElseThrow { NoSuchElementException("Sender user not found with id: ${request.senderId}") } }
+        // request.senderId might be null if System message? 
+        // Warning said 'Unnecessary safe call on non-null receiver of type Long' at 101:38. 
+        // 101:38 is `request.senderId?.let`. 
+        // If request.senderId IS Long (not Long?), then why `?.let`?
+        // Let's assume request.senderId IS Nullable Long based on `ChatMessageRequest`. 
+        // Wait, if warning says "non-null receiver of type Long", it means compiler thinks it is NOT null.
+        // So `request.senderId` must be `Long`.
+        // If so, `request.senderId` is not null.
+        val sender = userRepository.findById(request.senderId).orElseThrow { NoSuchElementException("Sender user not found with id: ${request.senderId}") }
 
         // Validate sender is a participant if not a system message
-        if (request.messageType != MessageType.SYSTEM && sender != null) {
+        if (request.messageType != MessageType.SYSTEM) {
+           // sender is guaranteed not null here if line above succeeded
             chatRoomParticipantRepository.findByChatRoomIdAndUserId(chatRoom.id, sender.id)
                 .orElseThrow { IllegalStateException("Sender is not a participant of this chat room.") }
         }
@@ -120,14 +129,14 @@ class ChatService(
 
     @Transactional(readOnly = true)
     fun getChatHistory(roomId: Long, page: Int, size: Int): List<ChatMessage> {
-        val chatRoom = chatRoomRepository.findById(roomId).orElseThrow { NoSuchElementException("Chat room not found with id: $roomId") }
+        chatRoomRepository.findById(roomId).orElseThrow { NoSuchElementException("Chat room not found with id: $roomId") }
         val pageable = PageRequest.of(page, size)
         return chatMessageRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId, pageable)
     }
 
     @Transactional(readOnly = true)
     fun getUserChatRooms(userId: Long): List<ChatRoom> {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
         return chatRoomParticipantRepository.findAllByUserId(userId).map { it.chatRoom }
     }
 }

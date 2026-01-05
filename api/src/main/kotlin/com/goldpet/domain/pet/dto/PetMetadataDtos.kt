@@ -20,13 +20,17 @@ data class SpeciesResponse(
 data class BreedResponse(
     val id: Int,
     val speciesId: Int,
-    val name: String
+    val name: String,
+    val category: String? = null,
+    val description: String? = null
 ) {
     companion object {
         fun from(entity: PetBreed) = BreedResponse(
             id = entity.id,
             speciesId = entity.petSpecies.id,
-            name = entity.name
+            name = entity.name,
+            category = entity.category,
+            description = entity.description
         )
     }
 }

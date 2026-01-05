@@ -49,21 +49,39 @@ export const LoginPage = () => {
     }
   };
 
-  const handleSnsLogin = async (provider: 'naver' | 'kakao' | 'apple' | 'google') => {
-    try {
-      const result = await authService.openLoginPopup(provider);
-      
-      // AuthResponse type - login succeeded
-      if (result.accessToken) {
-        login(result.accessToken, result.refreshToken, result.user);
-        navigate('/home');
-      }
-    } catch (error: any) {
-      console.error('SNS Login failed:', error);
-      // Check if signup is required (new user)
-      if (error.message?.includes('SIGNUP_REQUIRED') || error.signupRequired) {
-        navigate('/signup/sns', { state: { provider } });
-      }
+  const handleSnsLogin = async (provider: 'naver' | 'kakao' | 'apple' | 'google', email?: string) => {
+    const executeLogin = async (loginEmail?: string) => {
+        try {
+            const result = await authService.openLoginPopup(provider, loginEmail);
+            
+            // AuthResponse type - login succeeded
+            if (result.accessToken) {
+              login(result.accessToken, result.refreshToken, result.user);
+              navigate('/home');
+            }
+          } catch (error: any) {
+            console.error('SNS Login failed:', error);
+            // Check if signup is required (new user)
+            if (error.message?.includes('SIGNUP_REQUIRED') || error.signupRequired) {
+              navigate('/signup/sns', { state: { provider } });
+            } else {
+                showAlert(error.message || 'SNS 로그인에 실패했습니다.');
+            }
+          }
+    };
+
+    if (email) {
+        executeLogin(email);
+        return;
+    }
+
+    if (import.meta.env.VITE_USE_MOCK === 'true') {
+        const testEmail = prompt('테스트 로그인할 이메일을 입력하세요', 'sungchuli@naver.com');
+        if (testEmail !== null) { // Cancel returns null
+             executeLogin(testEmail);
+        }
+    } else {
+        executeLogin();
     }
   };
 
@@ -269,6 +287,34 @@ export const LoginPage = () => {
               />
             </button>
           </div>
+        </div>
+        {/* Test Login Section */}
+        <div className="mt-8 pt-4 border-t border-gray-100">
+            <p className="text-xs text-gray-400 text-center mb-2 font-mono">---------- DEVELOPER ONLY ----------</p>
+            <form 
+                className="flex gap-2 justify-center items-center px-4"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    const input = e.currentTarget.elements.namedItem('testEmail') as HTMLInputElement;
+                    if (input.value) {
+                         handleSnsLogin('google', input.value);
+                    }
+                }}
+            >
+                <input 
+                    name="testEmail"
+                    type="email" 
+                    defaultValue="sungchuli@naver.com"
+                    className="flex-1 max-w-[200px] h-8 text-sm px-2 border border-gray-300 rounded focus:border-amber-500 outline-none"
+                    placeholder="테스트 계정 이메일"
+                />
+                <button 
+                    type="submit"
+                    className="h-8 px-3 text-sm bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+                >
+                    즉시 로그인
+                </button>
+            </form>
         </div>
       </div>
     </div>

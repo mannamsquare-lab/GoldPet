@@ -3,6 +3,9 @@ import { Parallax, Navigation } from 'swiper/modules';
 import { useQuery } from '@tanstack/react-query';
 import { homeService } from '../../services/homeService';
 
+import { Loading } from '../../components/common/Loading';
+import { LocationStatus } from '../../components/common/LocationStatus';
+
 export default function HomePage() {
     const { data: homeData, isLoading } = useQuery({
         queryKey: ['homeData'],
@@ -10,20 +13,17 @@ export default function HomePage() {
     });
 
     if (isLoading) {
-        return <div className="loading">Loading...</div>; // Or a skeleton
+        return <Loading />;
     }
 
     if (!homeData) return null;
 
     return (
         <div id="mainContainer">
-            <div className="talk_wrap">
-                <p>
-                    나에게 호감 있는 친구들이에요. <br />
-                    ‘조하멍' 선택하고 대화 나눠보세요.
-                </p>
-                <button type="button"><img src="/assets/images/common/pin_icon.svg" alt="지도 마커" />서울 강남구</button>
-            </div>
+            <LocationStatus>
+                나에게 호감 있는 친구들이에요. <br />
+                ‘조하멍' 선택하고 대화 나눠보세요.
+            </LocationStatus>
             
             <Swiper
                 modules={[Parallax, Navigation]}

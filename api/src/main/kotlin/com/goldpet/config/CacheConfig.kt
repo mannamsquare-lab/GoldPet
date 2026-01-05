@@ -45,6 +45,9 @@ class CacheConfig {
             .cacheDefaults(defaultConfig)
             .withCacheConfiguration("community:posts", postFeedConfig)
             .withCacheConfiguration("community:categories", staticDataConfig)
+            .withCacheConfiguration("pet:species", staticDataConfig)
+            .withCacheConfiguration("pet:breeds", staticDataConfig)
+            .withCacheConfiguration("system:settings", staticDataConfig)
             .build()
     }
 }

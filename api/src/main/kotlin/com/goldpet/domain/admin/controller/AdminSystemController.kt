@@ -30,7 +30,30 @@ class AdminSystemController(
         adminSystemService.setMaintenanceMode(request.enabled)
         return ResponseEntity.ok().build()
     }
+    @Operation(summary = "시스템 설정 조회")
+    @GetMapping("/configs")
+    fun getConfigs(): ResponseEntity<List<AppConfigResponse>> {
+        return ResponseEntity.ok(adminSystemService.getAllConfigs())
+    }
+
+    @Operation(summary = "시스템 설정 수정")
+    @PostMapping("/configs")
+    fun updateConfig(@RequestBody request: UpdateConfigRequest): ResponseEntity<Void> {
+        adminSystemService.updateConfig(request.key, request.value)
+        return ResponseEntity.ok().build()
+    }
 }
+
+data class AppConfigResponse(
+    val key: String,
+    val value: String,
+    val description: String?
+)
+
+data class UpdateConfigRequest(
+    val key: String,
+    val value: String
+)
 
 data class SystemInfoResponse(
     val version: String,

@@ -5,19 +5,50 @@ import { useQuery } from '@tanstack/react-query';
 import { FriendCard } from './FriendCard';
 import { friendService } from '../../services/friendService';
 
+import { Loading } from '../../components/common/Loading';
+
 export const FriendsListPage = () => {
     const navigate = useNavigate(); 
     
-    // Fetch Friends
-    const { data: friends, isLoading } = useQuery({
-        queryKey: ['friends', 'list'],
-        queryFn: () => friendService.getFriends(),
-    });
-
     // Sub-tab State
     const [activeSubTab, setActiveSubTab] = useState<'mutual' | 'i_like' | 'likes_me'>('mutual');
 
-    if (isLoading) return <div>Loading...</div>;
+    // Fetch Mutual Likes (서로 좋아해)
+    const { data: mutualLikes, isLoading: isMutualLoading, refetch: refetchMutual } = useQuery({
+        queryKey: ['friends', 'likes', 'mutual'],
+        queryFn: friendService.getMutualLikes,
+    });
+
+    // Fetch My Likes (내가 좋아해)
+    const { data: myLikes, isLoading: isMyLoading, refetch: refetchMy } = useQuery({
+        queryKey: ['friends', 'likes', 'my'],
+        queryFn: friendService.getMyLikes,
+    });
+
+    // For now, "likes_me" can reuse mutual or show empty (backend doesn't have this endpoint yet)
+    // We'll use the mutual endpoint as placeholder
+    const { data: likesMe, isLoading: isLikesMeLoading, refetch: refetchLikesMe } = useQuery({
+        queryKey: ['friends', 'likes', 'received'],
+        queryFn: friendService.getReceivedLikes,
+    });
+
+    const isLoading = 
+        (activeSubTab === 'mutual' && isMutualLoading) ||
+        (activeSubTab === 'i_like' && isMyLoading) ||
+        (activeSubTab === 'likes_me' && isLikesMeLoading);
+
+    const currentList = 
+        activeSubTab === 'mutual' ? mutualLikes :
+        activeSubTab === 'i_like' ? myLikes :
+        likesMe;
+
+    const handleLikeStateChange = () => {
+        refetchMutual();
+        refetchMy();
+        refetchLikesMe();
+    };
+
+    if (isLoading) return <Loading description="친구 목록을 불러오고 있어요..." />;
 
     return (
         <div id="friendFind">
@@ -46,7 +77,7 @@ export const FriendsListPage = () => {
                             cursor: 'pointer'
                         }}
                     >
-                        서로 좋아해
+                        서로 좋아해 {mutualLikes?.length ? `(${mutualLikes.length})` : ''}
                     </button>
 
                     {/* Tab 2: I Like */}
@@ -65,7 +96,7 @@ export const FriendsListPage = () => {
                             cursor: 'pointer'
                         }}
                     >
-                        내가 좋아해
+                        내가 좋아해 {myLikes?.length ? `(${myLikes.length})` : ''}
                     </button>
 
                     {/* Tab 3: Likes Me */}
@@ -84,20 +115,34 @@ export const FriendsListPage = () => {
                             cursor: 'pointer'
                         }}
                     >
-                        나를 좋아해
+                        나를 좋아해 {likesMe?.length ? `(${likesMe.length})` : ''}
                     </button>
                 </div>
             </div>
 
             {/* Friend List */}
             <div className="friend_list">
-                {friends?.map((friend) => (
-                    <FriendCard key={friend.id} data={friend} />
-                ))}
-            </div>
-
-            <div className="more_wrap">
-                <button type="button" className="btn-effect">더보기 <img src="/assets/images/common/more_btn.svg" alt="" /></button>
+                {currentList && currentList.length > 0 ? (
+                    currentList.map((friend) => (
+                        <FriendCard 
+                            key={friend.id} 
+                            data={friend} 
+                            onLikeStateChange={handleLikeStateChange}
+                            viewMode={
+                                activeSubTab === 'mutual' ? 'mutual' :
+                                activeSubTab === 'i_like' ? 'sent_like' : 
+                                activeSubTab === 'likes_me' ? 'received_like' : 
+                                'default'
+                            }
+                        />
+                    ))
+                ) : (
+                    <div className="no_data" style={{ padding: '50px 0', textAlign: 'center', color: '#999' }}>
+                        {activeSubTab === 'mutual' && '아직 서로 좋아해한 친구가 없어요'}
+                        {activeSubTab === 'i_like' && '아직 좋아요한 친구가 없어요'}
+                        {activeSubTab === 'likes_me' && '아직 나를 좋아해한 친구가 없어요'}
+                    </div>
+                )}
             </div>
         </div>
     );

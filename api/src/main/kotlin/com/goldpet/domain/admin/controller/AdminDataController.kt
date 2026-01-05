@@ -71,4 +71,44 @@ class AdminDataController(
         adminDataService.deleteCategory(id)
         return ResponseEntity.noContent().build()
     }
+
+    // Interests
+    @Operation(summary = "관심사 목록")
+    @GetMapping("/interests")
+    fun getInterests(): ResponseEntity<List<Map<String, Any>>> {
+        return ResponseEntity.ok(adminDataService.getInterests())
+    }
+
+    @Operation(summary = "관심사 추가")
+    @PostMapping("/interests")
+    fun createInterest(@RequestBody request: Map<String, Any>): ResponseEntity<Map<String, Any>> {
+        return ResponseEntity.ok(adminDataService.createInterest(request))
+    }
+
+    @Operation(summary = "관심사 삭제")
+    @DeleteMapping("/interests/{id}")
+    fun deleteInterest(@PathVariable id: Long): ResponseEntity<Void> {
+        adminDataService.deleteInterest(id)
+        return ResponseEntity.noContent().build()
+    }
+
+    // Hobbies
+    @Operation(summary = "취미 목록")
+    @GetMapping("/hobbies")
+    fun getHobbies(): ResponseEntity<List<Map<String, Any>>> {
+        return ResponseEntity.ok(adminDataService.getHobbies())
+    }
+
+    @Operation(summary = "취미 추가")
+    @PostMapping("/hobbies")
+    fun createHobby(@RequestBody request: Map<String, Any>): ResponseEntity<Map<String, Any>> {
+        return ResponseEntity.ok(adminDataService.createHobby(request))
+    }
+
+    @Operation(summary = "취미 삭제")
+    @DeleteMapping("/hobbies/{id}")
+    fun deleteHobby(@PathVariable id: Long): ResponseEntity<Void> {
+        adminDataService.deleteHobby(id)
+        return ResponseEntity.noContent().build()
+    }
 }

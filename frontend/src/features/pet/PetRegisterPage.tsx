@@ -72,7 +72,7 @@ export default function PetRegisterPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myPets'] });
       showAlert('반려동물이 등록되었습니다!', () => {
-        navigate('/profile');
+        navigate('/home');
       });
     },
     onError: (error: Error) => {
@@ -86,7 +86,7 @@ export default function PetRegisterPage() {
       queryClient.invalidateQueries({ queryKey: ['myPets'] });
       queryClient.invalidateQueries({ queryKey: ['pet', petId] });
       showAlert('반려동물 정보가 수정되었습니다!', () => {
-        navigate('/profile');
+        navigate('/home');
       });
     },
     onError: (error: Error) => {
@@ -170,7 +170,7 @@ export default function PetRegisterPage() {
           </div>
           <label className="image_upload_btn btn-effect">
             📷 사진 {imagePreview ? '변경' : '추가'}
-            <input type="file" accept="image/*" onChange={handleImageChange} hidden />
+            <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,image/heic" onChange={handleImageChange} hidden />
           </label>
         </div>
 

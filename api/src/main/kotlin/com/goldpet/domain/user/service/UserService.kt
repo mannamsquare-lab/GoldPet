@@ -4,13 +4,17 @@ import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.user.dto.FriendLocationResponse
+import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
+import com.goldpet.domain.user.entity.UserProfileImage
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 @Transactional(readOnly = true)
 class UserService(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val interestRepository: com.goldpet.domain.user.repository.InterestRepository,
+    private val hobbyRepository: com.goldpet.domain.user.repository.HobbyRepository
 ) {
     fun findUserById(userId: Long): User? {
         return userRepository.findById(userId).orElse(null)
@@ -53,21 +57,65 @@ class UserService(
     }
 
     @Transactional
-    fun updateUserProfile(userId: Long, nickname: String?, gender: String?, birthYear: Int?, mainLocationText: String?): User {
+    fun updateNotification(userId: Long, enabled: Boolean): User {
         val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
-
-        nickname?.let { user.nickname = it }
-        gender?.let { user.gender = it }
-        birthYear?.let { user.birthYear = it }
-        mainLocationText?.let { user.mainLocationText = it }
-
+        user.isNotificationEnabled = enabled
         return userRepository.save(user)
     }
 
     @Transactional
-    fun updateUserProfileImageUrl(userId: Long, profileImageUrl: String?): User {
+    fun updateUserProfile(userId: Long, request: com.goldpet.domain.user.dto.UserProfileUpdateRequest): User {
         val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
-        user.profileImageUrl = profileImageUrl
+        
+        println("DEBUG: Updating user profile. Request hasPet: ${request.hasPet}")
+
+
+        request.name?.let { user.name = it }
+        request.nickname?.let { user.nickname = it }
+        request.birthDate?.let { user.birthDate = it }
+        request.phoneNumber?.let { user.phoneNumber = it }
+        request.gender?.let { user.gender = it }
+        request.hasPet?.let { user.hasPet = it }
+        request.intro?.let { user.intro = it }
+        request.mbti?.let { user.mbti = it }
+        
+        // Update tags
+        if (request.interests.isNotEmpty()) {
+            val interests = interestRepository.findByNameIn(request.interests)
+            user.interests.clear()
+            user.interests.addAll(interests)
+        }
+        
+        if (request.hobbies.isNotEmpty()) {
+            val hobbies = hobbyRepository.findByNameIn(request.hobbies)
+            user.hobbies.clear()
+            user.hobbies.addAll(hobbies)
+        }
+
+        return userRepository.save(user)
+    }
+
+    fun getAllInterests(): List<com.goldpet.domain.user.entity.Interest> {
+        return interestRepository.findAllByOrderByOrderIndexAsc()
+    }
+
+    fun getAllHobbies(): List<com.goldpet.domain.user.entity.Hobby> {
+        return hobbyRepository.findAllByOrderByOrderIndexAsc()
+    }
+
+    @Transactional
+    fun updateUserProfileImages(userId: Long, request: ProfileImageUpdateRequest): User {
+        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        
+        request.profileImageUrl?.let { user.profileImageUrl = it }
+        request.profileImageUrls?.let { urls ->
+            user.profileImages.clear()
+            urls.forEachIndexed { index, url ->
+                user.profileImages.add(UserProfileImage(user = user, imageUrl = url, orderIndex = index))
+            }
+            user.profileImageUrl = urls.firstOrNull()
+        }
+        
         return userRepository.save(user)
     }
 
@@ -79,5 +127,9 @@ class UserService(
             request.maxLon
         )
         return users.map { FriendLocationResponse.from(it) }
+    }
+
+    fun isNicknameAvailable(nickname: String): Boolean {
+        return !userRepository.findByNickname(nickname).isPresent
     }
 }

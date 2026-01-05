@@ -44,6 +44,7 @@ class SocialLoginService(
             Map::class.java
         )
 
+        @Suppress("UNCHECKED_CAST")
         val attributes = response.body as Map<String, Any>
         val kakaoId = attributes["id"].toString()
         
@@ -94,7 +95,7 @@ class SocialLoginService(
             accessToken = token,
             refreshToken = "", // Refresh token implementation needed if required
             user = AuthResponse.UserInfo(
-                id = user.id!!,
+                id = user.id,
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
                 email = user.email
@@ -116,7 +117,9 @@ class SocialLoginService(
             Map::class.java
         )
 
+        @Suppress("UNCHECKED_CAST")
         val attributes = response.body as Map<String, Any>
+        @Suppress("UNCHECKED_CAST")
         val resp = attributes["response"] as Map<String, Any>
         
         val naverId = resp["id"].toString()
@@ -160,7 +163,7 @@ class SocialLoginService(
             accessToken = token,
             refreshToken = "",
             user = AuthResponse.UserInfo(
-                id = user.id!!,
+                id = user.id,
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
                 email = user.email
@@ -175,6 +178,7 @@ class SocialLoginService(
         val url = "https://oauth2.googleapis.com/tokeninfo?id_token=$accessToken"
 
         val response = restTemplate.getForObject(url, Map::class.java)
+        @Suppress("UNCHECKED_CAST")
         val attributes = response as Map<String, Any>
         
         val googleId = attributes["sub"].toString()
@@ -218,7 +222,7 @@ class SocialLoginService(
             accessToken = token,
             refreshToken = "",
             user = AuthResponse.UserInfo(
-                id = user.id!!,
+                id = user.id,
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
                 email = user.email
@@ -242,7 +246,8 @@ class SocialLoginService(
         if (parts.size < 2) throw IllegalArgumentException("Invalid Identity Token format")
         
         val headerJson = String(Decoders.BASE64URL.decode(parts[0]))
-        val header = ObjectMapper().readValue(headerJson, Map::class.java)
+        @Suppress("UNCHECKED_CAST")
+        val header = ObjectMapper().readValue(headerJson, Map::class.java) as Map<String, Any>
         val kid = header["kid"] as String
 
         // 3. Find matching key
@@ -308,7 +313,7 @@ class SocialLoginService(
             accessToken = token,
             refreshToken = "",
             user = AuthResponse.UserInfo(
-                id = user.id!!,
+                id = user.id,
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
                 email = user.email

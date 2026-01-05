@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
+import { Loading } from '../../components/common/Loading';
 import '../../styles/chat-detail.css';
 
 const ChatDetailPage = () => {
@@ -78,7 +79,7 @@ const ChatDetailPage = () => {
         }
     };
 
-    if (isLoading) return <div>Loading...</div>;
+    if (isLoading) return <Loading description="대화 내용을 불러오고 있어요" />;
 
     return (
         <div className="chat_detail_page">

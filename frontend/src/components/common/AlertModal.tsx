@@ -1,4 +1,4 @@
-import React from 'react';
+
 import ReactDOM from 'react-dom';
 
 interface AlertModalProps {
@@ -28,7 +28,7 @@ export const AlertModal = ({
         <div className="alert_modal" style={{ display: 'flex' }}>
             <div className="alert_wrap">
                 <div className="txt_wrap">
-                    <p style={{ whiteSpace: 'pre-line' }}>{message}</p>
+                    <p style={{ whiteSpace: 'pre-line' }}>{message.replace(/\\n/g, '\n')}</p>
                 </div>
                 <div className="btn_wrap">
                     {onCancel ? (

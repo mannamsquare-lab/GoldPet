@@ -93,7 +93,7 @@ class AdminDashboardService(
                 id = user.id,
                 type = "USER_JOIN",
                 description = "${user.nickname ?: "사용자"}님이 가입했습니다.",
-                createdAt = user.createdAt?.format(formatter) ?: ""
+                createdAt = user.createdAt.format(formatter)
             ))
         }
 
@@ -102,7 +102,7 @@ class AdminDashboardService(
                 id = post.id,
                 type = "POST_CREATE",
                 description = "\"${post.title}\" 게시글이 작성되었습니다.",
-                createdAt = post.createdAt?.format(formatter) ?: ""
+                createdAt = post.createdAt.format(formatter)
             ))
         }
 

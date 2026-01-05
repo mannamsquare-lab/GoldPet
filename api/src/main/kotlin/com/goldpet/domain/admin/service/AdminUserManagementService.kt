@@ -47,7 +47,7 @@ class AdminUserManagementService(
             status = if (user.isActive) "ACTIVE" else "INACTIVE",
             provider = user.oauthProvider,
             goldBalance = user.goldBalance.toLong(),
-            createdAt = user.createdAt?.format(formatter),
+            createdAt = user.createdAt.format(formatter),
             lastLoginAt = null,
             pets = pets.map { pet ->
                 PetSummary(
@@ -104,7 +104,7 @@ class AdminUserManagementService(
             petCount = petCount.toInt(),
             walkCount = 0,
             postCount = postCount.toInt(),
-            createdAt = user.createdAt?.format(formatter),
+            createdAt = user.createdAt.format(formatter),
             lastLoginAt = null
         )
     }

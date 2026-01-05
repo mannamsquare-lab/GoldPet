@@ -12,6 +12,7 @@ data class CreatePetRequest(
     val weightKg: Double?,
     val isNeutered: Boolean?,
     val profileImageUrl: String?,
+    val profileImageUrls: List<String>? = emptyList(),
     val temperamentTags: String?,
 )
 
@@ -24,6 +25,7 @@ data class UpdatePetRequest(
     val weightKg: Double?,
     val isNeutered: Boolean?,
     val profileImageUrl: String?,
+    val profileImageUrls: List<String>? = emptyList(),
     val temperamentTags: String?,
 )
 
@@ -31,6 +33,8 @@ data class PetResponse(
     val id: Long,
     val ownerId: Long,
     val name: String,
+    val speciesId: Int,
+    val breedId: Int?,
     val species: String,
     val breed: String?,
     val gender: String?,
@@ -38,6 +42,7 @@ data class PetResponse(
     val weightKg: Double?,
     val isNeutered: Boolean?,
     val profileImageUrl: String?,
+    val profileImageUrls: List<String>,
     val temperamentTags: List<String>,
 ) {
     companion object {
@@ -46,6 +51,8 @@ data class PetResponse(
                 id = pet.id,
                 ownerId = pet.owner.id,
                 name = pet.name,
+                speciesId = pet.species.id,
+                breedId = pet.breed?.id,
                 species = pet.species.name,
                 breed = pet.breed?.name,
                 gender = pet.gender,
@@ -53,6 +60,7 @@ data class PetResponse(
                 weightKg = pet.weightKg,
                 isNeutered = pet.isNeutered,
                 profileImageUrl = pet.profileImageUrl,
+                profileImageUrls = pet.profileImages.map { it.imageUrl },
                 temperamentTags = pet.temperamentTags?.split(",") ?: emptyList()
             )
         }

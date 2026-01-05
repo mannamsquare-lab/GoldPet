@@ -1,0 +1,2 @@
+ALTER TABLE pet_breeds
+ADD COLUMN updated_at TIMESTAMP;

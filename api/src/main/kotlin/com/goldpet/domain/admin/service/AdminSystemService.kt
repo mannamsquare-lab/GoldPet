@@ -9,7 +9,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Service
-class AdminSystemService {
+class AdminSystemService(
+    private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService
+) {
     private var maintenanceMode = false
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -40,5 +42,19 @@ class AdminSystemService {
 
     fun setMaintenanceMode(enabled: Boolean) {
         maintenanceMode = enabled
+    }
+
+    fun getAllConfigs(): List<com.goldpet.domain.admin.controller.AppConfigResponse> {
+        return systemSettingService.getAllSettings().map {
+            com.goldpet.domain.admin.controller.AppConfigResponse(
+                key = it.key,
+                value = it.value,
+                description = it.description
+            )
+        }
+    }
+
+    fun updateConfig(key: String, value: String) {
+        systemSettingService.setValue(key, value)
     }
 }
