@@ -15,10 +15,10 @@ class _HybridAppState extends State<HybridApp> {
   @override
   Widget build(BuildContext context) {
     // React 앱 URL
-    // 개발 환경: Vite 개발 서버
-    // 프로덕션: 로컬 파일 또는 CDN
+    // 개발 환경: Dev Server Frontend URL
+    // 프로덕션: 로컬 파일 또는 CDN (추후 변경 가능)
     const reactAppUrl = kDebugMode
-        ? 'https://www.ciccosoft.com' // Cloudflare Tunnel
+        ? 'https://app.mannamsquare.com' // Dev Server
         : 'assets/web/index.html'; // 프로덕션 빌드
 
     return MaterialApp(
