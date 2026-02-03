@@ -10,7 +10,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main', 
-                    url: 'https://github.com/본인계정/GoldPet.git',
+                    url: 'https://github.com/jioabang/GoldPet.git',
                     credentialsId: 'github-credentials'
             }
         }
