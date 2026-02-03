@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../services/notificationService';
 import type { Notification } from '../../services/notificationService';
-import { useAlert } from '../../contexts/AlertContext';
+
 
 const TABS = [
   { id: 'ALL', label: '전체' },
