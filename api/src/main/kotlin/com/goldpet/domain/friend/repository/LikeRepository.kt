@@ -31,6 +31,7 @@ interface LikeRepository : JpaRepository<Like, Long> {
             AND l2.to_user_id = :userId 
             AND l2.status = 'ACTIVE'
         )
+        ORDER BY l.created_at DESC
     """, nativeQuery = true)
     fun findMutualLikes(@Param("userId") userId: Long): List<Like>
 
@@ -45,6 +46,7 @@ interface LikeRepository : JpaRepository<Like, Long> {
             AND l2.to_user_id = l.from_user_id 
             AND l2.status = 'ACTIVE'
         )
+        ORDER BY l.created_at DESC
     """, nativeQuery = true)
     fun findReceivedOnlyLikes(@Param("userId") userId: Long): List<Like>
 
@@ -59,6 +61,7 @@ interface LikeRepository : JpaRepository<Like, Long> {
             AND l2.to_user_id = :userId 
             AND l2.status = 'ACTIVE'
         )
+        ORDER BY l.created_at DESC
     """, nativeQuery = true)
     fun findSentOnlyLikes(@Param("userId") userId: Long): List<Like>
 }

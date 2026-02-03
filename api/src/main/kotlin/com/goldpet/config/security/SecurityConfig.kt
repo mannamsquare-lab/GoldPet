@@ -45,6 +45,7 @@ class SecurityConfig(
                     .requestMatchers("/ws/**").permitAll() // Allow WebSocket connection
                     .requestMatchers("/api/v1/chat/**").permitAll() // Allow chat API
                     .requestMatchers("/uploads/**").permitAll() // Allow static file access
+
                     .requestMatchers("/api/v1/settings/**").permitAll() // Allow public settings
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger
                     .requestMatchers("/error").permitAll() // Allow Error dispatch

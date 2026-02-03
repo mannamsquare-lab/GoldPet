@@ -27,5 +27,12 @@ interface UserRepository : JpaRepository<User, Long> {
         @Param("maxLat") maxLat: Double,
         @Param("maxLon") maxLon: Double
     ): List<User>
+
+    @Query(value = "SELECT * FROM users u WHERE u.main_location_geom IS NOT NULL AND ST_DistanceSphere(u.main_location_geom, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)) <= :radius", nativeQuery = true)
+    fun findUsersWithinRadius(
+        @Param("lat") lat: Double,
+        @Param("lon") lon: Double,
+        @Param("radius") radius: Double
+    ): List<User>
 }
 

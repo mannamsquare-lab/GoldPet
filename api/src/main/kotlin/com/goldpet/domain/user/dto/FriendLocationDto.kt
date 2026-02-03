@@ -7,16 +7,18 @@ data class FriendLocationResponse(
     val nickname: String?,
     val profileImageUrl: String?,
     val latitude: Double?,
-    val longitude: Double?
+    val longitude: Double?,
+    val distance: Double? = null
 ) {
     companion object {
-        fun from(user: User): FriendLocationResponse {
+        fun from(user: User, distance: Double? = null): FriendLocationResponse {
             return FriendLocationResponse(
                 id = user.id,
                 nickname = user.nickname,
                 profileImageUrl = user.profileImageUrl,
                 latitude = user.mainLocationGeom?.y,
-                longitude = user.mainLocationGeom?.x
+                longitude = user.mainLocationGeom?.x,
+                distance = distance
             )
         }
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:goldpet_app/core/webview/hybrid_webview.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:goldpet_app/core/constants/keys.dart';
 
 class HybridApp extends StatefulWidget {
   const HybridApp({super.key});
@@ -21,6 +22,7 @@ class _HybridAppState extends State<HybridApp> {
         : 'assets/web/index.html'; // 프로덕션 빌드
 
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       title: 'GoldPet',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.brown, useMaterial3: true),

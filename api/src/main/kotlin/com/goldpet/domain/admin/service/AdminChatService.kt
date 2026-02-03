@@ -27,7 +27,7 @@ class AdminChatService(
                 participantCount = room.participants.size,
                 lastMessage = lastMessage?.textContent,
                 lastMessageAt = lastMessage?.createdAt?.format(formatter),
-                createdAt = room.createdAt?.format(formatter) ?: ""
+                createdAt = room.createdAt.format(formatter) ?: ""
             )
         }
     }
@@ -41,7 +41,7 @@ class AdminChatService(
                 senderNickname = msg.sender?.nickname ?: "시스템",
                 content = msg.textContent ?: "",
                 type = msg.messageType.name,
-                createdAt = msg.createdAt?.format(formatter) ?: ""
+                createdAt = msg.createdAt.format(formatter) ?: ""
             )
         }
     }

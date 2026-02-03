@@ -2,12 +2,16 @@ package com.goldpet.domain.gamification.service
 
 import com.goldpet.domain.gamification.dto.BadgeResponse
 import com.goldpet.domain.gamification.dto.ChallengeResponse
-import com.goldpet.domain.gamification.dto.UserChallengeProgressResponse
+import com.goldpet.domain.gamification.entity.Challenge
+import com.goldpet.domain.gamification.entity.UserBadge
+import com.goldpet.domain.gamification.entity.UserChallengeProgress
 import com.goldpet.domain.gamification.repository.BadgeRepository
 import com.goldpet.domain.gamification.repository.ChallengeRepository
 import com.goldpet.domain.gamification.repository.UserBadgeRepository
 import com.goldpet.domain.gamification.repository.UserChallengeProgressRepository
+import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -15,66 +19,92 @@ import java.time.LocalDateTime
 @Service
 @Transactional(readOnly = true)
 class GamificationService(
+    private val userRepository: UserRepository,
     private val badgeRepository: BadgeRepository,
     private val userBadgeRepository: UserBadgeRepository,
     private val challengeRepository: ChallengeRepository,
-    private val progressRepository: UserChallengeProgressRepository,
-    private val userRepository: UserRepository
+    private val userChallengeProgressRepository: UserChallengeProgressRepository
 ) {
 
-    fun getAllBadges(): List<BadgeResponse> {
-        return badgeRepository.findAll().map { 
-            BadgeResponse(it.id, it.code, it.name, it.description, it.imageUrl)
-        }
-    }
-
     fun getMyBadges(userId: Long): List<BadgeResponse> {
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        return userBadgeRepository.findAllByUser(user).map {
-            BadgeResponse(
-                id = it.badge.id,
-                code = it.badge.code,
-                name = it.badge.name,
-                description = it.badge.description,
-                imageUrl = it.badge.imageUrl,
-                earnedAt = it.createdAt
-            )
+        val user = getUser(userId)
+        val userBadges = userBadgeRepository.findAllByUser(user)
+        return userBadges.map { BadgeResponse.from(it) }
+    }
+
+    fun getMyChallenges(userId: Long): List<ChallengeResponse> {
+        val user = getUser(userId)
+        val activeChallenges = challengeRepository.findAllByIsActiveTrueAndEndDateAfter(LocalDateTime.now())
+
+        return activeChallenges.map { challenge ->
+            val progress = userChallengeProgressRepository.findByUserAndChallenge(user, challenge).orElse(null)
+            ChallengeResponse.from(challenge, progress)
         }
     }
 
-    fun getActiveChallenges(): List<ChallengeResponse> {
-        return challengeRepository.findAllByIsActiveTrueAndEndDateAfter(LocalDateTime.now()).map {
-            ChallengeResponse(
-                id = it.id,
-                title = it.title,
-                description = it.description,
-                goalType = it.goalType,
-                goalValue = it.goalValue,
-                rewardGold = it.rewardGold,
-                rewardBadgeName = it.rewardBadge?.name,
-                startDate = it.startDate,
-                endDate = it.endDate,
-                isActive = it.isActive
-            )
+    @Transactional
+    fun updateChallengeProgress(userId: Long, goalType: Challenge.GoalType, amount: Int) {
+        val user = getUser(userId)
+        val activeChallenges = challengeRepository.findAllByIsActiveTrueAndEndDateAfter(LocalDateTime.now())
+            .filter { it.goalType == goalType }
+
+        activeChallenges.forEach { challenge ->
+            val progress = userChallengeProgressRepository.findByUserAndChallenge(user, challenge)
+                .orElseGet {
+                    userChallengeProgressRepository.save(
+                        UserChallengeProgress(
+                            user = user,
+                            challenge = challenge,
+                            status = UserChallengeProgress.Status.IN_PROGRESS
+                        )
+                    )
+                }
+
+            if (progress.status == UserChallengeProgress.Status.IN_PROGRESS) {
+                progress.currentValue += amount
+                
+                // Check completion
+                if (progress.currentValue >= challenge.goalValue) {
+                    progress.status = UserChallengeProgress.Status.COMPLETED
+                    progress.completedAt = LocalDateTime.now()
+                    giveReward(user, challenge)
+                }
+                userChallengeProgressRepository.save(progress)
+            }
+        }
+
+        // Basic Badge Logic: First Walk
+        if (goalType == Challenge.GoalType.WALK_DISTANCE_TOTAL) {
+            checkFirstWalkBadge(user)
         }
     }
 
-    fun getMyChallengeProgress(userId: Long): List<UserChallengeProgressResponse> {
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        return progressRepository.findAllByUser(user).map {
-            val progressPercent = if (it.challenge.goalValue > 0) {
-                (it.currentValue.toDouble() / it.challenge.goalValue * 100).toInt().coerceAtMost(100)
-            } else 0
-
-            UserChallengeProgressResponse(
-                challengeId = it.challenge.id,
-                challengeTitle = it.challenge.title,
-                goalValue = it.challenge.goalValue,
-                currentValue = it.currentValue,
-                progressPercent = progressPercent,
-                status = it.status,
-                completedAt = it.completedAt
-            )
+    private fun giveReward(user: User, challenge: Challenge) {
+        // Give Gold
+        if(challenge.rewardGold != null && challenge.rewardGold > 0) {
+            user.goldBalance += challenge.rewardGold
+            // TODO: Record Transaction
+            userRepository.save(user)
         }
+
+        // Give Badge
+        challenge.rewardBadge?.let { badge ->
+            if (!userBadgeRepository.existsByUserAndBadge(user, badge)) {
+                userBadgeRepository.save(UserBadge(user = user, badge = badge))
+            }
+        }
+    }
+
+    private fun checkFirstWalkBadge(user: User) {
+        val badgeCode = "FIRST_WALK"
+        val badge = badgeRepository.findByCode(badgeCode) ?: return
+
+        if (!userBadgeRepository.existsByUserAndBadge(user, badge)) {
+            userBadgeRepository.save(UserBadge(user = user, badge = badge))
+        }
+    }
+
+    private fun getUser(userId: Long): User {
+        return userRepository.findById(userId).orElseThrow { EntityNotFoundException("User not found") }
     }
 }

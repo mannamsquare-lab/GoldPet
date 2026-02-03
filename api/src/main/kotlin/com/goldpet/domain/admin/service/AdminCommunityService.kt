@@ -49,8 +49,8 @@ class AdminCommunityService(
             likeCount = likeCount.toInt(),
             commentCount = comments.size,
             isHidden = false,
-            createdAt = post.createdAt?.format(formatter),
-            updatedAt = post.updatedAt?.format(formatter),
+            createdAt = post.createdAt.format(formatter),
+            updatedAt = post.updatedAt.format(formatter),
             comments = comments.map { comment ->
                 CommentAdminResponse(
                     id = comment.id,
@@ -58,7 +58,7 @@ class AdminCommunityService(
                     authorId = comment.user.id,
                     authorNickname = comment.user.nickname ?: "",
                     isHidden = false,
-                    createdAt = comment.createdAt?.format(formatter)
+                    createdAt = comment.createdAt.format(formatter)
                 )
             }
         )
@@ -109,7 +109,7 @@ class AdminCommunityService(
             likeCount = likeCount.toInt(),
             commentCount = commentCount.toInt(),
             isHidden = false,
-            createdAt = post.createdAt?.format(formatter)
+            createdAt = post.createdAt.format(formatter)
         )
     }
 }

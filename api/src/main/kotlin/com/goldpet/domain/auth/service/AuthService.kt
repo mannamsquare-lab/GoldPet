@@ -35,7 +35,7 @@ class AuthService(
             password = passwordEncoder.encode(request.password),
             nickname = request.nickname,
             name = request.name,
-            birthDate = request.birthDate,
+            birthDate = java.time.LocalDate.parse(request.birthDate),
             phoneNumber = request.phoneNumber,
             gender = request.gender,
             birthYear = request.birthYear,
@@ -89,7 +89,7 @@ class AuthService(
         // Update user info
         user.nickname = request.nickname
         user.name = request.name
-        user.birthDate = request.birthDate
+        user.birthDate = java.time.LocalDate.parse(request.birthDate)
         user.gender = request.gender
         user.phoneNumber = request.phoneNumber
         // Note: Pet info should be saved to a Pet entity, but for now we'll just update the user or assume Pet entity creation logic is here.

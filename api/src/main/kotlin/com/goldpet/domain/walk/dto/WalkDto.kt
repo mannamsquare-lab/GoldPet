@@ -12,6 +12,7 @@ data class CreateWalkRequest(
     val distanceKm: Double,
     val durationSeconds: Long,
     val path: List<List<Double>>, // List of [latitude, longitude] pairs
+    val spots: List<WalkSpotDto> = emptyList(),
     val caloriesBurned: Double?,
     val notes: String?,
 ) {
@@ -22,6 +23,15 @@ data class CreateWalkRequest(
     }
 }
 
+data class WalkSpotDto(
+    val latitude: Double,
+    val longitude: Double,
+    val type: String,
+    val timestamp: LocalDateTime,
+    val imageUrl: String?,
+    val note: String?
+)
+
 data class WalkResponse(
     val id: Long,
     val userId: Long,
@@ -30,6 +40,7 @@ data class WalkResponse(
     val distanceKm: Double,
     val durationSeconds: Long,
     val path: List<List<Double>>, // List of [latitude, longitude] pairs
+    val spots: List<WalkSpotDto>,
     val caloriesBurned: Double?,
     val notes: String?,
 ) {
@@ -44,6 +55,16 @@ data class WalkResponse(
                 distanceKm = walk.distanceKm,
                 durationSeconds = walk.durationSeconds,
                 path = pathCoordinates,
+                spots = walk.spots.map { spot ->
+                    WalkSpotDto(
+                        latitude = spot.location.y,
+                        longitude = spot.location.x,
+                        type = spot.type.name,
+                        timestamp = spot.timestamp,
+                        imageUrl = spot.imageUrl,
+                        note = spot.note
+                    )
+                },
                 caloriesBurned = walk.caloriesBurned,
                 notes = walk.notes
             )

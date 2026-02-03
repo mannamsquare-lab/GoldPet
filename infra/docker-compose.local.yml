@@ -13,7 +13,7 @@ services:
     volumes:
       - goldpet-postgres-local-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432" # Standard Port
+      - "5433:5432" # Changed to 5433 to avoid conflict with local postgres
     networks:
       - goldpet-local-net
     shm_size: 1g
@@ -43,8 +43,8 @@ services:
     volumes:
       - goldpet-minio-local-data:/data
     ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Console
+      - "9100:9000" # S3 API
+      - "9101:9001" # Console
     networks:
       - goldpet-local-net
 
@@ -52,6 +52,7 @@ volumes:
   goldpet-postgres-local-data:
   goldpet-redis-local-data:
   goldpet-minio-local-data:
+
 
 networks:
   goldpet-local-net:

@@ -1,0 +1,10 @@
+/home/dev/www/mannam/goldpet/api/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 0640 dev dev
+    copytruncate
+}

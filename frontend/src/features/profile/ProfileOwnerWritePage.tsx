@@ -78,7 +78,12 @@ const ProfileOwnerWritePage: React.FC = () => {
 
     useEffect(() => {
         if (currentUser) {
-            let loadedImages: (string | null)[] = currentUser.profileImageUrls || (currentUser.profileImageUrl ? [currentUser.profileImageUrl] : []);
+            // Fix: Check if profileImageUrls actually has content (not just empty array)
+            const hasCustomImages = currentUser.profileImageUrls && currentUser.profileImageUrls.length > 0;
+            let loadedImages: (string | null)[] = hasCustomImages 
+                ? currentUser.profileImageUrls! 
+                : (currentUser.profileImageUrl ? [currentUser.profileImageUrl] : []);
+
             // Pad to 5 slots
             if (loadedImages.length < 5) {
                 loadedImages = [...loadedImages, ...Array(5 - loadedImages.length).fill(null)];
@@ -87,20 +92,6 @@ const ProfileOwnerWritePage: React.FC = () => {
             }
             setProfileImageUrls(loadedImages);
             
-            setName(currentUser.name || '');
-            setNickname(currentUser.nickname || '');
-            setBirthDate(currentUser.birthDate || '');
-            setPhoneNumber(currentUser.phoneNumber || '');
-            setGender(currentUser.gender || 'MALE');
-            setHasPet(currentUser.hasPet ?? null); // Use nullish coalescing
-            setIntro(currentUser.intro || '');
-            setMbti(currentUser.mbti || 'INTJ');
-            setInterests(currentUser.interests || []);
-            setHobbies(currentUser.hobbies || []);
-
-            // Initialize check/verify states based on existing data
-            if (currentUser.nickname) setIsNicknameChecked(true);
-            if (currentUser.phoneNumber) setIsPhoneVerified(true);
             setName(currentUser.name || '');
             setNickname(currentUser.nickname || '');
             setBirthDate(currentUser.birthDate || '');
@@ -351,14 +342,14 @@ const ProfileOwnerWritePage: React.FC = () => {
                 <div className="profile_write">
                     <div className="profile_img_edit">
                             <div className="profile_img" style={{ 
-                                backgroundImage: profileImageUrls.length > 0 
+                                backgroundImage: profileImageUrls[0] 
                                     ? `url(${profileImageUrls[0]})` 
                                     : `url(/assets/images/common/profile_none_img.svg)`,
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
-                                backgroundColor: profileImageUrls.length > 0 ? 'transparent' : '#f0f0f0' // Optional background color fallback
+                                backgroundColor: profileImageUrls[0] ? 'transparent' : '#f0f0f0' // Optional background color fallback
                             }}>
-                                 {profileImageUrls.length === 0 && <div className="img_none"></div>}
+                                 {!profileImageUrls[0] && <div className="img_none"></div>}
                             </div>
                     </div>
                     

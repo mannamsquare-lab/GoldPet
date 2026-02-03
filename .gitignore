@@ -47,6 +47,7 @@ api/out/
 api/target/
 api/bin/
 api/logs/
+api/gradle.properties
 # Keep gradle-wrapper.jar usually, but exclude if user wants completely clean. Assuming standard practice: Keep wrapper.
 
 # -----------------
@@ -115,3 +116,20 @@ env/
 venv/
 .pytest_cache/
 .ipynb_checkpoints/
+
+# -----------------
+# 9. Project Resources & Documentation (Korean folders)
+# -----------------
+# Resource files (large assets, zips)
+resource/
+resources/
+
+# Test data
+테스트데이터/
+test-data/
+
+# Documentation (internal planning docs)
+docs/기획문서/
+
+# Brain artifacts (local AI assistant artifacts)
+.gemini/

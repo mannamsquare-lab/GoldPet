@@ -34,7 +34,7 @@ class AdminReportService(
                 reporterNickname = report.reporter.nickname ?: "",
                 reporterId = report.reporter.id,
                 status = report.status.name,
-                createdAt = report.createdAt?.format(formatter),
+                createdAt = report.createdAt.format(formatter),
                 resolvedAt = report.resolvedAt?.format(formatter)
             )
         }

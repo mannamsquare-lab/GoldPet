@@ -72,7 +72,7 @@ class UserService(
 
         request.name?.let { user.name = it }
         request.nickname?.let { user.nickname = it }
-        request.birthDate?.let { user.birthDate = it }
+        request.birthDate?.let { user.birthDate = java.time.LocalDate.parse(it) }
         request.phoneNumber?.let { user.phoneNumber = it }
         request.gender?.let { user.gender = it }
         request.hasPet?.let { user.hasPet = it }
@@ -127,6 +127,27 @@ class UserService(
             request.maxLon
         )
         return users.map { FriendLocationResponse.from(it) }
+    }
+
+    fun findFriendsNearby(lat: Double, lon: Double, radius: Double): List<FriendLocationResponse> {
+        val users = userRepository.findUsersWithinRadius(lat, lon, radius)
+        return users.map { user ->
+            val userLat = user.mainLocationGeom?.y ?: 0.0
+            val userLon = user.mainLocationGeom?.x ?: 0.0
+            val distance = calculateDistancedInMeters(lat, lon, userLat, userLon)
+            FriendLocationResponse.from(user, distance)
+        }
+    }
+
+    private fun calculateDistancedInMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val R = 6371000.0 // Earth radius in meters
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return R * c
     }
 
     fun isNicknameAvailable(nickname: String): Boolean {

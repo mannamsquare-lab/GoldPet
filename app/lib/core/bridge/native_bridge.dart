@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'bridge_protocol.dart';
 import '../services/location_service.dart';
 import '../services/camera_service.dart';
 import '../services/push_notification_service.dart';
 import '../../services/native_auth_service.dart';
+import '../constants/keys.dart';
+import '../../features/walk/screens/walk_screen.dart';
 
 /// JavaScript와 Flutter 간 통신을 담당하는 브릿지
 class NativeBridge {
@@ -146,6 +149,7 @@ class NativeBridge {
           return await cameraService.pickImage(source: source);
 
         // 앱 정보
+        // 앱 정보
         case BridgeProtocol.getAppVersion:
           return {'version': '0.1.0'};
 
@@ -154,6 +158,13 @@ class NativeBridge {
             'platform': 'mobile',
             'os': 'android/ios', // 실제로는 Platform.isAndroid 등으로 확인
           };
+
+        // 산책 (Walk Feature)
+        case 'startWalk':
+          await rootNavigatorKey.currentState?.push(
+            MaterialPageRoute(builder: (_) => const WalkScreen()),
+          );
+          return {'success': true};
 
         default:
           throw PlatformException(

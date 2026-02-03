@@ -84,6 +84,16 @@ class UserController(
         return ResponseEntity.ok(friendLocations)
     }
 
+    @GetMapping("/search/nearby")
+    fun searchFriendsNearby(
+        @RequestParam lat: Double,
+        @RequestParam lon: Double,
+        @RequestParam radius: Double
+    ): ResponseEntity<List<FriendLocationResponse>> {
+        val friendLocations = userService.findFriendsNearby(lat, lon, radius)
+        return ResponseEntity.ok(friendLocations)
+    }
+
     @GetMapping("/interests")
     fun getAllInterests(): ResponseEntity<List<com.goldpet.domain.user.entity.Interest>> {
         return ResponseEntity.ok(userService.getAllInterests())

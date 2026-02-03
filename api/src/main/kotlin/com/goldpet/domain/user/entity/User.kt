@@ -1,6 +1,7 @@
 package com.goldpet.domain.user.entity
 
 import com.goldpet.domain.common.entity.BaseTimeEntity
+import java.time.LocalDate
 import jakarta.persistence.*
 import org.locationtech.jts.geom.Point
 
@@ -26,7 +27,7 @@ class User(
     
     var name: String?,
     
-    var birthDate: String?,
+    var birthDate: LocalDate?, // "YYYY-MM-DD"
     
     var phoneNumber: String?,
 
@@ -75,4 +76,5 @@ class User(
         inverseJoinColumns = [JoinColumn(name = "hobby_id")]
     )
     var hobbies: MutableSet<Hobby> = mutableSetOf()
+
 ) : BaseTimeEntity()

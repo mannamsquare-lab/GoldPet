@@ -39,7 +39,7 @@ data class UserResponse(
                 profileImageUrl = user.profileImageUrl,
                 profileImageUrls = user.profileImages.map { it.imageUrl },
                 name = user.name,
-                birthDate = user.birthDate,
+                birthDate = user.birthDate?.toString(),
                 phoneNumber = user.phoneNumber,
                 hasPet = user.hasPet,
                 intro = user.intro,

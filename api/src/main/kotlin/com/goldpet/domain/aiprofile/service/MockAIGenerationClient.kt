@@ -44,6 +44,7 @@ class MockAIGenerationClient(
     private fun failGeneration(requestId: Long, reason: String) {
         val request = aiProfileRequestRepository.findById(requestId).orElse(null) ?: return
         request.status = AIRequestStatus.FAILED
+        request.errorMessage = reason
         aiProfileRequestRepository.save(request)
     }
 }

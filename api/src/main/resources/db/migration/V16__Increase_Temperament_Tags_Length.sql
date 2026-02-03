@@ -1,2 +1,0 @@
-ALTER TABLE pets
-ALTER COLUMN temperament_tags TYPE TEXT;

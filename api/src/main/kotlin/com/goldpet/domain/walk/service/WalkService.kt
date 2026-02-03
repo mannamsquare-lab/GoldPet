@@ -14,7 +14,8 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class WalkService(
     private val walkRepository: WalkRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val gamificationService: com.goldpet.domain.gamification.service.GamificationService
 ) {
 
     @Transactional
@@ -31,7 +32,39 @@ class WalkService(
             caloriesBurned = request.caloriesBurned,
             notes = request.notes
         )
+        
+        // Add spots
+        val geometryFactory = org.locationtech.jts.geom.GeometryFactory()
+        request.spots.forEach { spotDto ->
+            val point = geometryFactory.createPoint(org.locationtech.jts.geom.Coordinate(spotDto.longitude, spotDto.latitude))
+            walk.spots.add(com.goldpet.domain.walk.entity.WalkSpot(
+                walk = walk,
+                location = point,
+                type = com.goldpet.domain.walk.entity.WalkSpotType.valueOf(spotDto.type),
+                timestamp = spotDto.timestamp,
+                imageUrl = spotDto.imageUrl,
+                note = spotDto.note
+            ))
+        }
+
         val savedWalk = walkRepository.save(walk)
+
+        // Update Gamification Challenge (Walk Distance)
+        try {
+            // distanceKm is double, challenge goal is usually int (e.g. meters or just km count).
+            // Assuming goal value is in KM for simplicity or let's convert to Meters?
+            // Existing DB schema says goal_value is INT. Let's assume it's Meters.
+            val distMeters = (savedWalk.distanceKm * 1000).toInt()
+            gamificationService.updateChallengeProgress(
+                userId, 
+                com.goldpet.domain.gamification.entity.Challenge.GoalType.WALK_DISTANCE_TOTAL, 
+                distMeters
+            )
+        } catch (e: Exception) {
+            // Log error but don't fail the walk creation
+            println("Failed to update gamification progress: ${e.message}")
+        }
+
         return WalkResponse.from(savedWalk)
     }
 

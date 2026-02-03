@@ -36,4 +36,7 @@ class Walk(
 
     var notes: String?,
 
+    @OneToMany(mappedBy = "walk", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var spots: MutableList<WalkSpot> = mutableListOf()
+
 ) : BaseTimeEntity()

@@ -67,7 +67,7 @@ class FriendService(
             // Filter by petTypes and genders if provided
             val matchesPetType = petTypes.isNullOrEmpty() || 
                 petRepository.findByOwnerId(user.id).any { pet -> 
-                    pet.species?.code in petTypes 
+                    pet.species.code in petTypes 
                 }
             val matchesGender = genders.isNullOrEmpty() || 
                 petRepository.findByOwnerId(user.id).any { pet -> 

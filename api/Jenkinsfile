@@ -1,0 +1,96 @@
+pipeline {
+    agent any
+    
+    environment {
+        DEPLOY_PATH = '/home/dev/www/mannam/goldpet/api'
+        JAR_NAME = 'goldpet-api.jar'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', 
+                    url: 'https://github.com/본인계정/GoldPet.git',
+                    credentialsId: 'github-credentials'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                dir('api') {
+                    sh './gradlew clean bootJar'
+                }
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                dir('api') {
+                    sh './gradlew test'
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    // 백업
+                    sh """
+                        if [ -f ${DEPLOY_PATH}/${JAR_NAME} ]; then
+                            cp ${DEPLOY_PATH}/${JAR_NAME} ${DEPLOY_PATH}/${JAR_NAME}.backup.\$(date +%Y%m%d_%H%M%S)
+                        fi
+                    """
+                    
+                    // 서비스 중지
+                    sh 'sudo systemctl stop goldpet-api || true'
+                    
+                    // JAR 복사
+                    sh "cp api/build/libs/*.jar ${DEPLOY_PATH}/${JAR_NAME}"
+                    
+                    // 서비스 시작
+                    sh 'sudo systemctl start goldpet-api'
+                    
+                    // 헬스체크
+                    sh '''
+                        echo "Waiting for API to start..."
+                        for i in {1..30}; do
+                            if curl -f http://localhost:8081/actuator/health > /dev/null 2>&1; then
+                                echo "✅ API is up and running!"
+                                exit 0
+                            fi
+                            echo "Attempt $i/30..."
+                            sleep 2
+                        done
+                        echo "❌ API failed to start"
+                        exit 1
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo '✅ Backend 배포 성공!'
+            // 슬랙/이메일 알림 추가 가능
+        }
+        failure {
+            echo '❌ Backend 배포 실패!'
+            // 롤백 로직 추가 가능
+            sh """
+                if [ -f ${DEPLOY_PATH}/${JAR_NAME}.backup.* ]; then
+                    LATEST_BACKUP=\$(ls -t ${DEPLOY_PATH}/${JAR_NAME}.backup.* | head -1)
+                    cp \$LATEST_BACKUP ${DEPLOY_PATH}/${JAR_NAME}
+                    sudo systemctl restart goldpet-api
+                fi
+            """
+        }
+        always {
+            // 오래된 백업 파일 정리 (최근 3개만 유지)
+            sh """
+                cd ${DEPLOY_PATH}
+                ls -t ${JAR_NAME}.backup.* 2>/dev/null | tail -n +4 | xargs rm -f || true
+            """
+        }
+    }
+}

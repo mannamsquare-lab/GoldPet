@@ -1,5 +1,6 @@
 
 import { useNavigate } from 'react-router-dom';
+import { nativeBridge } from '../../bridge/nativeBridge';
 import './WalkPage.css';
 
 export const WalkMapPage = () => {
@@ -17,7 +18,7 @@ export const WalkMapPage = () => {
                     서울 강남구
                 </button>
             </div>
-            
+
             <div className="walk_wrap">
                 {/* 지도 */}
                 <div className="map_box">
@@ -26,7 +27,7 @@ export const WalkMapPage = () => {
                         지도 API 연동 예정
                     </div>
                 </div>
-                
+
                 <div className="txt_wrap">
                     <dl>
                         <dt>거리(km)</dt>
@@ -45,18 +46,31 @@ export const WalkMapPage = () => {
                         <dd>7,700</dd>
                     </dl>
                 </div>
-                
+
                 <div className="link_wrap">
                     <button type="button">
                         <img src="/assets/images/walk/camera_icon.svg" alt="" />
                         사진 촬영하기
                     </button>
-                    <button type="button" onClick={() => navigate('/walk')}>
+                    <button type="button" onClick={async () => {
+                        // Hybrid Check
+                        if (nativeBridge.isAvailable()) {
+                            try {
+                                await nativeBridge.callMethod('startWalk');
+                            } catch (e) {
+                                alert('산책 시작 실패: ' + e);
+                            }
+                        } else {
+                            // Web Fallback
+                            alert('모바일 앱에서만 가능한 기능입니다.');
+                            navigate('/walk');
+                        }
+                    }}>
                         <img src="/assets/images/walk/play_icon.svg" alt="" />
                         산책 시작하기
                     </button>
                 </div>
-                
+
                 <div className="open_check">
                     <input type="checkbox" id="open" />
                     <label htmlFor="open">다른 사용자들에게 공개할 지 선택해주세요.</label>
