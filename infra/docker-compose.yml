@@ -10,10 +10,8 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
-      - ./config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
-    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
     ports:
-      - "5432:5432" # Exposed to host. Use Firewall to restrict if needed.
+      - "127.0.0.1:5432:5432" # localhost만 허용
     networks:
       - goldpet-net
     shm_size: 1g
@@ -27,7 +25,7 @@ services:
     volumes:
       - ./data/redis:/data
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379" # localhost만 허용
     networks:
       - goldpet-net
 
@@ -43,55 +41,10 @@ services:
     volumes:
       - ./data/minio:/data
     ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Console
+      - "127.0.0.1:9000:9000" # S3 API (localhost만)
+      - "127.0.0.1:9001:9001" # Console (localhost만)
     networks:
       - goldpet-net
-
-  # 4. Jenkins (CI/CD)
-  jenkins:
-    image: jenkins/jenkins:lts
-    restart: always
-    container_name: goldpet-jenkins
-    user: root # Often needed for Docker-in-Docker functionality
-    ports:
-      - "9090:8080" # Host Port 9090 -> Container 8080 (Avoid conflict with standard web ports)
-      - "50000:50000" # JNLP Agent
-    volumes:
-      - ./data/jenkins:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock # Allow Jenkins to spawn siblings
-      # - /usr/bin/docker:/usr/bin/docker # Optional mapping if needed
-    networks:
-      - goldpet-net
-
-  # 5. Spring Boot API
-  api:
-    build:
-      context: ../api
-      dockerfile: Dockerfile
-    restart: always
-    container_name: goldpet-api
-    ports:
-      - "8080:8080" # Exposed to host loopback for Nginx Proxy (or bind 127.0.0.1:8080:8080)
-    environment:
-      # Database
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
-      SPRING_DATASOURCE_USERNAME: ${DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      # Redis
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
-      # MinIO (If used by Backend)
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-    networks:
-      - goldpet-net
-    depends_on:
-      - db
-      - redis
-      - minio
 
 networks:
   goldpet-net:
