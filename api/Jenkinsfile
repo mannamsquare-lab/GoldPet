@@ -46,11 +46,12 @@ pipeline {
                     sh '''
                         echo "Waiting for API to start..."
                         for i in {1..30}; do
-                            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/actuator/health | grep -E "200|401" > /dev/null; then
-                                echo "✅ API is up and running!"
+                            HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/actuator/health)
+                            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "401" ]; then
+                                echo "✅ API is up and running! (HTTP $HTTP_CODE)"
                                 exit 0
                             fi
-                            echo "Attempt $i/30..."
+                            echo "Attempt $i/30 (HTTP $HTTP_CODE)..."
                             sleep 2
                         done
                         echo "❌ API failed to start"
