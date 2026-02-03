@@ -1,19 +1,19 @@
 -- Create Interests table
-CREATE TABLE interests (
+CREATE TABLE IF NOT EXISTS interests (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
     order_index INT NOT NULL DEFAULT 0
 );
 
 -- Create Hobbies table
-CREATE TABLE hobbies (
+CREATE TABLE IF NOT EXISTS hobbies (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
     order_index INT NOT NULL DEFAULT 0
 );
 
 -- Create User <-> Interests Join Table
-CREATE TABLE user_interests (
+CREATE TABLE IF NOT EXISTS user_interests (
     user_id BIGINT NOT NULL,
     interest_id INT NOT NULL,
     PRIMARY KEY (user_id, interest_id),
@@ -22,7 +22,7 @@ CREATE TABLE user_interests (
 );
 
 -- Create User <-> Hobbies Join Table
-CREATE TABLE user_hobbies (
+CREATE TABLE IF NOT EXISTS user_hobbies (
     user_id BIGINT NOT NULL,
     hobby_id INT NOT NULL,
     PRIMARY KEY (user_id, hobby_id),
@@ -30,7 +30,7 @@ CREATE TABLE user_hobbies (
     FOREIGN KEY (hobby_id) REFERENCES hobbies(id) ON DELETE CASCADE
 );
 
--- Seed Data for Interests
+-- Seed Data for Interests (Safe Insert)
 INSERT INTO interests (name, order_index) VALUES
 ('산책', 1),
 ('여행', 2),
@@ -39,13 +39,15 @@ INSERT INTO interests (name, order_index) VALUES
 ('등산', 5),
 ('러닝', 6),
 ('캠핑', 7),
-('맛집탐방', 8);
+('맛집탐방', 8)
+ON CONFLICT (name) DO NOTHING;
 
--- Seed Data for Hobbies
+-- Seed Data for Hobbies (Safe Insert)
 INSERT INTO hobbies (name, order_index) VALUES
 ('독서', 1),
 ('게임', 2),
 ('영화감상', 3),
 ('요리', 4),
 ('음악감상', 5),
-('운동', 6);
+('운동', 6)
+ON CONFLICT (name) DO NOTHING;
