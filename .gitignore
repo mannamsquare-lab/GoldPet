@@ -122,7 +122,7 @@ venv/
 # -----------------
 # Resource files (large assets, zips)
 resource/
-resources/
+/resources/
 
 # Test data
 테스트데이터/

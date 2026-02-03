@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    parameters {
+        choice(name: 'PROFILE', choices: ['dev', 'prod'], description: 'Select the profile to deploy (dev/prod)')
+    }
+    
     environment {
         DEPLOY_PATH = '/home/dev/www/mannam/goldpet/api'
         JAR_NAME = 'goldpet-api.jar'
@@ -26,12 +30,17 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
+                    echo "Deploying with profile: ${params.PROFILE}"
+                    
                     // 백업
                     sh """
                         if [ -f ${DEPLOY_PATH}/${JAR_NAME} ]; then
                             cp ${DEPLOY_PATH}/${JAR_NAME} ${DEPLOY_PATH}/${JAR_NAME}.backup.\$(date +%Y%m%d_%H%M%S)
                         fi
                     """
+                    
+                    // 환경 변수 파일 생성 (Systemd가 읽을 수 있도록)
+                    sh "echo 'SPRING_PROFILES_ACTIVE=${params.PROFILE}' > ${DEPLOY_PATH}/goldpet-api.env"
                     
                     // 서비스 중지
                     sh 'sudo systemctl stop goldpet-api || true'
@@ -56,6 +65,8 @@ pipeline {
                             sleep 2
                         done
                         echo "❌ API failed to start"
+                        // 로그 출력 (디버깅용)
+                        journalctl -u goldpet-api -n 50 --no-pager
                         exit 1
                     '''
                 }
@@ -65,11 +76,10 @@ pipeline {
     
     post {
         success {
-            echo '✅ Backend 배포 성공!'
-            // 슬랙/이메일 알림 추가 가능
+            echo "✅ Backend 배포 성공! (Profile: ${params.PROFILE})"
         }
         failure {
-            echo '❌ Backend 배포 실패!'
+            echo "❌ Backend 배포 실패! (Profile: ${params.PROFILE})"
             // 롤백
             sh """
                 if ls ${DEPLOY_PATH}/${JAR_NAME}.backup.* 1> /dev/null 2>&1; then

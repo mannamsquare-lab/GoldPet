@@ -1,0 +1,9 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # 운영 환경에서는 스키마 자동 변경 방지
+    show-sql: false
