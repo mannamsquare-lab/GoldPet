@@ -149,10 +149,52 @@ flutter run --dart-define=ENV=prod     # 상용 서버
 
 ### 로컬 개발 환경
 
-로컬 서비스 포트 (deploy-local/docker-compose.yml):
-- PostgreSQL: localhost:5433
-- Redis: localhost:6379
+```bash
+# 인프라 시작/중지/리셋
+./deploy-local/scripts/start.sh
+./deploy-local/scripts/stop.sh
+./deploy-local/scripts/reset.sh   # 데이터 초기화 후 재시작
+```
+
+로컬 서비스 포트:
+- PostgreSQL: localhost:5433 (goldpet/goldpet123)
+- Redis: localhost:6379 (password: goldpet123)
 - MinIO: localhost:9100 (API), localhost:9101 (Console)
 - API: localhost:8081
 - Frontend: localhost:5173
 - Admin: localhost:5174
+
+### 개발 서버 배포
+
+```bash
+# 개발 서버 배포 스크립트 (mannamsquare.com)
+./deploy-dev/scripts/deploy-api.sh
+./deploy-dev/scripts/deploy-frontend.sh
+./deploy-dev/scripts/deploy-admin.sh
+```
+
+## 폴더 구조
+
+```
+deploy-local/                    # 로컬 개발 환경
+├── docker-compose.yml
+├── config/postgres/
+└── scripts/
+    ├── start.sh
+    ├── stop.sh
+    └── reset.sh
+
+deploy-dev/                      # 개발 서버 (mannamsquare.com)
+├── docker/
+│   ├── docker-compose.yml
+│   └── install-docker.sh
+├── nginx/
+│   ├── nginx.conf
+│   └── sites-available/
+├── systemd/services/
+├── logrotate/
+└── scripts/
+    ├── deploy-api.sh
+    ├── deploy-frontend.sh
+    └── deploy-admin.sh
+```
