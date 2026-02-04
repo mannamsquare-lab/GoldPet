@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS admin_access_logs (
 INSERT INTO admin_users (email, password_hash, name, role, is_active, created_at, updated_at)
 VALUES (
     'admin@goldpet.com',
-    '$2a$10$24D/nnlAp.nvbLqiCqNI8eYkUZ7yM6gNHMT38a18DwQAReG.Sc.0C',
+    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.wGexMxJ6nBdLzjhFKW',
     '최고관리자',
     'SUPER_ADMIN',
     true,
