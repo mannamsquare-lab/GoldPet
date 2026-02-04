@@ -29,6 +29,7 @@ export default function CommunityWritePage() {
   const { data: categories } = useQuery({
     queryKey: ['community', 'categories'],
     queryFn: communityService.getCategories,
+    staleTime: 1000 * 60 * 60, // 1 hour - categories rarely change
   });
 
   // Initialize Edit Mode

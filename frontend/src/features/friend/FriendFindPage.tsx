@@ -77,6 +77,7 @@ export const FriendFindPage = () => {
     const { data: petSpecies } = useQuery({
         queryKey: ['pets', 'species'],
         queryFn: friendService.getSpecies,
+        staleTime: Infinity, // Static data - cache indefinitely
     });
 
     const handleDistanceChange = (value: string) => {

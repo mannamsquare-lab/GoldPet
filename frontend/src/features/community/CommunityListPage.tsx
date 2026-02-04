@@ -12,6 +12,7 @@ export default function CommunityListPage() {
   const { data: categories } = useQuery({
     queryKey: ['community', 'categories'],
     queryFn: communityService.getCategories,
+    staleTime: 1000 * 60 * 60, // 1 hour - categories rarely change
   });
 
   const { data: postsData, isLoading } = useQuery({

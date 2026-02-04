@@ -15,11 +15,10 @@ const ProfileOwnerWritePage: React.FC = () => {
     const { user, updateUser } = useAuthStore();
     const { showAlert } = useAlert();
 
-    // Fetch fresh user data
+    // Fetch user data for editing (uses default staleTime)
     const { data: fetchedUser } = useQuery({
         queryKey: ['users', 'me'],
         queryFn: userService.getMe,
-        staleTime: 0, 
     });
 
     const currentUser = fetchedUser || user;

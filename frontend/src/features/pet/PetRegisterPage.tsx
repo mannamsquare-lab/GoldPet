@@ -27,17 +27,19 @@ export default function PetRegisterPage() {
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Fetch species list
+  // Fetch species list (static data - cache indefinitely)
   const { data: speciesList } = useQuery({
     queryKey: ['pets', 'species'],
     queryFn: petService.getSpecies,
+    staleTime: Infinity,
   });
 
-  // Fetch breeds based on selected species
+  // Fetch breeds based on selected species (static data - cache indefinitely)
   const { data: breedList } = useQuery({
     queryKey: ['pets', 'breeds', formData.speciesId],
     queryFn: () => petService.getBreeds(formData.speciesId),
     enabled: !!formData.speciesId,
+    staleTime: Infinity,
   });
 
   // Fetch existing pet data for edit mode

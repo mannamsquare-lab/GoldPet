@@ -12,17 +12,16 @@ const ProfilePetTab: React.FC = () => {
     const navigate = useNavigate();
     const { user, updateUser } = useAuthStore();
     
-    // Using staleTime: 0 to ensure fresh data for now, or default
+    // Fetch my pets list (uses default staleTime, invalidated after pet updates)
     const { data: myPets, isLoading: isPetsLoading } = useQuery({
         queryKey: ['pets', 'my'],
         queryFn: petService.getMyPets,
     });
 
-    // Fetch fresh user data to ensure profile image is up to date
+    // Fetch user data (uses default staleTime, invalidated after profile update)
     const { data: fetchedUser } = useQuery({
         queryKey: ['users', 'me'],
         queryFn: userService.getMe,
-        staleTime: 0, 
     });
 
     const currentUser = fetchedUser || user;
