@@ -29,6 +29,7 @@ const ChatDetailPage = () => {
     const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
@@ -328,14 +329,42 @@ const ChatDetailPage = () => {
         }
 
         // Default: text message
+        const MAX_LENGTH = 300;
+        const isLongMessage = content.length > MAX_LENGTH;
+        const isExpanded = expandedMessages.has(String(msg.id));
+        const displayContent = isLongMessage && !isExpanded
+            ? content.slice(0, MAX_LENGTH) + '...'
+            : content;
+
+        const toggleExpand = () => {
+            setExpandedMessages(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(String(msg.id))) {
+                    newSet.delete(String(msg.id));
+                } else {
+                    newSet.add(String(msg.id));
+                }
+                return newSet;
+            });
+        };
+
         return (
             <div className="chat_detail_message_text">
-                {content.split('\n').map((line: string, i: number) => (
+                {displayContent.split('\n').map((line: string, i: number) => (
                     <span key={i}>
                         {line}
-                        {i < content.split('\n').length - 1 && <br />}
+                        {i < displayContent.split('\n').length - 1 && <br />}
                     </span>
                 ))}
+                {isLongMessage && (
+                    <button
+                        type="button"
+                        className="chat_detail_message_expand_btn"
+                        onClick={toggleExpand}
+                    >
+                        {isExpanded ? '접기' : '더보기'}
+                    </button>
+                )}
             </div>
         );
     };
@@ -560,12 +589,18 @@ const ChatDetailPage = () => {
                             className="chat_detail_input"
                             placeholder={selectedFiles.length > 0 ? "캡션을 입력하세요..." : "메세지를 입력하세요..."}
                             value={message}
+                            maxLength={5000}
                             onChange={(e) => {
                                 setMessage(e.target.value);
                                 handleTyping();
                             }}
                             onKeyPress={handleKeyPress}
                         />
+                        {message.length > 100 && (
+                            <span className="chat_detail_char_count">
+                                {message.length}/5000
+                            </span>
+                        )}
                         <button
                             type="button"
                             className="chat_detail_send_btn btn-effect"

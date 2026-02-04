@@ -6,6 +6,7 @@ import com.goldpet.domain.chat.dto.ChatMessageResponse
 import com.goldpet.domain.chat.dto.SendMessageRequest
 import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessageSendingOperations
@@ -75,7 +76,7 @@ class ChatRoomController(
     @PostMapping("/{roomId}/messages")
     fun sendMessage(
         @PathVariable roomId: Long,
-        @RequestBody request: SendMessageRequest,
+        @Valid @RequestBody request: SendMessageRequest,
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
     ): ResponseEntity<ChatMessageResponse> {
         val messageRequest = com.goldpet.domain.chat.dto.ChatMessageRequest(

@@ -1,11 +1,13 @@
 package com.goldpet.domain.chat.dto
 
 import com.goldpet.domain.chat.entity.MessageType
+import jakarta.validation.constraints.Size
 
 data class ChatMessageRequest(
     val roomId: Long,
     val senderId: Long,
     val messageType: MessageType,
+    @field:Size(max = 5000, message = "메시지는 5000자를 초과할 수 없습니다")
     val textContent: String? = null,
     val fileId: Long? = null,
     val emoticonId: Long? = null,

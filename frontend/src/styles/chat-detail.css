@@ -302,6 +302,7 @@
   justify-content: flex-start;
   align-items: center;
   gap: 2.22vw;
+  position: relative;
 }
 
 .chat_detail_attach_btn {
@@ -740,5 +741,29 @@
   font-size: 3.33vw;
   color: #614108;
   opacity: 0.7;
+}
+
+/* Character Count */
+.chat_detail_char_count {
+  position: absolute;
+  right: 18vw;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.8vw;
+  color: #999;
+}
+
+/* Message Expand Button */
+.chat_detail_message_expand_btn {
+  display: block;
+  margin-top: 1.5vw;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #614108;
+  font-size: 3.2vw;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
