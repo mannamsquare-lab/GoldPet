@@ -58,7 +58,7 @@ data class HideContentRequest(
 
 @Tag(name = "Admin Community", description = "관리자 커뮤니티 관리 API")
 @RestController
-@RequestMapping("/v1/admin/community")
+@RequestMapping("/api/v1/admin/community")
 @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 class AdminCommunityController(
     private val communityService: AdminCommunityService

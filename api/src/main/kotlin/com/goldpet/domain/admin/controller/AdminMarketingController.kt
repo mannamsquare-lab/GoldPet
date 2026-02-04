@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Marketing", description = "관리자 마케팅 관리 API")
 @RestController
-@RequestMapping("/v1/admin/marketing")
+@RequestMapping("/api/v1/admin/marketing")
 class AdminMarketingController(
     private val adminMarketingService: AdminMarketingService
 ) {

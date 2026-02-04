@@ -45,7 +45,7 @@ data class AdminUserDto(
 
 @Tag(name = "Admin Auth", description = "관리자 인증 API")
 @RestController
-@RequestMapping("/v1/admin/auth")
+@RequestMapping("/api/v1/admin/auth")
 class AdminAuthController(
     private val adminAuthService: AdminAuthService
 ) {

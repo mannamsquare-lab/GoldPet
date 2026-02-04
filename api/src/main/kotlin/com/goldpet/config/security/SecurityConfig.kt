@@ -35,8 +35,8 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/auth/**").permitAll() // Allow signup & login
                     .requestMatchers("/").permitAll() // Allow root endpoint (Health check)
                     .requestMatchers("/actuator/**").permitAll() // Allow actuator endpoints (health, metrics for monitoring)
-                    .requestMatchers("/v1/admin/auth/login", "/v1/admin/auth/verify-2fa").permitAll() // Allow Admin login & verify
-                    .requestMatchers(HttpMethod.POST, "/v1/admin/auth/**").authenticated() // Secure other admin auth endpoints (setup, confirm, remove)
+                    .requestMatchers("/api/v1/admin/auth/login", "/api/v1/admin/auth/verify-2fa").permitAll() // Allow Admin login & verify
+                    .requestMatchers(HttpMethod.POST, "/api/v1/admin/auth/**").authenticated() // Secure other admin auth endpoints (setup, confirm, remove)
                     .requestMatchers("/api/v1/pets/**").permitAll() // Allow access to pet API for now (should be secured later)
                     .requestMatchers("/api/v1/walks/**").permitAll() // Allow access to walk API for now (should be secured later)
                     .requestMatchers("/oauth2/**").permitAll() // Allow access to OAuth2 endpoints

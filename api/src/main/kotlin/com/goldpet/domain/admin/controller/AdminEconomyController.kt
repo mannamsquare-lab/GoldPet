@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Economy Management", description = "관리자 Gold/결제 관리 API")
 @RestController
-@RequestMapping("/v1/admin/economy")
+@RequestMapping("/api/v1/admin/economy")
 class AdminEconomyController(
     private val adminEconomyService: AdminEconomyService
 ) {

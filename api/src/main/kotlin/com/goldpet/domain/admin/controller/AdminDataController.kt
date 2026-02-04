@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Data", description = "관리자 코드/마스터 데이터 관리 API")
 @RestController
-@RequestMapping("/v1/admin/data")
+@RequestMapping("/api/v1/admin/data")
 class AdminDataController(
     private val adminDataService: AdminDataService
 ) {

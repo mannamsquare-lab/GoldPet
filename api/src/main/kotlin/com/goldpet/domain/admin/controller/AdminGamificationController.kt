@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Gamification Management", description = "관리자 게이미피케이션 관리 API")
 @RestController
-@RequestMapping("/v1/admin/gamification")
+@RequestMapping("/api/v1/admin/gamification")
 class AdminGamificationController(
     private val adminGamificationService: AdminGamificationService
 ) {

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Chat Management", description = "관리자 채팅 관리 API")
 @RestController
-@RequestMapping("/v1/admin/chat")
+@RequestMapping("/api/v1/admin/chat")
 class AdminChatController(
     private val adminChatService: AdminChatService
 ) {

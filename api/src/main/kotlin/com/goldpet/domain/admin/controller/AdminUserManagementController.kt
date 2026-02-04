@@ -61,7 +61,7 @@ data class UpdateUserStatusRequest(
 
 @Tag(name = "Admin User Management", description = "관리자 회원 관리 API")
 @RestController
-@RequestMapping("/v1/admin/users")
+@RequestMapping("/api/v1/admin/users")
 @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 class AdminUserManagementController(
     private val userManagementService: AdminUserManagementService

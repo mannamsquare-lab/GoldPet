@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Report Management", description = "관리자 신고 관리 API")
 @RestController
-@RequestMapping("/v1/admin/reports")
+@RequestMapping("/api/v1/admin/reports")
 class AdminReportController(
     private val adminReportService: AdminReportService
 ) {
