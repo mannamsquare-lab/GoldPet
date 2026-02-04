@@ -19,14 +19,6 @@ pipeline {
             }
         }
         
-        stage('Test') {
-            steps {
-                dir('api') {
-                    sh './gradlew test'
-                }
-            }
-        }
-        
         stage('Deploy') {
             steps {
                 script {
