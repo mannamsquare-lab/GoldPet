@@ -54,10 +54,10 @@ const ChatDetailPage = () => {
             clearTimeout(typingTimeoutRef.current);
         }
 
-        // Stop typing after 2 seconds of no input
+        // Stop typing after 1 second of no input
         typingTimeoutRef.current = setTimeout(() => {
             sendTypingEvent(false);
-        }, 2000);
+        }, 1000);
     };
 
     // Fetch Chat Room info (to get participant details)
@@ -147,6 +147,13 @@ const ChatDetailPage = () => {
     }, [chatId, queryClient]);
 
     const handleSendMessage = async () => {
+        // Stop typing indicator when sending
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = null;
+        }
+        sendTypingEvent(false);
+
         if (selectedFiles.length > 0) {
             await handleSendFiles();
             return;
@@ -200,6 +207,7 @@ const ChatDetailPage = () => {
     };
 
     const handleQuickReply = (text: string) => {
+        sendTypingEvent(false);
         sendMutation.mutate({ content: text });
     };
 

@@ -62,7 +62,7 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
 
       if (isTyping) {
         setTypingUsers(prev => new Set(prev).add(userId));
-        // Auto-clear typing after 3 seconds of no updates
+        // Auto-clear typing after 1.5 seconds of no updates
         const timeout = setTimeout(() => {
           setTypingUsers(prev => {
             const newSet = new Set(prev);
@@ -70,7 +70,7 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
             return newSet;
           });
           typingTimeoutRef.current.delete(userId);
-        }, 3000);
+        }, 1500);
         typingTimeoutRef.current.set(userId, timeout);
       } else {
         setTypingUsers(prev => {
