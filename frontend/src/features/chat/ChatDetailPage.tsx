@@ -114,9 +114,12 @@ const ChatDetailPage = () => {
 
     useEffect(() => {
         if (chatId && !USE_MOCK) {
-            chatService.markAsRead(chatId);
+            chatService.markAsRead(chatId).then(() => {
+                // Invalidate chatRooms to update unread count in the list
+                queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+            });
         }
-    }, [chatId]);
+    }, [chatId, queryClient]);
 
     const handleSendMessage = async () => {
         if (selectedFiles.length > 0) {
