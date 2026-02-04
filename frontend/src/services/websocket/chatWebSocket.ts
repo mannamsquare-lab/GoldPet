@@ -76,6 +76,8 @@ class ChatWebSocketService {
 
       this.client.activate();
     });
+
+    return this.connectPromise;
   }
 
   disconnect(): void {
