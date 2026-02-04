@@ -16,6 +16,8 @@ interface SelectedFile {
     type: 'image' | 'video' | 'file';
 }
 
+const MAX_FILES = 10; // Maximum number of files allowed at once
+
 const ChatDetailPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -23,8 +25,9 @@ const ChatDetailPage = () => {
     const isGroupChat = location.pathname.includes('/chat/group/');
     const [message, setMessage] = useState('');
     const [showAttachMenu, setShowAttachMenu] = useState(false);
-    const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
@@ -99,8 +102,8 @@ const ChatDetailPage = () => {
     }, [chatId]);
 
     const handleSendMessage = async () => {
-        if (selectedFile) {
-            await handleSendFile();
+        if (selectedFiles.length > 0) {
+            await handleSendFiles();
             return;
         }
         if (message.trim()) {
@@ -109,34 +112,45 @@ const ChatDetailPage = () => {
         }
     };
 
-    const handleSendFile = async () => {
-        if (!selectedFile) return;
+    const handleSendFiles = async () => {
+        if (selectedFiles.length === 0) return;
 
         setIsUploading(true);
+        setUploadProgress(0);
+
         try {
-            // Upload file first
-            const uploadResult = await uploadMutation.mutateAsync(selectedFile.file);
+            const totalFiles = selectedFiles.length;
 
-            // Determine message type
-            const messageType = selectedFile.type === 'image' ? 'IMAGE'
-                : selectedFile.type === 'video' ? 'VIDEO'
-                : 'FILE';
+            for (let i = 0; i < totalFiles; i++) {
+                const selectedFile = selectedFiles[i];
+                setUploadProgress(Math.round((i / totalFiles) * 100));
 
-            // Send message with file
-            await sendMutation.mutateAsync({
-                content: message || '',
-                messageType,
-                fileId: uploadResult.id,
-            });
+                // Upload file first
+                const uploadResult = await uploadMutation.mutateAsync(selectedFile.file);
 
-            // Clear selected file and message
-            setSelectedFile(null);
+                // Determine message type
+                const messageType = selectedFile.type === 'image' ? 'IMAGE'
+                    : selectedFile.type === 'video' ? 'VIDEO'
+                    : 'FILE';
+
+                // Send message with file (only include text message with the first file)
+                await sendMutation.mutateAsync({
+                    content: i === 0 ? (message || '') : '',
+                    messageType,
+                    fileId: uploadResult.id,
+                });
+            }
+
+            // Clear selected files and message
+            selectedFiles.forEach(f => URL.revokeObjectURL(f.preview));
+            setSelectedFiles([]);
             setMessage('');
         } catch (error) {
-            console.error('Failed to send file:', error);
+            console.error('Failed to send files:', error);
             alert('파일 전송에 실패했습니다.');
         } finally {
             setIsUploading(false);
+            setUploadProgress(0);
         }
     };
 
@@ -169,31 +183,50 @@ const ChatDetailPage = () => {
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-        // Determine file type
-        let type: 'image' | 'video' | 'file' = 'file';
-        if (file.type.startsWith('image/')) {
-            type = 'image';
-        } else if (file.type.startsWith('video/')) {
-            type = 'video';
+        const newFiles: SelectedFile[] = [];
+        const remainingSlots = MAX_FILES - selectedFiles.length;
+
+        for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
+            const file = files[i];
+
+            // Determine file type
+            let type: 'image' | 'video' | 'file' = 'file';
+            if (file.type.startsWith('image/')) {
+                type = 'image';
+            } else if (file.type.startsWith('video/')) {
+                type = 'video';
+            }
+
+            // Create preview URL
+            const preview = URL.createObjectURL(file);
+            newFiles.push({ file, preview, type });
         }
 
-        // Create preview URL
-        const preview = URL.createObjectURL(file);
+        if (files.length > remainingSlots) {
+            alert(`최대 ${MAX_FILES}개까지만 첨부할 수 있습니다.`);
+        }
 
-        setSelectedFile({ file, preview, type });
+        setSelectedFiles(prev => [...prev, ...newFiles]);
 
         // Reset input
         e.target.value = '';
     };
 
-    const handleCancelFile = () => {
-        if (selectedFile) {
-            URL.revokeObjectURL(selectedFile.preview);
-        }
-        setSelectedFile(null);
+    const handleCancelFile = (index: number) => {
+        setSelectedFiles(prev => {
+            const newFiles = [...prev];
+            URL.revokeObjectURL(newFiles[index].preview);
+            newFiles.splice(index, 1);
+            return newFiles;
+        });
+    };
+
+    const handleCancelAllFiles = () => {
+        selectedFiles.forEach(f => URL.revokeObjectURL(f.preview));
+        setSelectedFiles([]);
     };
 
     const renderMessageContent = (msg: any) => {
@@ -264,6 +297,7 @@ const ChatDetailPage = () => {
                 ref={fileInputRef}
                 style={{ display: 'none' }}
                 onChange={handleFileChange}
+                multiple
             />
 
             {/* Header */}
@@ -340,28 +374,44 @@ const ChatDetailPage = () => {
             </div>
 
             {/* File Preview */}
-            {selectedFile && (
-                <div className="chat_detail_file_preview">
-                    <div className="chat_detail_file_preview_content">
-                        {selectedFile.type === 'image' && (
-                            <img src={selectedFile.preview} alt="미리보기" />
-                        )}
-                        {selectedFile.type === 'video' && (
-                            <video src={selectedFile.preview} />
-                        )}
-                        {selectedFile.type === 'file' && (
-                            <span className="chat_detail_file_preview_name">{selectedFile.file.name}</span>
-                        )}
+            {selectedFiles.length > 0 && (
+                <div className="chat_detail_file_preview_container">
+                    <div className="chat_detail_file_preview_header">
+                        <span className="chat_detail_file_preview_count">{selectedFiles.length}개 파일 선택됨</span>
+                        <button
+                            type="button"
+                            className="chat_detail_file_preview_clear_all"
+                            onClick={handleCancelAllFiles}
+                        >
+                            전체 삭제
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        className="chat_detail_file_preview_remove"
-                        onClick={handleCancelFile}
-                    >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                            <path d="M18 6L6 18M6 6L18 18" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                    </button>
+                    <div className="chat_detail_file_preview_list">
+                        {selectedFiles.map((selectedFile, index) => (
+                            <div key={index} className="chat_detail_file_preview">
+                                <div className="chat_detail_file_preview_content">
+                                    {selectedFile.type === 'image' && (
+                                        <img src={selectedFile.preview} alt="미리보기" />
+                                    )}
+                                    {selectedFile.type === 'video' && (
+                                        <video src={selectedFile.preview} />
+                                    )}
+                                    {selectedFile.type === 'file' && (
+                                        <span className="chat_detail_file_preview_name">{selectedFile.file.name}</span>
+                                    )}
+                                </div>
+                                <button
+                                    type="button"
+                                    className="chat_detail_file_preview_remove"
+                                    onClick={() => handleCancelFile(index)}
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                        <path d="M18 6L6 18M6 6L18 18" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -376,7 +426,7 @@ const ChatDetailPage = () => {
             {/* Input Area */}
             <div className="chat_detail_input_area">
                 {/* Quick Replies */}
-                {!selectedFile && (
+                {selectedFiles.length === 0 && (
                     <div className="chat_detail_quick_replies">
                         {quickReplies.map((reply, index) => (
                             <button
@@ -434,7 +484,7 @@ const ChatDetailPage = () => {
                         <input
                             type="text"
                             className="chat_detail_input"
-                            placeholder={selectedFile ? "캡션을 입력하세요..." : "메세지를 입력하세요..."}
+                            placeholder={selectedFiles.length > 0 ? "캡션을 입력하세요..." : "메세지를 입력하세요..."}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             onKeyPress={handleKeyPress}
@@ -443,9 +493,9 @@ const ChatDetailPage = () => {
                             type="button"
                             className="chat_detail_send_btn btn-effect"
                             onClick={handleSendMessage}
-                            disabled={(!message.trim() && !selectedFile) || isUploading}
+                            disabled={(!message.trim() && selectedFiles.length === 0) || isUploading}
                         >
-                            <span>{isUploading ? '...' : '전송'}</span>
+                            <span>{isUploading ? `${uploadProgress}%` : '전송'}</span>
                         </button>
                     </div>
                 </div>
