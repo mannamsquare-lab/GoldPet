@@ -59,6 +59,83 @@ interface SelectedFile {
 
 const MAX_FILES = 10; // Maximum number of files allowed at once
 
+// Helper to get file icon based on MIME type or extension
+const getFileIcon = (file: File | { mimeType?: string; url?: string }) => {
+    const mimeType = 'type' in file ? file.type : file.mimeType || '';
+    const fileName = 'name' in file ? file.name : file.url?.split('/').pop() || '';
+    const ext = fileName.split('.').pop()?.toLowerCase() || '';
+
+    // PDF
+    if (mimeType === 'application/pdf' || ext === 'pdf') {
+        return (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#E53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2V8H20" stroke="#E53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <text x="12" y="17" textAnchor="middle" fontSize="6" fill="#E53935" fontWeight="bold">PDF</text>
+            </svg>
+        );
+    }
+
+    // Word documents
+    if (mimeType.includes('word') || ['doc', 'docx'].includes(ext)) {
+        return (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#2196F3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2V8H20" stroke="#2196F3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <text x="12" y="17" textAnchor="middle" fontSize="5" fill="#2196F3" fontWeight="bold">DOC</text>
+            </svg>
+        );
+    }
+
+    // Excel/Spreadsheet
+    if (mimeType.includes('sheet') || mimeType.includes('excel') || ['xls', 'xlsx', 'csv'].includes(ext)) {
+        return (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2V8H20" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <text x="12" y="17" textAnchor="middle" fontSize="5" fill="#4CAF50" fontWeight="bold">XLS</text>
+            </svg>
+        );
+    }
+
+    // Text files
+    if (mimeType.startsWith('text/') || ['txt', 'md', 'json', 'xml', 'html', 'css', 'js'].includes(ext)) {
+        return (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#757575" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2V8H20" stroke="#757575" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 13H16M8 17H12" stroke="#757575" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+        );
+    }
+
+    // Compressed/Archive files
+    if (mimeType.includes('zip') || mimeType.includes('compressed') || ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+        return (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#FF9800" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2V8H20" stroke="#FF9800" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <text x="12" y="17" textAnchor="middle" fontSize="5" fill="#FF9800" fontWeight="bold">ZIP</text>
+            </svg>
+        );
+    }
+
+    // Default file icon
+    return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M14 2V8H20" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    );
+};
+
+// Format file size
+const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 const ChatDetailPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -278,9 +355,14 @@ const ChatDetailPage = () => {
         setShowAttachMenu(!showAttachMenu);
     };
 
-    const handleFileSelect = (accept: string, capture?: string) => {
+    const handleFileSelect = (accept?: string, capture?: string) => {
         if (fileInputRef.current) {
-            fileInputRef.current.accept = accept;
+            // For "all files", remove accept attribute entirely for best browser compatibility
+            if (accept) {
+                fileInputRef.current.accept = accept;
+            } else {
+                fileInputRef.current.removeAttribute('accept');
+            }
             if (capture) {
                 fileInputRef.current.setAttribute('capture', capture);
             } else {
@@ -366,14 +448,11 @@ const ChatDetailPage = () => {
         // Handle file messages
         if ((msgType === 'FILE' || msgType === 'file') && file) {
             const fileName = file.url.split('/').pop() || '파일';
-            const fileSize = file.sizeBytes ? `${(file.sizeBytes / 1024).toFixed(1)} KB` : '';
+            const fileSize = file.sizeBytes ? formatFileSize(file.sizeBytes) : '';
             return (
                 <div className="chat_detail_message_file" onClick={() => window.open(file.url, '_blank')}>
                     <div className="chat_detail_file_icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                        {getFileIcon(file)}
                     </div>
                     <div className="chat_detail_file_info">
                         <span className="chat_detail_file_name">{fileName}</span>
@@ -518,7 +597,12 @@ const ChatDetailPage = () => {
                                         <video src={selectedFile.preview} />
                                     )}
                                     {selectedFile.type === 'file' && (
-                                        <span className="chat_detail_file_preview_name">{selectedFile.file.name}</span>
+                                        <div className="chat_detail_file_preview_doc">
+                                            {getFileIcon(selectedFile.file)}
+                                            <span className="chat_detail_file_preview_ext">
+                                                {selectedFile.file.name.split('.').pop()?.toUpperCase()}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
                                 <button
@@ -567,7 +651,7 @@ const ChatDetailPage = () => {
                     {/* Attachment Menu */}
                     {showAttachMenu && (
                         <div className="chat_detail_attach_menu">
-                            <button type="button" onClick={() => handleFileSelect('image/*', 'environment')}>
+                            <button type="button" onClick={() => handleFileSelect('image/*,video/*', 'environment')}>
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                                     <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     <circle cx="12" cy="13" r="4" stroke="#614108" strokeWidth="2"/>
@@ -580,9 +664,9 @@ const ChatDetailPage = () => {
                                     <circle cx="8.5" cy="8.5" r="1.5" fill="#614108"/>
                                     <path d="M21 15L16 10L5 21" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                <span>갤러리</span>
+                                <span>앨범</span>
                             </button>
-                            <button type="button" onClick={() => handleFileSelect('*/*')}>
+                            <button type="button" onClick={() => handleFileSelect()}>
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                                     <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     <path d="M14 2V8H20" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
