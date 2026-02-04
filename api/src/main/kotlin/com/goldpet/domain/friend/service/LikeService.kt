@@ -3,7 +3,9 @@ package com.goldpet.domain.friend.service
 import com.goldpet.domain.friend.dto.LikeResponse
 import com.goldpet.domain.friend.entity.Like
 import com.goldpet.domain.friend.entity.LikeStatus
+import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
+import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.notification.dto.CreateNotificationRequest
 import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.service.NotificationService
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class LikeService(
     private val likeRepository: LikeRepository,
+    private val matchRepository: MatchRepository,
     private val userRepository: UserRepository,
     private val notificationService: NotificationService
 ) {
@@ -42,7 +45,17 @@ class LikeService(
         
         // Check if mutual (target already liked me)
         val isMutual = likeRepository.existsByFromUserIdAndToUserIdAndStatus(toUserId, fromUserId, LikeStatus.ACTIVE)
-        
+
+        // If mutual, create match if not exists
+        if (isMutual) {
+            val user1 = if (fromUser.id < toUser.id) fromUser else toUser
+            val user2 = if (fromUser.id < toUser.id) toUser else fromUser
+
+            if (matchRepository.findByUser1AndUser2(user1, user2).isEmpty) {
+                matchRepository.save(Match(user1 = user1, user2 = user2))
+            }
+        }
+
         // Send notification to target
         val message = if (isMutual) {
             "${fromUser.nickname ?: "누군가"}님과 서로 좋아해가 되었어요! 💕"
@@ -89,7 +102,13 @@ class LikeService(
                 likeRepository.save(rLike)
                 println("LikeService: Canceled reverse like from ${toUser.id} to ${fromUser.id}")
             }
-            
+
+            // Delete match if exists
+            matchRepository.findByUserIds(fromUserId, toUserId).ifPresent { match ->
+                matchRepository.delete(match)
+                println("LikeService: Deleted match between ${fromUser.id} and ${toUser.id}")
+            }
+
             return true
         }
         return false
