@@ -104,12 +104,20 @@ const ChatDetailPage = () => {
         '지금 어디로 산책 가시나요?',
     ];
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const isInitialLoadRef = useRef(true);
+
+    const scrollToBottom = (instant = false) => {
+        messagesEndRef.current?.scrollIntoView({
+            behavior: instant ? 'instant' : 'smooth'
+        });
     };
 
     useEffect(() => {
-        scrollToBottom();
+        if (messages.length > 0) {
+            // Instant scroll on initial load, smooth scroll for new messages
+            scrollToBottom(isInitialLoadRef.current);
+            isInitialLoadRef.current = false;
+        }
     }, [messages]);
 
     useEffect(() => {
