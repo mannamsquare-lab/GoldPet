@@ -84,7 +84,7 @@ const mockChallenges: Challenge[] = [
   },
 ];
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || true;
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 export const gamificationService = {
   getAllBadges: async (): Promise<Badge[]> => {

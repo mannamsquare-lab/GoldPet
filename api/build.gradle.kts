@@ -44,8 +44,16 @@ dependencies {
     implementation("com.warrenstrange:googleauth:1.5.0")
 
     runtimeOnly("org.postgresql:postgresql")
+
+    // Test dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("org.springframework.security:spring-security-test")
+
+    // TestContainers for integration tests
+    testImplementation("org.testcontainers:testcontainers:1.19.3")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
+    testImplementation("org.testcontainers:postgresql:1.19.3")
 }
 
 tasks.withType<KotlinCompile> {

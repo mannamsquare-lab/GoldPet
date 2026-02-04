@@ -17,7 +17,7 @@ import java.net.URI
 
 @Tag(name = "AI Profile", description = "AI 프로필 API")
 @RestController
-@RequestMapping("/v1/ai-profile")
+@RequestMapping("/api/v1/ai-profile")
 class AIProfileController(
     private val aiProfileService: AIProfileService
 ) {

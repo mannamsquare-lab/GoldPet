@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Gold", description = "골드/결제 API")
 @RestController
-@RequestMapping("/v1/gold")
+@RequestMapping("/api/v1/gold")
 class GoldController(
     private val goldService: GoldService
 ) {

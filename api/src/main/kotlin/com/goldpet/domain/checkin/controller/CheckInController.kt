@@ -16,7 +16,7 @@ import java.net.URI
 
 @Tag(name = "CheckIn", description = "체크인 API")
 @RestController
-@RequestMapping("/v1/checkin")
+@RequestMapping("/api/v1/checkin")
 class CheckInController(
     private val checkInService: CheckInService
 ) {

@@ -43,7 +43,7 @@ const mockRecords: WalkRecord[] = [
   { id: 4, date: '2025.12.18', distance: '1.5 Km', duration: '총 40분', points: '15G 적립' },
 ];
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || true;
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 export const walkService = {
   getWalkStats: async (): Promise<WalkStats> => {

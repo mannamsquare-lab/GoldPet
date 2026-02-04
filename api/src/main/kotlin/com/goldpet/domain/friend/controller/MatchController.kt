@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Match", description = "매칭/친구 관련 API")
 @RestController
-@RequestMapping("/v1/matches")
+@RequestMapping("/api/v1/matches")
 class MatchController(
     private val matchService: MatchService
 ) {

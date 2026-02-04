@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import java.util.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertThrows
+import java.time.LocalDateTime
 
 @ExtendWith(MockitoExtension::class)
 class MatchServiceTest {
@@ -85,7 +86,12 @@ class MatchServiceTest {
         `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(false)
         `when`(likeRepository.findByFromUserAndToUser(user1, user2)).thenReturn(Optional.empty())
         `when`(likeRepository.findByFromUserAndToUser(user2, user1)).thenReturn(Optional.empty())
-        `when`(likeRepository.save(any(Like::class.java))).thenAnswer { it.arguments[0] }
+        `when`(likeRepository.save(any(Like::class.java))).thenAnswer {
+            (it.arguments[0] as Like).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
 
         // When
         val isMatchCreated = matchService.likeUser(user1.id, user2.id)
@@ -103,10 +109,23 @@ class MatchServiceTest {
         `when`(userRepository.findById(user2.id)).thenReturn(Optional.of(user2))
         `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(false)
         `when`(likeRepository.findByFromUserAndToUser(user1, user2)).thenReturn(Optional.empty())
-        `when`(likeRepository.findByFromUserAndToUser(user2, user1)).thenReturn(Optional.of(Like(fromUser = user2, toUser = user1)))
-        `when`(likeRepository.save(any(Like::class.java))).thenAnswer { it.arguments[0] }
+        `when`(likeRepository.findByFromUserAndToUser(user2, user1)).thenReturn(Optional.of(Like(fromUser = user2, toUser = user1).apply {
+            createdAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now()
+        }))
+        `when`(likeRepository.save(any(Like::class.java))).thenAnswer {
+            (it.arguments[0] as Like).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
         `when`(matchRepository.findByUser1AndUser2(user1, user2)).thenReturn(Optional.empty())
-        `when`(matchRepository.save(any(Match::class.java))).thenAnswer { it.arguments[0] }
+        `when`(matchRepository.save(any(Match::class.java))).thenAnswer {
+            (it.arguments[0] as Match).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
 
         // When
         val isMatchCreated = matchService.likeUser(user1.id, user2.id)
@@ -123,7 +142,10 @@ class MatchServiceTest {
         `when`(userRepository.findById(user1.id)).thenReturn(Optional.of(user1))
         `when`(userRepository.findById(user2.id)).thenReturn(Optional.of(user2))
         `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(false)
-        `when`(likeRepository.findByFromUserAndToUser(user1, user2)).thenReturn(Optional.of(Like(fromUser = user1, toUser = user2)))
+        `when`(likeRepository.findByFromUserAndToUser(user1, user2)).thenReturn(Optional.of(Like(fromUser = user1, toUser = user2).apply {
+            createdAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now()
+        }))
 
         // When
         val isMatchCreated = matchService.likeUser(user1.id, user2.id)

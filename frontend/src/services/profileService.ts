@@ -84,7 +84,7 @@ const mockSettings: SettingsData = {
   account: { email: 'user@goldpet.com', phone: '010-1234-5678', linkedAccounts: ['kakao', 'google'] },
 };
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || true;
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 export const profileService = {
   getMyProfile: async (): Promise<UserProfile> => {

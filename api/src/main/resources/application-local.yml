@@ -11,6 +11,9 @@ spring:
       hibernate:
         format_sql: true
 
+  flyway:
+    enabled: false # 로컬에서는 Hibernate ddl-auto로 스키마 관리
+
 # 로컬 환경 URL 설정
 app:
   frontend:

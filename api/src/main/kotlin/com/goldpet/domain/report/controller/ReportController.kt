@@ -13,7 +13,7 @@ import java.net.URI
 
 @Tag(name = "Report", description = "신고 API")
 @RestController
-@RequestMapping("/v1/reports")
+@RequestMapping("/api/v1/reports")
 class ReportController(
     private val reportService: ReportService
 ) {
