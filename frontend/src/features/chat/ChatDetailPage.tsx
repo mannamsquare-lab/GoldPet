@@ -71,6 +71,7 @@ const ChatDetailPage = () => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const queryClient = useQueryClient();
 
     // Get current user ID from auth store (needed for WebSocket)
@@ -251,12 +252,27 @@ const ChatDetailPage = () => {
         sendMutation.mutate({ content: text });
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
         }
+        // Shift+Enter allows newline (default textarea behavior)
     };
+
+    // Auto-resize textarea based on content
+    const adjustTextareaHeight = () => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            const maxHeight = 120; // ~4-5 lines max
+            textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+        }
+    };
+
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [message]);
 
     const handleAttachClick = () => {
         setShowAttachMenu(!showAttachMenu);
@@ -586,17 +602,18 @@ const ChatDetailPage = () => {
                                 <path d="M12.544 4.3847L5.44005 11.4887C3.59572 13.333 3.75132 16.4789 5.57312 18.3007C7.39492 20.1225 10.6668 20.4041 12.5111 18.5597L19.6151 11.4558C20.9564 10.1144 20.8255 8.09719 19.5006 6.77225C18.1756 5.44731 16.1584 5.31639 14.817 6.65773L8.82838 12.6464C8.0265 13.4483 7.60881 14.6088 8.4369 15.4369C9.26499 16.265 10.4255 15.8473 11.2274 15.0454L16.6368 9.63603" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
                             </svg>
                         </button>
-                        <input
-                            type="text"
+                        <textarea
+                            ref={textareaRef}
                             className="chat_detail_input"
                             placeholder={selectedFiles.length > 0 ? "캡션을 입력하세요..." : "메세지를 입력하세요..."}
                             value={message}
                             maxLength={5000}
+                            rows={1}
                             onChange={(e) => {
                                 setMessage(e.target.value);
                                 handleTyping();
                             }}
-                            onKeyPress={handleKeyPress}
+                            onKeyDown={handleKeyDown}
                         />
                         {message.length > 100 && (
                             <span className="chat_detail_char_count">

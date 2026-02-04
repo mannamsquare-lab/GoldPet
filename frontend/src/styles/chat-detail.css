@@ -305,7 +305,7 @@
   background: #EFE1C4;
   display: flex;
   justify-content: flex-start;
-  align-items: center;
+  align-items: flex-end;
   gap: 2.22vw;
   position: relative;
 }
@@ -326,21 +326,30 @@
 
 .chat_detail_input {
   flex: 1;
-  height: 9vw;
-  padding: 0 3.33vw;
+  min-height: 9vw;
+  max-height: 30vw;
+  padding: 2.22vw 3.33vw;
   background: white;
-  border-radius: 999px;
+  border-radius: 4.44vw;
   border: none;
   outline: none;
-  color: #AAAAAA;
+  color: #505050;
   font-size: 4.44vw;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
-  line-height: 6.22vw;
+  line-height: 1.4;
+  resize: none;
+  overflow-y: auto;
 }
 
 .chat_detail_input::placeholder {
   color: #AAAAAA;
+}
+
+/* Hide scrollbar but keep functionality */
+.chat_detail_input::-webkit-scrollbar {
+  width: 0;
+  display: none;
 }
 
 .chat_detail_send_btn {
