@@ -8,6 +8,7 @@ import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.messaging.simp.SimpMessageSendingOperations
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
@@ -15,7 +16,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/chat/rooms")
 class ChatRoomController(
     private val chatService: ChatService,
-    private val fileAttachmentRepository: FileAttachmentRepository
+    private val fileAttachmentRepository: FileAttachmentRepository,
+    private val simpMessageSendingOperations: SimpMessageSendingOperations
 ) {
     @PostMapping
     fun createChatRoom(
@@ -88,7 +90,12 @@ class ChatRoomController(
         // Fetch file attachment if present
         val fileAttachment = request.fileId?.let { fileAttachmentRepository.findById(it).orElse(null) }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ChatMessageResponse.from(message, fileAttachment))
+        val chatMessageResponse = ChatMessageResponse.from(message, fileAttachment)
+
+        // Broadcast to WebSocket subscribers for real-time updates
+        simpMessageSendingOperations.convertAndSend("/topic/chat/$roomId", chatMessageResponse)
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(chatMessageResponse)
     }
 
     @PostMapping("/{roomId}/read")
