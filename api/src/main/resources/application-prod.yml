@@ -7,3 +7,16 @@ spring:
     hibernate:
       ddl-auto: validate # 운영 환경에서는 스키마 자동 변경 방지
     show-sql: false
+
+# 상용 서버 환경 URL 설정 (goldpet.com)
+app:
+  frontend:
+    url: https://app.goldpet.com
+  admin:
+    url: https://admin.goldpet.com
+  cors:
+    allowed-origins:
+      - https://app.goldpet.com
+      - https://admin.goldpet.com
+      - https://goldpet.com
+      - https://www.goldpet.com

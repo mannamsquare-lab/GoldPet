@@ -10,3 +10,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+# 개발 서버 환경 URL 설정 (mannamsquare.com)
+app:
+  frontend:
+    url: https://app.mannamsquare.com
+  admin:
+    url: https://admin.mannamsquare.com
+  cors:
+    allowed-origins:
+      - https://app.mannamsquare.com
+      - https://admin.mannamsquare.com
+      - https://mannamsquare.com

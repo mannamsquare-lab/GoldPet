@@ -1,6 +1,10 @@
 pipeline {
     agent any
-    
+
+    parameters {
+        choice(name: 'ENV', choices: ['dev', 'prod'], description: '배포 환경 (dev=mannamsquare.com, prod=goldpet.com)')
+    }
+
     environment {
         DEPLOY_PATH = '/home/dev/www/mannam/goldpet/admin'
         NODE_VERSION = '24.13.0'
@@ -18,18 +22,21 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Build') {
             steps {
                 dir('admin') {
-                    sh 'npm run build'
+                    // 환경에 맞는 .env 파일 사용하여 빌드
+                    sh "npm run build -- --mode ${params.ENV}"
                 }
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 script {
+                    def checkUrl = params.ENV == 'dev' ? 'https://admin.mannamsquare.com' : 'https://admin.goldpet.com'
+
                     // 백업
                     sh """
                         if [ -d ${DEPLOY_PATH}/dist ]; then
@@ -38,36 +45,36 @@ pipeline {
                             echo "Backed up to \$BACKUP_DIR"
                         fi
                     """
-                    
+
                     // 새 빌드 배포
                     sh "cp -r admin/dist ${DEPLOY_PATH}/"
-                    
+
                     // Nginx 재로드
                     sh 'sudo systemctl reload nginx'
-                    
+
                     // 배포 확인
-                    sh '''
-                        echo "Checking deployment..."
-                        if curl -f https://admin.mannamsquare.com > /dev/null 2>&1; then
+                    sh """
+                        echo "Checking deployment at ${checkUrl}..."
+                        if curl -f ${checkUrl} > /dev/null 2>&1; then
                             echo "✅ Admin panel is accessible!"
                         else
                             echo "⚠️ Admin panel might not be accessible"
                         fi
-                    '''
+                    """
                 }
             }
         }
     }
-    
+
     post {
         success {
-            echo '✅ Admin 배포 성공!'
+            echo "✅ Admin 배포 성공! (ENV: ${params.ENV})"
         }
         failure {
-            echo '❌ Admin 배포 실패!'
+            echo "❌ Admin 배포 실패! (ENV: ${params.ENV})"
             // 롤백
             sh """
-                if [ -d ${DEPLOY_PATH}/dist.backup.* ]; then
+                if ls -d ${DEPLOY_PATH}/dist.backup.* 1> /dev/null 2>&1; then
                     LATEST_BACKUP=\$(ls -td ${DEPLOY_PATH}/dist.backup.* | head -1)
                     rm -rf ${DEPLOY_PATH}/dist
                     cp -r \$LATEST_BACKUP ${DEPLOY_PATH}/dist
