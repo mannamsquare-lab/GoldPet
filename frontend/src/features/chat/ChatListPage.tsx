@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
+import { useAuthStore } from '../../stores/authStore';
 import '../../styles/chat.css';
 import { Loading } from '../../components/common/Loading';
 
@@ -26,6 +27,8 @@ const ChatEmptyState = () => {
 const ChatListPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { user } = useAuthStore();
+    const currentUserId = user?.id;
     const [activeTab, setActiveTab] = useState('one'); // 'one', 'group', 'request'
 
     // URL state에서 activeTab 정보 가져오기
@@ -82,16 +85,19 @@ const ChatListPage = () => {
                         <ChatEmptyState />
                     ) : (
                         <ul className="chat_list">
-                            {oneOnOneChats.map((chat) => (
+                            {oneOnOneChats.map((chat) => {
+                                // Find the other participant (not current user)
+                                const otherParticipant = chat.participants.find(p => p.id !== currentUserId) || chat.participants[0];
+                                return (
                                 <li key={chat.id}>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="btn-effect"
                                         onClick={() => navigate(`/chat/${chat.id}`)}
                                     >
                                         <div className="profile_img">
-                                            {/* Show first participant's image for 1:1 */}
-                                            <img src={chat.participants[0]?.profileImageUrl || '/assets/images/temp/temp_dog_profile.png'} alt={chat.name} />
+                                            {/* Show other participant's image for 1:1 */}
+                                            <img src={otherParticipant?.profileImageUrl || '/assets/images/temp/temp_dog_profile.png'} alt={chat.name} />
                                         </div>
                                         <div className="txt_wrap">
                                             <strong>{chat.name}</strong>
@@ -104,7 +110,8 @@ const ChatListPage = () => {
                                         </div>
                                     </button>
                                 </li>
-                            ))}
+                            );
+                            })}
                         </ul>
                     )}
                 </>

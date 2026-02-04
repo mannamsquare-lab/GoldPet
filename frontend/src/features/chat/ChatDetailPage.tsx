@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
 import type { FileInfo } from '../../services/chatService';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
+import { useAuthStore } from '../../stores/authStore';
 import { Loading } from '../../components/common/Loading';
 import '../../styles/chat-detail.css';
 
@@ -75,8 +76,9 @@ const ChatDetailPage = () => {
         mutationFn: (file: File) => chatService.uploadFile(file),
     });
 
-    // Get current user ID
-    const currentUserId = parseInt(localStorage.getItem('userId') || '0', 10);
+    // Get current user ID from auth store
+    const { user } = useAuthStore();
+    const currentUserId = user?.id || 0;
 
     // Find current chat room from chatRooms list
     const currentRoom = chatRooms?.find(room => String(room.id) === chatId);
