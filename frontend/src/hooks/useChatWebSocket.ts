@@ -23,8 +23,9 @@ export function useChatWebSocket({ roomId, enabled = true }: UseChatWebSocketOpt
         ['chatMessages', roomId],
         (oldMessages: ChatMessage[] | undefined) => {
           if (!oldMessages) return [message];
-          // Avoid duplicates by checking ID
-          if (oldMessages.some((m) => m.id === message.id)) {
+          // Avoid duplicates by checking ID (compare as strings to handle type mismatch)
+          const messageId = String(message.id);
+          if (oldMessages.some((m) => String(m.id) === messageId)) {
             return oldMessages;
           }
           return [...oldMessages, message];
