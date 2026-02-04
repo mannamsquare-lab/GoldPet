@@ -29,7 +29,7 @@ const ExpandableText = ({ content }: { content: string }) => {
         <div className="chat_detail_message_text">
             <div
                 ref={contentRef}
-                className={`chat_detail_message_content ${!isExpanded ? 'chat_detail_message_clamped' : ''}`}
+                className={`chat_detail_expandable_content ${!isExpanded ? 'chat_detail_expandable_clamped' : ''}`}
             >
                 {content.split('\n').map((line: string, i: number) => (
                     <span key={i}>

@@ -204,6 +204,7 @@
 
 .chat_detail_message_bubble {
   width: 100%;
+  max-width: 100%;
   padding: 2.22vw 3.33vw;
   border-radius: 4.44vw;
   display: flex;
@@ -211,6 +212,7 @@
   justify-content: flex-start;
   align-items: flex-start;
   gap: 2.22vw;
+  overflow: hidden;
 }
 
 .chat_detail_message_bubble_other {
@@ -223,6 +225,7 @@
 
 .chat_detail_message_text {
   width: 100%;
+  max-width: 100%;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -231,6 +234,8 @@
   font-weight: 500;
   line-height: 6.22vw;
   word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .chat_detail_message_bubble_other .chat_detail_message_text {
@@ -753,8 +758,13 @@
   color: #999;
 }
 
-/* Long Message Handling with Line Clamp (5 lines) */
-.chat_detail_message_content.chat_detail_message_clamped {
+/* Long Message Handling - Expandable Content */
+.chat_detail_expandable_content {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.chat_detail_expandable_clamped {
   display: -webkit-box;
   -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
