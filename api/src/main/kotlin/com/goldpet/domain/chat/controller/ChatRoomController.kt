@@ -108,4 +108,17 @@ class ChatRoomController(
         chatService.leaveRoom(roomId, userDetails.id)
         return ResponseEntity.ok().build()
     }
+
+    /**
+     * Get or create a direct chat room with a matched user.
+     * If chat room exists, returns it. Otherwise, creates a new one.
+     */
+    @PostMapping("/direct/{targetUserId}")
+    fun getOrCreateDirectRoom(
+        @PathVariable targetUserId: Long,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<ChatRoomResponse> {
+        val chatRoom = chatService.getOrCreateDirectRoom(userDetails.id, targetUserId)
+        return ResponseEntity.ok(ChatRoomResponse.from(chatRoom, userDetails.id))
+    }
 }

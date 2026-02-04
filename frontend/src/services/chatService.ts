@@ -201,4 +201,33 @@ export const chatService = {
       throw new Error('채팅방 나가기에 실패했습니다.');
     }
   },
+
+  /**
+   * Get or create a direct chat room with a matched user.
+   * Returns the chat room (existing or newly created).
+   */
+  getOrCreateDirectRoom: async (targetUserId: number): Promise<ChatRoom> => {
+    if (USE_MOCK) {
+      await new Promise((r) => setTimeout(r, 500));
+      return {
+        id: `room-${Date.now()}`,
+        name: '1:1 채팅',
+        lastMessage: '',
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0,
+        isGroup: false,
+        participants: [{ id: targetUserId, nickname: '상대방' }],
+      };
+    }
+
+    try {
+      const response = await apiClient.post(`/chat/rooms/direct/${targetUserId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error('매칭된 상대가 아닙니다.');
+      }
+      throw new Error('채팅방 생성에 실패했습니다.');
+    }
+  },
 };

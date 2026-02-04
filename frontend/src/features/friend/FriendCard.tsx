@@ -1,8 +1,10 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navigation } from 'swiper/modules';
 import type { Friend } from '../../services/friendService';
 import { friendService, formatPetTag } from '../../services/friendService';
+import { chatService } from '../../services/chatService';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import { useAlert } from '../../contexts/AlertContext';
 
@@ -13,10 +15,24 @@ interface FriendCardProps {
 }
 
 export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: FriendCardProps) => {
+    const navigate = useNavigate();
     const { showAlert } = useAlert();
     const [isLoading, setIsLoading] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [isMutual, setIsMutual] = useState(false);
+
+    const handleStartChat = async () => {
+        if (isLoading) return;
+        setIsLoading(true);
+        try {
+            const room = await chatService.getOrCreateDirectRoom(data.id);
+            navigate(`/chat/${room.id}`);
+        } catch (error: any) {
+            showAlert(error.message || '채팅방을 열 수 없습니다.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const formatDistance = (dist: number) => {
         if (dist >= 1000) return `${(dist / 1000).toFixed(1)}km`;
@@ -132,7 +148,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: Fr
                             <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
                                 <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
                             </button>
-                            <button type="button" className="like_btn active" onClick={() => showAlert('채팅 기능은 준비 중입니다!')} disabled={isLoading}>
+                            <button type="button" className="like_btn active" onClick={handleStartChat} disabled={isLoading}>
                                 <img src="/assets/images/common/chat_icon.svg" alt="" style={{ marginRight: '6px' }} />채팅하기
                             </button>
                         </>

@@ -158,4 +158,41 @@ class ChatService(
         participant.leftAt = java.time.LocalDateTime.now()
         chatRoomParticipantRepository.save(participant)
     }
+
+    /**
+     * Get or create a direct chat room between two users based on their match.
+     * If a chat room already exists for the match, return it.
+     * Otherwise, create a new chat room.
+     */
+    @Transactional
+    fun getOrCreateDirectRoom(userId: Long, targetUserId: Long): ChatRoom {
+        val user = userRepository.findById(userId)
+            .orElseThrow { NoSuchElementException("User not found: $userId") }
+        val targetUser = userRepository.findById(targetUserId)
+            .orElseThrow { NoSuchElementException("Target user not found: $targetUserId") }
+
+        // Find match between the two users
+        val match = matchRepository.findByUserIds(userId, targetUserId)
+            .orElseThrow { IllegalStateException("No match exists between users $userId and $targetUserId") }
+
+        // Check if chat room already exists for this match
+        val existingRoom = chatRoomRepository.findByMatchId(match.id)
+        if (existingRoom.isPresent) {
+            return existingRoom.get()
+        }
+
+        // Create new chat room
+        val chatRoom = ChatRoom(
+            roomType = ChatRoomType.DIRECT,
+            ownerUser = user,
+            match = match
+        )
+        chatRoomRepository.save(chatRoom)
+
+        // Add both users as participants
+        chatRoomParticipantRepository.save(ChatRoomParticipant(chatRoom = chatRoom, user = user, role = ChatRoomRole.MEMBER))
+        chatRoomParticipantRepository.save(ChatRoomParticipant(chatRoom = chatRoom, user = targetUser, role = ChatRoomRole.MEMBER))
+
+        return chatRoom
+    }
 }
