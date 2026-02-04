@@ -184,6 +184,55 @@ class ChatWebSocketService {
     });
   }
 
+  sendTypingEvent(roomId: string, userId: number, isTyping: boolean): void {
+    if (!this.client || !this.isConnected) {
+      return;
+    }
+
+    this.client.publish({
+      destination: '/app/chat.typing',
+      body: JSON.stringify({
+        roomId: parseInt(roomId, 10),
+        userId,
+        isTyping,
+      }),
+    });
+  }
+
+  subscribeToTyping(roomId: string, onTyping: (userId: number, isTyping: boolean) => void): void {
+    if (!this.client || !this.isConnected) {
+      console.warn('[WebSocket] Not connected. Call connect() first.');
+      return;
+    }
+
+    const destination = `/topic/chat/${roomId}/typing`;
+    const subscriptionKey = `typing-${roomId}`;
+
+    if (this.subscriptions.has(subscriptionKey)) {
+      return;
+    }
+
+    const subscription = this.client.subscribe(destination, (message: IMessage) => {
+      try {
+        const data = JSON.parse(message.body);
+        onTyping(data.userId, data.isTyping);
+      } catch (error) {
+        console.error('[WebSocket] Failed to parse typing event:', error);
+      }
+    });
+
+    this.subscriptions.set(subscriptionKey, subscription);
+  }
+
+  unsubscribeFromTyping(roomId: string): void {
+    const subscriptionKey = `typing-${roomId}`;
+    const subscription = this.subscriptions.get(subscriptionKey);
+    if (subscription) {
+      subscription.unsubscribe();
+      this.subscriptions.delete(subscriptionKey);
+    }
+  }
+
   private parseMessage(body: string): ChatMessage {
     const data = JSON.parse(body);
     return {

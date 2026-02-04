@@ -8,6 +8,12 @@ import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessageSendingOperations
 import org.springframework.stereotype.Controller
 
+data class TypingEvent(
+    val roomId: Long,
+    val userId: Long,
+    val isTyping: Boolean
+)
+
 @Controller
 class WebSocketChatController(
     private val simpMessageSendingOperations: SimpMessageSendingOperations,
@@ -21,6 +27,12 @@ class WebSocketChatController(
         simpMessageSendingOperations.convertAndSend("/topic/chat/${chatMessageRequest.roomId}", chatMessageResponse)
     }
 
-    // You can add more message mappings here, e.g., for adding/removing users from a chat room
-    // or for typing indicators.
+    @MessageMapping("/chat.typing")
+    fun typing(@Payload typingEvent: TypingEvent) {
+        // Broadcast typing status to all subscribers of the room
+        simpMessageSendingOperations.convertAndSend(
+            "/topic/chat/${typingEvent.roomId}/typing",
+            typingEvent
+        )
+    }
 }

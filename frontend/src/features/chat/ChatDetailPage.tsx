@@ -33,11 +33,32 @@ const ChatDetailPage = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
 
+    // Get current user ID from auth store (needed for WebSocket)
+    const { user } = useAuthStore();
+    const currentUserId = user?.id || 0;
+
     // WebSocket for real-time messaging (disabled in mock mode)
-    useChatWebSocket({
+    const { sendTypingEvent, typingUsers } = useChatWebSocket({
         roomId: chatId,
+        currentUserId,
         enabled: !!chatId && !USE_MOCK,
     });
+
+    // Debounced typing event
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const handleTyping = () => {
+        sendTypingEvent(true);
+
+        // Clear previous timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Stop typing after 2 seconds of no input
+        typingTimeoutRef.current = setTimeout(() => {
+            sendTypingEvent(false);
+        }, 2000);
+    };
 
     // Fetch Chat Room info (to get participant details)
     const { data: chatRooms } = useQuery({
@@ -75,10 +96,6 @@ const ChatDetailPage = () => {
     const uploadMutation = useMutation({
         mutationFn: (file: File) => chatService.uploadFile(file),
     });
-
-    // Get current user ID from auth store
-    const { user } = useAuthStore();
-    const currentUserId = user?.id || 0;
 
     // Find current chat room from chatRooms list
     const currentRoom = chatRooms?.find(room => String(room.id) === chatId);
@@ -402,6 +419,23 @@ const ChatDetailPage = () => {
                         </div>
                     </div>
                 )})}
+
+                {/* Typing Indicator */}
+                {typingUsers.size > 0 && (
+                    <div className="chat_detail_typing_indicator">
+                        <div className="chat_detail_typing_dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <span className="chat_detail_typing_text">
+                            {isGroupChat
+                                ? `${typingUsers.size}명이 입력 중...`
+                                : '상대방이 입력 중...'}
+                        </span>
+                    </div>
+                )}
+
                 <div ref={messagesEndRef} />
             </div>
 
@@ -518,7 +552,10 @@ const ChatDetailPage = () => {
                             className="chat_detail_input"
                             placeholder={selectedFiles.length > 0 ? "캡션을 입력하세요..." : "메세지를 입력하세요..."}
                             value={message}
-                            onChange={(e) => setMessage(e.target.value)}
+                            onChange={(e) => {
+                                setMessage(e.target.value);
+                                handleTyping();
+                            }}
                             onKeyPress={handleKeyPress}
                         />
                         <button

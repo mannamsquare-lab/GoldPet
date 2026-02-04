@@ -689,3 +689,56 @@
   stroke: white;
 }
 
+/* Typing Indicator */
+.chat_detail_typing_indicator {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  padding: 2vw 4vw;
+  margin-left: 4vw;
+}
+
+.chat_detail_typing_dots {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+}
+
+.chat_detail_typing_dots span {
+  width: 2vw;
+  height: 2vw;
+  background-color: #614108;
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.chat_detail_typing_dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.chat_detail_typing_dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.chat_detail_typing_dots span:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes typingBounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.chat_detail_typing_text {
+  font-size: 3.33vw;
+  color: #614108;
+  opacity: 0.7;
+}
+
