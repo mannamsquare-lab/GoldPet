@@ -116,8 +116,8 @@ class LikeServiceTest {
         whenever(userRepository.findById(2L)).thenReturn(Optional.of(targetUser))
         whenever(likeRepository.findByFromUserAndToUser(testUser, targetUser)).thenReturn(Optional.empty())
         whenever(likeRepository.existsByFromUserIdAndToUserIdAndStatus(2L, 1L, LikeStatus.ACTIVE)).thenReturn(true)
-        whenever(matchRepository.findByUser1AndUser2(any(), any())).thenReturn(Optional.empty())
-        whenever(matchRepository.save(any())).thenAnswer { it.getArgument(0) }
+        whenever(matchRepository.findByUser1AndUser2(testUser, targetUser)).thenReturn(Optional.empty())
+        whenever(matchRepository.save(any())).thenAnswer { invocation -> invocation.getArgument(0) }
         whenever(likeRepository.save(any<Like>())).thenAnswer { invocation ->
             val like = invocation.getArgument<Like>(0)
             Like(
@@ -224,7 +224,7 @@ class LikeServiceTest {
         whenever(likeRepository.findByFromUserAndToUser(testUser, targetUser)).thenReturn(Optional.of(existingLike))
         whenever(likeRepository.findByFromUserAndToUser(targetUser, testUser)).thenReturn(Optional.empty())
         whenever(likeRepository.save(any<Like>())).thenReturn(existingLike)
-        whenever(matchRepository.findByUserIds(any(), any())).thenReturn(Optional.empty())
+        whenever(matchRepository.findByUserIds(1L, 2L)).thenReturn(Optional.empty())
 
         // When
         val result = likeService.unlikeUser(1L, 2L)

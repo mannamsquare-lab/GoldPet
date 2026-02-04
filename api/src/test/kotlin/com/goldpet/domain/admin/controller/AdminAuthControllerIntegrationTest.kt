@@ -7,6 +7,7 @@ import com.goldpet.domain.admin.entity.AdminUserRole
 import com.goldpet.domain.admin.repository.AdminUserRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
 @AutoConfigureMockMvc
+@Tag("integration")
 class AdminAuthControllerIntegrationTest : IntegrationTestBase() {
 
     @Autowired

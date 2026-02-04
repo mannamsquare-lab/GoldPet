@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/goldpet
+    url: jdbc:postgresql://101.250.201.36:5432/goldpet_db
     username: goldpet
-    password: goldpet123
+    password: doF149zVzj2kGfKVvT6CQddd/F2Pn1xDJCrnDD2vPBU=
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -15,11 +15,10 @@ spring:
     enabled: true
     baseline-on-migrate: true
     validate-on-migrate: false
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      password: goldpet123
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
 jwt:
   secret: test-secret-key-for-testing-purposes-must-be-at-least-256-bits-long

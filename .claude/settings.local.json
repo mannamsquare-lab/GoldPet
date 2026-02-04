@@ -81,7 +81,8 @@
       "Bash(docker run --rm postgres:16 psql \"postgresql://goldpet:doF149zVzj2kGfKVvT6CQddd%2FF2Pn1xDJCrnDD2vPBU%3D@101.250.201.36:5432/goldpet_db\" -c \"SELECT version\\(\\);\")",
       "Bash(nc:*)",
       "Bash(docker run --rm postgres:16 psql \"postgresql://goldpet:doF149zVzj2kGfKVvT6CQddd%2FF2Pn1xDJCrnDD2vPBU%3D@101.250.201.36:5432/goldpet_db\" -c \"SELECT * FROM likes WHERE \\(from_user_id IN \\(5,6\\) AND to_user_id IN \\(5,6\\)\\);\")",
-      "Bash(docker run:*)"
+      "Bash(docker run:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
