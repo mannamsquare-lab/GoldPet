@@ -753,6 +753,14 @@
   color: #999;
 }
 
+/* Long Message Handling with Line Clamp (5 lines) */
+.chat_detail_message_content.chat_detail_message_clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Message Expand Button */
 .chat_detail_message_expand_btn {
   display: block;

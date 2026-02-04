@@ -11,6 +11,46 @@ import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
+// Component for expandable long messages (5 lines max when collapsed)
+const ExpandableText = ({ content }: { content: string }) => {
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [isOverflowing, setIsOverflowing] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    useEffect(() => {
+        const el = contentRef.current;
+        if (el) {
+            // Check if content is overflowing (truncated by line-clamp)
+            setIsOverflowing(el.scrollHeight > el.clientHeight);
+        }
+    }, [content]);
+
+    return (
+        <div className="chat_detail_message_text">
+            <div
+                ref={contentRef}
+                className={`chat_detail_message_content ${!isExpanded ? 'chat_detail_message_clamped' : ''}`}
+            >
+                {content.split('\n').map((line: string, i: number) => (
+                    <span key={i}>
+                        {line}
+                        {i < content.split('\n').length - 1 && <br />}
+                    </span>
+                ))}
+            </div>
+            {(isOverflowing || isExpanded) && (
+                <button
+                    type="button"
+                    className="chat_detail_message_expand_btn"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                >
+                    {isExpanded ? '접기' : '더보기'}
+                </button>
+            )}
+        </div>
+    );
+};
+
 interface SelectedFile {
     file: File;
     preview: string;
@@ -29,7 +69,6 @@ const ChatDetailPage = () => {
     const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
@@ -328,45 +367,8 @@ const ChatDetailPage = () => {
             );
         }
 
-        // Default: text message
-        const MAX_LENGTH = 300;
-        const isLongMessage = content.length > MAX_LENGTH;
-        const isExpanded = expandedMessages.has(String(msg.id));
-        const displayContent = isLongMessage && !isExpanded
-            ? content.slice(0, MAX_LENGTH) + '...'
-            : content;
-
-        const toggleExpand = () => {
-            setExpandedMessages(prev => {
-                const newSet = new Set(prev);
-                if (newSet.has(String(msg.id))) {
-                    newSet.delete(String(msg.id));
-                } else {
-                    newSet.add(String(msg.id));
-                }
-                return newSet;
-            });
-        };
-
-        return (
-            <div className="chat_detail_message_text">
-                {displayContent.split('\n').map((line: string, i: number) => (
-                    <span key={i}>
-                        {line}
-                        {i < displayContent.split('\n').length - 1 && <br />}
-                    </span>
-                ))}
-                {isLongMessage && (
-                    <button
-                        type="button"
-                        className="chat_detail_message_expand_btn"
-                        onClick={toggleExpand}
-                    >
-                        {isExpanded ? '접기' : '더보기'}
-                    </button>
-                )}
-            </div>
-        );
+        // Default: text message - use ExpandableText component
+        return <ExpandableText content={content} />;
     };
 
     if (isLoading) return <Loading description="대화 내용을 불러오고 있어요" />;
