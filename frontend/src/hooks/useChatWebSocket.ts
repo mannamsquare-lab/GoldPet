@@ -5,6 +5,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { chatWebSocket } from '../services/websocket/chatWebSocket';
+import { chatService } from '../services/chatService';
 import type { ChatMessage } from '../services/chatService';
 
 interface UseChatWebSocketOptions {
@@ -34,6 +35,14 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
           return [...oldMessages, message];
         }
       );
+
+      // Mark as read immediately when receiving new message while in chat room
+      // This prevents unread count from showing for messages received while viewing
+      if (roomId) {
+        chatService.markAsRead(roomId).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+        });
+      }
     },
     [queryClient, roomId]
   );
