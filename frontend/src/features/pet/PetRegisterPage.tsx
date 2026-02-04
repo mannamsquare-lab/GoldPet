@@ -29,20 +29,20 @@ export default function PetRegisterPage() {
 
   // Fetch species list
   const { data: speciesList } = useQuery({
-    queryKey: ['pet', 'species'],
+    queryKey: ['pets', 'species'],
     queryFn: petService.getSpecies,
   });
 
   // Fetch breeds based on selected species
   const { data: breedList } = useQuery({
-    queryKey: ['pet', 'breeds', formData.speciesId],
+    queryKey: ['pets', 'breeds', formData.speciesId],
     queryFn: () => petService.getBreeds(formData.speciesId),
     enabled: !!formData.speciesId,
   });
 
   // Fetch existing pet data for edit mode
   const { data: existingPet } = useQuery({
-    queryKey: ['pet', petId],
+    queryKey: ['pets', petId],
     queryFn: () => petService.getPet(Number(petId)),
     enabled: isEdit,
   });
@@ -70,7 +70,7 @@ export default function PetRegisterPage() {
   const createMutation = useMutation({
     mutationFn: petService.createPet,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myPets'] });
+      queryClient.invalidateQueries({ queryKey: ['pets', 'my'] });
       showAlert('반려동물이 등록되었습니다!', () => {
         navigate('/home');
       });
@@ -83,8 +83,8 @@ export default function PetRegisterPage() {
   const updateMutation = useMutation({
     mutationFn: (data: CreatePetRequest) => petService.updatePet(Number(petId), data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myPets'] });
-      queryClient.invalidateQueries({ queryKey: ['pet', petId] });
+      queryClient.invalidateQueries({ queryKey: ['pets', 'my'] });
+      queryClient.invalidateQueries({ queryKey: ['pets', petId] });
       showAlert('반려동물 정보가 수정되었습니다!', () => {
         navigate('/home');
       });
