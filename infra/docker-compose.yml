@@ -1,51 +1,59 @@
+version: '3.8'
+
 services:
-  # 1. Database: PostgreSQL + PostGIS
+  # 1. Database: PostgreSQL + PostGIS (Local Port 5433)
   db:
     image: postgis/postgis:16-3.4
     restart: always
-    container_name: goldpet-db
+    container_name: goldpet-db-local
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: goldpet
+      POSTGRES_PASSWORD: goldpet123
+      POSTGRES_DB: goldpet
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - goldpet-postgres-local-data:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5432:5432" # localhost만 허용
+      - "5433:5432" # Changed to 5433 to avoid conflict with local postgres
     networks:
-      - goldpet-net
+      - goldpet-local-net
     shm_size: 1g
 
-  # 2. Redis Cache
+  # 2. Redis Cache (Local Port 6379)
   redis:
     image: redis:7-alpine
     restart: always
-    container_name: goldpet-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    container_name: goldpet-redis-local
+    command: redis-server --appendonly yes --requirepass goldpet123
     volumes:
-      - ./data/redis:/data
+      - goldpet-redis-local-data:/data
     ports:
-      - "127.0.0.1:6379:6379" # localhost만 허용
+      - "6379:6379" # Standard Port
     networks:
-      - goldpet-net
+      - goldpet-local-net
 
-  # 3. Object Storage: MinIO
+  # 3. Object Storage: MinIO (Local Port 9000/9001)
   minio:
     image: minio/minio
     restart: always
-    container_name: goldpet-minio
+    container_name: goldpet-minio-local
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: goldpet-s3-access-key
+      MINIO_ROOT_PASSWORD: goldpet-s3-secret-key
     volumes:
-      - ./data/minio:/data
+      - goldpet-minio-local-data:/data
     ports:
-      - "127.0.0.1:9000:9000" # S3 API (localhost만)
-      - "127.0.0.1:9001:9001" # Console (localhost만)
+      - "9100:9000" # S3 API
+      - "9101:9001" # Console
     networks:
-      - goldpet-net
+      - goldpet-local-net
+
+volumes:
+  goldpet-postgres-local-data:
+  goldpet-redis-local-data:
+  goldpet-minio-local-data:
+
 
 networks:
-  goldpet-net:
+  goldpet-local-net:
     driver: bridge

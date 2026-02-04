@@ -14,14 +14,15 @@ This is a monorepo with four main projects:
 - **frontend/** - React 19 web app for users (Vite, TypeScript, Tailwind)
 - **admin/** - React admin dashboard (Vite, TypeScript, Tailwind)
 - **api/** - Spring Boot 3.2 backend (Kotlin, Java 21)
-- **infra/** - Docker Compose and deployment configs
+- **infra/** - 로컬 개발용 Docker 설정
+- **deploy/** - 서버 배포 설정 (nginx, systemd, docker)
 
 ## Development Commands
 
 ### Infrastructure (Docker services)
 ```bash
 # Start local services (PostgreSQL+PostGIS, Redis, MinIO)
-cd infra && docker compose --env-file ../.env up -d
+cd infra && docker compose up -d
 ```
 
 ### Backend API (Spring Boot)
@@ -148,10 +149,8 @@ flutter run --dart-define=ENV=prod     # 상용 서버
 
 ### 로컬 개발 환경
 
-`.env` 파일 필수 변수: DB_USER, DB_PASSWORD, DB_NAME, REDIS_PASSWORD, MINIO_ROOT_USER, MINIO_ROOT_PASSWORD, JWT_SECRET
-
-로컬 서비스 포트:
-- PostgreSQL: localhost:5433 (docker-compose.local.yml)
+로컬 서비스 포트 (infra/docker-compose.yml):
+- PostgreSQL: localhost:5433
 - Redis: localhost:6379
 - MinIO: localhost:9100 (API), localhost:9101 (Console)
 - API: localhost:8081
