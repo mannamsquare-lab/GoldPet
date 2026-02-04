@@ -13,23 +13,21 @@
 
 ## 사용법
 
-### 서비스 시작
+### 스크립트 사용 (권장)
+
+```bash
+./deploy-local/scripts/start.sh   # 서비스 시작
+./deploy-local/scripts/stop.sh    # 서비스 중지
+./deploy-local/scripts/reset.sh   # 데이터 초기화 후 재시작
+```
+
+### 수동 실행
 
 ```bash
 cd deploy-local
-docker compose up -d
-```
-
-### 서비스 중지
-
-```bash
-docker compose down
-```
-
-### 데이터 초기화 (볼륨 삭제)
-
-```bash
-docker compose down -v
+docker compose up -d      # 시작
+docker compose down       # 중지
+docker compose down -v    # 데이터 삭제 후 중지
 ```
 
 ## 기본 접속 정보
@@ -45,9 +43,13 @@ docker compose down -v
 ```
 deploy-local/
 ├── docker-compose.yml      # Docker 서비스 정의
-└── config/
-    └── postgres/
-        └── postgresql.conf # PostgreSQL 최적화 설정
+├── config/
+│   └── postgres/
+│       └── postgresql.conf # PostgreSQL 최적화 설정
+└── scripts/
+    ├── start.sh            # 서비스 시작
+    ├── stop.sh             # 서비스 중지
+    └── reset.sh            # 데이터 초기화
 ```
 
 ## 관련 문서

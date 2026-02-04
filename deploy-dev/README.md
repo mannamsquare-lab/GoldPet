@@ -27,9 +27,13 @@ deploy-dev/
 ├── systemd/
 │   └── services/
 │       └── goldpet-api.service  # Spring Boot API 서비스
-└── logrotate/
-    ├── logrotate-goldpet-api    # API 로그 로테이션
-    └── logrotate-goldpet-nginx  # Nginx 로그 로테이션
+├── logrotate/
+│   ├── logrotate-goldpet-api    # API 로그 로테이션
+│   └── logrotate-goldpet-nginx  # Nginx 로그 로테이션
+└── scripts/
+    ├── deploy-api.sh         # API 배포
+    ├── deploy-frontend.sh    # Frontend 배포
+    └── deploy-admin.sh       # Admin 배포
 ```
 
 ## 서버 설정 적용
