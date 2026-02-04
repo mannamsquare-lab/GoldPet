@@ -38,6 +38,13 @@ const ChatDetailPage = () => {
         enabled: !!chatId && !USE_MOCK,
     });
 
+    // Fetch Chat Room info (to get participant details)
+    const { data: chatRooms } = useQuery({
+        queryKey: ['chatRooms'],
+        queryFn: chatService.getChatRooms,
+        staleTime: 1000 * 60, // 1 minute
+    });
+
     // Fetch Messages
     const { data: messages = [], isLoading } = useQuery({
         queryKey: ['chatMessages', chatId],
@@ -68,19 +75,25 @@ const ChatDetailPage = () => {
         mutationFn: (file: File) => chatService.uploadFile(file),
     });
 
+    // Get current user ID
+    const currentUserId = parseInt(localStorage.getItem('userId') || '0', 10);
+
+    // Find current chat room from chatRooms list
+    const currentRoom = chatRooms?.find(room => String(room.id) === chatId);
+
+    // Get other participant info (for 1:1 chat, filter out current user)
+    const otherParticipant = currentRoom?.participants?.find(p => p.id !== currentUserId);
+
     const chatUser = isGroupChat ? {
         id: chatId || '1',
-        name: '동네 산책 모임',
-        profileImgs: [
-            '/assets/images/temp/temp_dog_profile.png',
-            '/assets/images/temp/temp_dog_profile.png',
-            '/assets/images/temp/temp_dog_profile.png',
-            '/assets/images/temp/temp_dog_profile.png'
-        ],
+        name: currentRoom?.name || '그룹 채팅',
+        profileImgs: currentRoom?.participants?.slice(0, 4).map(p =>
+            p.profileImageUrl || '/assets/images/temp/temp_dog_profile.png'
+        ) || [],
     } : {
         id: chatId || '1',
-        name: '상대방',
-        profileImg: '/assets/images/temp/temp_dog_profile.png',
+        name: otherParticipant?.nickname || currentRoom?.name || '상대방',
+        profileImg: otherParticipant?.profileImageUrl || '/assets/images/temp/temp_dog_profile.png',
     };
 
     const quickReplies = [
@@ -347,8 +360,8 @@ const ChatDetailPage = () => {
             <div className="chat_detail_messages">
                 {messages.map((msg: any) => {
                     const timestamp = msg.timestamp || msg.createdAt;
-                    const currentUserId = parseInt(localStorage.getItem('userId') || '5', 10);
-                    const isMine = msg.senderId === currentUserId;
+                    // Compare as numbers (both should be numbers, but ensure type consistency)
+                    const isMine = Number(msg.senderId) === currentUserId;
                     const time = timestamp ? new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
 
                     return (
@@ -359,7 +372,11 @@ const ChatDetailPage = () => {
                         {!isMine && (
                             <div className="chat_detail_message_profile">
                                 <img
-                                    src={isGroupChat ? '/assets/images/temp/temp_dog_profile.png' : ('profileImg' in chatUser ? chatUser.profileImg : '')}
+                                    src={
+                                        isGroupChat
+                                            ? (currentRoom?.participants?.find(p => p.id === Number(msg.senderId))?.profileImageUrl || '/assets/images/temp/temp_dog_profile.png')
+                                            : ('profileImg' in chatUser ? chatUser.profileImg : '/assets/images/temp/temp_dog_profile.png')
+                                    }
                                     alt={isGroupChat ? 'User' : chatUser.name}
                                 />
                             </div>
