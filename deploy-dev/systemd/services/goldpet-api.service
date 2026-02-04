@@ -10,8 +10,7 @@ EnvironmentFile=-/home/dev/www/mannam/goldpet/api/goldpet-api.env
 ExecStart=/usr/bin/java -jar /home/dev/www/mannam/goldpet/api/goldpet-api.jar
 Restart=always
 RestartSec=10
-# 환경변수
-Environment="SPRING_PROFILES_ACTIVE=dev"
+# 환경변수 (SPRING_PROFILES_ACTIVE는 Jenkins가 goldpet-api.env에 설정)
 Environment="SERVER_PORT=8081"
 Environment="SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/goldpet_db"
 Environment="SPRING_DATASOURCE_USERNAME=goldpet"
