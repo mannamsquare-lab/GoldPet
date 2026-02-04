@@ -139,4 +139,23 @@ class ChatService(
         userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
         return chatRoomParticipantRepository.findAllByUserId(userId).map { it.chatRoom }
     }
+
+    @Transactional
+    fun markAsRead(roomId: Long, userId: Long) {
+        val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId)
+            .orElseThrow { NoSuchElementException("Participant not found in chat room $roomId for user $userId") }
+
+        participant.lastReadAt = java.time.LocalDateTime.now()
+        chatRoomParticipantRepository.save(participant)
+    }
+
+    @Transactional
+    fun leaveRoom(roomId: Long, userId: Long) {
+        val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId)
+            .orElseThrow { NoSuchElementException("Participant not found in chat room $roomId for user $userId") }
+
+        // Mark as left instead of deleting (soft delete)
+        participant.leftAt = java.time.LocalDateTime.now()
+        chatRoomParticipantRepository.save(participant)
+    }
 }

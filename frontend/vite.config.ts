@@ -14,4 +14,7 @@ export default defineConfig({
     assetsDir: 'assets',
   },
   publicDir: 'public', // public 디렉토리 명시
+  define: {
+    global: 'globalThis', // SockJS compatibility for browser
+  },
 });

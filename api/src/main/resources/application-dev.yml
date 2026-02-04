@@ -22,3 +22,9 @@ app:
       - https://app.mannamsquare.com
       - https://admin.mannamsquare.com
       - https://mannamsquare.com
+
+# Dev MinIO Configuration
+S3_ENDPOINT: ${MINIO_ENDPOINT:http://minio:9000}
+S3_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT}
+S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+S3_SECRET_KEY: ${MINIO_SECRET_KEY}

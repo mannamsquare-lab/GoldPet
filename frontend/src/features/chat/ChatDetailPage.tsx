@@ -3,8 +3,18 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
+import type { FileInfo } from '../../services/chatService';
+import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { Loading } from '../../components/common/Loading';
 import '../../styles/chat-detail.css';
+
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+
+interface SelectedFile {
+    file: File;
+    preview: string;
+    type: 'image' | 'video' | 'file';
+}
 
 const ChatDetailPage = () => {
     const navigate = useNavigate();
@@ -12,28 +22,50 @@ const ChatDetailPage = () => {
     const { chatId } = useParams<{ chatId: string }>();
     const isGroupChat = location.pathname.includes('/chat/group/');
     const [message, setMessage] = useState('');
+    const [showAttachMenu, setShowAttachMenu] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
+
+    // WebSocket for real-time messaging (disabled in mock mode)
+    useChatWebSocket({
+        roomId: chatId,
+        enabled: !!chatId && !USE_MOCK,
+    });
 
     // Fetch Messages
     const { data: messages = [], isLoading } = useQuery({
         queryKey: ['chatMessages', chatId],
-        queryFn: () => chatService.getMessages(chatId!), // ID handling needed
+        queryFn: () => chatService.getMessages(chatId!),
         enabled: !!chatId,
     });
 
     // Send Message Mutation
-    const mutation = useMutation({
-        mutationFn: (text: string) => chatService.sendMessage(chatId!, text),
-        onSuccess: (newMessage) => {
-             // Optimistic update or just refetch or push to cache
-             queryClient.setQueryData(['chatMessages', chatId], (old: any[]) => [...(old || []), newMessage]);
+    const sendMutation = useMutation({
+        mutationFn: async ({ content, messageType, fileId }: { content: string; messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE'; fileId?: number }) => {
+            return chatService.sendMessage(chatId!, content, { messageType, fileId });
         },
+        onSuccess: (newMessage) => {
+            queryClient.setQueryData(['chatMessages', chatId], (old: any[]) => {
+                const oldMessages = old || [];
+                if (oldMessages.some((m: any) => m.id === newMessage.id)) {
+                    return oldMessages;
+                }
+                return [...oldMessages, newMessage];
+            });
+        },
+    });
+
+    // Upload File Mutation
+    const uploadMutation = useMutation({
+        mutationFn: (file: File) => chatService.uploadFile(file),
     });
 
     const chatUser = isGroupChat ? {
         id: chatId || '1',
-        name: '동네 산책 모임', // In real app, fetch room info separately or pass via state
+        name: '동네 산책 모임',
         profileImgs: [
             '/assets/images/temp/temp_dog_profile.png',
             '/assets/images/temp/temp_dog_profile.png',
@@ -42,11 +74,10 @@ const ChatDetailPage = () => {
         ],
     } : {
         id: chatId || '1',
-        name: '상대방', // Should fetch user info
+        name: '상대방',
         profileImg: '/assets/images/temp/temp_dog_profile.png',
     };
-    
-    // Quick Replies (Static for now)
+
     const quickReplies = [
         '안녕하세요. 반가워요',
         '산책 같이 할까요?',
@@ -61,15 +92,56 @@ const ChatDetailPage = () => {
         scrollToBottom();
     }, [messages]);
 
-    const handleSendMessage = () => {
+    useEffect(() => {
+        if (chatId && !USE_MOCK) {
+            chatService.markAsRead(chatId);
+        }
+    }, [chatId]);
+
+    const handleSendMessage = async () => {
+        if (selectedFile) {
+            await handleSendFile();
+            return;
+        }
         if (message.trim()) {
-            mutation.mutate(message);
+            sendMutation.mutate({ content: message });
             setMessage('');
         }
     };
 
+    const handleSendFile = async () => {
+        if (!selectedFile) return;
+
+        setIsUploading(true);
+        try {
+            // Upload file first
+            const uploadResult = await uploadMutation.mutateAsync(selectedFile.file);
+
+            // Determine message type
+            const messageType = selectedFile.type === 'image' ? 'IMAGE'
+                : selectedFile.type === 'video' ? 'VIDEO'
+                : 'FILE';
+
+            // Send message with file
+            await sendMutation.mutateAsync({
+                content: message || '',
+                messageType,
+                fileId: uploadResult.id,
+            });
+
+            // Clear selected file and message
+            setSelectedFile(null);
+            setMessage('');
+        } catch (error) {
+            console.error('Failed to send file:', error);
+            alert('파일 전송에 실패했습니다.');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const handleQuickReply = (text: string) => {
-        mutation.mutate(text);
+        sendMutation.mutate({ content: text });
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -79,10 +151,121 @@ const ChatDetailPage = () => {
         }
     };
 
+    const handleAttachClick = () => {
+        setShowAttachMenu(!showAttachMenu);
+    };
+
+    const handleFileSelect = (accept: string, capture?: string) => {
+        if (fileInputRef.current) {
+            fileInputRef.current.accept = accept;
+            if (capture) {
+                fileInputRef.current.setAttribute('capture', capture);
+            } else {
+                fileInputRef.current.removeAttribute('capture');
+            }
+            fileInputRef.current.click();
+        }
+        setShowAttachMenu(false);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Determine file type
+        let type: 'image' | 'video' | 'file' = 'file';
+        if (file.type.startsWith('image/')) {
+            type = 'image';
+        } else if (file.type.startsWith('video/')) {
+            type = 'video';
+        }
+
+        // Create preview URL
+        const preview = URL.createObjectURL(file);
+
+        setSelectedFile({ file, preview, type });
+
+        // Reset input
+        e.target.value = '';
+    };
+
+    const handleCancelFile = () => {
+        if (selectedFile) {
+            URL.revokeObjectURL(selectedFile.preview);
+        }
+        setSelectedFile(null);
+    };
+
+    const renderMessageContent = (msg: any) => {
+        const content = msg.content || msg.textContent || '';
+        const msgType = msg.messageType || msg.type || 'TEXT';
+        const file: FileInfo | undefined = msg.file;
+
+        // Handle image messages
+        if ((msgType === 'IMAGE' || msgType === 'image') && file) {
+            return (
+                <div className="chat_detail_message_image">
+                    <img src={file.url} alt="첨부 이미지" onClick={() => window.open(file.url, '_blank')} />
+                    {content && <div className="chat_detail_message_caption">{content}</div>}
+                </div>
+            );
+        }
+
+        // Handle video messages
+        if ((msgType === 'VIDEO' || msgType === 'video') && file) {
+            return (
+                <div className="chat_detail_message_video">
+                    <video src={file.url} controls />
+                    {content && <div className="chat_detail_message_caption">{content}</div>}
+                </div>
+            );
+        }
+
+        // Handle file messages
+        if ((msgType === 'FILE' || msgType === 'file') && file) {
+            const fileName = file.url.split('/').pop() || '파일';
+            const fileSize = file.sizeBytes ? `${(file.sizeBytes / 1024).toFixed(1)} KB` : '';
+            return (
+                <div className="chat_detail_message_file" onClick={() => window.open(file.url, '_blank')}>
+                    <div className="chat_detail_file_icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                    </div>
+                    <div className="chat_detail_file_info">
+                        <span className="chat_detail_file_name">{fileName}</span>
+                        {fileSize && <span className="chat_detail_file_size">{fileSize}</span>}
+                    </div>
+                </div>
+            );
+        }
+
+        // Default: text message
+        return (
+            <div className="chat_detail_message_text">
+                {content.split('\n').map((line: string, i: number) => (
+                    <span key={i}>
+                        {line}
+                        {i < content.split('\n').length - 1 && <br />}
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
     if (isLoading) return <Loading description="대화 내용을 불러오고 있어요" />;
 
     return (
         <div className="chat_detail_page">
+            {/* Hidden file input */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+            />
+
             {/* Header */}
             <div className="chat_detail_header">
                 <div className="chat_detail_header_top">
@@ -90,8 +273,8 @@ const ChatDetailPage = () => {
                 </div>
                 <div className="chat_detail_header_content">
                     <div className="chat_detail_header_inner">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             className="chat_detail_back_btn btn-effect"
                             onClick={() => navigate('/chat', { state: { activeTab: isGroupChat ? 'group' : 'one' } })}
                         >
@@ -103,8 +286,8 @@ const ChatDetailPage = () => {
                                 {isGroupChat && 'profileImgs' in chatUser ? (
                                 <div className="chat_detail_profile_img chat_detail_profile_img_group">
                                     {chatUser.profileImgs?.slice(0, 4).map((img, index) => (
-                                        <div 
-                                            key={index} 
+                                        <div
+                                            key={index}
                                             className="chat_detail_profile_img_item"
                                             style={{ zIndex: 4 - index }}
                                         >
@@ -127,35 +310,27 @@ const ChatDetailPage = () => {
             {/* Messages */}
             <div className="chat_detail_messages">
                 {messages.map((msg: any) => {
-                    // Normalize message data from service to UI props if needed
-                    // Service: { id, roomId, senderId, content, timestamp, type }
-                    // UI expects: { id, text, time, isMine, profileImg?, senderName? }
-                    const isMine = msg.senderId === 1; // Assume current user is 1
-                    const time = new Date(msg.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    
+                    const timestamp = msg.timestamp || msg.createdAt;
+                    const currentUserId = parseInt(localStorage.getItem('userId') || '5', 10);
+                    const isMine = msg.senderId === currentUserId;
+                    const time = timestamp ? new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+
                     return (
-                    <div 
-                        key={msg.id} 
+                    <div
+                        key={msg.id}
                         className={`chat_detail_message ${isMine ? 'chat_detail_message_mine' : 'chat_detail_message_other'}`}
                     >
                         {!isMine && (
                             <div className="chat_detail_message_profile">
-                                <img 
-                                    src={isGroupChat ? '/assets/images/temp/temp_dog_profile.png' : ('profileImg' in chatUser ? chatUser.profileImg : '')} 
-                                    alt={isGroupChat ? 'User' : chatUser.name} 
+                                <img
+                                    src={isGroupChat ? '/assets/images/temp/temp_dog_profile.png' : ('profileImg' in chatUser ? chatUser.profileImg : '')}
+                                    alt={isGroupChat ? 'User' : chatUser.name}
                                 />
                             </div>
                         )}
                         <div className="chat_detail_message_content">
                             <div className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}`}>
-                                <div className="chat_detail_message_text">
-                                    {msg.content.split('\n').map((line: string, i: number) => (
-                                        <span key={i}>
-                                            {line}
-                                            {i < msg.content.split('\n').length - 1 && <br />}
-                                        </span>
-                                    ))}
-                                </div>
+                                {renderMessageContent(msg)}
                             </div>
                             <div className="chat_detail_message_time">{time}</div>
                         </div>
@@ -164,48 +339,115 @@ const ChatDetailPage = () => {
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* File Preview */}
+            {selectedFile && (
+                <div className="chat_detail_file_preview">
+                    <div className="chat_detail_file_preview_content">
+                        {selectedFile.type === 'image' && (
+                            <img src={selectedFile.preview} alt="미리보기" />
+                        )}
+                        {selectedFile.type === 'video' && (
+                            <video src={selectedFile.preview} />
+                        )}
+                        {selectedFile.type === 'file' && (
+                            <span className="chat_detail_file_preview_name">{selectedFile.file.name}</span>
+                        )}
+                    </div>
+                    <button
+                        type="button"
+                        className="chat_detail_file_preview_remove"
+                        onClick={handleCancelFile}
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 6L6 18M6 6L18 18" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            )}
+
+            {/* Click outside to close attach menu */}
+            {showAttachMenu && (
+                <div
+                    className="chat_detail_attach_menu_overlay"
+                    onClick={() => setShowAttachMenu(false)}
+                />
+            )}
+
             {/* Input Area */}
             <div className="chat_detail_input_area">
                 {/* Quick Replies */}
-                <div className="chat_detail_quick_replies">
-                    {quickReplies.map((reply, index) => (
-                        <button
-                            key={index}
-                            type="button"
-                            className="chat_detail_quick_reply_btn btn-effect"
-                            onClick={() => handleQuickReply(reply)}
-                        >
-                            {reply}
-                        </button>
-                    ))}
-                </div>
+                {!selectedFile && (
+                    <div className="chat_detail_quick_replies">
+                        {quickReplies.map((reply, index) => (
+                            <button
+                                key={index}
+                                type="button"
+                                className="chat_detail_quick_reply_btn btn-effect"
+                                onClick={() => handleQuickReply(reply)}
+                            >
+                                {reply}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 {/* Input */}
-                <div className="chat_detail_input_wrap">
-                    <button 
-                        type="button" 
-                        className="chat_detail_attach_btn btn-effect"
-                    >
-                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12.544 4.3847L5.44005 11.4887C3.59572 13.333 3.75132 16.4789 5.57312 18.3007C7.39492 20.1225 10.6668 20.4041 12.5111 18.5597L19.6151 11.4558C20.9564 10.1144 20.8255 8.09719 19.5006 6.77225C18.1756 5.44731 16.1584 5.31639 14.817 6.65773L8.82838 12.6464C8.0265 13.4483 7.60881 14.6088 8.4369 15.4369C9.26499 16.265 10.4255 15.8473 11.2274 15.0454L16.6368 9.63603" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                    </button>
-                    <input
-                        type="text"
-                        className="chat_detail_input"
-                        placeholder="메세지를 입력하세요..."
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                    />
-                    <button
-                        type="button"
-                        className="chat_detail_send_btn btn-effect"
-                        onClick={handleSendMessage}
-                        disabled={!message.trim()}
-                    >
-                        <span>전송</span>
-                    </button>
+                <div className="chat_detail_input_container">
+                    {/* Attachment Menu */}
+                    {showAttachMenu && (
+                        <div className="chat_detail_attach_menu">
+                            <button type="button" onClick={() => handleFileSelect('image/*', 'environment')}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <circle cx="12" cy="13" r="4" stroke="#614108" strokeWidth="2"/>
+                                </svg>
+                                <span>카메라</span>
+                            </button>
+                            <button type="button" onClick={() => handleFileSelect('image/*,video/*')}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="#614108" strokeWidth="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5" fill="#614108"/>
+                                    <path d="M21 15L16 10L5 21" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                <span>갤러리</span>
+                            </button>
+                            <button type="button" onClick={() => handleFileSelect('*/*')}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M14 2V8H20" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                <span>파일</span>
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="chat_detail_input_wrap">
+                        <button
+                            type="button"
+                            className={`chat_detail_attach_btn btn-effect ${showAttachMenu ? 'active' : ''}`}
+                            onClick={handleAttachClick}
+                        >
+                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12.544 4.3847L5.44005 11.4887C3.59572 13.333 3.75132 16.4789 5.57312 18.3007C7.39492 20.1225 10.6668 20.4041 12.5111 18.5597L19.6151 11.4558C20.9564 10.1144 20.8255 8.09719 19.5006 6.77225C18.1756 5.44731 16.1584 5.31639 14.817 6.65773L8.82838 12.6464C8.0265 13.4483 7.60881 14.6088 8.4369 15.4369C9.26499 16.265 10.4255 15.8473 11.2274 15.0454L16.6368 9.63603" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                        </button>
+                        <input
+                            type="text"
+                            className="chat_detail_input"
+                            placeholder={selectedFile ? "캡션을 입력하세요..." : "메세지를 입력하세요..."}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                        />
+                        <button
+                            type="button"
+                            className="chat_detail_send_btn btn-effect"
+                            onClick={handleSendMessage}
+                            disabled={(!message.trim() && !selectedFile) || isUploading}
+                        >
+                            <span>{isUploading ? '...' : '전송'}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -213,4 +455,3 @@ const ChatDetailPage = () => {
 };
 
 export default ChatDetailPage;
-

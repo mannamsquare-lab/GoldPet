@@ -11,6 +11,13 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.net.URI
 
+data class FileUploadResponse(
+    val id: Long,
+    val url: String,
+    val fileType: String,
+    val mimeType: String
+)
+
 @RestController
 @RequestMapping("/api/v1/files")
 class FileController(
@@ -21,8 +28,14 @@ class FileController(
     fun uploadFile(
         @RequestParam("file") file: MultipartFile,
         @AuthenticationPrincipal principal: UserPrincipal
-    ): ResponseEntity<Map<String, String>> {
-        val fileUrl = fileService.storeFile(file, principal.id)
-        return ResponseEntity.created(URI.create(fileUrl)).body(mapOf("url" to fileUrl))
+    ): ResponseEntity<FileUploadResponse> {
+        val fileAttachment = fileService.storeFile(file, principal.id)
+        val response = FileUploadResponse(
+            id = fileAttachment.id,
+            url = fileAttachment.url,
+            fileType = fileAttachment.fileType,
+            mimeType = fileAttachment.mimeType
+        )
+        return ResponseEntity.created(URI.create(fileAttachment.url)).body(response)
     }
 }

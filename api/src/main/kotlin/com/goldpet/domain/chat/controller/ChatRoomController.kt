@@ -3,7 +3,9 @@ package com.goldpet.domain.chat.controller
 import com.goldpet.domain.chat.dto.ChatRoomCreateRequest
 import com.goldpet.domain.chat.dto.ChatRoomResponse
 import com.goldpet.domain.chat.dto.ChatMessageResponse
+import com.goldpet.domain.chat.dto.SendMessageRequest
 import com.goldpet.domain.chat.service.ChatService
+import com.goldpet.domain.common.repository.FileAttachmentRepository
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -12,7 +14,8 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v1/chat/rooms")
 class ChatRoomController(
-    private val chatService: ChatService
+    private val chatService: ChatService,
+    private val fileAttachmentRepository: FileAttachmentRepository
 ) {
     @PostMapping
     fun createChatRoom(
@@ -21,6 +24,14 @@ class ChatRoomController(
     ): ResponseEntity<ChatRoomResponse> {
         val chatRoom = chatService.createChatRoom(request, userDetails.id)
         return ResponseEntity.status(HttpStatus.CREATED).body(ChatRoomResponse.from(chatRoom))
+    }
+
+    @GetMapping
+    fun getChatRooms(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<List<ChatRoomResponse>> {
+        val chatRooms = chatService.getUserChatRooms(userDetails.id)
+        return ResponseEntity.ok(chatRooms.map { ChatRoomResponse.from(it, userDetails.id) })
     }
 
     @GetMapping("/my")
@@ -45,6 +56,56 @@ class ChatRoomController(
         @RequestParam(defaultValue = "50") size: Int
     ): ResponseEntity<List<ChatMessageResponse>> {
         val messages = chatService.getChatHistory(roomId, page, size)
-        return ResponseEntity.ok(messages.map { ChatMessageResponse.from(it) })
+
+        // Fetch all file attachments for messages with fileId
+        val fileIds = messages.mapNotNull { it.fileId }
+        val fileAttachments = if (fileIds.isNotEmpty()) {
+            fileAttachmentRepository.findAllById(fileIds).associateBy { it.id }
+        } else {
+            emptyMap()
+        }
+
+        return ResponseEntity.ok(messages.map { msg ->
+            ChatMessageResponse.from(msg, msg.fileId?.let { fileAttachments[it] })
+        })
+    }
+
+    @PostMapping("/{roomId}/messages")
+    fun sendMessage(
+        @PathVariable roomId: Long,
+        @RequestBody request: SendMessageRequest,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<ChatMessageResponse> {
+        val messageRequest = com.goldpet.domain.chat.dto.ChatMessageRequest(
+            roomId = roomId,
+            senderId = userDetails.id,
+            messageType = request.messageType,
+            textContent = request.content,
+            fileId = request.fileId
+        )
+        val message = chatService.saveChatMessage(messageRequest)
+
+        // Fetch file attachment if present
+        val fileAttachment = request.fileId?.let { fileAttachmentRepository.findById(it).orElse(null) }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ChatMessageResponse.from(message, fileAttachment))
+    }
+
+    @PostMapping("/{roomId}/read")
+    fun markAsRead(
+        @PathVariable roomId: Long,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<Void> {
+        chatService.markAsRead(roomId, userDetails.id)
+        return ResponseEntity.ok().build()
+    }
+
+    @DeleteMapping("/{roomId}/leave")
+    fun leaveRoom(
+        @PathVariable roomId: Long,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<Void> {
+        chatService.leaveRoom(roomId, userDetails.id)
+        return ResponseEntity.ok().build()
     }
 }

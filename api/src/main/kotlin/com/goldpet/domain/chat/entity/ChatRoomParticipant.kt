@@ -32,6 +32,8 @@ class ChatRoomParticipant(
     val joinedAt: LocalDateTime = LocalDateTime.now(),
 
     @Column
-    var leftAt: LocalDateTime? = null
+    var leftAt: LocalDateTime? = null,
 
+    @Column
+    var lastReadAt: LocalDateTime? = null
 )

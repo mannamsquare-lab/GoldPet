@@ -20,6 +20,7 @@ Environment="SPRING_DATA_REDIS_PORT=6379"
 Environment="SPRING_DATA_REDIS_PASSWORD=8nzzakgY5XMHODTQZFQBa047+uRkfzAsBbGJ0TybDnU="
 Environment="JWT_SECRET=XhRnFTPUHOIU+OflhDsQiZDLjfGsl6eeItBD76hxTYg="
 Environment="MINIO_ENDPOINT=http://localhost:9000"
+Environment="MINIO_PUBLIC_ENDPOINT=https://s3.mannamsquare.com"
 Environment="MINIO_ACCESS_KEY=minioadmin"
 Environment="MINIO_SECRET_KEY=RSMVMnhzAVWPQkItTyV6QyJuA4OmJVL6tZ74V1i6De0="
 # 로그

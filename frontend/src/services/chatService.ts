@@ -16,13 +16,29 @@ export interface ChatRoom {
   isGroup: boolean;
 }
 
+export interface FileInfo {
+  id: number;
+  url: string;
+  fileType: string;
+  mimeType: string;
+  sizeBytes?: number;
+  width?: number;
+  height?: number;
+}
+
 export interface ChatMessage {
   id: string;
   roomId: string;
   senderId: number;
   content: string;
   timestamp: string;
-  type: 'text' | 'image' | 'system';
+  type: 'text' | 'image' | 'video' | 'file' | 'system';
+  // API response fields
+  textContent?: string;
+  createdAt?: string;
+  messageType?: string;
+  fileId?: number;
+  file?: FileInfo;
 }
 
 // Mock data
@@ -57,7 +73,7 @@ const mockMessages: ChatMessage[] = [
   { id: 'msg-3', roomId: 'room-1', senderId: 2, content: '오늘 산책 가시나요?', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), type: 'text' },
 ];
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || true;
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 export const chatService = {
   getChatRooms: async (): Promise<ChatRoom[]> => {
@@ -88,7 +104,11 @@ export const chatService = {
     }
   },
 
-  sendMessage: async (roomId: string, content: string): Promise<ChatMessage> => {
+  sendMessage: async (
+    roomId: string,
+    content: string,
+    options?: { messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE'; fileId?: number }
+  ): Promise<ChatMessage> => {
     if (USE_MOCK) {
       await new Promise((r) => setTimeout(r, 200));
       return {
@@ -102,10 +122,38 @@ export const chatService = {
     }
 
     try {
-      const response = await apiClient.post(`/chat/rooms/${roomId}/messages`, { content });
+      const response = await apiClient.post(`/chat/rooms/${roomId}/messages`, {
+        content: content || null,
+        messageType: options?.messageType || 'TEXT',
+        fileId: options?.fileId || null,
+      });
       return response.data;
     } catch {
       throw new Error('메시지 전송에 실패했습니다.');
+    }
+  },
+
+  uploadFile: async (file: File): Promise<{ id: number; url: string; fileType: string; mimeType: string }> => {
+    if (USE_MOCK) {
+      await new Promise((r) => setTimeout(r, 500));
+      return {
+        id: Date.now(),
+        url: URL.createObjectURL(file),
+        fileType: file.type.startsWith('image/') ? 'IMAGE' : file.type.startsWith('video/') ? 'VIDEO' : 'FILE',
+        mimeType: file.type,
+      };
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await apiClient.post('/files/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch {
+      throw new Error('파일 업로드에 실패했습니다.');
     }
   },
 

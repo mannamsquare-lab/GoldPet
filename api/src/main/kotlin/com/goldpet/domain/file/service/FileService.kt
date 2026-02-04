@@ -46,7 +46,7 @@ class FileService(
     }
 
     @org.springframework.transaction.annotation.Transactional
-    fun storeFile(file: MultipartFile, userId: Long): String {
+    fun storeFile(file: MultipartFile, userId: Long): com.goldpet.domain.common.entity.FileAttachment {
         try {
             if (file.isEmpty) {
                 throw RuntimeException("Failed to store empty file.")
@@ -54,28 +54,35 @@ class FileService(
             val originalFilename = file.originalFilename ?: "unknown"
             val extension = originalFilename.substringAfterLast(".", "")
             val newFilename = "${UUID.randomUUID()}.$extension"
-            
+
+            val mimeType = file.contentType ?: "application/octet-stream"
             val metadata = ObjectMetadata().apply {
-                contentType = file.contentType ?: "application/octet-stream"
+                contentType = mimeType
                 contentLength = file.size
             }
 
             amazonS3.putObject(bucketName, newFilename, file.inputStream, metadata)
-            
+
             // Construct URL accessible by public/frontend
             // If using MinIO locally, this is http://localhost:9000/bucket/filename
             val fileUrl = "$publicEndpoint/$bucketName/$newFilename"
-            
+
+            // Determine file type based on MIME type
+            val fileType = when {
+                mimeType.startsWith("image/") -> "IMAGE"
+                mimeType.startsWith("video/") -> "VIDEO"
+                mimeType.startsWith("audio/") -> "AUDIO"
+                else -> "FILE"
+            }
+
             val fileAttachment = com.goldpet.domain.common.entity.FileAttachment(
                 ownerUserId = userId,
-                fileType = "IMAGE",
-                mimeType = metadata.contentType,
+                fileType = fileType,
+                mimeType = mimeType,
                 url = fileUrl,
                 sizeBytes = file.size
             )
-            fileAttachmentRepository.save(fileAttachment)
-
-            return fileUrl
+            return fileAttachmentRepository.save(fileAttachment)
         } catch (e: IOException) {
             throw RuntimeException("Failed to store file.", e)
         } catch (e: Exception) {

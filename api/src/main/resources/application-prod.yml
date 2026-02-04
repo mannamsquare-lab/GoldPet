@@ -20,3 +20,9 @@ app:
       - https://admin.goldpet.com
       - https://goldpet.com
       - https://www.goldpet.com
+
+# Production S3/MinIO Configuration
+S3_ENDPOINT: ${MINIO_ENDPOINT}
+S3_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT}
+S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+S3_SECRET_KEY: ${MINIO_SECRET_KEY}

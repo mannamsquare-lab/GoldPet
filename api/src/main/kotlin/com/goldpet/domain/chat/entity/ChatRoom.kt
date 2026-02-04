@@ -32,6 +32,9 @@ class ChatRoom(
     val match: Match? = null,
 
     @OneToMany(mappedBy = "chatRoom", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val participants: MutableList<ChatRoomParticipant> = mutableListOf()
+    val participants: MutableList<ChatRoomParticipant> = mutableListOf(),
+
+    @OneToMany(mappedBy = "chatRoom", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val messages: MutableList<ChatMessage> = mutableListOf()
 
 ) : BaseTimeEntity()
