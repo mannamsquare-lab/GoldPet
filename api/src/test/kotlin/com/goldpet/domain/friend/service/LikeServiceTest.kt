@@ -3,6 +3,7 @@ package com.goldpet.domain.friend.service
 import com.goldpet.domain.friend.entity.Like
 import com.goldpet.domain.friend.entity.LikeStatus
 import com.goldpet.domain.friend.repository.LikeRepository
+import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
@@ -22,6 +23,9 @@ class LikeServiceTest {
     private lateinit var likeRepository: LikeRepository
 
     @Mock
+    private lateinit var matchRepository: MatchRepository
+
+    @Mock
     private lateinit var userRepository: UserRepository
 
     @Mock
@@ -35,7 +39,7 @@ class LikeServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        likeService = LikeService(likeRepository, userRepository, notificationService)
+        likeService = LikeService(likeRepository, matchRepository, userRepository, notificationService)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
         targetUser = createTestUser(2L, "targetuser", "대상유저")
@@ -112,6 +116,8 @@ class LikeServiceTest {
         whenever(userRepository.findById(2L)).thenReturn(Optional.of(targetUser))
         whenever(likeRepository.findByFromUserAndToUser(testUser, targetUser)).thenReturn(Optional.empty())
         whenever(likeRepository.existsByFromUserIdAndToUserIdAndStatus(2L, 1L, LikeStatus.ACTIVE)).thenReturn(true)
+        whenever(matchRepository.findByUser1AndUser2(any(), any())).thenReturn(Optional.empty())
+        whenever(matchRepository.save(any())).thenAnswer { it.getArgument(0) }
         whenever(likeRepository.save(any<Like>())).thenAnswer { invocation ->
             val like = invocation.getArgument<Like>(0)
             Like(
@@ -218,6 +224,7 @@ class LikeServiceTest {
         whenever(likeRepository.findByFromUserAndToUser(testUser, targetUser)).thenReturn(Optional.of(existingLike))
         whenever(likeRepository.findByFromUserAndToUser(targetUser, testUser)).thenReturn(Optional.empty())
         whenever(likeRepository.save(any<Like>())).thenReturn(existingLike)
+        whenever(matchRepository.findByUserIds(any(), any())).thenReturn(Optional.empty())
 
         // When
         val result = likeService.unlikeUser(1L, 2L)
