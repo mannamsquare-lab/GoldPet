@@ -19,7 +19,8 @@ export interface LoginResponse {
   user?: User;
 }
 
-const API_URL = 'http://api.goldpet.local/v1/admin/auth';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+const API_URL = `${API_BASE}/api/v1/admin/auth`;
 
 export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
