@@ -92,8 +92,17 @@ class ChatRoomController(
 
         val chatMessageResponse = ChatMessageResponse.from(message, fileAttachment)
 
-        // Broadcast to WebSocket subscribers for real-time updates
+        // Broadcast to WebSocket subscribers for real-time updates (chat detail page)
         simpMessageSendingOperations.convertAndSend("/topic/chat/$roomId", chatMessageResponse)
+
+        // Broadcast to user-specific topics for chat list updates
+        val participants = chatService.getParticipants(roomId)
+        participants.forEach { participant ->
+            simpMessageSendingOperations.convertAndSend(
+                "/topic/user/${participant.user.id}/chats",
+                mapOf("roomId" to roomId, "type" to "NEW_MESSAGE")
+            )
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(chatMessageResponse)
     }

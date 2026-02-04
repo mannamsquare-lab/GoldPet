@@ -212,4 +212,13 @@ class ChatService(
 
         return chatRoom
     }
+
+    /**
+     * Get all active participants of a chat room.
+     */
+    @Transactional(readOnly = true)
+    fun getParticipants(roomId: Long): List<ChatRoomParticipant> {
+        return chatRoomParticipantRepository.findAllByChatRoomId(roomId)
+            .filter { it.leftAt == null }
+    }
 }

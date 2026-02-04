@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
 import { useAuthStore } from '../../stores/authStore';
+import { useChatListWebSocket } from '../../hooks/useChatListWebSocket';
 import '../../styles/chat.css';
 import { Loading } from '../../components/common/Loading';
 
@@ -31,6 +32,9 @@ const ChatListPage = () => {
     const currentUserId = user?.id;
     const [activeTab, setActiveTab] = useState('one'); // 'one', 'group', 'request'
 
+    // WebSocket subscription for real-time chat list updates
+    useChatListWebSocket();
+
     // URL state에서 activeTab 정보 가져오기
     useEffect(() => {
         if (location.state && 'activeTab' in location.state) {
@@ -38,12 +42,11 @@ const ChatListPage = () => {
         }
     }, [location.state]);
 
-    // Fetch Chat Rooms with polling for real-time updates
+    // Fetch Chat Rooms (WebSocket handles real-time updates)
     const { data: chatRooms, isLoading } = useQuery({
         queryKey: ['chatRooms'],
         queryFn: chatService.getChatRooms,
-        staleTime: 1000 * 5, // 5 seconds
-        refetchInterval: 1000 * 5, // Poll every 5 seconds for new messages
+        staleTime: 1000 * 30, // 30 seconds
     });
 
     if (isLoading) return <Loading description="채팅 목록을 불러오고 있어요" />;

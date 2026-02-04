@@ -131,6 +131,40 @@ class ChatWebSocketService {
     }
   }
 
+  /**
+   * Subscribe to a generic topic (e.g., user-specific notifications)
+   */
+  subscribeToTopic(topic: string, onMessage: (data: any) => void): void {
+    if (!this.client || !this.isConnected) {
+      console.warn('[WebSocket] Not connected. Call connect() first.');
+      return;
+    }
+
+    // Check if already subscribed
+    if (this.subscriptions.has(topic)) {
+      return;
+    }
+
+    const subscription = this.client.subscribe(topic, (message: IMessage) => {
+      try {
+        const data = JSON.parse(message.body);
+        onMessage(data);
+      } catch (error) {
+        console.error('[WebSocket] Failed to parse message:', error);
+      }
+    });
+
+    this.subscriptions.set(topic, subscription);
+  }
+
+  unsubscribeFromTopic(topic: string): void {
+    const subscription = this.subscriptions.get(topic);
+    if (subscription) {
+      subscription.unsubscribe();
+      this.subscriptions.delete(topic);
+    }
+  }
+
   sendMessage(roomId: string, senderId: number, content: string): void {
     if (!this.client || !this.isConnected) {
       console.error('[WebSocket] Not connected. Cannot send message.');
