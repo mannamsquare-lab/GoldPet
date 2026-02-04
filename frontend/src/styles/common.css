@@ -213,7 +213,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   bottom: 0;
   left: 0;
   z-index: 1;
-  background-image: url(../../assets/images/main/main_slide_mask.png);
+  background-image: url(/assets/images/main/main_slide_mask.png);
   -ms-background-position-x: 0;
   background-position-x: 0;
   -ms-background-position-y: 100%;
@@ -253,7 +253,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   font-size: 3.33vw;
   font-weight: 500;
   padding: 0.56vw 2.5vw;
-  background-image: url(../../assets/images/main/underline_dot.svg);
+  background-image: url(/assets/images/main/underline_dot.svg);
   -ms-background-position-x: 50%;
   background-position-x: 50%;
   -ms-background-position-y: 100%;
@@ -280,7 +280,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 #mainContainer .main_slide .pet_detail button {
   width: 16.67vw;
   height: 13.33vw;
-  background-image: url(../../assets/images/main/wish_icon.svg);
+  background-image: url(/assets/images/main/wish_icon.svg);
   text-indent: -9999px;
   -ms-background-position-x: 50%;
   background-position-x: 50%;
@@ -294,7 +294,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   -ms-transition: background-image 0.2s ease;
 }
 #mainContainer .main_slide .pet_detail button.active {
-  background-image: url(../../assets/images/main/wish_icon_active.svg);
+  background-image: url(/assets/images/main/wish_icon_active.svg);
 }
 #mainContainer .swiper-slide {
   width: 90vw;
@@ -314,7 +314,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   width: 6.67vw;
   height: 6.67vw;
   position: absolute;
-  background-image: url(../../assets/images/main/slide_arrow.svg);
+  background-image: url(/assets/images/main/slide_arrow.svg);
   z-index: 10;
   top: 47.22vw;
   -ms-background-position-x: 50%;
@@ -420,7 +420,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 }
 .walk_wrap .txt_wrap {
   border-radius: 5.56vw;
-  background-image: url(../../assets/images/main/walk_bg.svg);
+  background-image: url(/assets/images/main/walk_bg.svg);
   margin: 2.22vw 0 0;
   display: -webkit-box;
   display: -ms-flexbox;
@@ -476,7 +476,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   padding: 11.67vw 0 0;
   position: fixed;
   top: 0;
-  background-image: url(../../assets/images/layout/header_bg_brown.svg);
+  background-image: url(/assets/images/layout/header_bg_brown.svg);
   z-index: 100;
   -ms-background-position-x: 50%;
   background-position-x: 50%;
@@ -529,7 +529,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   padding: 0 0 6.67vw;
   position: fixed;
   bottom: 0;
-  background-image: url(../../assets/images/layout/b_bg_brown.svg);
+  background-image: url(/assets/images/layout/b_bg_brown.svg);
   z-index: 100;
   -ms-background-position-x: 50%;
   background-position-x: 50%;
@@ -690,7 +690,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
 }
 #intro .intro_slide {
-  background-image: url(../../assets/images/intro/slide_bg.png);
+  background-image: url(/assets/images/intro/slide_bg.png);
   padding: 0 4% 27.78vw;
   position: relative;
   -ms-background-position-x: 50%;
@@ -898,7 +898,7 @@ strong, h1, h2, h3, h4, h5, h6 {
           box-sizing: border-box;
 }
 #friendFind .find_filter li .check_wrap label:after {
-  background-image: url(../../assets/images/common/checkbox_icon.svg);
+  background-image: url(/assets/images/common/checkbox_icon.svg);
   opacity: 0;
   -webkit-transition: opacity 0.2s;
   transition: opacity 0.2s;
@@ -978,7 +978,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   width: 6.67vw;
   height: 6.67vw;
   position: absolute;
-  background-image: url(../../assets/images/main/slide_arrow.svg);
+  background-image: url(/assets/images/main/slide_arrow.svg);
   z-index: 10;
   top: 50%;
   translate: 0 -50%;
@@ -1028,7 +1028,7 @@ strong, h1, h2, h3, h4, h5, h6 {
   font-size: 3.89vw;
   font-weight: 500;
   padding: 0.56vw 2.5vw;
-  background-image: url(../../assets/images/main/underline_dot.svg);
+  background-image: url(/assets/images/main/underline_dot.svg);
   -ms-background-position-x: 50%;
   background-position-x: 50%;
   -ms-background-position-y: 100%;
