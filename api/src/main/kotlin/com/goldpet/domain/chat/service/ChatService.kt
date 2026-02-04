@@ -7,6 +7,7 @@ import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.repository.ChatRoomRepository
 import com.goldpet.domain.friend.repository.MatchRepository
+import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -18,7 +19,8 @@ class ChatService(
     private val chatRoomParticipantRepository: ChatRoomParticipantRepository,
     private val chatMessageRepository: ChatMessageRepository,
     private val userRepository: UserRepository,
-    private val matchRepository: MatchRepository
+    private val matchRepository: MatchRepository,
+    private val notificationService: NotificationService
 ) {
 
     @Transactional
@@ -98,19 +100,10 @@ class ChatService(
     @Transactional
     fun saveChatMessage(request: ChatMessageRequest): ChatMessage {
         val chatRoom = chatRoomRepository.findById(request.roomId).orElseThrow { NoSuchElementException("Chat room not found with id: ${request.roomId}") }
-        // request.senderId might be null if System message? 
-        // Warning said 'Unnecessary safe call on non-null receiver of type Long' at 101:38. 
-        // 101:38 is `request.senderId?.let`. 
-        // If request.senderId IS Long (not Long?), then why `?.let`?
-        // Let's assume request.senderId IS Nullable Long based on `ChatMessageRequest`. 
-        // Wait, if warning says "non-null receiver of type Long", it means compiler thinks it is NOT null.
-        // So `request.senderId` must be `Long`.
-        // If so, `request.senderId` is not null.
         val sender = userRepository.findById(request.senderId).orElseThrow { NoSuchElementException("Sender user not found with id: ${request.senderId}") }
 
         // Validate sender is a participant if not a system message
         if (request.messageType != MessageType.SYSTEM) {
-           // sender is guaranteed not null here if line above succeeded
             chatRoomParticipantRepository.findByChatRoomIdAndUserId(chatRoom.id, sender.id)
                 .orElseThrow { IllegalStateException("Sender is not a participant of this chat room.") }
         }
@@ -124,7 +117,31 @@ class ChatService(
             emoticonId = request.emoticonId,
             emojiCode = request.emojiCode
         )
-        return chatMessageRepository.save(chatMessage)
+        val savedMessage = chatMessageRepository.save(chatMessage)
+
+        // Send notification to other participants (not the sender)
+        if (request.messageType != MessageType.SYSTEM) {
+            val participants = chatRoomParticipantRepository.findAllByChatRoomId(chatRoom.id)
+            val messagePreview = request.textContent ?: when (request.messageType) {
+                MessageType.IMAGE -> "사진을 보냈습니다"
+                MessageType.VIDEO -> "동영상을 보냈습니다"
+                MessageType.FILE -> "파일을 보냈습니다"
+                else -> "메시지를 보냈습니다"
+            }
+
+            participants
+                .filter { it.user.id != sender.id && it.leftAt == null }
+                .forEach { participant ->
+                    notificationService.notifyMessage(
+                        toUserId = participant.user.id,
+                        fromUserId = sender.id,
+                        chatRoomId = chatRoom.id,
+                        messagePreview = messagePreview
+                    )
+                }
+        }
+
+        return savedMessage
     }
 
     @Transactional(readOnly = true)

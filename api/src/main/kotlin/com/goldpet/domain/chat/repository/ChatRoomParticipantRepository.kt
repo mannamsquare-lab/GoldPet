@@ -7,4 +7,5 @@ import java.util.Optional
 interface ChatRoomParticipantRepository : JpaRepository<ChatRoomParticipant, Long> {
     fun findByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): Optional<ChatRoomParticipant>
     fun findAllByUserId(userId: Long): List<ChatRoomParticipant>
+    fun findAllByChatRoomId(chatRoomId: Long): List<ChatRoomParticipant>
 }
