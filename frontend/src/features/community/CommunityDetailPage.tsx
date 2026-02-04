@@ -203,11 +203,11 @@ export default function CommunityDetailPage() {
           <div className="img_wrap">
              {post.imageUrls && post.imageUrls.length > 0 ? (
                  post.imageUrls.map((url, index) => {
-                     const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${url}`;
+                     const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${url}`;
                      return <img key={index} src={fullUrl} alt={`Post image ${index + 1}`} style={{ marginBottom: '16px' }} />;
                  })
              ) : post.thumbnailUrl ? (
-                 <img src={post.thumbnailUrl.startsWith('http') ? post.thumbnailUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${post.thumbnailUrl}`} alt="Thumbnail" />
+                 <img src={post.thumbnailUrl.startsWith('http') ? post.thumbnailUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${post.thumbnailUrl}`} alt="Thumbnail" />
              ) : null}
           </div>
 

@@ -209,7 +209,7 @@ export const authService = {
 
       const popup = window.open(
         `${
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
         }/oauth2/authorization/${provider}`,
         "Login",
         `width=${width},height=${height},left=${left},top=${top}`

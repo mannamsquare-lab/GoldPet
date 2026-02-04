@@ -120,7 +120,7 @@ export default function CommunityListPage() {
                 
                 {post.imageUrls && post.imageUrls.length > 0 && (
                     <div className="list_img">
-                        <img src={post.imageUrls[0].startsWith('http') ? post.imageUrls[0] : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${post.imageUrls[0]}`} alt="" />
+                        <img src={post.imageUrls[0].startsWith('http') ? post.imageUrls[0] : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${post.imageUrls[0]}`} alt="" />
                     </div>
                 )}
 
