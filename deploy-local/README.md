@@ -1,4 +1,4 @@
-# 로컬 개발 인프라
+# deploy-local: 로컬 개발 환경
 
 로컬 개발 환경에서 사용하는 Docker 서비스 설정입니다.
 
@@ -16,7 +16,7 @@
 ### 서비스 시작
 
 ```bash
-cd infra
+cd deploy-local
 docker compose up -d
 ```
 
@@ -43,7 +43,7 @@ docker compose down -v
 ## 파일 구조
 
 ```
-infra/
+deploy-local/
 ├── docker-compose.yml      # Docker 서비스 정의
 └── config/
     └── postgres/
@@ -52,5 +52,5 @@ infra/
 
 ## 관련 문서
 
-- 서버 배포 설정: [deploy/](../deploy/)
+- 개발 서버 배포: [deploy-dev/](../deploy-dev/)
 - 개발 가이드: [docs/LOCAL_DEVELOPMENT.md](../docs/LOCAL_DEVELOPMENT.md)

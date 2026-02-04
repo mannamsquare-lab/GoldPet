@@ -1,18 +1,19 @@
-# 서버 배포 설정
+# deploy-dev: 개발 서버 환경
 
-개발/상용 서버 배포에 필요한 설정 파일들입니다.
+mannamsquare.com 개발 서버 배포에 필요한 설정 파일들입니다.
 
 ## 환경
 
-| 환경 | 도메인 |
-|-----|--------|
-| **dev** | *.mannamsquare.com |
-| **prod** | *.goldpet.com |
+| 환경 | 도메인 | 폴더 |
+|-----|--------|------|
+| **local** | localhost | deploy-local/ |
+| **dev** | *.mannamsquare.com | deploy-dev/ (현재) |
+| **prod** | *.goldpet.com | deploy-prod/ (예정) |
 
 ## 폴더 구조
 
 ```
-deploy/
+deploy-dev/
 ├── docker/
 │   ├── docker-compose.yml    # 서버용 Docker 서비스
 │   └── install-docker.sh     # Docker 설치 스크립트 (Ubuntu)
@@ -97,5 +98,5 @@ sudo cp logrotate/* /etc/logrotate.d/
 
 ## 관련 문서
 
-- 로컬 개발: [infra/](../infra/)
+- 로컬 개발: [deploy-local/](../deploy-local/)
 - 개발 가이드: [docs/LOCAL_DEVELOPMENT.md](../docs/LOCAL_DEVELOPMENT.md)

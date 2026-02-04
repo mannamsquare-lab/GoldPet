@@ -12,7 +12,7 @@ void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
 
   // Firebase 초기화
-  await Firebase.initializeApp();
+  // await Firebase.initializeApp();
 
   // Kakao SDK 초기화
   // TODO: YOUR_KAKAO_APP_KEY를 실제 네이티브 앱 키로 변경해야 함

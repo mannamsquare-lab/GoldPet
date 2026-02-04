@@ -14,15 +14,15 @@ This is a monorepo with four main projects:
 - **frontend/** - React 19 web app for users (Vite, TypeScript, Tailwind)
 - **admin/** - React admin dashboard (Vite, TypeScript, Tailwind)
 - **api/** - Spring Boot 3.2 backend (Kotlin, Java 21)
-- **infra/** - 로컬 개발용 Docker 설정
-- **deploy/** - 서버 배포 설정 (nginx, systemd, docker)
+- **deploy-local/** - 로컬 개발용 Docker 설정
+- **deploy-dev/** - 개발 서버 배포 설정 (mannamsquare.com)
 
 ## Development Commands
 
 ### Infrastructure (Docker services)
 ```bash
 # Start local services (PostgreSQL+PostGIS, Redis, MinIO)
-cd infra && docker compose up -d
+cd deploy-local && docker compose up -d
 ```
 
 ### Backend API (Spring Boot)
@@ -149,7 +149,7 @@ flutter run --dart-define=ENV=prod     # 상용 서버
 
 ### 로컬 개발 환경
 
-로컬 서비스 포트 (infra/docker-compose.yml):
+로컬 서비스 포트 (deploy-local/docker-compose.yml):
 - PostgreSQL: localhost:5433
 - Redis: localhost:6379
 - MinIO: localhost:9100 (API), localhost:9101 (Console)

@@ -20,7 +20,7 @@
 ## 2. 인프라 실행 (Docker)
 
 ```bash
-cd infra
+cd deploy-local
 docker compose up -d
 ```
 
@@ -94,14 +94,14 @@ flutter run --dart-define=ENV=prod  # 상용 서버
 ### Q: DB 데이터 초기화
 
 ```bash
-cd infra
+cd deploy-local
 docker compose down -v
 docker compose up -d
 ```
 
 ### Q: 포트 충돌
 
-로컬에 PostgreSQL이 이미 있다면 `infra/docker-compose.yml`에서 포트 5433을 다른 값으로 변경하세요.
+로컬에 PostgreSQL이 이미 있다면 `deploy-local/docker-compose.yml`에서 포트 5433을 다른 값으로 변경하세요.
 
 ### Q: MinIO 콘솔 접속
 
