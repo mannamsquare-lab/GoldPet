@@ -38,11 +38,12 @@ const ChatListPage = () => {
         }
     }, [location.state]);
 
-    // Fetch Chat Rooms (shorter stale time for real-time feel)
+    // Fetch Chat Rooms with polling for real-time updates
     const { data: chatRooms, isLoading } = useQuery({
         queryKey: ['chatRooms'],
         queryFn: chatService.getChatRooms,
-        staleTime: 1000 * 10, // 10 seconds - chat list needs to be fresh
+        staleTime: 1000 * 5, // 5 seconds
+        refetchInterval: 1000 * 5, // Poll every 5 seconds for new messages
     });
 
     if (isLoading) return <Loading description="채팅 목록을 불러오고 있어요" />;
