@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { MainHeader } from '../../components/common/MainHeader';
 import { useAuthStore, type User } from '../../stores/authStore';
@@ -11,6 +11,7 @@ import { useAlert } from '../../contexts/AlertContext';
 
 const ProfileOwnerWritePage: React.FC = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { user, updateUser } = useAuthStore();
     const { showAlert } = useAlert();
 
@@ -315,19 +316,22 @@ const ProfileOwnerWritePage: React.FC = () => {
             };
 
             await userService.updateProfile(updateData);
-            
+
+            // Invalidate cache to ensure fresh data
+            await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+
             // Optimistic update
             if (user) {
                 const updatedUser: User = {
                     ...user,
                     ...updateData,
-                    hasPet: hasPet === true, 
+                    hasPet: hasPet === true,
                     profileImageUrls: validImages,
                     profileImageUrl: validImages.length > 0 ? validImages[0] : undefined
                 };
                 updateUser(updatedUser);
             }
-            
+
             navigate('/profile');
         } catch (error) {
             console.error(error);

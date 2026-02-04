@@ -12,10 +12,10 @@ const ProfileOwnerTab: React.FC = () => {
     const navigate = useNavigate();
 
     // Fetch fresh user data from API
-    const { data: apiUser, isLoading: isUserLoading } = useQuery({ 
-        queryKey: ['user', 'me'], 
+    const { data: apiUser, isLoading: isUserLoading } = useQuery({
+        queryKey: ['users', 'me'],
         queryFn: userService.getMe,
-        staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+        staleTime: 0, // Always fetch fresh data
     });
 
     // Merge API data with auth store (API data takes precedence)
