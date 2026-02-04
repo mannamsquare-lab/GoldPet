@@ -159,14 +159,31 @@ class ChatWebSocketService {
       content: data.textContent || data.content || '',
       timestamp: data.createdAt || data.timestamp || new Date().toISOString(),
       type: this.mapMessageType(data.messageType || data.type),
+      // Include additional fields for file attachments
+      textContent: data.textContent,
+      createdAt: data.createdAt,
+      messageType: data.messageType,
+      fileId: data.fileId,
+      file: data.file ? {
+        id: data.file.id,
+        url: data.file.url,
+        fileType: data.file.fileType,
+        mimeType: data.file.mimeType,
+        sizeBytes: data.file.sizeBytes,
+        width: data.file.width,
+        height: data.file.height,
+      } : undefined,
     };
   }
 
-  private mapMessageType(type: string): 'text' | 'image' | 'system' {
+  private mapMessageType(type: string): 'text' | 'image' | 'video' | 'file' | 'system' {
     switch (type?.toUpperCase()) {
       case 'IMAGE':
-      case 'FILE':
         return 'image';
+      case 'VIDEO':
+        return 'video';
+      case 'FILE':
+        return 'file';
       case 'SYSTEM':
         return 'system';
       default:
