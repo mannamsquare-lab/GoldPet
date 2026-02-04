@@ -5,7 +5,11 @@ pipeline {
         DEPLOY_PATH = '/home/dev/www/mannam/goldpet/admin'
         NODE_VERSION = '24.13.0'
     }
-    
+
+    tools {
+        nodejs "NodeJS"
+    }
+
     stages {
         stage('Install Dependencies') {
             steps {
