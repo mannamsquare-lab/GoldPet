@@ -1,85 +1,109 @@
 # Local Development Guide (로컬 개발 가이드)
 
-이 문서는 로컬 환경(내 컴퓨터)에서 GoldPet 프로젝트를 개발하고 테스트하는 방법을 안내합니다.
-실서버 배포 환경(`infra/docker-compose.yml`)과 달리, 로컬 개발 시에는 **백엔드/프론트엔드 코드를 직접 실행**하여 빠른 디버깅과 Hot Reload 기능을 활용합니다.
+로컬 환경에서 GoldPet 프로젝트를 개발하고 테스트하는 방법을 안내합니다.
 
-## 1. 사전 준비 (Prerequisites)
+## 환경 구성
 
-*   **Docker Desktop**: 데이터베이스(Postgres), 캐시(Redis), 스토리지(MinIO) 실행용.
-*   **Java 21 (JDK)**: 백엔드 빌드 및 실행용.
-*   **Node.js (v20 이상) & npm**: 프론트엔드 실행용.
-*   **Flutter SDK**: 모바일 앱 실행용.
+| 환경 | 도메인 | 용도 |
+|-----|--------|------|
+| **local** | localhost | 로컬 개발 |
+| **dev** | *.mannamsquare.com | 개발 서버 |
+| **prod** | *.goldpet.com | 상용 서버 |
 
-## 2. 인프라 실행 (Database, Redis, MinIO)
+## 1. 사전 준비
 
-로컬 개발 시 DB나 Redis를 직접 설치할 필요 없이 Docker를 통해 실행합니다.
-포트 충돌 방지를 위해 로컬 개발용 포트는 기본 포트와 다르게 설정되어 있습니다 (application.yml 기준).
+- **Docker Desktop**: DB, Redis, MinIO 실행
+- **Java 21 (JDK)**: 백엔드
+- **Node.js (v20+)**: 프론트엔드/Admin
+- **Flutter SDK**: 모바일 앱
 
-*   **PostgreSQL**: `localhost:5432`
-*   **Redis**: `localhost:6379`
-*   **MinIO**: `localhost:9000` (API), `9001` (Console)
-
-### 실행 방법
-터미널에서 다음 스크립트를 실행하여 인프라 컨테이너만 띄웁니다.
+## 2. 인프라 실행 (Docker)
 
 ```bash
-# 프로젝트 루트에서 실행
-./scripts/dev_infra_up.sh
+cd infra
+docker compose -f docker-compose.local.yml up -d
 ```
 
-또는 수동으로 실행:
-```bash
-docker compose -f infra/docker-compose.local.yml up -d
-```
+### 로컬 포트 매핑
+
+| 서비스 | 포트 | 설명 |
+|-------|------|------|
+| PostgreSQL | **5433** | PostGIS 포함 |
+| Redis | 6379 | 캐시/세션 |
+| MinIO API | **9100** | S3 호환 스토리지 |
+| MinIO Console | **9101** | 웹 콘솔 |
 
 ## 3. 백엔드 (API) 실행
-
-IntelliJ IDEA 또는 터미널에서 실행합니다.
-
-*   **위치**: `api/`
-*   **설정 파일**: `api/src/main/resources/application.yml` (기본 profile: local)
-*   **실행 확인**: `http://localhost:8080`
 
 ```bash
 cd api
 ./gradlew bootRun
+# http://localhost:8081
 ```
 
+환경 프로필: `SPRING_PROFILES_ACTIVE=local` (기본값)
+
 ## 4. 프론트엔드 (React) 실행
-
-웹 브라우저에서 개발하기 위해 실행합니다.
-
-*   **위치**: `frontend/`
-*   **실행 확인**: `http://localhost:5173` (Vite 기본 포트)
 
 ```bash
 cd frontend
 npm install
 npm run dev
+# http://localhost:5173
 ```
 
-## 5. 모바일 앱 (Flutter) 실행
+`.env.local` 파일이 자동으로 로드됩니다.
 
-iOS 시뮬레이터 또는 Android 에뮬레이터에서 실행합니다.
+## 5. Admin 대시보드 실행
 
-*   **위치**: `app/`
+```bash
+cd admin
+npm install
+npm run dev
+# http://localhost:5174
+```
+
+## 6. 모바일 앱 (Flutter) 실행
 
 ```bash
 cd app
 flutter pub get
-flutter run
+flutter run --dart-define=ENV=local
+```
+
+## 7. 환경별 빌드
+
+### Frontend/Admin
+
+```bash
+npm run build -- --mode dev   # 개발 서버용
+npm run build -- --mode prod  # 상용 서버용
+```
+
+### Flutter
+
+```bash
+flutter run --dart-define=ENV=dev   # 개발 서버
+flutter run --dart-define=ENV=prod  # 상용 서버
 ```
 
 ---
 
-## 💡 자주 묻는 질문 (FAQ)
+## FAQ
 
-### Q: DB 데이터를 초기화하고 싶어요.
-A: Docker 볼륨을 삭제하고 재시작하면 됩니다.
+### Q: DB 데이터 초기화
+
 ```bash
 docker compose -f infra/docker-compose.local.yml down -v
-./scripts/dev_infra_up.sh
+docker compose -f infra/docker-compose.local.yml up -d
 ```
 
-### Q: 포트 5432가 이미 사용 중이라고 떠요.
-A: 만약 로컬에 이미 Postgres가 실행 중이라면 포트 충돌이 발생할 수 있습니다. 이미 실행 중인 Postgres를 끄거나, 충돌이 발생하면 `infra/docker-compose.local.yml`에서 포트를 변경해주세요.
+### Q: 포트 충돌
+
+로컬에 PostgreSQL이 이미 있다면 `docker-compose.local.yml`에서 포트 5433을 다른 값으로 변경하세요.
+
+### Q: MinIO 콘솔 접속
+
+브라우저에서 http://localhost:9101 접속
+- ID: `minioadmin`
+- PW: `minioadmin`
