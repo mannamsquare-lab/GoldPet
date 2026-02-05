@@ -564,8 +564,8 @@ const ChatDetailPage = () => {
                         </div>
                         <span className="chat_detail_typing_text">
                             {isGroupChat
-                                ? `${typingUsers.size}명이 입력 중...`
-                                : '상대방이 입력 중...'}
+                                ? `${Array.from(typingUsers).map(userId => currentRoom?.participants?.find(p => p.id === userId)?.nickname).filter(Boolean).join(', ') || typingUsers.size + '명'}님이 입력 중`
+                                : `${chatUser.name}님이 입력 중`}
                         </span>
                     </div>
                 )}
