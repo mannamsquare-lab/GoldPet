@@ -71,7 +71,7 @@ const CreateGroupChatPage = () => {
             {/* Header */}
             <header className="create_group_header">
                 <button type="button" className="back_btn btn-effect" onClick={handleBack}>
-                    <img src="/assets/images/common/back_btn.svg" alt="뒤로가기" />
+                    <img src="/assets/images/layout/header_icon_back.svg" alt="뒤로가기" />
                 </button>
                 <h1>{step === 'select' ? '그룹 채팅 만들기' : '그룹 이름 설정'}</h1>
                 <div className="header_right">
