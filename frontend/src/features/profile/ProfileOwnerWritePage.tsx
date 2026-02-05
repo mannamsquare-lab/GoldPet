@@ -94,8 +94,10 @@ const ProfileOwnerWritePage: React.FC = () => {
             
             setName(currentUser.name || '');
             setNickname(currentUser.nickname || '');
-            setBirthDate(currentUser.birthDate || '');
-            setPhoneNumber(currentUser.phoneNumber || '');
+            // 서버에서 받은 데이터에서 '-' 제거 (YYYY-MM-DD -> YYYYMMDD)
+            setBirthDate((currentUser.birthDate || '').replace(/-/g, ''));
+            // 서버에서 받은 데이터에서 '-' 제거 (010-1234-5678 -> 01012345678)
+            setPhoneNumber((currentUser.phoneNumber || '').replace(/-/g, ''));
             setGender(currentUser.gender || 'MALE');
             setHasPet(currentUser.hasPet ?? null); // Use nullish coalescing
             setIntro(currentUser.intro || '');
