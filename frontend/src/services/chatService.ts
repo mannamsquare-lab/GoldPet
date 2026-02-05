@@ -172,7 +172,11 @@ export const chatService = {
     }
 
     try {
-      const response = await apiClient.post('/chat/rooms', { participantIds, name });
+      const response = await apiClient.post('/chat/rooms', {
+        roomType: 'GROUP',
+        title: name || null,
+        participantUserIds: participantIds,
+      });
       return response.data;
     } catch {
       throw new Error('채팅방 생성에 실패했습니다.');
