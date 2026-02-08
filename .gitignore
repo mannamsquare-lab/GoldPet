@@ -131,3 +131,13 @@ docs/기획문서/
 
 # Brain artifacts (local AI assistant artifacts)
 .gemini/
+
+# OMC
+.omc/
+
+.claude/
+
+.mcp.json
+
+.playwright-mcp/
+.claude/settings.local.json

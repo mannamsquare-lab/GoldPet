@@ -83,7 +83,32 @@
       "Bash(docker run --rm postgres:16 psql \"postgresql://goldpet:doF149zVzj2kGfKVvT6CQddd%2FF2Pn1xDJCrnDD2vPBU%3D@101.250.201.36:5432/goldpet_db\" -c \"SELECT * FROM likes WHERE \\(from_user_id IN \\(5,6\\) AND to_user_id IN \\(5,6\\)\\);\")",
       "Bash(docker run:*)",
       "Bash(git rm:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(rsync:*)",
+      "Bash(flutter devices:*)",
+      "Bash(flutter run:*)",
+      "Bash(flutter emulators:*)",
+      "Bash(./deploy-dev/scripts/deploy-frontend.sh:*)",
+      "Bash(STATE_FILE=\".omc/state/setup-state.json\":*)",
+      "Bash(if [ -f \"$STATE_FILE\" ])",
+      "Bash(then cat \"$STATE_FILE\")",
+      "Bash(else echo \"NO_STATE\")",
+      "Bash(node -e:*)",
+      "mcp__exa__web_search_exa",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(wc:*)",
+      "mcp__plugin_oh-my-claudecode_t__state_list_active",
+      "mcp__plugin_oh-my-claudecode_t__state_clear",
+      "mcp__plugin_oh-my-claudecode_t__state_write",
+      "Bash(xargs:*)",
+      "mcp__plugin_oh-my-claudecode_t__state_read",
+      "mcp__plugin_oh-my-claudecode_x__ask_codex",
+      "mcp__plugin_oh-my-claudecode_t__notepad_write_working"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "exa"
+  ]
 }
