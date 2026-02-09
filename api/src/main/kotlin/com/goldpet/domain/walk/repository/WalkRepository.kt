@@ -15,4 +15,17 @@ interface WalkRepository : JpaRepository<Walk, Long> {
         @Param("maxLat") maxLat: Double,
         @Param("maxLon") maxLon: Double
     ): List<Walk>
+
+    @Query("""
+        SELECT w.user.id, w.user.nickname, w.user.profileImageUrl,
+               SUM(w.distanceKm), COUNT(w)
+        FROM Walk w
+        WHERE w.startTime >= :since
+        GROUP BY w.user.id, w.user.nickname, w.user.profileImageUrl
+        ORDER BY SUM(w.distanceKm) DESC
+    """)
+    fun findRankingsSince(
+        @Param("since") since: java.time.LocalDateTime,
+        pageable: org.springframework.data.domain.Pageable
+    ): List<Array<Any>>
 }

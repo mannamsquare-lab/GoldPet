@@ -4,6 +4,7 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
+import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.entity.Walk
 import com.goldpet.domain.walk.repository.WalkRepository
 import jakarta.persistence.EntityNotFoundException
@@ -86,5 +87,24 @@ class WalkService(
             request.maxLon
         )
         return walks.map { WalkResponse.from(it) }
+    }
+
+    fun getWalkRanking(period: String, pageable: org.springframework.data.domain.Pageable): List<WalkRankingResponse> {
+        val since = when (period) {
+            "monthly" -> java.time.LocalDateTime.now().minusDays(30)
+            else -> java.time.LocalDateTime.now().minusDays(7) // weekly default
+        }
+
+        val results = walkRepository.findRankingsSince(since, pageable)
+        return results.mapIndexed { index, row ->
+            WalkRankingResponse(
+                rank = index + 1,
+                userId = (row[0] as Number).toLong(),
+                nickname = row[1] as String,
+                profileImageUrl = row[2] as? String,
+                totalDistanceKm = (row[3] as Number).toDouble(),
+                walkCount = (row[4] as Number).toInt()
+            )
+        }
     }
 }

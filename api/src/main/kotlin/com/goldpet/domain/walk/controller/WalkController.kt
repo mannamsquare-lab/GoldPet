@@ -3,6 +3,7 @@ package com.goldpet.domain.walk.controller
 import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
+import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.service.WalkService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -48,5 +49,14 @@ class WalkController(
         val request = BoundingBoxRequest(minLat, minLon, maxLat, maxLon)
         val walkResponses = walkService.findWalksInArea(request)
         return ResponseEntity.ok(walkResponses)
+    }
+
+    @GetMapping("/ranking")
+    fun getWalkRanking(
+        @RequestParam(defaultValue = "weekly") period: String,
+        @org.springframework.data.web.PageableDefault(size = 50) pageable: org.springframework.data.domain.Pageable
+    ): ResponseEntity<List<WalkRankingResponse>> {
+        val rankings = walkService.getWalkRanking(period, pageable)
+        return ResponseEntity.ok(rankings)
     }
 }
