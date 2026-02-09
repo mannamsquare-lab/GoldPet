@@ -1,0 +1,53 @@
+.account-notice-container {
+  padding: 6.67vw 4.44vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 25.56vw);
+  text-align: center;
+}
+
+.account-notice-icon {
+  width: 50vw;
+  max-width: 50vw;
+  margin-bottom: 8.89vw;
+}
+
+.account-notice-title {
+  font-size: 6.67vw;
+  font-weight: 700;
+  color: #614108;
+  margin-bottom: 4.44vw;
+}
+
+.account-notice-desc {
+  font-size: 4.44vw;
+  font-weight: 500;
+  color: #505050;
+  line-height: 140%;
+  margin-bottom: 8.89vw;
+}
+
+.account-notice-btn {
+  width: 100%;
+  height: 13.33vw;
+  border-radius: 13.33vw;
+  background-color: #614108;
+  color: #fff;
+  font-size: 4.44vw;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.account-notice-link {
+  margin-top: 4.44vw;
+  font-size: 3.89vw;
+  font-weight: 500;
+  color: #727272;
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
