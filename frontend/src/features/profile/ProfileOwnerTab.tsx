@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { petService } from '../../services/petService';
 import { userService } from '../../services/userService';
+import { goldService } from '../../services/goldService';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import { ProfileSettingsSection } from './components/ProfileSettingsSection';
 
@@ -23,6 +24,12 @@ const ProfileOwnerTab: React.FC = () => {
     // Fetch My Pet for Secondary Image
     const { data: myPets } = useQuery({ queryKey: ['pets', 'my'], queryFn: petService.getMyPets });
     const representativePet = myPets && myPets.length > 0 ? myPets[0] : null;
+
+    // Fetch gold balance
+    const { data: goldBalance } = useQuery({
+        queryKey: ['gold', 'balance'],
+        queryFn: goldService.getBalance,
+    });
 
     // Mock counts for now as they are not in User store yet
     const counts = {
@@ -92,7 +99,19 @@ const ProfileOwnerTab: React.FC = () => {
                     </dl>
                 </div>
             </div>
-            
+
+            {/* Gold Balance */}
+            <div className="gold-balance-link" onClick={() => navigate('/gold')} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                backgroundColor: '#FFF7E6', borderRadius: '4.44vw', padding: '4.44vw',
+                margin: '4.44vw 0', cursor: 'pointer'
+            }}>
+                <span style={{ fontSize: '3.89vw', color: '#727272' }}>보유 골드</span>
+                <span style={{ fontSize: '4.44vw', fontWeight: 700, color: '#614108' }}>
+                    {goldBalance?.balance?.toLocaleString() || '0'}G
+                </span>
+            </div>
+
             <div className="profile_info_box">
                 <strong>기본 정보</strong>
                 <div className="box_wrap pink_color">
