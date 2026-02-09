@@ -12,7 +12,7 @@ void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
 
   // Firebase 초기화
-  // await Firebase.initializeApp();
+  await Firebase.initializeApp();
 
   // Kakao SDK 초기화
   KakaoSdk.init(

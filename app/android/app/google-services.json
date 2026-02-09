@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "473812144206",
+    "project_id": "goldpet-71d64",
+    "storage_bucket": "goldpet-71d64.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473812144206:android:8d36aec648bc46ffba731f",
+        "android_client_info": {
+          "package_name": "com.mannam.goldpet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "473812144206-v9ik4cnamb99d8flkh62ljo04n3de4pu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDU3QEnMmxWf7M5wiWjnUVNt-KW_dbLhxs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "473812144206-v9ik4cnamb99d8flkh62ljo04n3de4pu.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "473812144206-3r727dhdludfbpt9139isuoqfj1e4jbt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mannam.goldpet"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
