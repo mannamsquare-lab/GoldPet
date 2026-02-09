@@ -15,6 +15,8 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.transaction.annotation.Transactional
 
 import com.goldpet.domain.auth.dto.AuthResponse
+import com.goldpet.domain.auth.exception.AccountStatusException
+import com.goldpet.domain.user.entity.UserStatus
 import java.math.BigInteger
 import java.security.KeyFactory
 import java.security.spec.RSAPublicKeySpec
@@ -88,12 +90,14 @@ class SocialLoginService(
             if (changed) userRepository.save(user)
         }
 
-        // 3. Generate JWT
+        // 3. Check account status and Generate JWT
+        checkAccountStatus(user.status)
         val token = generateJwt(user, attributes)
-        
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
+
         return AuthResponse(
             accessToken = token,
-            refreshToken = "", // Refresh token implementation needed if required
+            refreshToken = refreshToken,
             user = AuthResponse.UserInfo(
                 id = user.id,
                 username = user.username ?: user.nickname ?: "User",
@@ -156,12 +160,14 @@ class SocialLoginService(
             if (changed) userRepository.save(user)
         }
 
-        // 3. Generate JWT
+        // 3. Check account status and Generate JWT
+        checkAccountStatus(user.status)
         val token = generateJwt(user, attributes)
-        
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
+
         return AuthResponse(
             accessToken = token,
-            refreshToken = "",
+            refreshToken = refreshToken,
             user = AuthResponse.UserInfo(
                 id = user.id,
                 username = user.username ?: user.nickname ?: "User",
@@ -215,12 +221,14 @@ class SocialLoginService(
             if (changed) userRepository.save(user)
         }
 
-        // 3. Generate JWT
+        // 3. Check account status and Generate JWT
+        checkAccountStatus(user.status)
         val token = generateJwt(user, attributes)
-        
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
+
         return AuthResponse(
             accessToken = token,
-            refreshToken = "",
+            refreshToken = refreshToken,
             user = AuthResponse.UserInfo(
                 id = user.id,
                 username = user.username ?: user.nickname ?: "User",
@@ -307,11 +315,13 @@ class SocialLoginService(
             "sub" to appleId,
             "email" to (email ?: "")
         )
+        checkAccountStatus(user.status)
         val token = generateJwt(user, attributes)
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
 
         return AuthResponse(
             accessToken = token,
-            refreshToken = "",
+            refreshToken = refreshToken,
             user = AuthResponse.UserInfo(
                 id = user.id,
                 username = user.username ?: user.nickname ?: "User",
@@ -319,6 +329,15 @@ class SocialLoginService(
                 email = user.email
             )
         )
+    }
+
+    private fun checkAccountStatus(status: UserStatus) {
+        when (status) {
+            UserStatus.ACTIVE -> return
+            UserStatus.DORMANT -> throw AccountStatusException(status, "DORMANT_ACCOUNT")
+            UserStatus.WITHDRAWN -> throw AccountStatusException(status, "WITHDRAWN_ACCOUNT")
+            UserStatus.SUSPENDED -> throw AccountStatusException(status, "SUSPENDED_ACCOUNT")
+        }
     }
 
     private fun generateJwt(user: User, attributes: Map<String, Any>): String {

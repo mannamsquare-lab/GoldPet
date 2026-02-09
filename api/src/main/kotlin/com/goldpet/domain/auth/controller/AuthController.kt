@@ -11,13 +11,17 @@ import com.goldpet.domain.auth.dto.AvailabilityResponse
 import com.goldpet.domain.user.repository.UserRepository
 
 import com.goldpet.service.auth.SocialLoginService
+import com.goldpet.config.jwt.JwtTokenProvider
+import com.goldpet.config.security.UserPrincipal
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 
 @RestController
 @RequestMapping("/api/v1/auth")
 class AuthController(
     private val authService: AuthService,
     private val userRepository: UserRepository,
-    private val socialLoginService: SocialLoginService
+    private val socialLoginService: SocialLoginService,
+    private val jwtTokenProvider: JwtTokenProvider
 ) {
     @PostMapping("/signup")
     fun signup(@Valid @RequestBody request: SignupRequest): ResponseEntity<AuthResponse> {
@@ -102,5 +106,34 @@ class AuthController(
             else -> throw IllegalArgumentException("Unsupported provider: $provider")
         }
         return ResponseEntity.ok(authResponse)
+    }
+
+    @PostMapping("/refresh")
+    fun refreshToken(@RequestBody body: Map<String, String>): ResponseEntity<AuthResponse> {
+        val refreshToken = body["refreshToken"] ?: return ResponseEntity.badRequest().build()
+
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            return ResponseEntity.status(401).build()
+        }
+
+        val userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken)
+        val user = userRepository.findById(userId).orElse(null)
+            ?: return ResponseEntity.status(401).build()
+
+        val userPrincipal = UserPrincipal.create(user)
+        val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
+        val newAccessToken = jwtTokenProvider.generateToken(auth)
+        val newRefreshToken = jwtTokenProvider.generateRefreshToken(user.id)
+
+        return ResponseEntity.ok(AuthResponse(
+            accessToken = newAccessToken,
+            refreshToken = newRefreshToken,
+            user = AuthResponse.UserInfo(
+                id = user.id,
+                username = user.username ?: user.oauthId,
+                nickname = user.nickname ?: "User",
+                email = user.email
+            )
+        ))
     }
 }

@@ -82,8 +82,9 @@ class PetService(
 
 
     @Transactional
-    fun updatePet(petId: Long, request: UpdatePetRequest): PetResponse {
+    fun updatePet(userId: Long, petId: Long, request: UpdatePetRequest): PetResponse {
         val pet = petRepository.findById(petId).orElseThrow { EntityNotFoundException("Pet not found") }
+        if (pet.owner.id != userId) throw IllegalArgumentException("Not authorized to update this pet")
 
         request.name?.let { pet.name = it }
         request.speciesId?.let {
@@ -111,10 +112,9 @@ class PetService(
     }
 
     @Transactional
-    fun deletePet(petId: Long) {
-        if (!petRepository.existsById(petId)) {
-            throw EntityNotFoundException("Pet not found")
-        }
-        petRepository.deleteById(petId)
+    fun deletePet(userId: Long, petId: Long) {
+        val pet = petRepository.findById(petId).orElseThrow { EntityNotFoundException("Pet not found") }
+        if (pet.owner.id != userId) throw IllegalArgumentException("Not authorized to delete this pet")
+        petRepository.delete(pet)
     }
 }

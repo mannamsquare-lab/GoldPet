@@ -16,7 +16,10 @@ class JwtTokenProvider(
     private val jwtSecret: String,
 
     @Value("\${app.jwt.expiration-ms}")
-    private val jwtExpirationMs: Long
+    private val jwtExpirationMs: Long,
+
+    @Value("\${app.jwt.refresh-expiration-ms:2592000000}")
+    private val refreshExpirationMs: Long = 2592000000
 ) {
     private val key: SecretKey = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
 
@@ -72,5 +75,43 @@ class JwtTokenProvider(
             .parseSignedClaims(token)
             .payload
         return claims["type"] as String? ?: "USER" // Default to USER if missing for backward compatibility
+    }
+
+    fun generateRefreshToken(userId: Long): String {
+        val now = Date()
+        val expiryDate = Date(now.time + refreshExpirationMs)
+
+        return Jwts.builder()
+            .subject(userId.toString())
+            .claim("type", "REFRESH")
+            .issuedAt(now)
+            .expiration(expiryDate)
+            .signWith(key)
+            .compact()
+    }
+
+    fun validateRefreshToken(token: String): Boolean {
+        return try {
+            val claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+            claims["type"] == "REFRESH"
+        } catch (ex: Exception) {
+            false
+        }
+    }
+
+    fun getUserIdFromRefreshToken(token: String): Long {
+        val claims = Jwts.parser()
+            .verifyWith(key)
+            .build()
+            .parseSignedClaims(token)
+            .payload
+        if (claims["type"] != "REFRESH") {
+            throw IllegalArgumentException("Not a refresh token")
+        }
+        return claims.subject.toLong()
     }
 }

@@ -37,8 +37,34 @@ class ApiClient {
         },
         onError: (error, handler) async {
           if (error.response?.statusCode == 401) {
-            // TODO: Implement token refresh logic
-            await _storage.deleteAll();
+            final refreshToken = await _storage.read(key: StorageKeys.refreshToken);
+            if (refreshToken != null && refreshToken.isNotEmpty) {
+              try {
+                // Use a separate Dio instance to avoid interceptor loops
+                final refreshDio = Dio(BaseOptions(
+                  baseUrl: ApiConstants.baseUrl,
+                  headers: {'Content-Type': 'application/json'},
+                ));
+                final response = await refreshDio.post(
+                  '/api/v1/auth/refresh',
+                  data: {'refreshToken': refreshToken},
+                );
+                if (response.statusCode == 200) {
+                  final newAccessToken = response.data['accessToken'] as String;
+                  final newRefreshToken = response.data['refreshToken'] as String;
+                  await setToken(newAccessToken, newRefreshToken);
+
+                  // Retry the original request with new token
+                  final opts = error.requestOptions;
+                  opts.headers['Authorization'] = 'Bearer $newAccessToken';
+                  final retryResponse = await refreshDio.fetch(opts);
+                  return handler.resolve(retryResponse);
+                }
+              } catch (_) {
+                // Refresh failed - clear tokens and let error propagate
+              }
+            }
+            await clearToken();
           }
           return handler.next(error);
         },

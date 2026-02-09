@@ -45,7 +45,11 @@ class User(
     var goldBalance: Int = 0,
 
     var isActive: Boolean = true,
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var status: UserStatus = UserStatus.ACTIVE,
+
     var mbti: String? = null,
     
     @Column(columnDefinition = "TEXT")

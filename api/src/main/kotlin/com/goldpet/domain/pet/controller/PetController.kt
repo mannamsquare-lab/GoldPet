@@ -44,18 +44,24 @@ class PetController(
 
     @PutMapping("/{petId}")
     fun updatePet(
+        @AuthenticationPrincipal principal: UserDetails?,
         @PathVariable petId: Long,
         @RequestBody request: UpdatePetRequest
     ): ResponseEntity<PetResponse> {
-        // TODO: Verify ownership?
-        val petResponse = petService.updatePet(petId, request)
+        if (principal == null) return ResponseEntity.status(401).build()
+        val userId = userService.getUserIdFromPrincipal(principal)
+        val petResponse = petService.updatePet(userId, petId, request)
         return ResponseEntity.ok(petResponse)
     }
 
     @DeleteMapping("/{petId}")
-    fun deletePet(@PathVariable petId: Long): ResponseEntity<Void> {
-        // TODO: Verify ownership?
-        petService.deletePet(petId)
+    fun deletePet(
+        @AuthenticationPrincipal principal: UserDetails?,
+        @PathVariable petId: Long
+    ): ResponseEntity<Void> {
+        if (principal == null) return ResponseEntity.status(401).build()
+        val userId = userService.getUserIdFromPrincipal(principal)
+        petService.deletePet(userId, petId)
         return ResponseEntity.noContent().build()
     }
 }

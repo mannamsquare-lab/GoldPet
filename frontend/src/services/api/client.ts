@@ -30,8 +30,16 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // 토큰 만료 시 처리
       localStorage.removeItem('accessToken');
-      // 로그인 페이지로 리다이렉트
       window.location.href = '/login';
+    } else if (error.response?.status === 403) {
+      const errorCode = error.response?.data?.errorCode;
+      if (errorCode === 'DORMANT_ACCOUNT') {
+        localStorage.removeItem('accessToken');
+        window.location.href = '/account/dormant';
+      } else if (errorCode === 'WITHDRAWN_ACCOUNT') {
+        localStorage.removeItem('accessToken');
+        window.location.href = '/account/withdrawn';
+      }
     }
     return Promise.reject(error);
   }

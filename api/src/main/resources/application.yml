@@ -108,6 +108,7 @@ app:
   jwt:
     secret: ${JWT_SECRET:your_very_secure_and_long_jwt_secret_key_for_goldpet_application_2024}
     expiration-ms: 86400000 # 24 hours
+    refresh-expiration-ms: 2592000000 # 30 days
 
 S3_ENDPOINT: ${MINIO_ENDPOINT:http://localhost:9100}
 S3_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:http://localhost:9100}

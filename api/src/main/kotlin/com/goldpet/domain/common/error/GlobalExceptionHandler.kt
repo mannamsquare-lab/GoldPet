@@ -1,5 +1,6 @@
 package com.goldpet.domain.common.error
 
+import com.goldpet.domain.auth.exception.AccountStatusException
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,6 +20,18 @@ class GlobalExceptionHandler {
             message = ex.message ?: "Resource not found"
         )
         return ResponseEntity(errorResponse, HttpStatus.NOT_FOUND)
+    }
+
+    @ExceptionHandler(AccountStatusException::class)
+    fun handleAccountStatusException(ex: AccountStatusException): ResponseEntity<Map<String, Any>> {
+        val body = mapOf(
+            "timestamp" to LocalDateTime.now().toString(),
+            "status" to 403,
+            "error" to "Forbidden",
+            "message" to ex.message.orEmpty(),
+            "errorCode" to ex.errorCode
+        )
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body)
     }
 }
 

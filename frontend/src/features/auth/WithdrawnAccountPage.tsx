@@ -1,7 +1,3 @@
-// TODO: Backend integration pending.
-// Requires: UserStatus enum in User.kt, AuthService.login() status checks,
-// 403 error codes (WITHDRAWN_ACCOUNT), and client.ts interceptor + LoginPage.tsx redirect logic.
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './WithdrawnAccountPage.css';

@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.auth.exception.AccountStatusException
+import com.goldpet.domain.user.entity.UserStatus
 
 @Service
 class AuthService(
@@ -47,9 +49,10 @@ class AuthService(
         val userPrincipal = UserPrincipal.create(saved)
         val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
         val token = jwtTokenProvider.generateToken(auth)
+        val refreshToken = jwtTokenProvider.generateRefreshToken(saved.id)
         return AuthResponse(
             accessToken = token,
-            refreshToken = "",
+            refreshToken = refreshToken,
             user = AuthResponse.UserInfo(
                 id = saved.id,
                 username = saved.username!!,
@@ -66,12 +69,14 @@ class AuthService(
         if (!passwordEncoder.matches(request.password, user.password)) {
             throw IllegalArgumentException("Invalid credentials")
         }
+        checkAccountStatus(user.status)
         val userPrincipal = UserPrincipal.create(user)
         val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
         val token = jwtTokenProvider.generateToken(auth)
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
         return AuthResponse(
             accessToken = token,
-            refreshToken = "",
+            refreshToken = refreshToken,
             user = AuthResponse.UserInfo(
                 id = user.id,
                 username = user.username!!,
@@ -103,10 +108,11 @@ class AuthService(
         val userPrincipal = UserPrincipal.create(user)
         val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
         val token = jwtTokenProvider.generateToken(auth)
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
 
         return AuthResponse(
-            accessToken = token, 
-            refreshToken = "",
+            accessToken = token,
+            refreshToken = refreshToken,
             user = AuthResponse.UserInfo(
                 id = user.id,
                 username = user.username ?: user.oauthId, // Fallback to oauthId if username is null
@@ -115,15 +121,26 @@ class AuthService(
             )
         )
     }
+
+    private fun checkAccountStatus(status: UserStatus) {
+        when (status) {
+            UserStatus.ACTIVE -> return
+            UserStatus.DORMANT -> throw AccountStatusException(status, "DORMANT_ACCOUNT")
+            UserStatus.WITHDRAWN -> throw AccountStatusException(status, "WITHDRAWN_ACCOUNT")
+            UserStatus.SUSPENDED -> throw AccountStatusException(status, "SUSPENDED_ACCOUNT")
+        }
+    }
+
     @Transactional
     fun devLogin(user: User): AuthResponse {
         val userPrincipal = UserPrincipal.create(user)
         val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
         val token = jwtTokenProvider.generateToken(auth)
-        
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
+
         return AuthResponse(
             accessToken = token,
-            refreshToken = "", // No refresh token needed for dev login
+            refreshToken = refreshToken,
             user = AuthResponse.UserInfo(
                 id = user.id,
                 username = user.username ?: user.oauthId,

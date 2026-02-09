@@ -235,13 +235,22 @@ const ProfileOwnerWritePage: React.FC = () => {
         }
     };
 
-    const handleConfirmVerifyCode = () => {
+    const handleConfirmVerifyCode = async () => {
         if (!verifyCode) {
             showAlert('인증번호를 입력해주세요.');
             return;
         }
-        // TODO: Implement code verification logic
-        showAlert('인증되었습니다.');
+        try {
+            const success = await userService.confirmVerificationCode(phoneNumber, verifyCode);
+            if (success) {
+                setIsPhoneVerified(true);
+                showAlert('인증되었습니다.');
+            } else {
+                showAlert('인증번호가 올바르지 않습니다.');
+            }
+        } catch (error) {
+            showAlert('인증 확인에 실패했습니다.');
+        }
     };
 
     const handleSubmit = async () => {
