@@ -27,6 +27,15 @@ export interface WalkSession {
   pathPoints?: { lat: number; lng: number }[];
 }
 
+export interface WalkRankingEntry {
+  rank: number;
+  userId: number;
+  nickname: string;
+  profileImageUrl: string | null;
+  totalDistanceKm: number;
+  walkCount: number;
+}
+
 // Mock data
 const mockStats: WalkStats = {
   todayDistance: '1.25',
@@ -150,6 +159,26 @@ export const walkService = {
       return response.data;
     } catch {
       throw new Error('산책 기록을 불러올 수 없습니다.');
+    }
+  },
+
+  getWalkRanking: async (period: 'weekly' | 'monthly' = 'weekly'): Promise<WalkRankingEntry[]> => {
+    if (USE_MOCK) {
+      await new Promise((r) => setTimeout(r, 500));
+      return [
+        { rank: 1, userId: 1, nickname: '망고와친구들', profileImageUrl: '/assets/images/main/main_slide_butler01.jpg', totalDistanceKm: 25.5, walkCount: 12 },
+        { rank: 2, userId: 2, nickname: '개똥이와 똥개', profileImageUrl: '/assets/images/main/main_slide_butler02.png', totalDistanceKm: 18.3, walkCount: 8 },
+        { rank: 3, userId: 3, nickname: '뽀삐러버', profileImageUrl: null, totalDistanceKm: 15.0, walkCount: 6 },
+        { rank: 4, userId: 4, nickname: '산책왕코코', profileImageUrl: null, totalDistanceKm: 12.1, walkCount: 5 },
+        { rank: 5, userId: 5, nickname: '댕댕이맘', profileImageUrl: null, totalDistanceKm: 8.7, walkCount: 4 },
+      ];
+    }
+
+    try {
+      const response = await apiClient.get(`/walks/ranking?period=${period}`);
+      return response.data;
+    } catch {
+      return [];
     }
   },
 };

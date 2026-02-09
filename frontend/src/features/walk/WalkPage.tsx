@@ -183,6 +183,24 @@ export const WalkPage = () => {
                                 </div>
                             </li>
                         </ul>
+
+                        <div style={{ textAlign: 'center', padding: '4.44vw 0' }}>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/walk/ranking')}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#614108',
+                                    fontSize: '3.89vw',
+                                    fontWeight: 600,
+                                    textDecoration: 'underline',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                전체 랭킹 보기 →
+                            </button>
+                        </div>
                     </>
                 )}
             </div>
