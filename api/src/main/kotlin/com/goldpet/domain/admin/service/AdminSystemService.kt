@@ -2,6 +2,8 @@ package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.controller.AdminUserResponse
 import com.goldpet.domain.admin.controller.SystemInfoResponse
+import com.goldpet.domain.admin.repository.AdminUserRepository
+import com.goldpet.domain.common.service.SystemSettingService
 import org.springframework.stereotype.Service
 import java.lang.management.ManagementFactory
 import java.time.Duration
@@ -10,9 +12,9 @@ import java.time.format.DateTimeFormatter
 
 @Service
 class AdminSystemService(
-    private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService
+    private val systemSettingService: SystemSettingService,
+    private val adminUserRepository: AdminUserRepository
 ) {
-    private var maintenanceMode = false
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
     fun getSystemInfo(): SystemInfoResponse {
@@ -20,28 +22,36 @@ class AdminSystemService(
         val uptime = Duration.ofMillis(runtime.uptime)
         val uptimeStr = "${uptime.toDays()}일 ${uptime.toHoursPart()}시간 ${uptime.toMinutesPart()}분"
 
+        val fileStore = java.nio.file.FileSystems.getDefault().fileStores.first()
+        val storageTotal = fileStore.totalSpace / (1024.0 * 1024 * 1024)
+        val storageUsed = (fileStore.totalSpace - fileStore.usableSpace) / (1024.0 * 1024 * 1024)
+
         return SystemInfoResponse(
-            version = "2.1.0",
+            version = systemSettingService.getString("app.version", "1.0.0"),
             environment = System.getProperty("spring.profiles.active", "development"),
             serverTime = LocalDateTime.now().format(formatter),
             uptime = uptimeStr,
             dbStatus = "OK",
             cacheStatus = "OK",
-            storageUsed = 45.2,
-            storageTotal = 100.0
+            storageUsed = storageUsed,
+            storageTotal = storageTotal
         )
     }
 
     fun getAdmins(): List<AdminUserResponse> {
-        // Mock data - would come from admin_users table
-        return listOf(
-            AdminUserResponse(1, "admin@goldpet.com", "최고관리자", "SUPER_ADMIN", "2025-12-21 14:30"),
-            AdminUserResponse(2, "operator@goldpet.com", "운영자", "OPERATOR", "2025-12-21 10:00")
-        )
+        return adminUserRepository.findAll().map {
+            AdminUserResponse(
+                id = it.id,
+                email = it.email,
+                name = it.name,
+                role = it.role.name,
+                lastLogin = null // 로그인 로그 테이블 구현 시 추가
+            )
+        }
     }
 
     fun setMaintenanceMode(enabled: Boolean) {
-        maintenanceMode = enabled
+        systemSettingService.setValue("maintenance.mode", enabled.toString())
     }
 
     fun getAllConfigs(): List<com.goldpet.domain.admin.controller.AppConfigResponse> {

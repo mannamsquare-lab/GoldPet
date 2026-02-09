@@ -27,13 +27,6 @@ export default function CommunityPage() {
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error('Failed to load posts:', error);
-      // Mock data
-      setPosts([
-        { id: 1, title: '강아지 산책 코스 추천해주세요', content: '서울 강남 근처 좋은 산책 코스 있을까요?', categoryName: '질문', authorNickname: '멍멍이맘', authorId: 1, viewCount: 150, likeCount: 12, commentCount: 8, isHidden: false, createdAt: '2025-12-21 10:30' },
-        { id: 2, title: '우리집 고양이 자랑합니다', content: '너무 귀여운 우리 치즈...', categoryName: '자유', authorNickname: '고양이집사', authorId: 2, viewCount: 89, likeCount: 25, commentCount: 15, isHidden: false, createdAt: '2025-12-20 18:00' },
-        { id: 3, title: '신고된 게시글', content: '부적절한 내용...', categoryName: '자유', authorNickname: 'baduser', authorId: 3, viewCount: 23, likeCount: 0, commentCount: 2, isHidden: true, createdAt: '2025-12-19 12:00' },
-      ]);
-      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -46,20 +39,6 @@ export default function CommunityPage() {
       setSelectedPost(detail);
     } catch (error) {
       console.error('Failed to load post detail:', error);
-      // Mock detail
-      const mockPost = posts.find(p => p.id === postId);
-      if (mockPost) {
-        setSelectedPost({
-          ...mockPost,
-          categoryId: 1,
-          authorProfileImage: null,
-          imageUrls: [],
-          updatedAt: mockPost.createdAt,
-          comments: [
-            { id: 1, content: '좋은 글이네요!', authorId: 2, authorNickname: '산책러버', isHidden: false, createdAt: '2025-12-21 11:00' },
-          ],
-        });
-      }
     } finally {
       setDetailLoading(false);
     }

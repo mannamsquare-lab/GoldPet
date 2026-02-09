@@ -1,66 +1,234 @@
 package com.goldpet.domain.admin.service
 
+import com.goldpet.domain.admin.dto.*
+import com.goldpet.domain.admin.entity.Banner
+import com.goldpet.domain.admin.entity.Campaign
+import com.goldpet.domain.admin.entity.NotificationTemplate
+import com.goldpet.domain.admin.entity.PushDeliveryLog
+import com.goldpet.domain.admin.repository.BannerRepository
+import com.goldpet.domain.admin.repository.CampaignRepository
+import com.goldpet.domain.admin.repository.NotificationTemplateRepository
+import com.goldpet.domain.admin.repository.PushDeliveryLogRepository
+import com.goldpet.domain.notification.dto.CreateNotificationRequest
+import com.goldpet.domain.notification.entity.NotificationType
+import com.goldpet.domain.notification.service.NotificationService
+import com.goldpet.domain.user.repository.UserRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Service
-class AdminMarketingService {
+@Transactional(readOnly = true)
+class AdminMarketingService(
+    private val bannerRepository: BannerRepository,
+    private val campaignRepository: CampaignRepository,
+    private val notificationTemplateRepository: NotificationTemplateRepository,
+    private val pushDeliveryLogRepository: PushDeliveryLogRepository,
+    private val notificationService: NotificationService,
+    private val userRepository: UserRepository
+) {
+    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    // Mock data storage (in production, use database entities)
-    private val banners = mutableListOf<MutableMap<String, Any>>(
-        mutableMapOf("id" to 1L, "title" to "신규 가입 이벤트", "imageUrl" to "/banners/event1.jpg", "link" to "/events/new-user", "isActive" to true, "order" to 1),
-        mutableMapOf("id" to 2L, "title" to "산책 챌린지", "imageUrl" to "/banners/walk.jpg", "link" to "/challenges/walk", "isActive" to true, "order" to 2)
-    )
-    
-    private val campaigns = mutableListOf<MutableMap<String, Any>>(
-        mutableMapOf("id" to 1L, "name" to "크리스마스 이벤트", "startDate" to "2024-12-20", "endDate" to "2024-12-26", "status" to "ACTIVE", "participants" to 150),
-        mutableMapOf("id" to 2L, "name" to "신년 맞이 챌린지", "startDate" to "2024-01-01", "endDate" to "2024-01-15", "status" to "SCHEDULED", "participants" to 0)
-    )
-
-    private var bannerId = 3L
-    private var campaignId = 3L
-
-    fun getBanners(): List<Map<String, Any>> = banners.toList()
-
-    fun createBanner(request: Map<String, Any>): Map<String, Any> {
-        val newBanner = mutableMapOf<String, Any>(
-            "id" to bannerId++,
-            "title" to (request["title"] ?: "새 배너"),
-            "imageUrl" to (request["imageUrl"] ?: ""),
-            "link" to (request["link"] ?: ""),
-            "isActive" to true,
-            "order" to banners.size + 1
-        )
-        banners.add(newBanner)
-        return newBanner
+    fun getBanners(): List<BannerResponse> {
+        return bannerRepository.findAllByOrderByDisplayOrderAsc().map {
+            BannerResponse(
+                id = it.id,
+                title = it.title,
+                imageUrl = it.imageUrl,
+                link = it.link,
+                isActive = it.isActive,
+                displayOrder = it.displayOrder
+            )
+        }
     }
 
+    @Transactional
+    fun createBanner(request: BannerCreateRequest): BannerResponse {
+        val banner = bannerRepository.save(Banner(
+            title = request.title,
+            imageUrl = request.imageUrl,
+            link = request.link
+        ))
+        return BannerResponse(
+            id = banner.id,
+            title = banner.title,
+            imageUrl = banner.imageUrl,
+            link = banner.link,
+            isActive = banner.isActive,
+            displayOrder = banner.displayOrder
+        )
+    }
+
+    @Transactional
     fun deleteBanner(bannerId: Long) {
-        banners.removeIf { it["id"] == bannerId }
+        bannerRepository.deleteById(bannerId)
     }
 
-    fun getCampaigns(): List<Map<String, Any>> = campaigns.toList()
-
-    fun createCampaign(request: Map<String, Any>): Map<String, Any> {
-        val newCampaign = mutableMapOf<String, Any>(
-            "id" to campaignId++,
-            "name" to (request["name"] ?: "새 캠페인"),
-            "startDate" to (request["startDate"] ?: ""),
-            "endDate" to (request["endDate"] ?: ""),
-            "status" to "DRAFT",
-            "participants" to 0
-        )
-        campaigns.add(newCampaign)
-        return newCampaign
+    fun getCampaigns(): List<CampaignResponse> {
+        return campaignRepository.findAllByOrderByCreatedAtDesc().map {
+            CampaignResponse(
+                id = it.id,
+                name = it.name,
+                startDate = it.startDate.format(formatter),
+                endDate = it.endDate.format(formatter),
+                status = it.status,
+                participants = it.participantCount
+            )
+        }
     }
 
-    fun sendPush(request: Map<String, Any>): Map<String, Any> {
-        // In production, integrate with FCM or other push service
-        return mapOf(
-            "success" to true,
-            "targetUsers" to (request["targetUsers"] ?: "ALL"),
-            "title" to (request["title"] ?: ""),
-            "body" to (request["body"] ?: ""),
-            "sentCount" to 1000 // Mock count
+    @Transactional
+    fun createCampaign(request: CampaignCreateRequest): CampaignResponse {
+        val campaign = campaignRepository.save(Campaign(
+            name = request.name,
+            startDate = LocalDateTime.parse(request.startDate + "T00:00:00"),
+            endDate = LocalDateTime.parse(request.endDate + "T23:59:59")
+        ))
+        return CampaignResponse(
+            id = campaign.id,
+            name = campaign.name,
+            startDate = campaign.startDate.format(formatter),
+            endDate = campaign.endDate.format(formatter),
+            status = campaign.status,
+            participants = campaign.participantCount
         )
+    }
+
+    // Database-backed notification template methods
+    fun getTemplates(): List<NotificationTemplateResponse> {
+        return notificationTemplateRepository.findAll().map {
+            NotificationTemplateResponse(
+                id = it.id,
+                title = it.titleTemplate,
+                body = it.messageTemplate,
+                category = it.type,
+                createdAt = it.createdAt
+            )
+        }
+    }
+
+    @Transactional
+    fun createTemplate(request: NotificationTemplateRequest): NotificationTemplateResponse {
+        val template = NotificationTemplate(
+            name = request.title,
+            titleTemplate = request.title,
+            messageTemplate = request.body,
+            type = request.category,
+            isActive = true
+        )
+        val saved = notificationTemplateRepository.save(template)
+        return NotificationTemplateResponse(
+            id = saved.id,
+            title = saved.titleTemplate,
+            body = saved.messageTemplate,
+            category = saved.type,
+            createdAt = saved.createdAt
+        )
+    }
+
+    @Transactional
+    fun updateTemplate(id: Long, request: NotificationTemplateRequest): NotificationTemplateResponse {
+        val template = notificationTemplateRepository.findById(id)
+            .orElseThrow { IllegalArgumentException("Template not found: $id") }
+
+        template.name = request.title
+        template.titleTemplate = request.title
+        template.messageTemplate = request.body
+        template.type = request.category
+
+        val updated = notificationTemplateRepository.save(template)
+        return NotificationTemplateResponse(
+            id = updated.id,
+            title = updated.titleTemplate,
+            body = updated.messageTemplate,
+            category = updated.type,
+            createdAt = updated.createdAt
+        )
+    }
+
+    @Transactional
+    fun deleteTemplate(id: Long) {
+        notificationTemplateRepository.deleteById(id)
+    }
+
+    @Transactional
+    fun sendNotification(request: SendNotificationRequest): SendNotificationResult {
+        val template = request.templateId?.let {
+            notificationTemplateRepository.findById(it).orElse(null)
+        }
+
+        val title = request.title ?: template?.titleTemplate ?: "알림"
+        val message = request.body ?: template?.messageTemplate ?: ""
+        val category = template?.type ?: "MARKETING"
+
+        val notificationType = when (category) {
+            "NOTICE" -> NotificationType.NOTICE
+            "EVENT" -> NotificationType.EVENT
+            "MARKETING" -> NotificationType.EVENT
+            else -> NotificationType.SYSTEM
+        }
+
+        val targetUsers = when (request.targetType) {
+            "ALL" -> userRepository.findAll()
+            "USER" -> request.targetUserIds?.let { userIds ->
+                userRepository.findAllById(userIds)
+            } ?: emptyList()
+            else -> emptyList()
+        }
+
+        var successCount = 0
+        var failCount = 0
+
+        targetUsers.forEach { user ->
+            try {
+                notificationService.createNotification(
+                    CreateNotificationRequest(
+                        userId = user.id,
+                        type = notificationType,
+                        title = title,
+                        message = message,
+                        targetId = null,
+                        targetType = null,
+                        senderId = null
+                    )
+                )
+                successCount++
+            } catch (e: Exception) {
+                failCount++
+            }
+        }
+
+        val deliveryLog = PushDeliveryLog(
+            template = template,
+            title = title,
+            message = message,
+            targetType = request.targetType,
+            targetValue = request.targetUserIds?.joinToString(","),
+            targetCount = targetUsers.size,
+            deliveredCount = successCount,
+            failedCount = failCount,
+            sentAt = LocalDateTime.now(),
+            status = if (failCount == 0) "COMPLETED" else if (successCount == 0) "FAILED" else "COMPLETED",
+            sentBy = "ADMIN"
+        )
+        pushDeliveryLogRepository.save(deliveryLog)
+
+        return SendNotificationResult(successCount = successCount, failCount = failCount)
+    }
+
+    fun getDeliveryLogs(page: Int, size: Int): List<DeliveryLogResponse> {
+        val pageable = PageRequest.of(page, size)
+        return pushDeliveryLogRepository.findAllByOrderByCreatedAtDesc(pageable)
+            .map { log ->
+                DeliveryLogResponse(
+                    id = log.id,
+                    title = log.title,
+                    targetType = log.targetType,
+                    sentCount = log.deliveredCount,
+                    sentAt = log.sentAt ?: log.createdAt
+                )
+            }.content
     }
 }

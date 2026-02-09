@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { systemService } from '../../services/systemService';
 import type { SystemInfo, AdminUser, AppConfig } from '../../services/systemService';
+import { cacheService } from '../../services/cacheService';
+import type { CacheInfo } from '../../services/cacheService';
 
 export default function SystemPage() {
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [configs, setConfigs] = useState<AppConfig[]>([]);
+  const [caches, setCaches] = useState<CacheInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,14 +18,16 @@ export default function SystemPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [infoData, adminsData, configsData] = await Promise.all([
+      const [infoData, adminsData, configsData, cachesData] = await Promise.all([
         systemService.getSystemInfo(),
         systemService.getAdmins(),
         systemService.getConfigs(),
+        cacheService.getStatus(),
       ]);
       setSystemInfo(infoData);
       setAdmins(adminsData);
       setConfigs(configsData);
+      setCaches(cachesData);
     } catch (error) {
       console.error('Failed to load system data:', error);
     } finally {
@@ -38,6 +43,42 @@ export default function SystemPage() {
     } catch (e) {
         console.error('Failed to update config', e);
         alert('Failed to update config');
+    }
+  };
+
+  const handleClearCache = async (cacheName: string) => {
+    if (!confirm(`Are you sure you want to clear the ${cacheName} cache?`)) {
+      return;
+    }
+    try {
+      const result = await cacheService.clearCache(cacheName);
+      if (result.success) {
+        alert(`Cache cleared: ${result.message}`);
+        await loadData();
+      } else {
+        alert(`Failed to clear cache: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Failed to clear cache:', error);
+      alert('Failed to clear cache');
+    }
+  };
+
+  const handleClearAllCaches = async () => {
+    if (!confirm('Are you sure you want to clear ALL caches? This may impact system performance temporarily.')) {
+      return;
+    }
+    try {
+      const result = await cacheService.clearAll();
+      if (result.success) {
+        alert(`All caches cleared: ${result.message}`);
+        await loadData();
+      } else {
+        alert(`Failed to clear all caches: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Failed to clear all caches:', error);
+      alert('Failed to clear all caches');
     }
   };
 
@@ -100,6 +141,42 @@ export default function SystemPage() {
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Cache Management */}
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-semibold">Cache Management</h2>
+          <button
+            onClick={handleClearAllCaches}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
+          >
+            전체 초기화
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {caches.map(cache => (
+            <div key={cache.name} className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-sm">{cache.name}</span>
+                <span className={`px-2 py-0.5 text-xs rounded ${cache.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                  {cache.isActive ? '활성' : '비활성'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mb-2">{cache.description}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400">TTL: {cache.ttlSeconds}s</span>
+                <button
+                  onClick={() => handleClearCache(cache.name)}
+                  className="text-xs text-red-600 hover:text-red-800"
+                >
+                  초기화
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

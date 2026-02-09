@@ -6,8 +6,13 @@ import com.goldpet.domain.admin.controller.DashboardStatsResponse
 import com.goldpet.domain.admin.controller.RecentActivityItem
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
+import com.goldpet.domain.gold.entity.TransactionType
+import com.goldpet.domain.gold.repository.GoldTransactionRepository
 import com.goldpet.domain.pet.repository.PetRepository
+import com.goldpet.domain.report.entity.ReportStatus
+import com.goldpet.domain.report.repository.ReportRepository
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.walk.repository.WalkRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -17,7 +22,10 @@ class AdminDashboardService(
     private val userRepository: UserRepository,
     private val petRepository: PetRepository,
     private val postRepository: CommunityPostRepository,
-    private val commentRepository: CommunityCommentRepository
+    private val commentRepository: CommunityCommentRepository,
+    private val walkRepository: WalkRepository,
+    private val goldTransactionRepository: GoldTransactionRepository,
+    private val reportRepository: ReportRepository
 ) {
 
     fun getStats(): DashboardStatsResponse {
@@ -29,7 +37,7 @@ class AdminDashboardService(
         val newUsersToday = userRepository.countByCreatedAtAfter(startOfToday)
         val newUsersThisWeek = userRepository.countByCreatedAtAfter(startOfWeek)
         val totalPets = petRepository.count()
-        
+
         val totalPosts = postRepository.count()
         val totalComments = commentRepository.count()
 
@@ -38,43 +46,50 @@ class AdminDashboardService(
             newUsersToday = newUsersToday,
             newUsersThisWeek = newUsersThisWeek,
             totalPets = totalPets,
-            totalWalks = 0L,
-            totalDistance = 0.0,
+            totalWalks = walkRepository.count(),
+            totalDistance = walkRepository.sumTotalDistanceKm(),
             totalPosts = totalPosts,
             totalComments = totalComments,
-            totalReports = 0,
-            pendingReports = 0,
-            revenue = 0L,
-            goldCirculation = 0L
+            totalReports = reportRepository.count().toInt(),
+            pendingReports = reportRepository.countByStatus(ReportStatus.PENDING).toInt(),
+            revenue = goldTransactionRepository.sumAmountByType(TransactionType.CHARGE),
+            goldCirculation = userRepository.sumGoldBalance()
         )
     }
 
     fun getCharts(days: Int): DashboardChartsResponse {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val today = LocalDate.now()
-        
+        val since = today.minusDays(days.toLong()).atStartOfDay()
+
+        // Fetch grouped data from DB
+        val userGrowthData = userRepository.countByDateGrouped(since).associate {
+            it[0].toString() to (it[1] as Number).toLong()
+        }
+        val walkActivityData = walkRepository.countByDateGrouped(since).associate {
+            it[0].toString() to (it[1] as Number).toLong()
+        }
+        val revenueData = goldTransactionRepository.sumByDateGrouped(since).associate {
+            it[0].toString() to (it[1] as Number).toLong()
+        }
+
+        // Fill missing dates with 0
         val userGrowth = (0 until days).map { i ->
             val date = today.minusDays(i.toLong())
-            ChartDataPoint(
-                date = date.format(formatter),
-                value = (100..200).random().toLong()
-            )
+            val dateStr = date.format(formatter)
+            ChartDataPoint(date = dateStr, value = userGrowthData[dateStr] ?: 0L)
         }.reversed()
 
         val walkActivity = (0 until days).map { i ->
             val date = today.minusDays(i.toLong())
-            ChartDataPoint(
-                date = date.format(formatter),
-                value = (50..150).random().toLong()
-            )
+            val dateStr = date.format(formatter)
+            ChartDataPoint(date = dateStr, value = walkActivityData[dateStr] ?: 0L)
         }.reversed()
 
         val revenue = (0 until days).map { i ->
             val date = today.minusDays(i.toLong())
-            ChartDataPoint(
-                date = date.format(formatter),
-                value = (1000..5000).random().toLong()
-            )
+            val dateStr = date.format(formatter)
+            ChartDataPoint(date = dateStr, value = revenueData[dateStr] ?: 0L)
         }.reversed()
 
         return DashboardChartsResponse(
@@ -87,7 +102,7 @@ class AdminDashboardService(
     fun getRecentActivity(limit: Int): List<RecentActivityItem> {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
         val activities = mutableListOf<RecentActivityItem>()
-        
+
         userRepository.findAll().take(limit / 3).forEach { user ->
             activities.add(RecentActivityItem(
                 id = user.id,

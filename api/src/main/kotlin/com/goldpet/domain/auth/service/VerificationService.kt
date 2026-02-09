@@ -8,7 +8,8 @@ import kotlin.random.Random
 
 @Service
 class VerificationService(
-    private val redisTemplate: StringRedisTemplate
+    private val redisTemplate: StringRedisTemplate,
+    private val smsSender: SmsSender
 ) {
     private val logger = LoggerFactory.getLogger(VerificationService::class.java)
     private val CODE_TTL_MINUTES = 3L
@@ -25,10 +26,7 @@ class VerificationService(
             TimeUnit.MINUTES
         )
 
-        // Mock sending: Log to console
-        logger.info("==========================================")
-        logger.info("[MOCK SMS] To: $phoneNumber, Code: $code")
-        logger.info("==========================================")
+        smsSender.send(phoneNumber, "인증번호: $code")
     }
 
     fun verifyCode(phoneNumber: String, code: String): Boolean {

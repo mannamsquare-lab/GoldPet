@@ -34,5 +34,11 @@ interface UserRepository : JpaRepository<User, Long> {
         @Param("lon") lon: Double,
         @Param("radius") radius: Double
     ): List<User>
+
+    @Query("SELECT COALESCE(SUM(u.goldBalance), 0) FROM User u")
+    fun sumGoldBalance(): Long
+
+    @Query(value = "SELECT DATE(created_at) as date, COUNT(*) as cnt FROM users WHERE created_at >= :since GROUP BY DATE(created_at) ORDER BY date", nativeQuery = true)
+    fun countByDateGrouped(@Param("since") since: LocalDateTime): List<Array<Any>>
 }
 

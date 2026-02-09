@@ -1,6 +1,5 @@
 package com.goldpet.config
 
-import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.cache.RedisCacheConfiguration
@@ -12,7 +11,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer
 import java.time.Duration
 
 @Configuration
-@EnableCaching
+@org.springframework.context.annotation.Profile("!test")
 class CacheConfig {
 
     @Bean

@@ -12,7 +12,7 @@ export interface TransactionItem {
   id: number;
   userId: number;
   userNickname: string;
-  type: 'PURCHASE' | 'SPEND' | 'EARN' | 'REFUND';
+  type: 'CHARGE' | 'SPEND' | 'REWARD' | 'REFUND';
   amount: number;
   description: string;
   createdAt: string | null;

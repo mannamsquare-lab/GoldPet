@@ -11,11 +11,12 @@ import {
   Map, 
   Trophy, 
   Database, 
-  Settings, 
+  Settings,
   Menu,
   X,
   Bell,
-  User
+  User,
+  Sparkles
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +30,7 @@ const NAVIGATION = [
   { name: '마케팅 관리', path: '/marketing', icon: Megaphone },
   { name: '신고/콘텐츠', path: '/reports', icon: AlertTriangle },
   { name: 'Gold/결제', path: '/economy', icon: Coins },
+  { name: 'AI 프로필', path: '/ai-profile', icon: Sparkles },
   { name: '산책/지도', path: '/lbs', icon: Map },
   { name: '게이미피케이션', path: '/gamification', icon: Trophy },
   { name: '코드/데이터', path: '/data', icon: Database },

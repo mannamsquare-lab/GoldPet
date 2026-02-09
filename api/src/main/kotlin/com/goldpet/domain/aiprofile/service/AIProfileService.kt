@@ -7,6 +7,7 @@ import com.goldpet.domain.aiprofile.entity.AIProfileRequest
 import com.goldpet.domain.aiprofile.entity.AIRequestStatus
 import com.goldpet.domain.aiprofile.entity.AIRequestType
 import com.goldpet.domain.aiprofile.repository.AIProfileRequestRepository
+import com.goldpet.domain.aiprofile.repository.AIStyleRepository
 import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.gold.dto.SpendRequest
 import com.goldpet.domain.pet.repository.PetRepository
@@ -23,18 +24,14 @@ class AIProfileService(
     private val userRepository: UserRepository,
     private val petRepository: PetRepository,
     private val goldService: GoldService,
-    private val aiGenerationClient: AIGenerationClient
+    private val aiGenerationClient: AIGenerationClient,
+    private val aiStyleRepository: AIStyleRepository
 ) {
-    // 스타일 옵션 (실제로는 DB나 외부 설정에서 관리)
-    private val styles = listOf(
-        AIStyleOption("cartoon", "만화 스타일", "귀여운 만화풍으로 변환", "/styles/cartoon.jpg", 10),
-        AIStyleOption("watercolor", "수채화 스타일", "부드러운 수채화풍으로 변환", "/styles/watercolor.jpg", 15),
-        AIStyleOption("oil_painting", "유화 스타일", "클래식한 유화풍으로 변환", "/styles/oil.jpg", 20),
-        AIStyleOption("3d", "3D 캐릭터", "3D 캐릭터로 변환", "/styles/3d.jpg", 25),
-        AIStyleOption("anime", "애니메이션", "애니메이션 스타일로 변환", "/styles/anime.jpg", 15)
-    )
-
-    fun getStyles(): List<AIStyleOption> = styles
+    fun getStyles(): List<AIStyleOption> {
+        return aiStyleRepository.findAllByIsActiveTrueOrderByDisplayOrderAsc().map { style ->
+            AIStyleOption(style.id, style.name, style.description ?: "", style.previewUrl ?: "", style.goldCost)
+        }
+    }
 
     fun getMyRequests(userId: Long, pageable: Pageable): Page<AIProfileRequestResponse> {
         return aiRequestRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable)

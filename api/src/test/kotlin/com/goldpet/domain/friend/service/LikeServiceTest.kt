@@ -2,6 +2,7 @@ package com.goldpet.domain.friend.service
 
 import com.goldpet.domain.friend.entity.Like
 import com.goldpet.domain.friend.entity.LikeStatus
+import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.notification.service.NotificationService
@@ -117,7 +118,7 @@ class LikeServiceTest {
         whenever(likeRepository.findByFromUserAndToUser(testUser, targetUser)).thenReturn(Optional.empty())
         whenever(likeRepository.existsByFromUserIdAndToUserIdAndStatus(2L, 1L, LikeStatus.ACTIVE)).thenReturn(true)
         whenever(matchRepository.findByUser1AndUser2(testUser, targetUser)).thenReturn(Optional.empty())
-        whenever(matchRepository.save(any())).thenAnswer { invocation -> invocation.getArgument(0) }
+        whenever(matchRepository.save(any<Match>())).thenAnswer { invocation -> invocation.getArgument(0) }
         whenever(likeRepository.save(any<Like>())).thenAnswer { invocation ->
             val like = invocation.getArgument<Like>(0)
             Like(

@@ -1,5 +1,6 @@
 package com.goldpet.domain.admin.controller
 
+import com.goldpet.domain.admin.dto.*
 import com.goldpet.domain.admin.service.AdminMarketingService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -14,13 +15,13 @@ class AdminMarketingController(
 ) {
     @Operation(summary = "배너 목록 조회")
     @GetMapping("/banners")
-    fun getBanners(): ResponseEntity<List<Map<String, Any>>> {
+    fun getBanners(): ResponseEntity<List<BannerResponse>> {
         return ResponseEntity.ok(adminMarketingService.getBanners())
     }
 
     @Operation(summary = "배너 생성")
     @PostMapping("/banners")
-    fun createBanner(@RequestBody request: Map<String, Any>): ResponseEntity<Map<String, Any>> {
+    fun createBanner(@RequestBody request: BannerCreateRequest): ResponseEntity<BannerResponse> {
         return ResponseEntity.ok(adminMarketingService.createBanner(request))
     }
 
@@ -33,19 +34,56 @@ class AdminMarketingController(
 
     @Operation(summary = "캠페인 목록 조회")
     @GetMapping("/campaigns")
-    fun getCampaigns(): ResponseEntity<List<Map<String, Any>>> {
+    fun getCampaigns(): ResponseEntity<List<CampaignResponse>> {
         return ResponseEntity.ok(adminMarketingService.getCampaigns())
     }
 
     @Operation(summary = "캠페인 생성")
     @PostMapping("/campaigns")
-    fun createCampaign(@RequestBody request: Map<String, Any>): ResponseEntity<Map<String, Any>> {
+    fun createCampaign(@RequestBody request: CampaignCreateRequest): ResponseEntity<CampaignResponse> {
         return ResponseEntity.ok(adminMarketingService.createCampaign(request))
     }
 
-    @Operation(summary = "푸시 발송")
-    @PostMapping("/push")
-    fun sendPush(@RequestBody request: Map<String, Any>): ResponseEntity<Map<String, Any>> {
-        return ResponseEntity.ok(adminMarketingService.sendPush(request))
+    @Operation(summary = "알림 템플릿 목록 조회")
+    @GetMapping("/notifications/templates")
+    fun getTemplates(): ResponseEntity<List<NotificationTemplateResponse>> {
+        return ResponseEntity.ok(adminMarketingService.getTemplates())
+    }
+
+    @Operation(summary = "알림 템플릿 생성")
+    @PostMapping("/notifications/templates")
+    fun createTemplate(@RequestBody request: NotificationTemplateRequest): ResponseEntity<NotificationTemplateResponse> {
+        return ResponseEntity.ok(adminMarketingService.createTemplate(request))
+    }
+
+    @Operation(summary = "알림 템플릿 수정")
+    @PutMapping("/notifications/templates/{id}")
+    fun updateTemplate(
+        @PathVariable id: Long,
+        @RequestBody request: NotificationTemplateRequest
+    ): ResponseEntity<NotificationTemplateResponse> {
+        return ResponseEntity.ok(adminMarketingService.updateTemplate(id, request))
+    }
+
+    @Operation(summary = "알림 템플릿 삭제")
+    @DeleteMapping("/notifications/templates/{id}")
+    fun deleteTemplate(@PathVariable id: Long): ResponseEntity<Void> {
+        adminMarketingService.deleteTemplate(id)
+        return ResponseEntity.noContent().build()
+    }
+
+    @Operation(summary = "알림 발송")
+    @PostMapping("/notifications/send")
+    fun sendNotification(@RequestBody request: SendNotificationRequest): ResponseEntity<SendNotificationResult> {
+        return ResponseEntity.ok(adminMarketingService.sendNotification(request))
+    }
+
+    @Operation(summary = "발송 로그 조회")
+    @GetMapping("/notifications/logs")
+    fun getDeliveryLogs(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<List<DeliveryLogResponse>> {
+        return ResponseEntity.ok(adminMarketingService.getDeliveryLogs(page, size))
     }
 }

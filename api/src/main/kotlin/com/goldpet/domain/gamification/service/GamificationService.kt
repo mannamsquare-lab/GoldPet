@@ -9,6 +9,9 @@ import com.goldpet.domain.gamification.repository.BadgeRepository
 import com.goldpet.domain.gamification.repository.ChallengeRepository
 import com.goldpet.domain.gamification.repository.UserBadgeRepository
 import com.goldpet.domain.gamification.repository.UserChallengeProgressRepository
+import com.goldpet.domain.gold.entity.GoldTransaction
+import com.goldpet.domain.gold.entity.TransactionType
+import com.goldpet.domain.gold.repository.GoldTransactionRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
@@ -23,7 +26,8 @@ class GamificationService(
     private val badgeRepository: BadgeRepository,
     private val userBadgeRepository: UserBadgeRepository,
     private val challengeRepository: ChallengeRepository,
-    private val userChallengeProgressRepository: UserChallengeProgressRepository
+    private val userChallengeProgressRepository: UserChallengeProgressRepository,
+    private val goldTransactionRepository: GoldTransactionRepository
 ) {
 
     fun getMyBadges(userId: Long): List<BadgeResponse> {
@@ -83,7 +87,13 @@ class GamificationService(
         // Give Gold
         if(challenge.rewardGold != null && challenge.rewardGold > 0) {
             user.goldBalance += challenge.rewardGold
-            // TODO: Record Transaction
+            goldTransactionRepository.save(GoldTransaction(
+                user = user,
+                type = TransactionType.REWARD,
+                amount = challenge.rewardGold,
+                balanceAfter = user.goldBalance,
+                description = "챌린지 완료 보상: ${challenge.title}"
+            ))
             userRepository.save(user)
         }
 

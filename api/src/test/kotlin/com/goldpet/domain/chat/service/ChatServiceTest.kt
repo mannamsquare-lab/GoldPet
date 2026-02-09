@@ -8,6 +8,7 @@ import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.repository.ChatRoomRepository
 import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.MatchRepository
+import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.Assertions.*
@@ -39,6 +40,9 @@ class ChatServiceTest {
     @Mock
     private lateinit var matchRepository: MatchRepository
 
+    @Mock
+    private lateinit var notificationService: NotificationService
+
     private lateinit var chatService: ChatService
 
     private lateinit var testUser: User
@@ -54,7 +58,8 @@ class ChatServiceTest {
             chatRoomParticipantRepository,
             chatMessageRepository,
             userRepository,
-            matchRepository
+            matchRepository,
+            notificationService
         )
 
         testUser = createTestUser(1L, "testuser", "테스트유저")

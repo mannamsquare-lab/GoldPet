@@ -15,10 +15,8 @@ spring:
     enabled: true
     baseline-on-migrate: true
     validate-on-migrate: false
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  cache:
+    type: simple
 
 jwt:
   secret: test-secret-key-for-testing-purposes-must-be-at-least-256-bits-long

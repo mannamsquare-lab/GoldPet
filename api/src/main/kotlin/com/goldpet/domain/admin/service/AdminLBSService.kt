@@ -1,43 +1,73 @@
 package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.controller.*
+import com.goldpet.domain.checkin.entity.Place
+import com.goldpet.domain.checkin.entity.PlaceCategory
+import com.goldpet.domain.checkin.repository.CheckInRepository
+import com.goldpet.domain.checkin.repository.PlaceRepository
+import com.goldpet.domain.walk.repository.WalkRepository
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+import kotlin.math.roundToInt
 
 @Service
-class AdminLBSService {
+class AdminLBSService(
+    private val walkRepository: WalkRepository,
+    private val placeRepository: PlaceRepository,
+    private val checkInRepository: CheckInRepository
+) {
     fun getStats(): LBSStatsResponse {
-        // Mock data - would come from walk and place tables
+        val today = LocalDate.now().atStartOfDay()
+
         return LBSStatsResponse(
-            totalWalks = 5420,
-            todayWalks = 156,
-            totalDistance = 12580.5,
-            avgDuration = 28,
-            topSpots = listOf(
-                TopSpotResponse(1, "한강공원", 1250),
-                TopSpotResponse(2, "서울숲", 890),
-                TopSpotResponse(3, "올림픽공원", 650)
-            )
+            totalWalks = walkRepository.count(),
+            todayWalks = walkRepository.countByStartTimeAfter(today),
+            totalDistance = walkRepository.sumTotalDistanceKm(),
+            avgDuration = (walkRepository.avgDurationSeconds() / 60.0).roundToInt(),
+            topSpots = checkInRepository.findTopPlaces(5).map { row ->
+                TopSpotResponse(
+                    id = (row[0] as Number).toLong(),
+                    name = row[1] as String,
+                    visits = (row[2] as Number).toInt()
+                )
+            }
         )
     }
 
     fun getPlaces(): List<PlaceAdminResponse> {
-        // Mock data - would come from places table
-        return listOf(
-            PlaceAdminResponse(1, "한강공원 반포지구", "공원", 37.5085, 126.9960, 1250, 4.8),
-            PlaceAdminResponse(2, "서울숲", "공원", 37.5443, 127.0374, 890, 4.7),
-            PlaceAdminResponse(3, "멍멍카페", "카페", 37.5172, 127.0473, 420, 4.5)
-        )
+        return placeRepository.findAll().map { place ->
+            PlaceAdminResponse(
+                id = place.id,
+                name = place.name,
+                category = place.category.name,
+                latitude = place.locationGeom.y,
+                longitude = place.locationGeom.x,
+                visits = place.checkinCount,
+                rating = 0.0 // 리뷰 시스템 미구현
+            )
+        }
     }
 
+    @Transactional
     fun createPlace(request: CreatePlaceRequest): PlaceAdminResponse {
-        // Mock - would save to places table
-        return PlaceAdminResponse(
-            id = System.currentTimeMillis(),
+        val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
+        val point = geometryFactory.createPoint(Coordinate(request.longitude, request.latitude))
+        val place = placeRepository.save(Place(
             name = request.name,
-            category = request.category,
-            latitude = request.latitude,
-            longitude = request.longitude,
-            visits = 0,
+            category = PlaceCategory.valueOf(request.category.uppercase()),
+            locationGeom = point
+        ))
+        return PlaceAdminResponse(
+            id = place.id,
+            name = place.name,
+            category = place.category.name,
+            latitude = place.locationGeom.y,
+            longitude = place.locationGeom.x,
+            visits = place.checkinCount,
             rating = 0.0
         )
     }

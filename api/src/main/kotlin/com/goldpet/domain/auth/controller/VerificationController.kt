@@ -19,7 +19,7 @@ class VerificationController(
     private val verificationService: VerificationService
 ) {
 
-    @Operation(summary = "Request Verification Code", description = "Generates a code and logs it to console (Mock SMS)")
+    @Operation(summary = "Request Verification Code", description = "인증번호를 발송합니다")
     @PostMapping("/request")
     fun requestVerificationCode(@RequestBody request: VerificationRequest): ResponseEntity<VerificationResponse> {
         verificationService.sendVerificationCode(request.phoneNumber)

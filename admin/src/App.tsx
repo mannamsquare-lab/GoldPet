@@ -18,6 +18,7 @@ import BreedsPage from './pages/data/BreedsPage';
 import AttributesPage from './pages/data/AttributesPage';
 import UserAttributesPage from './pages/data/UserAttributesPage';
 import SystemPage from './pages/system/SystemPage';
+import AIProfilePage from './pages/aiprofile/AIProfilePage';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
             <Route path="data/breeds" element={<BreedsPage />} />
             <Route path="data/attributes" element={<AttributesPage />} />
             <Route path="data/user-attributes" element={<UserAttributesPage />} />
+            <Route path="ai-profile" element={<AIProfilePage />} />
             <Route path="system" element={<SystemPage />} />
           </Route>
 

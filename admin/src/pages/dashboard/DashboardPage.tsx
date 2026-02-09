@@ -35,25 +35,6 @@ export default function DashboardPage() {
       setActivities(activitiesData);
     } catch (error) {
       console.error('Failed to load dashboard:', error);
-      // Mock data for development
-      setStats({
-        totalUsers: 1250,
-        newUsersToday: 15,
-        newUsersThisWeek: 87,
-        totalPets: 1890,
-        totalWalks: 5420,
-        totalDistance: 12580.5,
-        totalPosts: 342,
-        totalComments: 1205,
-        totalReports: 12,
-        pendingReports: 3,
-        revenue: 2450000,
-        goldCirculation: 15000000,
-      });
-      setActivities([
-        { id: 1, type: 'USER_JOIN', description: '멍멍이맘님이 가입했습니다.', createdAt: '2025-12-21 14:30' },
-        { id: 2, type: 'POST_CREATE', description: '"산책 코스 추천" 게시글이 작성되었습니다.', createdAt: '2025-12-21 14:25' },
-      ]);
     } finally {
       setLoading(false);
     }

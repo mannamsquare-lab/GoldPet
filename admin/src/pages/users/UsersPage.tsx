@@ -26,13 +26,6 @@ export default function UsersPage() {
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error('Failed to load users:', error);
-      // Mock data for development
-      setUsers([
-        { id: 1, email: 'user1@example.com', nickname: '멍멍이맘', profileImageUrl: null, status: 'ACTIVE', petCount: 2, walkCount: 45, postCount: 12, createdAt: '2025-12-01 10:00', lastLoginAt: '2025-12-21 14:00' },
-        { id: 2, email: 'user2@example.com', nickname: '고양이집사', profileImageUrl: null, status: 'ACTIVE', petCount: 1, walkCount: 23, postCount: 5, createdAt: '2025-12-05 15:30', lastLoginAt: '2025-12-20 09:00' },
-        { id: 3, email: 'user3@example.com', nickname: '산책러버', profileImageUrl: null, status: 'INACTIVE', petCount: 3, walkCount: 120, postCount: 30, createdAt: '2025-11-15 08:00', lastLoginAt: '2025-12-10 18:00' },
-      ]);
-      setTotalPages(1);
     } finally {
       setLoading(false);
     }
