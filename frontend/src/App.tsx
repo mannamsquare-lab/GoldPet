@@ -27,6 +27,7 @@ import CreateGroupChatPage from './features/chat/CreateGroupChatPage';
 import WalkPage from './features/walk/WalkPage';
 import WalkMapPage from './features/walk/WalkMapPage';
 import WalkDetailPage from './features/walk/WalkDetailPage';
+import WalkRankingPage from './features/walk/WalkRankingPage';
 import CommunityListPage from './features/community/CommunityListPage';
 import CommunityDetailPage from './features/community/CommunityDetailPage';
 import CommunityWritePage from './features/community/CommunityWritePage';
@@ -39,6 +40,19 @@ import ChallengesPage from './features/gamification/ChallengesPage';
 import NotificationPage from './features/notification/NotificationPage';
 import { ProfileTermsPage } from './features/profile/ProfileTermsPage';
 import ScrollToTop from './components/common/ScrollToTop';
+import AIProfilePage from './features/aiprofile/AIProfilePage';
+import AIProfileStyleSelectPage from './features/aiprofile/AIProfileStyleSelectPage';
+import AIProfileResultPage from './features/aiprofile/AIProfileResultPage';
+import SettingsPage from './features/settings/SettingsPage';
+import DormantAccountPage from './features/auth/DormantAccountPage';
+import WithdrawnAccountPage from './features/auth/WithdrawnAccountPage';
+import PasswordExpiryPage from './features/auth/PasswordExpiryPage';
+import AutoLogoutPage from './features/auth/AutoLogoutPage';
+import PlaceListPage from './features/checkin/PlaceListPage';
+import PlaceDetailPage from './features/checkin/PlaceDetailPage';
+import GoldMainPage from './features/gold/GoldMainPage';
+import GoldPurchasePage from './features/gold/GoldPurchasePage';
+import GoldHistoryPage from './features/gold/GoldHistoryPage';
 
 
 
@@ -95,6 +109,14 @@ function App() {
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
               </Route>
             
+              {/* Type A Layout (Back Only): Account Edge Cases */}
+              <Route element={<TypeALayout variant="back-only" />}>
+                <Route path="/account/dormant" element={<DormantAccountPage />} />
+                <Route path="/account/withdrawn" element={<WithdrawnAccountPage />} />
+                <Route path="/account/password-expiry" element={<PasswordExpiryPage />} />
+                <Route path="/account/auto-logout" element={<AutoLogoutPage />} />
+              </Route>
+
               {/* Type B Layout (Logo + Icons): Home, Main Features */}
               <Route element={<TypeBLayout variant="logo-with-icons" />}>
                 <Route path="/home" element={<HomePage />} />
@@ -103,15 +125,27 @@ function App() {
                 <Route path="/chat" element={<ChatListPage />} />
                 <Route path="/walk" element={<WalkPage />} />
                 <Route path="/walk/map" element={<WalkMapPage />} />
+                <Route path="/walk/ranking" element={<WalkRankingPage />} />
                 <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
                 <Route path="/community" element={<CommunityListPage />} />
                 <Route path="/community/:postId" element={<CommunityDetailPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/places" element={<PlaceListPage />} />
+                <Route path="/places/:placeId" element={<PlaceDetailPage />} />
+                <Route path="/gold" element={<GoldMainPage />} />
+                <Route path="/gold/purchase" element={<GoldPurchasePage />} />
+                <Route path="/gold/history" element={<GoldHistoryPage />} />
               </Route>
               
               <Route path="/profile/owner/edit" element={<ProfileOwnerWritePage />} />
               <Route path="/profile/pet/edit" element={<ProfilePetWritePage />} />
               <Route path="/profile/terms" element={<ProfileTermsPage />} />
+
+              {/* AI Profile Routes */}
+              <Route path="/ai-profile" element={<AIProfilePage />} />
+              <Route path="/ai-profile/styles" element={<AIProfileStyleSelectPage />} />
+              <Route path="/ai-profile/result/:requestId" element={<AIProfileResultPage />} />
 
               {/* Chat - No Layout */}
               <Route path="/chat/:chatId" element={<ChatDetailPage />} />
