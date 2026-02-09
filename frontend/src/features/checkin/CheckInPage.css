@@ -1,0 +1,337 @@
+/* Place Card */
+.place-card {
+  background-color: #fff;
+  border-radius: 4.44vw;
+  padding: 4.44vw;
+  margin-bottom: 4.44vw;
+  display: flex;
+  gap: 4.44vw;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.place-card:active {
+  transform: scale(0.98);
+}
+
+.place-card .place-image {
+  width: 22.22vw;
+  height: 22.22vw;
+  border-radius: 4.44vw;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: #f5f5f5;
+}
+
+.place-card .place-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.11vw;
+}
+
+.place-card .place-name {
+  font-size: 4.44vw;
+  font-weight: 600;
+  color: #505050;
+}
+
+.place-card .place-category {
+  font-size: 3.33vw;
+  font-weight: 500;
+  padding: 1.11vw 2.22vw;
+  border-radius: 2.22vw;
+  display: inline-block;
+  width: fit-content;
+}
+
+.place-card .place-address {
+  font-size: 3.33vw;
+  color: #727272;
+}
+
+.place-card .place-stats {
+  font-size: 3.33vw;
+  color: #614108;
+  font-weight: 500;
+}
+
+/* Place Detail Info */
+.place-detail-info {
+  background-color: #fff;
+  border-radius: 4.44vw;
+  padding: 6.67vw 4.44vw;
+  margin-bottom: 4.44vw;
+}
+
+.place-detail-info .place-detail-image {
+  width: 100%;
+  height: 55.56vw;
+  border-radius: 4.44vw;
+  object-fit: cover;
+  margin-bottom: 4.44vw;
+  background-color: #f5f5f5;
+}
+
+.place-detail-info .place-detail-name {
+  font-size: 5.56vw;
+  font-weight: 700;
+  color: #505050;
+  margin-bottom: 2.22vw;
+}
+
+.place-detail-info .place-detail-category {
+  font-size: 3.89vw;
+  font-weight: 500;
+  padding: 1.11vw 2.22vw;
+  border-radius: 2.22vw;
+  display: inline-block;
+  margin-bottom: 3.33vw;
+}
+
+.place-detail-info .place-detail-address {
+  font-size: 3.89vw;
+  color: #727272;
+  margin-bottom: 2.22vw;
+}
+
+.place-detail-info .place-detail-description {
+  font-size: 3.89vw;
+  color: #505050;
+  line-height: 1.5;
+  margin-bottom: 3.33vw;
+}
+
+.place-detail-info .place-detail-stats {
+  font-size: 3.89vw;
+  color: #614108;
+  font-weight: 600;
+}
+
+/* Check-in Button */
+.checkin-btn {
+  width: 100%;
+  height: 13.33vw;
+  border-radius: 13.33vw;
+  background-color: #614108;
+  color: #fff;
+  font-size: 4.44vw;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.checkin-btn:hover {
+  background-color: #4d3306;
+}
+
+.checkin-btn:active {
+  transform: scale(0.98);
+}
+
+.checkin-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Category Colors */
+.category-cafe {
+  background-color: #ffe5fa;
+  color: #8a497d;
+}
+
+.category-hospital {
+  background-color: #e5f0ff;
+  color: #4a7db5;
+}
+
+.category-park {
+  background-color: #e5ffe9;
+  color: #4a8a5d;
+}
+
+.category-shop {
+  background-color: #fff3e5;
+  color: #8a6b4a;
+}
+
+/* Search Bar */
+.place-search {
+  width: 100%;
+  height: 11.11vw;
+  border-radius: 11.11vw;
+  border: 1px solid #efe1c4;
+  padding: 0 4.44vw;
+  font-size: 4.44vw;
+  background-color: #fff;
+  margin-bottom: 4.44vw;
+}
+
+.place-search:focus {
+  border-color: #614108;
+  outline: none;
+}
+
+/* Category Filter */
+.category-filter {
+  display: flex;
+  gap: 2.22vw;
+  margin-bottom: 4.44vw;
+  overflow-x: auto;
+  padding-bottom: 2.22vw;
+}
+
+.category-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.category-filter button {
+  height: 8.89vw;
+  padding: 0 4.44vw;
+  border-radius: 8.89vw;
+  border: 1px solid #efe1c4;
+  background-color: #fff;
+  font-size: 3.89vw;
+  color: #727272;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.category-filter button.active {
+  background-color: #614108;
+  color: #fff;
+  border-color: #614108;
+}
+
+.category-filter button:hover {
+  border-color: #614108;
+}
+
+/* Check-in History */
+.checkin-history {
+  background-color: #fff;
+  border-radius: 4.44vw;
+  padding: 4.44vw;
+  margin-bottom: 4.44vw;
+}
+
+.checkin-history-title {
+  font-size: 4.44vw;
+  font-weight: 600;
+  color: #505050;
+  margin-bottom: 3.33vw;
+}
+
+.checkin-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1.11vw;
+  padding: 4.44vw 0;
+  border-bottom: 1px solid #efe1c4;
+}
+
+.checkin-history-item:last-child {
+  border-bottom: none;
+}
+
+.checkin-history-item .checkin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.checkin-history-item .nickname {
+  font-size: 4.44vw;
+  font-weight: 600;
+  color: #505050;
+}
+
+.checkin-history-item .time {
+  font-size: 3.33vw;
+  color: #727272;
+}
+
+.checkin-history-item .memo {
+  font-size: 3.89vw;
+  color: #505050;
+  margin-top: 1.11vw;
+  line-height: 1.4;
+}
+
+/* Container */
+.checkin-container {
+  padding: 0 4.44vw;
+  min-height: 100vh;
+  background-color: #f9f9f9;
+}
+
+/* Place List */
+.place-list {
+  padding-bottom: 4.44vw;
+}
+
+.place-list-empty {
+  text-align: center;
+  padding: 13.33vw 0;
+  color: #727272;
+  font-size: 4.44vw;
+}
+
+/* Place Marker */
+.place-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.place-marker:active {
+  transform: scale(0.95);
+}
+
+.place-marker-icon {
+  width: 11.11vw;
+  height: 11.11vw;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 0.56vw 1.67vw rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.11vw;
+}
+
+.place-marker-icon img {
+  width: 6.67vw;
+  height: 6.67vw;
+}
+
+.place-marker-label {
+  font-size: 3.33vw;
+  font-weight: 500;
+  color: #505050;
+  background-color: #fff;
+  padding: 1.11vw 2.22vw;
+  border-radius: 2.22vw;
+  box-shadow: 0 0.56vw 1.67vw rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+
+/* Loading */
+.checkin-loading {
+  text-align: center;
+  padding: 13.33vw 0;
+  color: #727272;
+  font-size: 4.44vw;
+}
+
+/* Error */
+.checkin-error {
+  text-align: center;
+  padding: 13.33vw 0;
+  color: #ff4444;
+  font-size: 4.44vw;
+}
