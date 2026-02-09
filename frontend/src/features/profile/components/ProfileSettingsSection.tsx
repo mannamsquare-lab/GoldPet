@@ -55,13 +55,19 @@ export const ProfileSettingsSection: React.FC<ProfileSettingsSectionProps> = ({
         });
     };
 
+    const handleSettingsClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        navigate('/settings');
+    };
+
     return (
         <>
+            <a href="/settings" className="white_link" onClick={handleSettingsClick}>설정</a>
             <div className="check_wrap">
                 <div className="check_box">
-                    <input 
-                        type="checkbox" 
-                        id={`${idPrefix}_alram`} 
+                    <input
+                        type="checkbox"
+                        id={`${idPrefix}_alram`}
                         checked={localEnabled}
                         onChange={handleToggle}
                     />
