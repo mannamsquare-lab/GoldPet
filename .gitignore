@@ -35,6 +35,8 @@ Desktop.ini
 id_rsa
 # Specific sensitive directories
 keys/*.json
+# Firebase service account (private key)
+**/firebase-service-account.json
 
 # -----------------
 # 4. Backend (API) - Java / Spring Boot / Gradle

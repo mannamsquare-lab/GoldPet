@@ -64,6 +64,13 @@ class UserService(
     }
 
     @Transactional
+    fun updateFcmToken(userId: Long, fcmToken: String?): User {
+        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        user.fcmToken = fcmToken
+        return userRepository.save(user)
+    }
+
+    @Transactional
     fun updateUserProfile(userId: Long, request: com.goldpet.domain.user.dto.UserProfileUpdateRequest): User {
         val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
         

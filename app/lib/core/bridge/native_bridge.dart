@@ -99,6 +99,14 @@ class NativeBridge {
 
           return {'success': false, 'message': 'Login failed'};
 
+        // FCM 토큰 등록
+        case 'registerFcmToken':
+          final accessToken = params?['accessToken'] as String?;
+          if (accessToken != null) {
+            pushNotificationService.registerTokenWithBackend(accessToken);
+          }
+          return {'success': true};
+
         // 푸시 알림
         case BridgeProtocol.requestPushPermission:
           return await pushNotificationService.requestPermission();

@@ -61,6 +61,9 @@ class User(
     @Column(name = "is_notification_enabled", nullable = false)
     var isNotificationEnabled: Boolean = true,
 
+    @Column(name = "fcm_token")
+    var fcmToken: String? = null,
+
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     var profileImages: MutableList<UserProfileImage> = mutableListOf(),

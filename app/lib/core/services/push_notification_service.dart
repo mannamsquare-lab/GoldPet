@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../bridge/native_bridge.dart';
+import '../config/environment.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -62,6 +65,50 @@ class PushNotificationService {
     } catch (e) {
       debugPrint('Failed to get FCM token: $e');
       return null;
+    }
+  }
+
+  /// Register FCM token with backend
+  Future<void> registerTokenWithBackend(String accessToken) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        debugPrint('FCM token is null, skipping registration');
+        return;
+      }
+
+      await _sendTokenToBackend(token, accessToken);
+
+      // Listen for token refresh
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+        debugPrint('FCM token refreshed, re-registering...');
+        _sendTokenToBackend(newToken, accessToken);
+      });
+    } catch (e) {
+      debugPrint('Failed to register FCM token: $e');
+    }
+  }
+
+  Future<void> _sendTokenToBackend(String fcmToken, String accessToken) async {
+    try {
+      final currentEnv = EnvironmentConfig.fromEnv();
+      final uri = Uri.parse('${currentEnv.apiBaseUrl}/api/v1/users/me/fcm-token');
+      final response = await http.put(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode({'fcmToken': fcmToken}),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('FCM token registered successfully');
+      } else {
+        debugPrint('Failed to register FCM token: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error sending FCM token to backend: $e');
     }
   }
 

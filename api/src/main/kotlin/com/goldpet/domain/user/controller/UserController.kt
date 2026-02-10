@@ -72,6 +72,17 @@ class UserController(
         return ResponseEntity.ok(UserResponse.from(updatedUser))
     }
 
+    @PutMapping("/me/fcm-token")
+    fun updateFcmToken(
+        @AuthenticationPrincipal principal: UserDetails,
+        @RequestBody request: Map<String, String?>
+    ): ResponseEntity<Void> {
+        val userId = userService.getUserIdFromPrincipal(principal)
+        val fcmToken = request["fcmToken"]
+        userService.updateFcmToken(userId, fcmToken)
+        return ResponseEntity.ok().build()
+    }
+
     @GetMapping("/search")
     fun searchFriendsInArea(
         @RequestParam minLat: Double,

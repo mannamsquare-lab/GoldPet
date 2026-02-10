@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { nativeBridge } from '../bridge/nativeBridge';
 
 export interface User {
   id: number;
@@ -46,6 +47,12 @@ export const useAuthStore = create<AuthState>()(
       login: (token, refreshToken, user) => {
         set({ token, refreshToken, user, isAuthenticated: true });
         localStorage.setItem('accessToken', token);
+        // Register FCM token with backend (only in Flutter WebView)
+        if (nativeBridge.isAvailable()) {
+          nativeBridge.callMethod('registerFcmToken', { accessToken: token }).catch(() => {
+            // FCM registration failure is non-critical
+          });
+        }
       },
       logout: () => {
         set({ token: null, refreshToken: null, user: null, isAuthenticated: false });

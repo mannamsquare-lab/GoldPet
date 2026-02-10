@@ -15,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class NotificationService(
     private val notificationRepository: NotificationRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val fcmPushSender: FcmPushSender
 ) {
     fun getNotifications(userId: Long, category: String?, pageable: Pageable): Page<NotificationResponse> {
         if (category == null || category == "ALL") {
@@ -92,6 +93,22 @@ class NotificationService(
         )
         
         val saved = notificationRepository.save(notification)
+
+        // Send FCM push if user has a token and notifications enabled
+        if (user.isNotificationEnabled && user.fcmToken != null) {
+            fcmPushSender.send(
+                fcmToken = user.fcmToken!!,
+                title = request.title,
+                message = request.message,
+                data = buildMap {
+                    request.targetId?.let { put("targetId", it.toString()) }
+                    request.targetType?.let { put("targetType", it) }
+                    put("type", request.type.name)
+                    put("notificationId", saved.id.toString())
+                }
+            )
+        }
+
         return NotificationResponse.from(saved)
     }
 

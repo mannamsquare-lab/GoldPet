@@ -11,6 +11,7 @@ import com.goldpet.domain.admin.repository.NotificationTemplateRepository
 import com.goldpet.domain.admin.repository.PushDeliveryLogRepository
 import com.goldpet.domain.notification.dto.CreateNotificationRequest
 import com.goldpet.domain.notification.entity.NotificationType
+import com.goldpet.domain.notification.service.FcmPushSender
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
@@ -27,7 +28,8 @@ class AdminMarketingService(
     private val notificationTemplateRepository: NotificationTemplateRepository,
     private val pushDeliveryLogRepository: PushDeliveryLogRepository,
     private val notificationService: NotificationService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val fcmPushSender: FcmPushSender
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
@@ -198,6 +200,18 @@ class AdminMarketingService(
             } catch (e: Exception) {
                 failCount++
             }
+        }
+
+        // Send FCM push to all target users with tokens
+        val fcmTokens = targetUsers
+            .filter { it.isNotificationEnabled && it.fcmToken != null }
+            .map { it.fcmToken!! }
+        if (fcmTokens.isNotEmpty()) {
+            val pushSuccessCount = fcmPushSender.sendToMultiple(fcmTokens, title, message)
+            // Log FCM delivery result
+            org.slf4j.LoggerFactory.getLogger(javaClass).info(
+                "FCM push sent: {}/{} tokens successful", pushSuccessCount, fcmTokens.size
+            )
         }
 
         val deliveryLog = PushDeliveryLog(
