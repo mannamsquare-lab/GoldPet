@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../services/notificationService';
 import type { Notification } from '../../services/notificationService';
-
+import './NotificationPage.css';
 
 const TABS = [
   { id: 'ALL', label: '전체' },
@@ -69,59 +69,47 @@ const NotificationPage = () => {
     };
 
     return (
-        <div className="sub_page_wrap">
+        <div id="notificationContainer">
             {/* Header */}
-            <header className="header">
-                <div className="left_btn">
-                    <button type="button" className="back_btn" onClick={handleBack}>
-                        <img src="/assets/images/common/back_btn.svg" alt="뒤로가기" />
-                    </button>
-                    <h2>알림</h2>
-                </div>
-            </header>
+            <div className="notification_header_bar">
+                <button type="button" className="back_btn" onClick={handleBack}>
+                    <img src="/assets/images/layout/header_icon_back.svg" alt="뒤로가기" />
+                </button>
+                <h2>알림</h2>
+            </div>
 
-            <div className="content_wrap">
-                {/* Tabs */}
-                <div className="tab_menu_wrap scroll_type" style={{ paddingTop: '10px' }}>
-                    <ul className="tab_menu" style={{ flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                        {TABS.map(tab => (
-                            <li key={tab.id} className={activeTab === tab.id ? 'active' : ''}>
-                                <button type="button" onClick={() => setActiveTab(tab.id)}>
-                                    {tab.label}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+            {/* Tabs */}
+            <div className="notification_tab">
+                <ul>
+                    {TABS.map(tab => (
+                        <li key={tab.id}>
+                            <button
+                                type="button"
+                                className={activeTab === tab.id ? 'active' : ''}
+                                onClick={() => setActiveTab(tab.id)}
+                            >
+                                {tab.label}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
 
-                {/* List */}
-                <div className="notice_list_wrap" style={{ marginTop: '20px', padding: '0 20px' }}>
-                    {loading ? (
-                        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>로딩 중...</div>
-                    ) : notifications.length === 0 ? (
-                        <div className="no_data_wrap" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '100px' }}>
-                            <img src="/assets/images/common/no_data_icon.svg" alt="" style={{ marginBottom: '16px' }} />
-                            <p style={{ color: '#999', fontSize: '14px' }}>새로운 알림이 없습니다.</p>
-                        </div>
-                    ) : (
-                        <ul>
-                            {notifications.map(item => (
-                                <li key={item.id} style={{ 
-                                    padding: '16px 0', 
-                                    borderBottom: '1px solid #f0f0f0', 
-                                    position: 'relative',
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '12px'
-                                }}>
-                                    <div className="icon_box" style={{ 
-                                        width: '40px', height: '40px', 
-                                        borderRadius: '50%', 
-                                        backgroundColor: item.isRead ? '#f5f5f5' : '#FFF4E6',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        flexShrink: 0
-                                    }}>
-                                        {/* Simple icon logic based on type */}
+            {/* List */}
+            <div className="notification_list">
+                {loading ? (
+                    <div className="loading">로딩 중...</div>
+                ) : notifications.length === 0 ? (
+                    <div className="empty_state">
+                        <img src="/assets/images/common/comment_icon03.svg" alt="" />
+                        <p>새로운 알림이 없습니다.</p>
+                    </div>
+                ) : (
+                    <ul>
+                        {notifications.map(item => (
+                            <li key={item.id} className={`notification_item${item.isRead ? '' : ' unread'}`}>
+                                <div className="notification_icon">
+                                    <span>
                                         {item.type === 'MATCH' && '💕'}
                                         {item.type === 'LIKE' && '❤️'}
                                         {item.type === 'MESSAGE' && '💬'}
@@ -130,23 +118,19 @@ const NotificationPage = () => {
                                         {item.type === 'NOTICE' && '📢'}
                                         {item.type === 'EVENT' && '🎉'}
                                         {item.type === 'SYSTEM' && '⚙️'}
-                                    </div>
-                                    
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{item.title}</span>
-                                            <span style={{ fontSize: '12px', color: '#999' }}>{formatTime(item.createdAt)}</span>
-                                        </div>
-                                        <p style={{ fontSize: '13px', color: '#666', lineHeight: '1.4' }}>{item.message}</p>
-                                    </div>
+                                    </span>
+                                </div>
 
-                                    {/* Optional: Delete button */}
-                                    {/* <button onClick={() => handleDelete(item.id)} style={{ color: '#ccc' }}>x</button> */}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                                <div className="notification_content">
+                                    <h3>{item.title}</h3>
+                                    <p>{item.message}</p>
+                                </div>
+                                <span className="notification_time">{formatTime(item.createdAt)}</span>
+                                {!item.isRead && <span className="unread_dot" />}
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
         </div>
     );
