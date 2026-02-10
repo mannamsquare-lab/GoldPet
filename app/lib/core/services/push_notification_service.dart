@@ -6,29 +6,82 @@ import '../bridge/native_bridge.dart';
 import '../config/environment.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+/// Android 알림 채널
+const AndroidNotificationChannel _androidChannel = AndroidNotificationChannel(
+  'goldpet_notifications',
+  'GoldPet 알림',
+  description: 'GoldPet 앱 알림',
+  importance: Importance.high,
+);
+
+/// 백그라운드 메시지 핸들러 (top-level function 필수)
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('[FCM] Background message: ${message.messageId}');
+}
 
 /// 푸시 알림 서비스
 class PushNotificationService {
   NativeBridge? bridge;
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
-  PushNotificationService() {
+  PushNotificationService();
+
+  /// 초기화 (앱 시작 시 호출)
+  Future<void> initialize() async {
+    // 알림 채널 생성 (Android)
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_androidChannel);
+
+    // flutter_local_notifications 초기화
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidSettings);
+    await _localNotifications.initialize(settings: initSettings);
+
+    // 알림 권한 요청
+    await requestPermission();
+
+    // 리스너 설정
     _setupListeners();
   }
 
   void _setupListeners() {
     // 포그라운드 메시지 수신
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('Got a message whilst in the foreground!');
-      debugPrint('Message data: ${message.data}');
+      debugPrint('[FCM] Foreground message: ${message.messageId}');
+      debugPrint('[FCM] Data: ${message.data}');
 
-      if (message.notification != null) {
-        debugPrint(
-          'Message also contained a notification: ${message.notification}',
+      final notification = message.notification;
+      if (notification != null) {
+        debugPrint('[FCM] Notification: ${notification.title} - ${notification.body}');
+
+        // 포그라운드에서 로컬 알림으로 표시
+        _localNotifications.show(
+          id: notification.hashCode,
+          title: notification.title,
+          body: notification.body,
+          notificationDetails: NotificationDetails(
+            android: AndroidNotificationDetails(
+              _androidChannel.id,
+              _androidChannel.name,
+              channelDescription: _androidChannel.description,
+              importance: Importance.high,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+            ),
+          ),
+          payload: jsonEncode(message.data),
         );
 
+        // React에도 이벤트 전달
         bridge?.sendEventToReact('pushNotificationReceived', {
-          'title': message.notification?.title,
-          'body': message.notification?.body,
+          'title': notification.title,
+          'body': notification.body,
           'data': message.data,
         });
       }
@@ -36,7 +89,7 @@ class PushNotificationService {
 
     // 앱이 백그라운드에서 열릴 때 (알림 클릭 등)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('A new onMessageOpenedApp event was published!');
+      debugPrint('[FCM] Notification opened app: ${message.messageId}');
       bridge?.sendEventToReact('pushNotificationClicked', {
         'title': message.notification?.title,
         'body': message.notification?.body,
@@ -52,7 +105,7 @@ class PushNotificationService {
       badge: true,
       sound: true,
     );
-    debugPrint('User granted permission: ${settings.authorizationStatus}');
+    debugPrint('[FCM] Permission: ${settings.authorizationStatus}');
     return settings.authorizationStatus == AuthorizationStatus.authorized;
   }
 
@@ -60,10 +113,10 @@ class PushNotificationService {
   Future<String?> getToken() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
-      debugPrint('FCM Token: $token');
+      debugPrint('[FCM] Token: $token');
       return token;
     } catch (e) {
-      debugPrint('Failed to get FCM token: $e');
+      debugPrint('[FCM] Failed to get token: $e');
       return null;
     }
   }
@@ -73,7 +126,7 @@ class PushNotificationService {
     try {
       final token = await getToken();
       if (token == null) {
-        debugPrint('FCM token is null, skipping registration');
+        debugPrint('[FCM] Token is null, skipping registration');
         return;
       }
 
@@ -81,11 +134,11 @@ class PushNotificationService {
 
       // Listen for token refresh
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-        debugPrint('FCM token refreshed, re-registering...');
+        debugPrint('[FCM] Token refreshed, re-registering...');
         _sendTokenToBackend(newToken, accessToken);
       });
     } catch (e) {
-      debugPrint('Failed to register FCM token: $e');
+      debugPrint('[FCM] Failed to register token: $e');
     }
   }
 
@@ -103,12 +156,12 @@ class PushNotificationService {
       );
 
       if (response.statusCode == 200) {
-        debugPrint('FCM token registered successfully');
+        debugPrint('[FCM] Token registered with backend');
       } else {
-        debugPrint('Failed to register FCM token: ${response.statusCode}');
+        debugPrint('[FCM] Token registration failed: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error sending FCM token to backend: $e');
+      debugPrint('[FCM] Error sending token to backend: $e');
     }
   }
 
