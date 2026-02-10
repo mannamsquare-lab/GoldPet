@@ -53,21 +53,18 @@ VALUES (
 );
 
 -- =================================================================================================
--- 3. Mock Walks & Spots
+-- 3. Mock Walks
 -- =================================================================================================
 
--- User 1 Walk Record in Gangnam
-INSERT INTO walk_records (user_id, pet_id, title, distance_m, duration_sec, started_at, ended_at, route_geom, visibility)
+-- User 1 Walk in Gangnam
+INSERT INTO walks (user_id, start_time, end_time, distance_km, duration_seconds, path)
 VALUES (
     (SELECT id FROM users WHERE nickname = '강남산책러'),
-    (SELECT id FROM pets WHERE name = '초코'),
-    '강남역 주변 아침 산책',
-    1500,
-    1800,
     NOW() - INTERVAL '1 day',
     NOW() - INTERVAL '1 day' + INTERVAL '30 minutes',
-    ST_SetSRID(ST_MakeLine(ARRAY[ST_MakePoint(127.027, 37.497), ST_MakePoint(127.028, 37.498), ST_MakePoint(127.029, 37.499)]), 4326),
-    'PUBLIC'
+    1.5,
+    1800,
+    ST_SetSRID(ST_MakeLine(ARRAY[ST_MakePoint(127.027, 37.497), ST_MakePoint(127.028, 37.498), ST_MakePoint(127.029, 37.499)]), 4326)
 );
 
 -- =================================================================================================
@@ -90,16 +87,14 @@ INSERT INTO likes (from_user_id, to_user_id, status) VALUES
     'ACTIVE'
 );
 
--- Create Match (Ensuring user1_id < user2_id)
-INSERT INTO matches (user1_id, user2_id, status)
-SELECT 
+-- Create Match
+INSERT INTO matches (user1_id, user2_id)
+SELECT
     LEAST(u1.id, u2.id),
-    GREATEST(u1.id, u2.id),
-    'MATCHED'
+    GREATEST(u1.id, u2.id)
 FROM users u1, users u2
 WHERE u1.nickname = '한강러닝' AND u2.nickname = '강남산책러'
 ON CONFLICT DO NOTHING;
-
 
 -- =================================================================================================
 -- 5. Mock Community Posts
@@ -120,3 +115,12 @@ INSERT INTO community_posts (user_id, category_id, title, content, post_type) VA
     '입맛이 까다로운 아이라 고민입니다.',
     'QUESTION'
 );
+
+-- =================================================================================================
+-- 6. Gamification Test Data (from V9)
+-- =================================================================================================
+
+-- Seed Challenge
+INSERT INTO challenges (title, description, goal_type, goal_value, reward_gold, start_date, end_date, is_active)
+VALUES
+('Weekly 10km Walk', 'Walk 10km this week!', 'WALK_DISTANCE_TOTAL', 10000, 500, NOW() - INTERVAL '1 day', NOW() + INTERVAL '7 days', true);

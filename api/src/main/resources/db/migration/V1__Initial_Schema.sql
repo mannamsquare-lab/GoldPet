@@ -1,203 +1,233 @@
+-- GoldPet Initial Schema
+-- Matches JPA entity definitions as of 2026-02-10
 -- Enable PostGIS extension
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- =================================================================================================
--- 1. Users & Pets Domain
+-- 1. Users Domain
 -- =================================================================================================
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE,
-    oauth_provider VARCHAR(50), -- KAKAO, NAVER, GOOGLE, APPLE
+    oauth_provider VARCHAR(255),
     oauth_id VARCHAR(255),
-    nickname VARCHAR(50),
-    gender VARCHAR(10),
+    username VARCHAR(255),
+    password VARCHAR(255),
+    nickname VARCHAR(255),
+    name VARCHAR(255),
+    birth_date DATE,
+    phone_number VARCHAR(255),
+    gender VARCHAR(255),
     birth_year INT,
     main_location_text VARCHAR(255),
     main_location_geom geometry(Point, 4326),
-    profile_image_url VARCHAR(500),
+    profile_image_url VARCHAR(255),
     gold_balance INT NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    status VARCHAR(255) NOT NULL DEFAULT 'ACTIVE',
+    mbti VARCHAR(255),
+    intro TEXT,
+    has_pet BOOLEAN NOT NULL DEFAULT FALSE,
+    is_notification_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP,
-    UNIQUE (oauth_provider, oauth_id)
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_users_main_location_geom ON users USING GIST (main_location_geom);
+CREATE INDEX IF NOT EXISTS idx_users_main_location_geom ON users USING GIST (main_location_geom);
 
-CREATE TABLE user_location_history (
+CREATE TABLE IF NOT EXISTS user_profile_images (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
-    location_geom geometry(Point, 4326) NOT NULL,
-    accuracy_m FLOAT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    image_url VARCHAR(255) NOT NULL,
+    order_index INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_user_location_history_user_id ON user_location_history(user_id);
-CREATE INDEX idx_user_location_history_geom ON user_location_history USING GIST (location_geom);
+CREATE TABLE IF NOT EXISTS interests (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    order_index INT NOT NULL DEFAULT 0
+);
 
-CREATE TABLE pet_species (
+CREATE TABLE IF NOT EXISTS hobbies (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    order_index INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS user_interests (
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    interest_id BIGINT NOT NULL REFERENCES interests(id),
+    PRIMARY KEY (user_id, interest_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_hobbies (
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    hobby_id BIGINT NOT NULL REFERENCES hobbies(id),
+    PRIMARY KEY (user_id, hobby_id)
+);
+
+-- =================================================================================================
+-- 2. Pet Domain
+-- =================================================================================================
+
+CREATE TABLE IF NOT EXISTS pet_species (
     id SERIAL PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL, -- DOG, CAT
-    name VARCHAR(50) NOT NULL,
-    description TEXT,
+    code VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE pet_breeds (
+CREATE TABLE IF NOT EXISTS pet_breeds (
     id SERIAL PRIMARY KEY,
     species_id INT NOT NULL REFERENCES pet_species(id),
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(255),
+    category VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
-CREATE INDEX idx_pet_breeds_species_id ON pet_breeds(species_id);
+CREATE INDEX IF NOT EXISTS idx_pet_breeds_species_id ON pet_breeds(species_id);
 
-CREATE TABLE pets (
+CREATE TABLE IF NOT EXISTS pets (
     id BIGSERIAL PRIMARY KEY,
     owner_user_id BIGINT NOT NULL REFERENCES users(id),
-    name VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     species_id INT NOT NULL REFERENCES pet_species(id),
-    breed_id INT NOT NULL REFERENCES pet_breeds(id),
-    gender VARCHAR(10),
+    breed_id INT REFERENCES pet_breeds(id),
+    gender VARCHAR(255),
     birth_date DATE,
-    weight_kg DECIMAL(4,1),
+    weight_kg DOUBLE PRECISION,
     is_neutered BOOLEAN,
-    profile_image_url VARCHAR(500),
-    temperament_tags VARCHAR(255),
+    profile_image_url VARCHAR(255),
+    temperament_tags TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_pets_owner_user_id ON pets(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_pets_owner_user_id ON pets(owner_user_id);
 
-CREATE TABLE pet_attribute_defs (
-    id SERIAL PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    species_id INT REFERENCES pet_species(id),
-    data_type VARCHAR(20) NOT NULL, -- STRING, NUMBER, BOOLEAN, ENUM
-    enum_values TEXT, -- JSON array string
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS pet_attributes (
+    id BIGSERIAL PRIMARY KEY,
+    category VARCHAR(255) NOT NULL,
+    code VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    input_type VARCHAR(255) NOT NULL,
+    display_order INT NOT NULL DEFAULT 0,
+    options JSONB
 );
 
-CREATE TABLE pet_attribute_values (
+CREATE TABLE IF NOT EXISTS pet_profile_images (
     id BIGSERIAL PRIMARY KEY,
     pet_id BIGINT NOT NULL REFERENCES pets(id),
-    attribute_def_id INT NOT NULL REFERENCES pet_attribute_defs(id),
-    value_string TEXT,
-    value_number DECIMAL(10,2),
-    value_boolean BOOLEAN,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- =================================================================================================
--- 2. Walk & Map Domain
--- =================================================================================================
-
-CREATE TABLE walk_albums (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id),
-    title VARCHAR(100) NOT NULL,
-    description TEXT,
-    cover_walk_id BIGINT, -- Late binding to walk_records
-    visibility VARCHAR(20) NOT NULL DEFAULT 'PRIVATE', -- PUBLIC, FRIENDS, PRIVATE
+    image_url VARCHAR(255) NOT NULL,
+    order_index INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE walk_records (
+-- =================================================================================================
+-- 3. Walk Domain
+-- =================================================================================================
+
+CREATE TABLE IF NOT EXISTS walks (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
-    pet_id BIGINT NOT NULL REFERENCES pets(id),
-    album_id BIGINT REFERENCES walk_albums(id),
-    title VARCHAR(100),
-    distance_m INT,
-    duration_sec INT,
-    user_calorie INT,
-    pet_calorie INT,
-    started_at TIMESTAMP NOT NULL,
-    ended_at TIMESTAMP NOT NULL,
-    route_geom geometry(LineString, 4326),
-    center_point geometry(Point, 4326),
-    visibility VARCHAR(20) NOT NULL DEFAULT 'PRIVATE',
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    distance_km DOUBLE PRECISION NOT NULL,
+    duration_seconds BIGINT NOT NULL,
+    path geometry(LineString, 4326) NOT NULL,
+    calories_burned DOUBLE PRECISION,
+    notes VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_walk_records_user_id ON walk_records(user_id);
-CREATE INDEX idx_walk_records_route_geom ON walk_records USING GIST (route_geom);
-CREATE INDEX idx_walk_records_center_point ON walk_records USING GIST (center_point);
+CREATE INDEX IF NOT EXISTS idx_walks_user_id ON walks(user_id);
+CREATE INDEX IF NOT EXISTS idx_walks_path ON walks USING GIST (path);
 
-CREATE TABLE walk_spots (
+CREATE TABLE IF NOT EXISTS walk_spots (
     id BIGSERIAL PRIMARY KEY,
-    walk_id BIGINT NOT NULL REFERENCES walk_records(id),
-    location_geom geometry(Point, 4326) NOT NULL,
-    photo_url VARCHAR(500),
-    memo TEXT,
-    taken_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    walk_id BIGINT NOT NULL REFERENCES walks(id),
+    location geometry(Point, 4326) NOT NULL,
+    type VARCHAR(255) NOT NULL,
+    timestamp TIMESTAMP NOT NULL,
+    image_url VARCHAR(255),
+    note TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_walk_spots_geom ON walk_spots USING GIST (location_geom);
+CREATE INDEX IF NOT EXISTS idx_walk_spots_geom ON walk_spots USING GIST (location);
 
 -- =================================================================================================
--- 3. Social Domain (Likes & Matches)
+-- 4. Social Domain (Likes, Matches, Blocks)
 -- =================================================================================================
 
-CREATE TABLE likes (
+CREATE TABLE IF NOT EXISTS likes (
     id BIGSERIAL PRIMARY KEY,
     from_user_id BIGINT NOT NULL REFERENCES users(id),
     to_user_id BIGINT NOT NULL REFERENCES users(id),
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, CANCELED
+    status VARCHAR(255) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (from_user_id, to_user_id)
 );
 
-CREATE TABLE matches (
+CREATE TABLE IF NOT EXISTS matches (
     id BIGSERIAL PRIMARY KEY,
     user1_id BIGINT NOT NULL REFERENCES users(id),
     user2_id BIGINT NOT NULL REFERENCES users(id),
-    status VARCHAR(20) NOT NULL DEFAULT 'MATCHED', -- MATCHED, BLOCKED, ENDED
-    last_action_by BIGINT REFERENCES users(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (user1_id < user2_id),
     UNIQUE (user1_id, user2_id)
 );
 
+CREATE TABLE IF NOT EXISTS user_blocks (
+    id BIGSERIAL PRIMARY KEY,
+    blocker_id BIGINT NOT NULL REFERENCES users(id),
+    blocked_id BIGINT NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (blocker_id, blocked_id)
+);
+
 -- =================================================================================================
--- 4. Chat Domain
+-- 5. Chat Domain
 -- =================================================================================================
 
-CREATE TABLE chat_rooms (
+CREATE TABLE IF NOT EXISTS chat_rooms (
     id BIGSERIAL PRIMARY KEY,
-    room_type VARCHAR(20) NOT NULL, -- DIRECT, GROUP, AI_PET
-    title VARCHAR(100),
+    room_type VARCHAR(255) NOT NULL,
+    title VARCHAR(255),
     owner_user_id BIGINT REFERENCES users(id),
     match_id BIGINT REFERENCES matches(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE chat_room_participants (
+CREATE TABLE IF NOT EXISTS chat_room_participants (
     id BIGSERIAL PRIMARY KEY,
     room_id BIGINT NOT NULL REFERENCES chat_rooms(id),
     user_id BIGINT NOT NULL REFERENCES users(id),
-    role VARCHAR(20) NOT NULL DEFAULT 'MEMBER',
+    role VARCHAR(255) NOT NULL,
     joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     left_at TIMESTAMP,
+    last_read_at TIMESTAMP,
     UNIQUE (room_id, user_id)
 );
 
-CREATE TABLE file_attachments (
+CREATE TABLE IF NOT EXISTS file_attachments (
     id BIGSERIAL PRIMARY KEY,
-    owner_user_id BIGINT NOT NULL REFERENCES users(id),
-    file_type VARCHAR(20) NOT NULL, -- IMAGE, VIDEO, DOCUMENT
-    mime_type VARCHAR(100),
-    url VARCHAR(500) NOT NULL,
+    owner_user_id BIGINT NOT NULL,
+    file_type VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
     size_bytes BIGINT,
     width INT,
     height INT,
@@ -205,7 +235,8 @@ CREATE TABLE file_attachments (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE emoticon_packs (
+-- Emoticon tables (no JPA entity but used by chat_messages FK and seed data)
+CREATE TABLE IF NOT EXISTS emoticon_packs (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
@@ -214,7 +245,7 @@ CREATE TABLE emoticon_packs (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE emoticons (
+CREATE TABLE IF NOT EXISTS emoticons (
     id BIGSERIAL PRIMARY KEY,
     pack_id BIGINT NOT NULL REFERENCES emoticon_packs(id),
     code VARCHAR(50),
@@ -222,67 +253,70 @@ CREATE TABLE emoticons (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE chat_messages (
+CREATE TABLE IF NOT EXISTS chat_messages (
     id BIGSERIAL PRIMARY KEY,
     room_id BIGINT NOT NULL REFERENCES chat_rooms(id),
-    sender_user_id BIGINT REFERENCES users(id), -- NULL for system messages
-    message_type VARCHAR(20) NOT NULL, -- TEXT, IMAGE, VIDEO, FILE, EMOTICON, SYSTEM
+    sender_user_id BIGINT REFERENCES users(id),
+    message_type VARCHAR(255) NOT NULL,
     text_content TEXT,
-    file_id BIGINT REFERENCES file_attachments(id),
-    emoticon_id BIGINT REFERENCES emoticons(id),
-    emoji_code VARCHAR(50),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    read_count INT NOT NULL DEFAULT 0
-);
-
-CREATE INDEX idx_chat_messages_room_created ON chat_messages(room_id, created_at);
-
--- =================================================================================================
--- 5. Community Domain
--- =================================================================================================
-
-CREATE TABLE community_categories (
-    id SERIAL PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL
-);
-
-CREATE TABLE community_posts (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id),
-    category_id INT NOT NULL REFERENCES community_categories(id),
-    title VARCHAR(200) NOT NULL,
-    content TEXT NOT NULL,
-    visibility VARCHAR(20) DEFAULT 'PUBLIC',
-    post_type VARCHAR(20) NOT NULL DEFAULT 'GENERAL', -- GENERAL, QUESTION, INFO
-    is_answered BOOLEAN DEFAULT FALSE,
-    view_count INT NOT NULL DEFAULT 0,
-    like_count INT NOT NULL DEFAULT 0,
+    file_id BIGINT,
+    emoticon_id BIGINT,
+    emoji_code VARCHAR(255),
+    read_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE community_post_images (
+CREATE INDEX IF NOT EXISTS idx_chat_messages_room_created ON chat_messages(room_id, created_at);
+
+-- =================================================================================================
+-- 6. Community Domain
+-- =================================================================================================
+
+CREATE TABLE IF NOT EXISTS community_categories (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS community_posts (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    category_id BIGINT NOT NULL REFERENCES community_categories(id),
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    visibility VARCHAR(255) NOT NULL DEFAULT 'PUBLIC',
+    view_count INT NOT NULL DEFAULT 0,
+    like_count INT NOT NULL DEFAULT 0,
+    post_type VARCHAR(255) NOT NULL DEFAULT 'GENERAL',
+    adopted_comment_id BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS community_post_images (
     id BIGSERIAL PRIMARY KEY,
     post_id BIGINT NOT NULL REFERENCES community_posts(id),
     file_id BIGINT NOT NULL REFERENCES file_attachments(id),
-    sort_order INT NOT NULL DEFAULT 0
+    sort_order INT NOT NULL
 );
 
-CREATE TABLE community_comments (
+CREATE TABLE IF NOT EXISTS community_comments (
     id BIGSERIAL PRIMARY KEY,
     post_id BIGINT NOT NULL REFERENCES community_posts(id),
     user_id BIGINT NOT NULL REFERENCES users(id),
     parent_comment_id BIGINT REFERENCES community_comments(id),
     content TEXT NOT NULL,
-    is_selected_answer BOOLEAN DEFAULT FALSE,
+    like_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Update post's adopted_comment linking if needed (usually handled by update query + is_answered flag)
+-- Add FK for adopted_comment_id after community_comments exists
+ALTER TABLE community_posts ADD CONSTRAINT fk_community_posts_adopted_comment
+    FOREIGN KEY (adopted_comment_id) REFERENCES community_comments(id);
 
-CREATE TABLE community_post_likes (
+CREATE TABLE IF NOT EXISTS community_post_likes (
     id BIGSERIAL PRIMARY KEY,
     post_id BIGINT NOT NULL REFERENCES community_posts(id),
     user_id BIGINT NOT NULL REFERENCES users(id),
@@ -290,134 +324,272 @@ CREATE TABLE community_post_likes (
     UNIQUE (post_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS community_comment_likes (
+    id BIGSERIAL PRIMARY KEY,
+    comment_id BIGINT NOT NULL REFERENCES community_comments(id),
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (comment_id, user_id)
+);
+
 -- =================================================================================================
--- 6. Economy Domain
+-- 7. Gold / Economy Domain
 -- =================================================================================================
 
-CREATE TABLE gold_transactions (
+CREATE TABLE IF NOT EXISTS gold_transactions (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
-    type VARCHAR(20) NOT NULL, -- CHARGE, USE, REFUND
+    type VARCHAR(255) NOT NULL,
     amount INT NOT NULL,
     balance_after INT NOT NULL,
-    reason_code VARCHAR(50),
+    description VARCHAR(255),
+    reference_type VARCHAR(255),
     reference_id BIGINT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE iap_receipts (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id),
-    platform VARCHAR(20) NOT NULL, -- GOOGLE, APPLE
-    receipt_data TEXT NOT NULL,
-    order_id VARCHAR(100),
-    purchased_gold INT NOT NULL,
-    verified BOOLEAN NOT NULL DEFAULT FALSE,
-    verified_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- =================================================================================================
--- 7. AI Domain
--- =================================================================================================
-
-CREATE TABLE ai_profile_jobs (
-    id BIGSERIAL PRIMARY KEY,
-    pet_id BIGINT NOT NULL REFERENCES pets(id),
-    user_id BIGINT NOT NULL REFERENCES users(id),
-    style VARCHAR(50) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'REQUESTED',
-    input_image_id BIGINT REFERENCES file_attachments(id),
-    result_image_id BIGINT REFERENCES file_attachments(id),
-    result_video_id BIGINT REFERENCES file_attachments(id),
-    used_gold INT NOT NULL DEFAULT 0,
+    status VARCHAR(255) NOT NULL DEFAULT 'COMPLETED',
+    payment_method VARCHAR(255),
+    external_transaction_id VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =================================================================================================
--- 8. Notifications Domain
+-- 8. Notification Domain
 -- =================================================================================================
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
-    type VARCHAR(50) NOT NULL,
-    title VARCHAR(100) NOT NULL,
-    message TEXT NOT NULL,
-    payload_json JSONB,
+    type VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message VARCHAR(255) NOT NULL,
+    target_id BIGINT,
+    target_type VARCHAR(255),
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    sender_id BIGINT,
+    sender_nickname VARCHAR(255),
+    sender_profile_image VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    read_at TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =================================================================================================
--- 9. Gamification Domain (v2.1 NEW)
+-- 9. Gamification Domain
 -- =================================================================================================
 
-CREATE TABLE badges (
-    id SERIAL PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL, -- FIRST_WALK, 10KM_WALKER
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    image_url VARCHAR(500),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS badges (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    image_url VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE user_badges (
+CREATE TABLE IF NOT EXISTS user_badges (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
-    badge_id INT NOT NULL REFERENCES badges(id),
-    acquired_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    badge_id BIGINT NOT NULL REFERENCES badges(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id, badge_id)
 );
 
-CREATE TABLE challenges (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
-    description TEXT,
-    goal_type VARCHAR(50) NOT NULL, -- DISTANCE, WALK_COUNT, CHECK_IN
+CREATE TABLE IF NOT EXISTS challenges (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    goal_type VARCHAR(255) NOT NULL,
     goal_value INT NOT NULL,
-    reward_gold INT DEFAULT 0,
-    reward_badge_id INT REFERENCES badges(id),
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    reward_gold INT,
+    reward_badge_id BIGINT REFERENCES badges(id),
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE TABLE user_challenge_progress (
+CREATE TABLE IF NOT EXISTS user_challenge_progress (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
-    challenge_id INT NOT NULL REFERENCES challenges(id),
+    challenge_id BIGINT NOT NULL REFERENCES challenges(id),
     current_value INT NOT NULL DEFAULT 0,
-    status VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS', -- IN_PROGRESS, COMPLETED, FAILED, CLAIMED
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(255) NOT NULL DEFAULT 'IN_PROGRESS',
+    completed_at TIMESTAMP,
     UNIQUE (user_id, challenge_id)
 );
 
 -- =================================================================================================
--- 10. Places Domain (v2.1 NEW)
+-- 10. Places & Check-in Domain
 -- =================================================================================================
 
-CREATE TABLE places (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    category VARCHAR(50) NOT NULL, -- PARK, CAFE, HOSPITAL
-    description TEXT,
+CREATE TABLE IF NOT EXISTS places (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(255) NOT NULL,
     address VARCHAR(255),
     location_geom geometry(Point, 4326) NOT NULL,
-    image_url VARCHAR(500),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    description VARCHAR(255),
+    image_url VARCHAR(255),
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    checkin_count INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_places_geom ON places USING GIST (location_geom);
+CREATE INDEX IF NOT EXISTS idx_places_geom ON places USING GIST (location_geom);
 
-CREATE TABLE check_ins (
+CREATE TABLE IF NOT EXISTS check_ins (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id),
-    place_id INT NOT NULL REFERENCES places(id),
-    visit_date DATE NOT NULL,
+    place_id BIGINT NOT NULL REFERENCES places(id),
+    photo_url VARCHAR(255),
+    memo VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =================================================================================================
+-- 11. Common Domain
+-- =================================================================================================
+
+CREATE TABLE IF NOT EXISTS system_settings (
+    setting_key VARCHAR(255) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL,
+    description VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =================================================================================================
+-- 12. Report Domain
+-- =================================================================================================
+
+CREATE TABLE IF NOT EXISTS reports (
+    id BIGSERIAL PRIMARY KEY,
+    type VARCHAR(255) NOT NULL,
+    target_id BIGINT NOT NULL,
+    target_preview VARCHAR(255),
+    reason VARCHAR(255) NOT NULL,
+    reporter_id BIGINT NOT NULL REFERENCES users(id),
+    status VARCHAR(255) NOT NULL DEFAULT 'PENDING',
+    resolved_at TIMESTAMP,
+    resolved_by BIGINT REFERENCES users(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =================================================================================================
+-- 13. Admin Domain
+-- =================================================================================================
+
+CREATE TABLE IF NOT EXISTS admin_users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(255) NOT NULL DEFAULT 'OPERATOR',
+    otp_secret VARCHAR(255),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_access_logs (
+    id BIGSERIAL PRIMARY KEY,
+    admin_user_id BIGINT NOT NULL REFERENCES admin_users(id),
+    ip_address VARCHAR(50),
+    action VARCHAR(100),
+    target_resource VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_check_ins_user_date ON check_ins(user_id, visit_date);
+CREATE TABLE IF NOT EXISTS banners (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255),
+    image_url VARCHAR(255),
+    link VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    display_order INT DEFAULT 0,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS campaigns (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    description VARCHAR(255),
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    status VARCHAR(255) NOT NULL DEFAULT 'DRAFT',
+    participant_count INT DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS notification_templates (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    title_template VARCHAR(200) NOT NULL,
+    message_template VARCHAR(1000) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    variables TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS push_delivery_logs (
+    id BIGSERIAL PRIMARY KEY,
+    template_id BIGINT REFERENCES notification_templates(id),
+    title VARCHAR(200) NOT NULL,
+    message VARCHAR(1000) NOT NULL,
+    target_type VARCHAR(50) NOT NULL,
+    target_value VARCHAR(500),
+    target_count INT NOT NULL DEFAULT 0,
+    delivered_count INT NOT NULL DEFAULT 0,
+    failed_count INT NOT NULL DEFAULT 0,
+    scheduled_at TIMESTAMP,
+    sent_at TIMESTAMP,
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    sent_by VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cache_clear_logs (
+    id BIGSERIAL PRIMARY KEY,
+    cache_name VARCHAR(100) NOT NULL,
+    cleared_by VARCHAR(100) NOT NULL,
+    cleared_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reason VARCHAR(255)
+);
+
+-- =================================================================================================
+-- 14. AI Profile Domain
+-- =================================================================================================
+
+CREATE TABLE IF NOT EXISTS ai_styles (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(500),
+    preview_url VARCHAR(500),
+    gold_cost INT NOT NULL DEFAULT 10,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    display_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ai_profile_requests (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    pet_id BIGINT NOT NULL REFERENCES pets(id),
+    type VARCHAR(255) NOT NULL,
+    source_image_url VARCHAR(255) NOT NULL,
+    style_prompt VARCHAR(255),
+    status VARCHAR(255) NOT NULL DEFAULT 'PENDING',
+    result_url VARCHAR(255),
+    error_message VARCHAR(255),
+    gold_cost INT NOT NULL DEFAULT 10,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
