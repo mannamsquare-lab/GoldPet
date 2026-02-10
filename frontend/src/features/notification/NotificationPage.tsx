@@ -42,6 +42,27 @@ const NotificationPage = () => {
         navigate(-1);
     };
 
+    const handleNotificationClick = async (item: Notification) => {
+        if (!item.isRead) {
+            await notificationService.markAsRead(item.id);
+            setNotifications(prev =>
+                prev.map(n => n.id === item.id ? { ...n, isRead: true } : n)
+            );
+        }
+        if (item.targetType && item.targetId) {
+            switch (item.targetType) {
+                case 'CHAT_ROOM': navigate(`/chat/${item.targetId}`); break;
+                case 'POST': navigate(`/community/${item.targetId}`); break;
+                case 'MATCH': navigate('/friend-list'); break;
+            }
+        }
+    };
+
+    const handleMarkAllAsRead = async () => {
+        await notificationService.markAllAsRead();
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    };
+
     // handleDelete removed as it was unused and referenced showAlert which I'm commenting out usage for now code cleanliness
     /*
     const handleDelete = async (id: number) => {
@@ -72,10 +93,15 @@ const NotificationPage = () => {
         <div id="notificationContainer">
             {/* Header */}
             <div className="notification_header_bar">
-                <button type="button" className="back_btn" onClick={handleBack}>
-                    <img src="/assets/images/layout/header_icon_back.svg" alt="뒤로가기" />
+                <div className="header_left">
+                    <button type="button" className="back_btn" onClick={handleBack}>
+                        <img src="/assets/images/layout/header_icon_back.svg" alt="뒤로가기" />
+                    </button>
+                    <h2>알림</h2>
+                </div>
+                <button type="button" className="mark_all_btn" onClick={handleMarkAllAsRead}>
+                    전체 읽음
                 </button>
-                <h2>알림</h2>
             </div>
 
             {/* Tabs */}
@@ -107,7 +133,7 @@ const NotificationPage = () => {
                 ) : (
                     <ul>
                         {notifications.map(item => (
-                            <li key={item.id} className={`notification_item${item.isRead ? '' : ' unread'}`}>
+                            <li key={item.id} className={`notification_item${item.isRead ? '' : ' unread'}`} onClick={() => handleNotificationClick(item)}>
                                 <div className="notification_icon">
                                     <span>
                                         {item.type === 'MATCH' && '💕'}

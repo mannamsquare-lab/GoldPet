@@ -10,12 +10,19 @@
 #notificationContainer .notification_header_bar {
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	gap: 2.78vw;
 	padding: 4.44vw;
 	background-color: #FFF7E6;
 	position: sticky;
 	top: 0;
 	z-index: 100;
+}
+
+#notificationContainer .notification_header_bar .header_left {
+	display: flex;
+	align-items: center;
+	gap: 2.78vw;
 }
 
 #notificationContainer .notification_header_bar .back_btn {
@@ -37,6 +44,16 @@
 	font-size: 5vw;
 	font-weight: 700;
 	color: #614108;
+}
+
+#notificationContainer .notification_header_bar .mark_all_btn {
+	background: none;
+	border: none;
+	font-size: 3.33vw;
+	font-weight: 600;
+	color: #A58A54;
+	padding: 0;
+	flex-shrink: 0;
 }
 
 /* Tabs - matches community_tab pattern */
@@ -101,6 +118,7 @@
 	padding: 4.44vw 0;
 	border-top: 1px solid #EFE1C4;
 	position: relative;
+	cursor: pointer;
 }
 
 #notificationContainer .notification_item.unread {

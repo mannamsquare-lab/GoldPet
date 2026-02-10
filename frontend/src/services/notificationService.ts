@@ -9,6 +9,8 @@ export interface Notification {
   message: string;
   imageUrl?: string;
   linkUrl?: string;
+  targetId?: number;
+  targetType?: string;
   isRead: boolean;
   createdAt: string;
 }
