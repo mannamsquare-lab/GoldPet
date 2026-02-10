@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:image_picker/image_picker.dart';
 import '../bridge/bridge_message_handler.dart';
 import '../bridge/native_bridge.dart';
 import '../services/location_service.dart';
@@ -129,6 +132,75 @@ class _HybridWebViewState extends State<HybridWebView> {
         debugPrint('JS Console: ${message.message}');
       });
 
+    // Android file upload support via content:// URIs
+    if (_controller.platform is AndroidWebViewController) {
+      final androidController = _controller.platform as AndroidWebViewController;
+      await androidController.setOnShowFileSelector((params) async {
+        final ImagePicker picker = ImagePicker();
+
+        if (params.acceptTypes.any((type) => type.contains('image'))) {
+          // Show bottom sheet to choose camera or gallery
+          final source = await showModalBottomSheet<String>(
+            context: context,
+            builder: (BuildContext ctx) {
+              return SafeArea(
+                child: Wrap(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.camera_alt),
+                      title: const Text('카메라로 촬영'),
+                      onTap: () => Navigator.pop(ctx, 'camera'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.photo_library),
+                      title: const Text('갤러리에서 선택'),
+                      onTap: () => Navigator.pop(ctx, 'gallery'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+
+          if (source == null) return [];
+
+          if (source == 'camera') {
+            final XFile? photo = await picker.pickImage(
+              source: ImageSource.camera,
+              imageQuality: 80,
+              maxWidth: 1920,
+              maxHeight: 1920,
+            );
+            if (photo == null) return [];
+            final contentUri = await _getContentUri(photo.path);
+            if (contentUri == null) return [];
+            return [contentUri];
+          } else {
+            final List<XFile> images = await picker.pickMultiImage(
+              imageQuality: 80,
+              maxWidth: 1920,
+              maxHeight: 1920,
+            );
+            if (images.isEmpty) return [];
+            final uris = <String>[];
+            for (final image in images) {
+              final contentUri = await _getContentUri(image.path);
+              if (contentUri != null) {
+                uris.add(contentUri);
+              }
+            }
+            return uris;
+          }
+        } else {
+          final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+          if (file == null) return [];
+          final contentUri = await _getContentUri(file.path);
+          if (contentUri == null) return [];
+          return [contentUri];
+        }
+      });
+    }
+
     // Bridge 초기화 (서비스는 Bridge 내부에서 생성됨)
     _bridge = NativeBridge(_controller);
 
@@ -162,6 +234,23 @@ class _HybridWebViewState extends State<HybridWebView> {
       debugPrint('Failed to extract fallback URL: $e');
     }
     return null;
+  }
+
+  static const _fileProviderChannel = MethodChannel('com.mannam.goldpet/file_provider');
+
+  Future<String?> _getContentUri(String filePath) async {
+    try {
+      if (Platform.isAndroid) {
+        final String? contentUri = await _fileProviderChannel.invokeMethod(
+            'getContentUri', {'filePath': filePath});
+        debugPrint('Converted to content URI: $contentUri');
+        return contentUri;
+      }
+      return Uri.file(filePath).toString();
+    } catch (e) {
+      debugPrint('Failed to get content URI: $e');
+      return null;
+    }
   }
 
   @override

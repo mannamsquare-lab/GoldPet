@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:goldpet_app/core/webview/hybrid_webview.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:goldpet_app/core/constants/app_constants.dart';
 import 'package:goldpet_app/core/constants/keys.dart';
 
 class HybridApp extends StatefulWidget {
@@ -14,12 +14,8 @@ class HybridApp extends StatefulWidget {
 class _HybridAppState extends State<HybridApp> {
   @override
   Widget build(BuildContext context) {
-    // React 앱 URL
-    // 개발 환경: Dev Server Frontend URL
-    // 프로덕션: 로컬 파일 또는 CDN (추후 변경 가능)
-    const reactAppUrl = kDebugMode
-        ? 'https://app.mannamsquare.com' // Dev Server
-        : 'assets/web/index.html'; // 프로덕션 빌드
+    // React 앱 URL - 환경 설정에 따라 결정
+    final reactAppUrl = currentEnv.appBaseUrl;
 
     return MaterialApp(
       navigatorKey: rootNavigatorKey,

@@ -903,6 +903,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	border-radius: 0.83vw;
 	-webkit-box-sizing: border-box;
 	        box-sizing: border-box;
+	pointer-events: none;
 }
 #friendFind .find_filter li .check_wrap label:after {
 	background-image: url(/assets/images/common/checkbox_icon.svg);

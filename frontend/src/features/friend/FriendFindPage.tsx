@@ -180,17 +180,17 @@ export const FriendFindPage = () => {
                     <li>
                         <p>거리순</p>
                         <div className="filter_list">
-                            <div className="check_wrap">
-                                <input type="checkbox" id="for1" checked={selectedDistance === '1km'} onChange={() => handleDistanceChange('1km')} disabled={!userLocation} />
-                                <label htmlFor="for1">1km 이내</label>
+                            <div className="check_wrap" onClick={() => handleDistanceChange('1km')}>
+                                <input type="checkbox" id="for1" checked={selectedDistance === '1km'} readOnly />
+                                <label>1km 이내</label>
                             </div>
-                            <div className="check_wrap">
-                                <input type="checkbox" id="for2" checked={selectedDistance === '3km'} onChange={() => handleDistanceChange('3km')} disabled={!userLocation} />
-                                <label htmlFor="for2">3km 이내</label>
+                            <div className="check_wrap" onClick={() => handleDistanceChange('3km')}>
+                                <input type="checkbox" id="for2" checked={selectedDistance === '3km'} readOnly />
+                                <label>3km 이내</label>
                             </div>
-                            <div className="check_wrap">
-                                <input type="checkbox" id="for3" checked={selectedDistance === '5km'} onChange={() => handleDistanceChange('5km')} disabled={!userLocation} />
-                                <label htmlFor="for3">5km 이내</label>
+                            <div className="check_wrap" onClick={() => handleDistanceChange('5km')}>
+                                <input type="checkbox" id="for3" checked={selectedDistance === '5km'} readOnly />
+                                <label>5km 이내</label>
                             </div>
                         </div>
                     </li>

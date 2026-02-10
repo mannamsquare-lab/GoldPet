@@ -19,12 +19,12 @@ class EnvironmentConfig {
     required this.adminBaseUrl,
   });
 
-  /// 로컬 개발 환경
+  /// 로컬 개발 환경 (같은 WiFi 네트워크에서 PC IP로 접근)
   static const local = EnvironmentConfig._(
     environment: Environment.local,
-    apiBaseUrl: 'http://10.0.2.2:8081', // Android emulator localhost
-    appBaseUrl: 'http://10.0.2.2:5173',
-    adminBaseUrl: 'http://10.0.2.2:5174',
+    apiBaseUrl: 'http://192.168.0.87:8081',
+    appBaseUrl: 'http://192.168.0.87:5173',
+    adminBaseUrl: 'http://192.168.0.87:5174',
   );
 
   /// 개발 서버 환경 (mannamsquare.com)
