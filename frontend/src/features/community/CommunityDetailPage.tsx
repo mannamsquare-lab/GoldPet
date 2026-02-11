@@ -20,6 +20,26 @@ export default function CommunityDetailPage() {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentInput, setEditCommentInput] = useState('');
 
+  const handleInputFocus = () => {
+    const nav = document.getElementById('bottomNav');
+    if (nav) nav.style.display = 'none';
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) {
+        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 300);
+  };
+
+  const handleInputBlur = () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (active && active.tagName === 'TEXTAREA') return;
+      const nav = document.getElementById('bottomNav');
+      if (nav) nav.style.display = '';
+    }, 150);
+  };
+
   const handleOptionClick = (type: 'POST' | 'COMMENT', id: number) => {
     setActionSheetTarget({ type, id });
   };
@@ -67,6 +87,13 @@ export default function CommunityDetailPage() {
           mainInputRef.current.style.height = '40px';
       }
   }, [commentInput]);
+
+  useEffect(() => {
+    return () => {
+      const nav = document.getElementById('bottomNav');
+      if (nav) nav.style.display = '';
+    };
+  }, []);
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['community', 'post', postId],
@@ -259,8 +286,10 @@ export default function CommunityDetailPage() {
                   
                   {editingCommentId === comment.id ? (
                       <div className="comment_edit_wrap" style={{ marginTop: '8px' }}>
-                          <textarea 
+                          <textarea
                              autoFocus
+                             onFocus={handleInputFocus}
+                             onBlur={handleInputBlur}
                              value={editCommentInput}
                              onChange={(e) => setEditCommentInput(e.target.value)}
                              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', resize: 'none', minHeight: '60px', fontFamily: 'inherit' }}
@@ -298,8 +327,10 @@ export default function CommunityDetailPage() {
                   {/* Reply Input */}
                   {replyTargetId === comment.id && (
                     <div className="comment_submit" style={{ marginTop: '10px', display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-                      <textarea 
+                      <textarea
                         autoFocus
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
                         placeholder="답글을 남겨보세요" 
                         rows={1}
                         style={{ 
@@ -349,12 +380,13 @@ export default function CommunityDetailPage() {
 
           {/* Main Comment Input */}
           <div className="comment_submit" style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-            <textarea 
+            <textarea
               ref={mainInputRef}
-              placeholder="댓글을 남겨보세요" 
+              placeholder="댓글을 남겨보세요"
               value={commentInput}
               rows={1}
-              onFocus={() => setReplyTargetId(null)}
+              onFocus={() => { setReplyTargetId(null); handleInputFocus(); }}
+              onBlur={handleInputBlur}
               style={{ 
                   flex: 1,
                   resize: 'none', 

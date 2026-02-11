@@ -32,7 +32,10 @@ void main() async {
   );
 
   // Naver Map SDK 초기화
-  await NaverMapSdk.instance.initialize(clientId: 'ex0an0bs06');
+  await FlutterNaverMap().init(
+    clientId: 'ex0an0bs06',
+    onAuthFailed: (ex) => debugPrint('네이버맵 인증 오류: $ex'),
+  );
 
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   runApp(const ProviderScope(child: MainApp()));

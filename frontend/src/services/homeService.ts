@@ -2,64 +2,44 @@
 
 import apiClient from './api/client';
 
+export interface HomeRecommendation {
+  id: number;
+  name: string;
+  description: string;
+  distance: string;
+  images: string[];
+  isNeutered: boolean;
+  gender: 'MALE' | 'FEMALE';
+  nickname: string;
+  profileImageUrl?: string;
+}
+
+export interface HomeRecentWalk {
+  id: number;
+  petName: string;
+  placeName: string;
+  distanceKm: number;
+  durationSeconds: number;
+  endTime: string;
+}
+
 export interface HomeDataResponse {
-  user: {
-    id: number;
-    nickname: string;
-    profileImageUrl?: string;
-    point: number;
-  };
-  pet?: {
-    id: number;
-    name: string;
-    imageUrl?: string;
-    breed: string;
-    age: number;
-  };
+  recommendations: HomeRecommendation[];
+  recentWalk: HomeRecentWalk | null;
   notifications: {
     hasUnread: boolean;
     count: number;
   };
-  weather?: {
-    temp: number;
-    condition: string; // 'sunny' | 'cloudy' | 'rain' | 'snow'
-    text: string;
-  };
-  recommendations: {
-    id: number;
-    name: string;
-    description: string;
-    distance: string;
-    images: string[];
-    isNeutered: boolean;
-    gender: 'MALE' | 'FEMALE';
-  }[];
 }
 
-// Mock data
+// Format distance from meters to Korean string
+function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)}m 이내`;
+  return `${(meters / 1000).toFixed(1)}km 이내`;
+}
+
+// Mock data for fallback
 const mockHomeData: HomeDataResponse = {
-  user: {
-    id: 1,
-    nickname: '지오',
-    point: 1250,
-    profileImageUrl: '/assets/images/main/main_slide_butler01.png',
-  },
-  pet: {
-    id: 101,
-    name: 'Goldie',
-    breed: 'Golden Retriever',
-    age: 3,
-    imageUrl: '/assets/images/main/main_slide_img01.png',
-  },
-  notifications: {
-    hasUnread: true,
-    count: 3,
-  },
-  weather: {
-    temp: 24,
-    condition: 'sunny',
-    text: '산책하기 딱 좋은 날씨에요!',
-  },
   recommendations: [
     {
       id: 1,
@@ -69,6 +49,8 @@ const mockHomeData: HomeDataResponse = {
       images: ['/assets/images/main/main_slide_img01.png', '/assets/images/main/main_slide_img01.png'],
       isNeutered: true,
       gender: 'FEMALE',
+      nickname: '지오',
+      profileImageUrl: '/assets/images/main/main_slide_butler01.jpg',
     },
     {
       id: 2,
@@ -78,6 +60,8 @@ const mockHomeData: HomeDataResponse = {
       images: ['/assets/images/main/main_slide_img02.png', '/assets/images/main/main_slide_img02.png'],
       isNeutered: true,
       gender: 'FEMALE',
+      nickname: '냥집사',
+      profileImageUrl: '/assets/images/main/main_slide_butler02.jpg',
     },
     {
       id: 3,
@@ -87,64 +71,59 @@ const mockHomeData: HomeDataResponse = {
       images: ['/assets/images/main/main_slide_img03.png', '/assets/images/main/main_slide_img03.png'],
       isNeutered: true,
       gender: 'MALE',
+      nickname: '멍집사',
+      profileImageUrl: '/assets/images/main/main_slide_butler03.jpg',
     },
   ],
+  recentWalk: null,
+  notifications: {
+    hasUnread: false,
+    count: 0,
+  },
 };
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 export const homeService = {
   getHomeData: async (): Promise<HomeDataResponse> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 500));
-      return mockHomeData;
-    }
-
     try {
       const response = await apiClient.get('/home');
-      return response.data;
+      const data = response.data;
+
+      // Map backend FriendResponse to frontend HomeRecommendation
+      const recommendations: HomeRecommendation[] = (data.recommendations || []).map((r: any) => ({
+        id: r.id,
+        name: r.petName,
+        description: `${r.petAge}개월 ∙ ${r.petBreed}`,
+        distance: formatDistance(r.distance),
+        images: r.images.length > 0 ? r.images : ['/assets/images/common/pet_none_img02.svg'],
+        isNeutered: r.isNeutered,
+        gender: r.petGender,
+        nickname: r.nickname,
+        profileImageUrl: r.profileImageUrl,
+      }));
+
+      return {
+        recommendations,
+        recentWalk: data.recentWalk ? {
+          id: data.recentWalk.id,
+          petName: '', // Will need to be populated from context
+          placeName: '', // Will need geocoding
+          distanceKm: data.recentWalk.distanceKm,
+          durationSeconds: data.recentWalk.durationSeconds,
+          endTime: data.recentWalk.endTime,
+        } : null,
+        notifications: data.notifications || { hasUnread: false, count: 0 },
+      };
     } catch {
       return mockHomeData;
-    }
-  },
-
-  getRecommendations: async (page = 0, size = 10): Promise<HomeDataResponse['recommendations']> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 300));
-      return mockHomeData.recommendations;
-    }
-
-    try {
-      const response = await apiClient.get(`/friends/recommendations?page=${page}&size=${size}`);
-      return response.data.content || response.data;
-    } catch {
-      return mockHomeData.recommendations;
     }
   },
 
   getNotifications: async (): Promise<{ hasUnread: boolean; count: number }> => {
-    if (USE_MOCK) {
-      return { hasUnread: true, count: 3 };
-    }
-
     try {
       const response = await apiClient.get('/notifications/unread-count');
-      return response.data;
+      return { hasUnread: response.data.count > 0, count: response.data.count };
     } catch {
       return { hasUnread: false, count: 0 };
-    }
-  },
-
-  getWeather: async (lat: number, lng: number): Promise<HomeDataResponse['weather']> => {
-    if (USE_MOCK) {
-      return { temp: 24, condition: 'sunny', text: '산책하기 딱 좋은 날씨에요!' };
-    }
-
-    try {
-      const response = await apiClient.get(`/weather?lat=${lat}&lng=${lng}`);
-      return response.data;
-    } catch {
-      return undefined;
     }
   },
 };

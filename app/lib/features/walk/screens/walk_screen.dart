@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/api/api_client.dart';
 import '../data/walk_models.dart';
 import '../data/walk_repository.dart';
 
@@ -242,6 +246,11 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
   Future<void> _addSpot(String type) async {
     if (!_isWalking) return;
 
+    if (type == 'PHOTO') {
+      await _addPhotoSpot();
+      return;
+    }
+
     try {
       final position = await Geolocator.getCurrentPosition();
       final latLng = NLatLng(position.latitude, position.longitude);
@@ -255,25 +264,104 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
 
       _spots.add(spot);
 
-      // Add Marker
       final marker = NMarker(
         id: 'spot_${_spots.length}',
         position: latLng,
         caption: NOverlayCaption(text: _getSpotLabel(type)),
         iconTintColor: _getSpotColor(type),
       );
-      
+
       _markers.add(marker);
       _mapController?.addOverlay(marker);
 
-      if(mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('${_getSpotLabel(type)} 스팟이 기록되었습니다!')),
-         );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${_getSpotLabel(type)} 스팟이 기록되었습니다!')),
+        );
       }
-
     } catch (e) {
       debugPrint('Error adding spot: $e');
+    }
+  }
+
+  Future<void> _addPhotoSpot() async {
+    try {
+      // 1. Get GPS location first (before camera opens)
+      final position = await Geolocator.getCurrentPosition();
+
+      // 2. Open camera
+      final picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+      if (photo == null) return;
+
+      // Wait for widget to be ready after camera returns
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+
+      // 3. Show memo bottom sheet (community write style)
+      final note = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _PhotoMemoSheet(photoPath: photo.path),
+      );
+      if (!mounted) return;
+
+      // 4. Upload photo to server
+      String? imageUrl;
+      try {
+        final formData = FormData.fromMap({
+          'file': await MultipartFile.fromFile(photo.path, filename: photo.name),
+        });
+        final response = await ApiClient().dio.post('/api/v1/files/upload', data: formData);
+        imageUrl = response.data['url'] as String?;
+      } catch (e) {
+        debugPrint('Photo upload failed: $e');
+      }
+
+      if (!mounted) return;
+
+      // 5. Create spot with photo info
+      final latLng = NLatLng(position.latitude, position.longitude);
+      final spot = WalkSpotDto(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        type: 'PHOTO',
+        timestamp: DateTime.now(),
+        imageUrl: imageUrl,
+        note: (note != null && note.isNotEmpty) ? note : null,
+      );
+      _spots.add(spot);
+
+      // 6. Add marker on map
+      final marker = NMarker(
+        id: 'spot_${_spots.length}',
+        position: latLng,
+        caption: NOverlayCaption(
+          text: (note != null && note.isNotEmpty) ? note : '사진',
+        ),
+        iconTintColor: _getSpotColor('PHOTO'),
+      );
+      _markers.add(marker);
+      _mapController?.addOverlay(marker);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('사진이 저장되었습니다!')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error adding photo spot: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('사진 저장 실패: $e')),
+        );
+      }
     }
   }
 
@@ -306,7 +394,36 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
         _startTime ??
         endTime.subtract(Duration(seconds: _durationNotifier.value));
 
+    // Ensure path has at least 2 points (JTS LineString requirement)
+    if (_path.length < 2) {
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(timeLimit: Duration(seconds: 3)),
+        );
+        final currentLatLng = NLatLng(pos.latitude, pos.longitude);
+        if (_path.isEmpty) {
+          _path.add(currentLatLng);
+        }
+        // Add a second point (same location) to satisfy LineString minimum
+        if (_path.length < 2) {
+          _path.add(_path.first);
+        }
+      } catch (e) {
+        // If location fails, use default or existing point
+        if (_path.isEmpty) {
+          final fallback = _initialPosition ?? const NLatLng(37.5665, 126.9780);
+          _path.add(fallback);
+          _path.add(fallback);
+        } else {
+          _path.add(_path.first);
+        }
+      }
+    }
+
     final pathList = _path.map((e) => [e.latitude, e.longitude]).toList();
+
+    // Calculate calories: ~50 kcal per km
+    final caloriesBurned = _distanceNotifier.value * 50.0;
 
     final request = CreateWalkRequest(
       startTime: startTime,
@@ -314,7 +431,8 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
       distanceKm: _distanceNotifier.value,
       durationSeconds: _durationNotifier.value,
       path: pathList,
-      spots: _spots, // Include spots
+      spots: _spots,
+      caloriesBurned: caloriesBurned,
     );
 
     setState(() => _isWalking = false);
@@ -346,7 +464,26 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('산책')),
+      backgroundColor: AppColors.background, // #FFF7E6
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          color: AppColors.primary, // #614108
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          '산책',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -367,16 +504,15 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
                     ),
                     onMapReady: (controller) {
                       _mapController = controller;
-                      if (_initialPosition != null) {
-                        controller.setLocationTrackingMode(
-                          NLocationTrackingMode.follow,
-                        );
-                      }
+                      // Always enable location tracking to center on current position
+                      controller.setLocationTrackingMode(
+                        NLocationTrackingMode.follow,
+                      );
                     },
                   ),
           ),
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(context).padding.bottom),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -452,13 +588,17 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
                     backgroundColor: _isWalking
                         ? AppColors.error
                         : AppColors.primary,
+                    foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
                   ),
                   child: Text(
                     _isWalking ? '산책 종료' : '산책 시작',
                     style: const TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -530,6 +670,151 @@ class _SpotButton extends StatelessWidget {
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+}
+
+/// Community write page style bottom sheet for photo memo
+class _PhotoMemoSheet extends StatefulWidget {
+  final String photoPath;
+  const _PhotoMemoSheet({required this.photoPath});
+
+  @override
+  State<_PhotoMemoSheet> createState() => _PhotoMemoSheetState();
+}
+
+class _PhotoMemoSheetState extends State<_PhotoMemoSheet> {
+  final _textController = TextEditingController();
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFF7E6),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '사진 메모',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                      onPressed: () => Navigator.pop(context, ''),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Photo preview
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.file(
+                    File(widget.photoPath),
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Label
+                const Text(
+                  '메모',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Textarea
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: TextField(
+                    controller: _textController,
+                    maxLines: 5,
+                    decoration: const InputDecoration(
+                      hintText: '이 장소에 대한 메모를 남겨보세요.',
+                      hintStyle: TextStyle(
+                        color: AppColors.textHint,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.all(16),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Submit button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context, _textController.text),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      '저장하기',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

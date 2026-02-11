@@ -18,7 +18,13 @@ data class CreateWalkRequest(
 ) {
     fun toLineString(): LineString {
         val geometryFactory = GeometryFactory()
-        val coordinates = path.map { Coordinate(it[1], it[0]) }.toTypedArray() // JTS expects (longitude, latitude)
+        val coords = path.map { Coordinate(it[1], it[0]) } // JTS expects (longitude, latitude)
+        // LineString requires at least 2 points
+        val coordinates = when {
+            coords.size >= 2 -> coords.toTypedArray()
+            coords.size == 1 -> arrayOf(coords[0], Coordinate(coords[0]))
+            else -> arrayOf(Coordinate(0.0, 0.0), Coordinate(0.0, 0.0))
+        }
         return geometryFactory.createLineString(coordinates)
     }
 }
@@ -71,3 +77,11 @@ data class WalkResponse(
         }
     }
 }
+
+data class WalkStatsResponse(
+    val totalDistanceKm: Double,
+    val totalDurationMinutes: Long,
+    val totalCalories: Double,
+    val totalGoldEarned: Int,
+    val totalWalks: Long
+)

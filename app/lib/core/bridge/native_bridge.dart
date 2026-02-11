@@ -8,6 +8,7 @@ import '../services/camera_service.dart';
 import '../services/push_notification_service.dart';
 import '../../services/native_auth_service.dart';
 import '../constants/keys.dart';
+import '../api/api_client.dart';
 import '../../features/walk/screens/walk_screen.dart';
 
 /// JavaScript와 Flutter 간 통신을 담당하는 브릿지
@@ -70,6 +71,13 @@ class NativeBridge {
             // Frontend expects 'token' and 'type'
             newResult['token'] = newResult['accessToken'];
 
+            // Store tokens in Flutter secure storage for native API calls (e.g. walk save)
+            final accessToken = newResult['accessToken'] as String?;
+            final refreshToken = newResult['refreshToken'] as String?;
+            if (accessToken != null && refreshToken != null) {
+              await ApiClient().setToken(accessToken, refreshToken);
+            }
+
             // Determine type based on response content
             // If backend returns 'user', we need to check if it's a complete user or a new incomplete user
             // The user said: "2. If not in DB, save to DB -> 2-1. Move to Terms"
@@ -98,6 +106,16 @@ class NativeBridge {
           }
 
           return {'success': false, 'message': 'Login failed'};
+
+        // Auth 토큰 동기화 (React → Flutter secure storage)
+        case 'syncAuthToken':
+          final accessToken = params?['accessToken'] as String?;
+          final refreshToken = params?['refreshToken'] as String?;
+          if (accessToken != null) {
+            await ApiClient().setToken(accessToken, refreshToken ?? '');
+            debugPrint('[NativeBridge] Auth tokens synced to secure storage');
+          }
+          return {'success': true};
 
         // FCM 토큰 등록
         case 'registerFcmToken':
@@ -169,7 +187,8 @@ class NativeBridge {
 
         // 산책 (Walk Feature)
         case 'startWalk':
-          await rootNavigatorKey.currentState?.push(
+          // Don't await - return immediately so bridge doesn't timeout
+          rootNavigatorKey.currentState?.push(
             MaterialPageRoute(builder: (_) => const WalkScreen()),
           );
           return {'success': true};

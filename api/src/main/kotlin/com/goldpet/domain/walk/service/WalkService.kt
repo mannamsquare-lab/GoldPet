@@ -16,7 +16,8 @@ import org.springframework.transaction.annotation.Transactional
 class WalkService(
     private val walkRepository: WalkRepository,
     private val userRepository: UserRepository,
-    private val gamificationService: com.goldpet.domain.gamification.service.GamificationService
+    private val gamificationService: com.goldpet.domain.gamification.service.GamificationService,
+    private val goldTransactionRepository: com.goldpet.domain.gold.repository.GoldTransactionRepository
 ) {
 
     @Transactional
@@ -106,5 +107,25 @@ class WalkService(
                 walkCount = (row[4] as Number).toInt()
             )
         }
+    }
+
+    fun getMyStats(userId: Long): com.goldpet.domain.walk.dto.WalkStatsResponse {
+        val totalDistance = walkRepository.sumDistanceByUserId(userId)
+        val totalDuration = walkRepository.sumDurationByUserId(userId)
+        val totalCalories = walkRepository.sumCaloriesByUserId(userId)
+        val totalWalks = walkRepository.countByUserId(userId)
+        val totalGold = goldTransactionRepository.sumAmountByUserAndTypeSince(
+            userId,
+            com.goldpet.domain.gold.entity.TransactionType.REWARD,
+            java.time.LocalDateTime.of(2020, 1, 1, 0, 0)
+        ) ?: 0
+
+        return com.goldpet.domain.walk.dto.WalkStatsResponse(
+            totalDistanceKm = totalDistance,
+            totalDurationMinutes = totalDuration / 60,
+            totalCalories = totalCalories,
+            totalGoldEarned = totalGold,
+            totalWalks = totalWalks
+        )
     }
 }

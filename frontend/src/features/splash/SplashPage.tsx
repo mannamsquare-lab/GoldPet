@@ -10,21 +10,24 @@ export const SplashPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 2초 후 온보딩 또는 홈으로 이동
     const timer = setTimeout(() => {
       const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+      const hasSeenPermissions = localStorage.getItem('hasSeenPermissions');
+      const hasSeenBenefits = localStorage.getItem('hasSeenBenefits');
       const isAuthenticated = localStorage.getItem('accessToken');
 
       if (!hasSeenOnboarding) {
         navigate('/onboarding');
+      } else if (!hasSeenPermissions) {
+        navigate('/permissions');
+      } else if (!hasSeenBenefits) {
+        navigate('/benefits');
       } else if (isAuthenticated) {
         navigate('/home');
       } else {
         navigate('/login');
       }
     }, 2000);
-
-    return () => clearTimeout(timer);
 
     return () => clearTimeout(timer);
   }, [navigate]);

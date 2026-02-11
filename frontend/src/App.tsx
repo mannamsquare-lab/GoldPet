@@ -40,6 +40,7 @@ import ChallengesPage from './features/gamification/ChallengesPage';
 import NotificationPage from './features/notification/NotificationPage';
 import { ProfileTermsPage } from './features/profile/ProfileTermsPage';
 import ScrollToTop from './components/common/ScrollToTop';
+import { PullToRefresh } from './components/common/PullToRefresh';
 import AIProfilePage from './features/aiprofile/AIProfilePage';
 import AIProfileStyleSelectPage from './features/aiprofile/AIProfileStyleSelectPage';
 import AIProfileResultPage from './features/aiprofile/AIProfileResultPage';
@@ -85,6 +86,7 @@ function App() {
           <ToastProvider>
            <BrowserRouter>
             <ScrollToTop />
+            <PullToRefresh />
             <Routes>
               {/* ... routes ... */}
               <Route path="/splash" element={<SplashPage />} />

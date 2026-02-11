@@ -8,7 +8,7 @@ export const OnboardingPage = () => {
     const [activeIndex, setActiveIndex] = useState(0);
 
     const handleStart = () => {
-        console.log('Start button clicked');
+        localStorage.setItem('hasSeenOnboarding', 'true');
         navigate('/permissions');
     };
 

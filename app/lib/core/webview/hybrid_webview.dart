@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:image_picker/image_picker.dart';
 import '../bridge/bridge_message_handler.dart';
 import '../bridge/native_bridge.dart';
@@ -36,8 +37,8 @@ class _HybridWebViewState extends State<HybridWebView> {
     // Google Login 403 에러 방지를 위한 User Agent 설정
     // "wv" 또는 "Version/4.0" 등의 식별자를 제거하여 일반 브라우저처럼 보이게 함
     final String userAgent = Platform.isIOS
-        ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
-        : 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36';
+        ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+        : 'Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36';
 
     // WebView 컨트롤러 생성
     _controller = WebViewController()
@@ -131,6 +132,11 @@ class _HybridWebViewState extends State<HybridWebView> {
       ..setOnConsoleMessage((JavaScriptConsoleMessage message) {
         debugPrint('JS Console: ${message.message}');
       });
+
+    // Enable WebView debugging in debug mode
+    if (_controller.platform is AndroidWebViewController) {
+      AndroidWebViewController.enableDebugging(true);
+    }
 
     // Android file upload support via content:// URIs
     if (_controller.platform is AndroidWebViewController) {
@@ -265,7 +271,19 @@ class _HybridWebViewState extends State<HybridWebView> {
       backgroundColor: const Color(
         0xFFFFF7E6,
       ), // React App의 메인 배경색 (#FFF7E6)과 일치시킴
-      body: SafeArea(child: WebViewWidget(controller: _controller)),
+      body: SafeArea(
+        child: Platform.isAndroid
+            ? WebViewWidget.fromPlatformCreationParams(
+                params: AndroidWebViewWidgetCreationParams.fromPlatformWebViewWidgetCreationParams(
+                  PlatformWebViewWidgetCreationParams(
+                    controller: _controller.platform,
+                    layoutDirection: TextDirection.ltr,
+                  ),
+                  displayWithHybridComposition: true,
+                ),
+              )
+            : WebViewWidget(controller: _controller),
+      ),
     );
   }
 }

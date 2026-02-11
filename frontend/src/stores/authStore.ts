@@ -47,11 +47,11 @@ export const useAuthStore = create<AuthState>()(
       login: (token, refreshToken, user) => {
         set({ token, refreshToken, user, isAuthenticated: true });
         localStorage.setItem('accessToken', token);
-        // Register FCM token with backend (only in Flutter WebView)
         if (nativeBridge.isAvailable()) {
-          nativeBridge.callMethod('registerFcmToken', { accessToken: token }).catch(() => {
-            // FCM registration failure is non-critical
-          });
+          // Sync auth tokens to Flutter secure storage for native API calls
+          nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch(() => {});
+          // Register FCM token with backend
+          nativeBridge.callMethod('registerFcmToken', { accessToken: token }).catch(() => {});
         }
       },
       logout: () => {

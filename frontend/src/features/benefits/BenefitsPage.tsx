@@ -5,6 +5,7 @@ export const BenefitsPage = () => {
   const navigate = useNavigate();
 
   const handleStart = () => {
+    localStorage.setItem('hasSeenBenefits', 'true');
     navigate('/login');
   };
 

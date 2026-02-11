@@ -45,10 +45,12 @@ export const PermissionsPage = () => {
 
       // 권한 요청 완료 후 혜택 안내 화면으로 이동
       console.log('모든 권한 요청 완료:', results);
+      localStorage.setItem('hasSeenPermissions', 'true');
       navigate('/benefits');
     } catch (error) {
       console.error('권한 요청 중 오류 발생:', error);
       // 권한 거부 시에도 다음 화면으로 이동 (선택적)
+      localStorage.setItem('hasSeenPermissions', 'true');
       navigate('/benefits');
     } finally {
       setIsLoading(false);
@@ -56,6 +58,7 @@ export const PermissionsPage = () => {
   };
 
   const handleSkip = () => {
+    localStorage.setItem('hasSeenPermissions', 'true');
     navigate('/benefits');
   };
 

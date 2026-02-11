@@ -4,6 +4,7 @@ import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.walk.dto.WalkRankingResponse
+import com.goldpet.domain.walk.dto.WalkStatsResponse
 import com.goldpet.domain.walk.service.WalkService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -18,9 +19,10 @@ class WalkController(
 
     @PostMapping
     fun createWalk(
-        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
         @RequestBody request: CreateWalkRequest
     ): ResponseEntity<WalkResponse> {
+        if (userDetails == null) return ResponseEntity.status(401).build()
         val walkResponse = walkService.createWalk(userDetails.id, request)
         return ResponseEntity.created(URI.create("/api/v1/walks/${walkResponse.id}")).body(walkResponse)
     }
@@ -31,10 +33,20 @@ class WalkController(
         return ResponseEntity.ok(walkResponse)
     }
 
+    @GetMapping("/my/stats")
+    fun getMyStats(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?
+    ): ResponseEntity<WalkStatsResponse> {
+        if (userDetails == null) return ResponseEntity.status(401).build()
+        val stats = walkService.getMyStats(userDetails.id)
+        return ResponseEntity.ok(stats)
+    }
+
     @GetMapping("/my")
     fun getMyWalks(
-        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?
     ): ResponseEntity<List<WalkResponse>> {
+        if (userDetails == null) return ResponseEntity.status(401).build()
         val walkResponses = walkService.getWalksByUser(userDetails.id)
         return ResponseEntity.ok(walkResponses)
     }

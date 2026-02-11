@@ -69,4 +69,15 @@ interface WalkRepository : JpaRepository<Walk, Long> {
 
     @Query(value = "SELECT DATE(start_time) as date, COUNT(*) as cnt FROM walks WHERE start_time >= :since GROUP BY DATE(start_time) ORDER BY date", nativeQuery = true)
     fun countByDateGrouped(@Param("since") since: java.time.LocalDateTime): List<Array<Any>>
+
+    @Query("SELECT COALESCE(SUM(w.distanceKm), 0.0) FROM Walk w WHERE w.user.id = :userId")
+    fun sumDistanceByUserId(@Param("userId") userId: Long): Double
+
+    @Query("SELECT COALESCE(SUM(w.durationSeconds), 0) FROM Walk w WHERE w.user.id = :userId")
+    fun sumDurationByUserId(@Param("userId") userId: Long): Long
+
+    @Query("SELECT COALESCE(SUM(w.caloriesBurned), 0.0) FROM Walk w WHERE w.user.id = :userId")
+    fun sumCaloriesByUserId(@Param("userId") userId: Long): Double
+
+    fun countByUserId(userId: Long): Long
 }

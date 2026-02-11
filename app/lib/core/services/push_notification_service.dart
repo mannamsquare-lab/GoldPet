@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../bridge/native_bridge.dart';
@@ -40,7 +41,15 @@ class PushNotificationService {
 
     // flutter_local_notifications 초기화
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidSettings);
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
     await _localNotifications.initialize(settings: initSettings);
 
     // 알림 권한 요청
@@ -109,9 +118,27 @@ class PushNotificationService {
     return settings.authorizationStatus == AuthorizationStatus.authorized;
   }
 
-  /// FCM 토큰 가져오기
+  /// FCM 토큰 가져오기 (iOS에서는 APNs 토큰을 먼저 기다림)
   Future<String?> getToken() async {
     try {
+      // iOS에서는 APNs 토큰이 준비될 때까지 대기
+      if (Platform.isIOS) {
+        String? apnsToken;
+        for (int i = 0; i < 10; i++) {
+          apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+          if (apnsToken != null) {
+            debugPrint('[FCM] APNs token ready');
+            break;
+          }
+          debugPrint('[FCM] Waiting for APNs token... (${i + 1}/10)');
+          await Future.delayed(const Duration(seconds: 2));
+        }
+        if (apnsToken == null) {
+          debugPrint('[FCM] APNs token not available after retries');
+          return null;
+        }
+      }
+
       final token = await FirebaseMessaging.instance.getToken();
       debugPrint('[FCM] Token: $token');
       return token;
