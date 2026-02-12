@@ -125,23 +125,38 @@ class CustomOAuth2UserService(
         var user = userRepository.findByOauthProviderAndOauthId(registrationId, oauth2Id).orElse(null)
 
         if (user == null) {
-            user = User(
-                oauthProvider = registrationId,
-                oauthId = oauth2Id,
-                email = email,
-                nickname = nickname,
-                gender = null,
-                birthYear = null,
-                mainLocationText = null,
-                mainLocationGeom = null,
-                profileImageUrl = profileImage,
-                username = null,
-                password = null,
-                name = null,
-                birthDate = null,
-                phoneNumber = null
-            )
-            user = userRepository.save(user)
+            // Check if a user with this email already exists (from a different OAuth provider)
+            if (email != null) {
+                user = userRepository.findByEmail(email).orElse(null)
+            }
+
+            if (user != null) {
+                // User exists with same email but different OAuth provider - link the new provider
+                user.oauthProvider = registrationId
+                user.oauthId = oauth2Id
+                user.nickname = nickname ?: user.nickname
+                user.profileImageUrl = profileImage ?: user.profileImageUrl
+                user = userRepository.save(user)
+            } else {
+                // Create new user
+                user = User(
+                    oauthProvider = registrationId,
+                    oauthId = oauth2Id,
+                    email = email,
+                    nickname = nickname,
+                    gender = null,
+                    birthYear = null,
+                    mainLocationText = null,
+                    mainLocationGeom = null,
+                    profileImageUrl = profileImage,
+                    username = null,
+                    password = null,
+                    name = null,
+                    birthDate = null,
+                    phoneNumber = null
+                )
+                user = userRepository.save(user)
+            }
         } else {
             // Update user details if necessary
             user.email = email ?: user.email
