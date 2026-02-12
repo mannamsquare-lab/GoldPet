@@ -27,6 +27,9 @@ class NotificationServiceTest {
     @Mock
     private lateinit var userRepository: UserRepository
 
+    @Mock
+    private lateinit var fcmPushSender: com.goldpet.domain.notification.service.FcmPushSender
+
     private lateinit var notificationService: NotificationService
 
     private lateinit var testUser: User
@@ -35,7 +38,7 @@ class NotificationServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        notificationService = NotificationService(notificationRepository, userRepository)
+        notificationService = NotificationService(notificationRepository, userRepository, fcmPushSender)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
         testFromUser = createTestUser(2L, "fromuser", "보낸유저")

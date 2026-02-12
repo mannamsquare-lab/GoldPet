@@ -143,3 +143,4 @@ docs/기획문서/
 
 .playwright-mcp/
 .claude/settings.local.json
+*.log.*.gz

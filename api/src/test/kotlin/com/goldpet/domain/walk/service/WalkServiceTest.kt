@@ -34,6 +34,9 @@ class WalkServiceTest {
     @Mock
     private lateinit var gamificationService: GamificationService
 
+    @Mock
+    private lateinit var goldTransactionRepository: com.goldpet.domain.gold.repository.GoldTransactionRepository
+
     private lateinit var walkService: WalkService
 
     private lateinit var testUser: User
@@ -42,7 +45,7 @@ class WalkServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        walkService = WalkService(walkRepository, userRepository, gamificationService)
+        walkService = WalkService(walkRepository, userRepository, gamificationService, goldTransactionRepository)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
     }

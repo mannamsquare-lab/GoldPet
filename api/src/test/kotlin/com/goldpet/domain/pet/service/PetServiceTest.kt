@@ -320,7 +320,7 @@ class PetServiceTest {
         whenever(petRepository.save(any<Pet>())).thenReturn(pet)
 
         // When
-        val result = petService.updatePet(1L, request)
+        val result = petService.updatePet(1L, 1L, request)
 
         // Then
         assertEquals("뽀삐수정", pet.name)
@@ -331,11 +331,28 @@ class PetServiceTest {
     @Test
     fun `deletePet should delete pet`() {
         // Given
-        whenever(petRepository.existsById(1L)).thenReturn(true)
+        val pet = Pet(
+            id = 1L,
+            owner = testUser,
+            name = "뽀삐",
+            species = testSpecies,
+            breed = testBreed,
+            gender = "M",
+            birthDate = null,
+            weightKg = null,
+            isNeutered = null,
+            profileImageUrl = null,
+            temperamentTags = null
+        ).apply {
+            createdAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now()
+        }
+
+        whenever(petRepository.findById(1L)).thenReturn(Optional.of(pet))
 
         // When & Then (no exception should be thrown)
         assertDoesNotThrow {
-            petService.deletePet(1L)
+            petService.deletePet(1L, 1L)
         }
     }
 

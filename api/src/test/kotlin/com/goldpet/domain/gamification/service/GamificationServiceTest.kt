@@ -39,6 +39,9 @@ class GamificationServiceTest {
     @Mock
     private lateinit var userChallengeProgressRepository: UserChallengeProgressRepository
 
+    @Mock
+    private lateinit var goldTransactionRepository: com.goldpet.domain.gold.repository.GoldTransactionRepository
+
     private lateinit var gamificationService: GamificationService
 
     private lateinit var testUser: User
@@ -53,7 +56,8 @@ class GamificationServiceTest {
             badgeRepository,
             userBadgeRepository,
             challengeRepository,
-            userChallengeProgressRepository
+            userChallengeProgressRepository,
+            goldTransactionRepository
         )
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
