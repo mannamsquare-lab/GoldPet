@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:goldpet_app/core/config/environment.dart';
 
 class NativeAuthService {
   Future<String?> loginWithKakao() async {
@@ -97,8 +98,9 @@ class NativeAuthService {
     String provider,
     String accessToken,
   ) async {
+    final config = EnvironmentConfig.fromEnv();
     final url = Uri.parse(
-      'https://api.ciccosoft.com/api/v1/auth/login/$provider',
+      '${config.apiBaseUrl}/api/v1/auth/login/$provider',
     );
     try {
       final response = await http.post(

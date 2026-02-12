@@ -1,6 +1,7 @@
 // Auth Service - API integration for Authentication
 
 import apiClient from "./api/client";
+import { nativeBridge } from "../bridge/nativeBridge";
 
 export interface SignupRequest {
   username: string;
@@ -201,7 +202,28 @@ export const authService = {
         return;
       }
 
-      // Real SNS login popup
+      // Native app: use Flutter bridge for social login
+      if (nativeBridge.isAvailable()) {
+        nativeBridge
+          .callMethod("login", { provider })
+          .then((result: any) => {
+            if (result.accessToken) {
+              localStorage.setItem("accessToken", result.accessToken);
+              localStorage.setItem("refreshToken", result.refreshToken || "");
+              resolve(result);
+            } else if (result.success === false) {
+              reject(new Error(result.message || "로그인에 실패했습니다."));
+            } else {
+              resolve(result);
+            }
+          })
+          .catch((err: Error) => {
+            reject(new Error(err.message || "로그인에 실패했습니다."));
+          });
+        return;
+      }
+
+      // Web browser: OAuth2 popup flow
       const width = 500;
       const height = 600;
       const left = window.screenX + (window.outerWidth - width) / 2;
