@@ -30,7 +30,7 @@ class HomeService(
             myUserId = userId,
             myLat = lat,
             myLng = lng,
-            distanceKm = null, // default 5km
+            distanceKm = 10.0, // Home: 10km radius
             sortBy = "distance",
             petTypes = null,
             genders = null,

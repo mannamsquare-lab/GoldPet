@@ -10,10 +10,23 @@ export const PullToRefresh = () => {
     const [releasing, setReleasing] = useState(false);
 
     const onTouchStart = useCallback((e: TouchEvent) => {
-        if (window.scrollY <= 0 && !releasing) {
-            startY.current = e.touches[0].clientY;
-            activeRef.current = true;
+        if (window.scrollY > 0 || releasing) return;
+
+        // Check if touch started inside a scrollable container that isn't at top
+        let el = e.target as HTMLElement | null;
+        while (el && el !== document.body) {
+            if (el.scrollHeight > el.clientHeight && el.scrollTop > 0) {
+                const style = window.getComputedStyle(el);
+                const overflowY = style.overflowY;
+                if (overflowY === 'auto' || overflowY === 'scroll') {
+                    return; // scrollable parent not at top, skip pull-to-refresh
+                }
+            }
+            el = el.parentElement;
         }
+
+        startY.current = e.touches[0].clientY;
+        activeRef.current = true;
     }, [releasing]);
 
     const onTouchMove = useCallback((e: TouchEvent) => {

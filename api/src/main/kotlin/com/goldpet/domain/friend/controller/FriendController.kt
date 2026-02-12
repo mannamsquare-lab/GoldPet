@@ -49,9 +49,10 @@ class FriendController(
             }
         }
 
-        // If still no location, return empty page (serializable version)
+        // If still no location, default to Seoul center (same as HomeService)
         if (userLat == 0.0 && userLng == 0.0) {
-            return ResponseEntity.ok(PageImpl(emptyList(), pageable, 0))
+            userLat = 37.5665
+            userLng = 126.978
         }
 
         return ResponseEntity.ok(

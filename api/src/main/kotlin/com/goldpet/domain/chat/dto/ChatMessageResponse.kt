@@ -10,6 +10,7 @@ data class FileInfo(
     val url: String,
     val fileType: String,
     val mimeType: String,
+    val originalFileName: String?,
     val sizeBytes: Long?,
     val width: Int?,
     val height: Int?
@@ -45,6 +46,7 @@ data class ChatMessageResponse(
                         url = it.url,
                         fileType = it.fileType,
                         mimeType = it.mimeType,
+                        originalFileName = it.originalFileName,
                         sizeBytes = it.sizeBytes,
                         width = it.width,
                         height = it.height

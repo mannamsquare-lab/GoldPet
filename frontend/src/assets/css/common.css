@@ -507,6 +507,16 @@ strong, h1, h2, h3, h4, h5, h6 {
 #header .header_wrap .header_util button img {
 	width: 100%;
 }
+#header .header_util .notification_dot {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #FF3B30;
+	pointer-events: none;
+}
 
 #bottomNav {
 	width: 100%;

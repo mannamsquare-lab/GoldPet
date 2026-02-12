@@ -38,6 +38,14 @@ class NativeBridge {
       this.emitEvent(type, data);
     }) as EventListener);
 
+    // Flutter WebView의 window.postMessage() 수신
+    window.addEventListener('message', (e: MessageEvent) => {
+      // Flutter sendEventToReact 형식: { type: eventName, data: {...} }
+      if (e.data && typeof e.data === 'object' && e.data.type) {
+        this.emitEvent(e.data.type, e.data.data);
+      }
+    });
+
     this.isInitialized = true;
     console.log('NativeBridge initialized');
   }

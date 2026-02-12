@@ -25,9 +25,27 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 /// 푸시 알림 서비스
 class PushNotificationService {
-  NativeBridge? bridge;
+  NativeBridge? _bridge;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+  RemoteMessage? _pendingInitialMessage;
+
+  NativeBridge? get bridge => _bridge;
+  set bridge(NativeBridge? value) {
+    _bridge = value;
+    // Deliver pending initial message when bridge is connected
+    if (value != null && _pendingInitialMessage != null) {
+      Future.delayed(const Duration(seconds: 1), () {
+        value.sendEventToReact('pushNotificationClicked', {
+          'title': _pendingInitialMessage!.notification?.title,
+          'body': _pendingInitialMessage!.notification?.body,
+          'data': _pendingInitialMessage!.data,
+        });
+        _pendingInitialMessage = null;
+      });
+    }
+  }
 
   PushNotificationService();
 
@@ -50,13 +68,34 @@ class PushNotificationService {
       android: androidSettings,
       iOS: iosSettings,
     );
-    await _localNotifications.initialize(settings: initSettings);
+    await _localNotifications.initialize(
+      settings: initSettings,
+      onDidReceiveNotificationResponse: (details) {
+        // 로컬 알림 탭 시 React로 이벤트 전달
+        if (details.payload != null) {
+          try {
+            final data = jsonDecode(details.payload!);
+            _bridge?.sendEventToReact('pushNotificationClicked', {
+              'data': data,
+            });
+          } catch (e) {
+            debugPrint('[FCM] Failed to parse notification payload: $e');
+          }
+        }
+      },
+    );
 
     // 알림 권한 요청
     await requestPermission();
 
     // 리스너 설정
     _setupListeners();
+
+    // Cold start: 앱 종료 상태에서 알림 클릭으로 열린 경우
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      _pendingInitialMessage = initialMessage;
+    }
   }
 
   void _setupListeners() {
@@ -88,7 +127,7 @@ class PushNotificationService {
         );
 
         // React에도 이벤트 전달
-        bridge?.sendEventToReact('pushNotificationReceived', {
+        _bridge?.sendEventToReact('pushNotificationReceived', {
           'title': notification.title,
           'body': notification.body,
           'data': message.data,
@@ -99,7 +138,7 @@ class PushNotificationService {
     // 앱이 백그라운드에서 열릴 때 (알림 클릭 등)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('[FCM] Notification opened app: ${message.messageId}');
-      bridge?.sendEventToReact('pushNotificationClicked', {
+      _bridge?.sendEventToReact('pushNotificationClicked', {
         'title': message.notification?.title,
         'body': message.notification?.body,
         'data': message.data,

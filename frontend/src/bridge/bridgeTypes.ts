@@ -23,6 +23,7 @@ export interface BridgeResponse {
 
 export type NativeEventType =
   | 'pushNotificationReceived'
+  | 'pushNotificationClicked'
   | 'locationUpdated'
   | 'permissionStatusChanged'
   | 'appStateChanged';

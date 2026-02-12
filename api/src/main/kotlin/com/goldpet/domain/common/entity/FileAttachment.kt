@@ -22,6 +22,9 @@ class FileAttachment(
     @Column(nullable = false)
     val url: String,
 
+    @Column(name = "original_file_name")
+    val originalFileName: String? = null,
+
     @Column(name = "size_bytes")
     val sizeBytes: Long? = null,
 

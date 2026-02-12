@@ -21,6 +21,7 @@ export interface FileInfo {
   url: string;
   fileType: string;
   mimeType: string;
+  originalFileName?: string;
   sizeBytes?: number;
   width?: number;
   height?: number;

@@ -16,8 +16,8 @@ interface FriendRepository : JpaRepository<User, Long> {
         AND u.is_active = true
         AND EXISTS (SELECT 1 FROM pets p WHERE p.owner_user_id = u.id)
         AND ST_DWithin(
-            u.main_location_geom,
-            ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326),
+            CAST(u.main_location_geom AS geography),
+            CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
             :radiusMeters
         )
         AND NOT EXISTS (
@@ -28,14 +28,14 @@ interface FriendRepository : JpaRepository<User, Long> {
         )
         ORDER BY u.created_at DESC
     """, countQuery = """
-        SELECT count(DISTINCT u.id) 
+        SELECT count(DISTINCT u.id)
         FROM users u
         INNER JOIN pets p ON u.id = p.owner_user_id
         WHERE u.id != :myUserId
         AND u.is_active = true
         AND ST_DWithin(
-            u.main_location_geom, 
-            ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326), 
+            CAST(u.main_location_geom AS geography),
+            CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
             :radiusMeters
         )
         AND NOT EXISTS (
@@ -62,8 +62,8 @@ interface FriendRepository : JpaRepository<User, Long> {
         WHERE u.id != :myUserId
         AND u.is_active = true
         AND ST_DWithin(
-            u.main_location_geom,
-            ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326),
+            CAST(u.main_location_geom AS geography),
+            CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
             :radiusMeters
         )
         AND NOT EXISTS (
@@ -75,20 +75,20 @@ interface FriendRepository : JpaRepository<User, Long> {
         GROUP BY u.id
         ORDER BY like_count DESC, u.created_at DESC
     """, countQuery = """
-        SELECT count(DISTINCT u.id) 
+        SELECT count(DISTINCT u.id)
         FROM users u
         INNER JOIN pets p ON u.id = p.owner_user_id
         WHERE u.id != :myUserId
         AND u.is_active = true
         AND ST_DWithin(
-            u.main_location_geom, 
-            ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326), 
+            CAST(u.main_location_geom AS geography),
+            CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
             :radiusMeters
         )
         AND NOT EXISTS (
-            SELECT 1 FROM likes l 
-            WHERE l.from_user_id = :myUserId 
-            AND l.to_user_id = u.id 
+            SELECT 1 FROM likes l
+            WHERE l.from_user_id = :myUserId
+            AND l.to_user_id = u.id
             AND l.status = 'ACTIVE'
         )
     """, nativeQuery = true)
@@ -102,14 +102,14 @@ interface FriendRepository : JpaRepository<User, Long> {
 
     // Find users within distance, ordered by distance (closest first)
     @Query(value = """
-        SELECT u.*, ST_Distance(u.main_location_geom, ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326)) AS dist
+        SELECT u.*, ST_Distance(CAST(u.main_location_geom AS geography), CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography)) AS dist
         FROM users u
         INNER JOIN pets p ON u.id = p.owner_user_id
         WHERE u.id != :myUserId
         AND u.is_active = true
         AND ST_DWithin(
-            u.main_location_geom,
-            ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326),
+            CAST(u.main_location_geom AS geography),
+            CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
             :radiusMeters
         )
         AND NOT EXISTS (
@@ -121,20 +121,20 @@ interface FriendRepository : JpaRepository<User, Long> {
         GROUP BY u.id
         ORDER BY dist ASC
     """, countQuery = """
-        SELECT count(DISTINCT u.id) 
+        SELECT count(DISTINCT u.id)
         FROM users u
         INNER JOIN pets p ON u.id = p.owner_user_id
         WHERE u.id != :myUserId
         AND u.is_active = true
         AND ST_DWithin(
-            u.main_location_geom, 
-            ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326), 
+            CAST(u.main_location_geom AS geography),
+            CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
             :radiusMeters
         )
         AND NOT EXISTS (
-            SELECT 1 FROM likes l 
-            WHERE l.from_user_id = :myUserId 
-            AND l.to_user_id = u.id 
+            SELECT 1 FROM likes l
+            WHERE l.from_user_id = :myUserId
+            AND l.to_user_id = u.id
             AND l.status = 'ACTIVE'
         )
     """, nativeQuery = true)

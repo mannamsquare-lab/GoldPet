@@ -7,6 +7,7 @@ import type { FileInfo } from '../../services/chatService';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useAuthStore } from '../../stores/authStore';
 import { Loading } from '../../components/common/Loading';
+import { useToast } from '../../contexts/ToastContext';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -146,14 +147,28 @@ const ChatDetailPage = () => {
     const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const queryClient = useQueryClient();
 
+    const { showToast } = useToast();
+
     // Get current user ID from auth store (needed for WebSocket)
     const { user } = useAuthStore();
     const currentUserId = user?.id || 0;
+
+    // Listen for file download completion from native bridge
+    useEffect(() => {
+        const handler = (e: MessageEvent) => {
+            if (e.data?.type === 'fileDownloaded') {
+                showToast(`${e.data.data?.fileName || '파일'} 다운로드 완료`, 'success');
+            }
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
+    }, [showToast]);
 
     // WebSocket for real-time messaging (disabled in mock mode)
     const { sendTypingEvent, typingUsers } = useChatWebSocket({
@@ -249,9 +264,16 @@ const ChatDetailPage = () => {
 
     useEffect(() => {
         if (messages.length > 0) {
-            // Instant scroll on initial load, smooth scroll for new messages
-            scrollToBottom(isInitialLoadRef.current);
-            isInitialLoadRef.current = false;
+            if (isInitialLoadRef.current) {
+                // Initial load: scroll immediately, then again after images load
+                scrollToBottom(true);
+                const timer = setTimeout(() => scrollToBottom(true), 300);
+                isInitialLoadRef.current = false;
+                return () => clearTimeout(timer);
+            } else {
+                // New message: smooth scroll
+                scrollToBottom(false);
+            }
         }
     }, [messages]);
 
@@ -432,7 +454,7 @@ const ChatDetailPage = () => {
         if ((msgType === 'IMAGE' || msgType === 'image') && file) {
             return (
                 <div className="chat_detail_message_image">
-                    <img src={file.url} alt="첨부 이미지" onClick={() => window.open(file.url, '_blank')} />
+                    <img src={file.url} alt="첨부 이미지" onClick={() => setPreviewImageUrl(file.url)} style={{ cursor: 'pointer' }} />
                     {content && <div className="chat_detail_message_caption">{content}</div>}
                 </div>
             );
@@ -450,10 +472,24 @@ const ChatDetailPage = () => {
 
         // Handle file messages
         if ((msgType === 'FILE' || msgType === 'file') && file) {
-            const fileName = file.url.split('/').pop() || '파일';
+            const fileName = file.originalFileName || file.url.split('/').pop() || '파일';
             const fileSize = file.sizeBytes ? formatFileSize(file.sizeBytes) : '';
+            const handleDownload = async () => {
+                try {
+                    // Try native bridge (WebView) - download to device
+                    if ((window as any).NativeBridge) {
+                        const { nativeBridge } = await import('../../bridge/nativeBridge');
+                        await nativeBridge.callMethod('downloadFile', { url: file.url, fileName });
+                        return;
+                    }
+                } catch {
+                    // fallback below
+                }
+                // Browser fallback
+                window.open(file.url, '_blank');
+            };
             return (
-                <div className="chat_detail_message_file" onClick={() => window.open(file.url, '_blank')}>
+                <div className="chat_detail_message_file" onClick={handleDownload} style={{ cursor: 'pointer' }}>
                     <div className="chat_detail_file_icon">
                         {getFileIcon(file)}
                     </div>
@@ -718,6 +754,27 @@ const ChatDetailPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Image Preview Modal */}
+            {previewImageUrl && (
+                <div className="chat_detail_image_modal" onClick={() => setPreviewImageUrl(null)}>
+                    <button
+                        type="button"
+                        className="chat_detail_image_modal_close"
+                        onClick={(e) => { e.stopPropagation(); setPreviewImageUrl(null); }}
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 6L6 18M6 6L18 18" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                        </svg>
+                    </button>
+                    <img
+                        src={previewImageUrl}
+                        alt="이미지 미리보기"
+                        className="chat_detail_image_modal_img"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
         </div>
     );
 };

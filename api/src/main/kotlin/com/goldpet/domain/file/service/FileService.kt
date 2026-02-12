@@ -80,6 +80,7 @@ class FileService(
                 fileType = fileType,
                 mimeType = mimeType,
                 url = fileUrl,
+                originalFileName = originalFilename,
                 sizeBytes = file.size
             )
             return fileAttachmentRepository.save(fileAttachment)

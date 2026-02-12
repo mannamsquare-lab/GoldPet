@@ -15,7 +15,8 @@ data class FileUploadResponse(
     val id: Long,
     val url: String,
     val fileType: String,
-    val mimeType: String
+    val mimeType: String,
+    val originalFileName: String?
 )
 
 @RestController
@@ -34,7 +35,8 @@ class FileController(
             id = fileAttachment.id,
             url = fileAttachment.url,
             fileType = fileAttachment.fileType,
-            mimeType = fileAttachment.mimeType
+            mimeType = fileAttachment.mimeType,
+            originalFileName = fileAttachment.originalFileName
         )
         return ResponseEntity.created(URI.create(fileAttachment.url)).body(response)
     }

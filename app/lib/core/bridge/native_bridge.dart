@@ -1,6 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'bridge_protocol.dart';
 import '../services/location_service.dart';
@@ -184,6 +190,70 @@ class NativeBridge {
             'platform': 'mobile',
             'os': 'android/ios', // 실제로는 Platform.isAndroid 등으로 확인
           };
+
+        // 파일 다운로드
+        case 'downloadFile':
+          final url = params?['url'] as String?;
+          final fileName = params?['fileName'] as String? ?? url?.split('/').last ?? 'download';
+          if (url == null) throw Exception('URL parameter is required');
+
+          try {
+            final tempDir = await getTemporaryDirectory();
+            final tempPath = '${tempDir.path}/$fileName';
+            await Dio().download(url, tempPath);
+            debugPrint('[Bridge] File downloaded to: $tempPath');
+
+            if (Platform.isAndroid) {
+              // Android: Downloads 폴더에 복사
+              final downloadsDir = Directory('/storage/emulated/0/Download');
+              if (await downloadsDir.exists()) {
+                final destPath = '${downloadsDir.path}/$fileName';
+                await File(tempPath).copy(destPath);
+                debugPrint('[Bridge] File saved to Downloads: $destPath');
+
+                sendEventToReact('fileDownloaded', {
+                  'fileName': fileName,
+                  'path': destPath,
+                  'message': '다운로드 폴더에 저장되었습니다',
+                });
+                return {'success': true, 'path': destPath};
+              }
+            }
+
+            // iOS: 네이티브 저장 다이얼로그
+            if (Platform.isIOS) {
+              final savedPath = await FlutterFileDialog.saveFile(
+                params: SaveFileDialogParams(sourceFilePath: tempPath),
+              );
+              if (savedPath != null) {
+                sendEventToReact('fileDownloaded', {
+                  'fileName': fileName,
+                  'path': savedPath,
+                  'message': '파일이 저장되었습니다',
+                });
+              }
+              return {'success': true, 'path': savedPath ?? tempPath};
+            }
+
+            // Fallback: 공유 시트
+            await SharePlus.instance.share(
+              ShareParams(files: [XFile(tempPath)]),
+            );
+            return {'success': true, 'path': tempPath};
+          } catch (e) {
+            debugPrint('[Bridge] Download failed: $e');
+            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            return {'success': true, 'fallback': true};
+          }
+
+        // 외부 URL 열기
+        case 'openExternalUrl':
+          final url = params?['url'] as String?;
+          if (url != null) {
+            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            return {'success': true};
+          }
+          throw Exception('URL parameter is required');
 
         // 산책 (Walk Feature)
         case 'startWalk':

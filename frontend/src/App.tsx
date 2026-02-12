@@ -41,6 +41,7 @@ import NotificationPage from './features/notification/NotificationPage';
 import { ProfileTermsPage } from './features/profile/ProfileTermsPage';
 import ScrollToTop from './components/common/ScrollToTop';
 import { PullToRefresh } from './components/common/PullToRefresh';
+import { PushNotificationHandler } from './components/common/PushNotificationHandler';
 import AIProfilePage from './features/aiprofile/AIProfilePage';
 import AIProfileStyleSelectPage from './features/aiprofile/AIProfileStyleSelectPage';
 import AIProfileResultPage from './features/aiprofile/AIProfileResultPage';
@@ -86,6 +87,7 @@ function App() {
           <ToastProvider>
            <BrowserRouter>
             <ScrollToTop />
+            <PushNotificationHandler />
             <PullToRefresh />
             <Routes>
               {/* ... routes ... */}

@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { homeService } from '../../services/homeService';
 
 interface MainHeaderProps {
     variant: 'logo-only' | 'back-only' | 'logo-with-icons' | 'back-with-menu';
@@ -7,6 +9,13 @@ interface MainHeaderProps {
 
 export const MainHeader = ({ variant, className = '' }: MainHeaderProps) => {
     const navigate = useNavigate();
+
+    const { data: notificationStatus } = useQuery({
+        queryKey: ['notificationUnread'],
+        queryFn: homeService.getNotifications,
+        staleTime: 30_000,
+        enabled: variant === 'logo-with-icons',
+    });
 
     const handleBack = () => {
         navigate(-1);
@@ -34,7 +43,7 @@ export const MainHeader = ({ variant, className = '' }: MainHeaderProps) => {
                     {variant === 'logo-with-icons' && (
                         <>
                             <li><button type="button"><img src="/assets/images/layout/header_icon01.svg" alt="G아이콘" /></button></li>
-                            <li><button type="button" onClick={() => navigate('/notifications')}><img src="/assets/images/layout/header_icon02.svg" alt="알림" /></button></li>
+                            <li style={{ position: 'relative' }}><button type="button" onClick={() => navigate('/notifications')}><img src="/assets/images/layout/header_icon02.svg" alt="알림" /></button>{notificationStatus?.hasUnread && <span className="notification_dot" />}</li>
                             <li><button type="button" onClick={() => navigate('/profile')}><img src="/assets/images/layout/header_icon03.svg" alt="프로필" /></button></li>
                         </>
                     )}
