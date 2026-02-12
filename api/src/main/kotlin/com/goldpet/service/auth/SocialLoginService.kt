@@ -90,7 +90,7 @@ class SocialLoginService(
             if (email != null && user.email != email) { user.email = email; changed = true }
             if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
             if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
-            if (user.oauthProvider == null || user.oauthId == null) { user.oauthProvider = "kakao"; user.oauthId = kakaoId; changed = true }
+            if (user.oauthProvider.isBlank()) { user.oauthProvider = "kakao"; user.oauthId = kakaoId; changed = true }
             if (changed) userRepository.save(user)
         }
 
@@ -164,7 +164,7 @@ class SocialLoginService(
             if (email != null && user.email != email) { user.email = email; changed = true }
             if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
             if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
-            if (user.oauthProvider == null || user.oauthId == null) { user.oauthProvider = "naver"; user.oauthId = naverId; changed = true }
+            if (user.oauthProvider.isBlank()) { user.oauthProvider = "naver"; user.oauthId = naverId; changed = true }
             if (changed) userRepository.save(user)
         }
 
@@ -229,7 +229,7 @@ class SocialLoginService(
             if (email != null && user.email != email) { user.email = email; changed = true }
             if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
             if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
-            if (user.oauthProvider == null || user.oauthId == null) { user.oauthProvider = "google"; user.oauthId = googleId; changed = true }
+            if (user.oauthProvider.isBlank()) { user.oauthProvider = "google"; user.oauthId = googleId; changed = true }
             if (changed) userRepository.save(user)
         }
 
@@ -317,7 +317,7 @@ class SocialLoginService(
             // Update info if needed
             var changed = false
             if (email != null && user.email != email) { user.email = email; changed = true }
-            if (user.oauthProvider == null || user.oauthId == null) { user.oauthProvider = "apple"; user.oauthId = appleId; changed = true }
+            if (user.oauthProvider.isBlank()) { user.oauthProvider = "apple"; user.oauthId = appleId; changed = true }
             if (changed) userRepository.save(user)
         }
 
