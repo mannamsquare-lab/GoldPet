@@ -17,8 +17,6 @@ import com.goldpet.domain.user.entity.User
 class UserController(
     private val userService: UserService
 ) {
-    // TODO: 실제 인증 구현 시 @AuthenticationPrincipal 등을 사용하여 userId를 가져오도록 변경
-
     @GetMapping("/me")
     fun getMyProfile(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<UserResponse> {
         val userId = if (principal is com.goldpet.config.security.UserPrincipal) {
