@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "473812144206-6fjjua4qegkikrvv9grqh18q9r0qvjbg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mannam.goldpet",
+            "certificate_hash": "6b76d20531876a7e9ca9d6591946d034cacc261c"
+          }
+        },
+        {
           "client_id": "473812144206-v9ik4cnamb99d8flkh62ljo04n3de4pu.apps.googleusercontent.com",
           "client_type": 3
         }

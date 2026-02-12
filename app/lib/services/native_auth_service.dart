@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
@@ -14,24 +15,32 @@ import 'package:goldpet_app/core/config/environment.dart';
 class NativeAuthService {
   Future<String?> loginWithKakao() async {
     try {
-      bool isInstalled = await isKakaoTalkInstalled();
       OAuthToken token;
-      if (isInstalled) {
-        try {
-          token = await UserApi.instance.loginWithKakaoTalk();
-          debugPrint('Logged in with KakaoTalk');
-        } catch (e) {
-          debugPrint('KakaoTalk login failed: $e');
-          // 카카오톡에 연결된 계정이 없는 경우, 카카오계정으로 로그인
-          if (e is PlatformException && e.code == 'CANCELED') {
-            return null;
+      if (Platform.isIOS) {
+        // iOS: 카카오톡 설치 시 네이티브 로그인, 미설치 시 웹 로그인
+        bool isInstalled = await isKakaoTalkInstalled();
+        debugPrint('KakaoTalk installed check: $isInstalled');
+        if (isInstalled) {
+          try {
+            token = await UserApi.instance.loginWithKakaoTalk();
+            debugPrint('Logged in with KakaoTalk');
+          } catch (e) {
+            debugPrint('KakaoTalk login failed: $e');
+            if (e is PlatformException && e.code == 'CANCELED') {
+              return null;
+            }
+            token = await UserApi.instance.loginWithKakaoAccount();
+            debugPrint('Logged in with Kakao Account (Fallback)');
           }
+        } else {
           token = await UserApi.instance.loginWithKakaoAccount();
-          debugPrint('Logged in with Kakao Account (Fallback)');
+          debugPrint('Logged in with Kakao Account');
         }
       } else {
+        // Android: 카카오계정 웹 로그인 사용
+        // (Android 14+ TalkAuthCodeActivity 결과 미반환 이슈 우회)
         token = await UserApi.instance.loginWithKakaoAccount();
-        debugPrint('Logged in with Kakao Account');
+        debugPrint('Logged in with Kakao Account (Android)');
       }
       return token.accessToken;
     } catch (e) {
