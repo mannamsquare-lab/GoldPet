@@ -591,3 +591,16 @@
 #communityContainer .comment_submit textarea {
   overflow-y: hidden;
 }
+
+/* Preserve line breaks in comment content */
+.comment_txt {
+  white-space: pre-wrap;
+}
+
+/* Make comment_info flex column so reply input can expand upward */
+.comment_info {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1;
+}

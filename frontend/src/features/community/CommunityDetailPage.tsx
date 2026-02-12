@@ -297,7 +297,7 @@ export default function CommunityDetailPage() {
                       <strong>{comment.authorNickname}</strong>
                       <p>{formatDate(comment.createdAt)}</p>
                   </div>
-                  
+
                   {editingCommentId === comment.id ? (
                       <div className="comment_edit_wrap" style={{ marginTop: '8px' }}>
                           <textarea
@@ -320,7 +320,7 @@ export default function CommunityDetailPage() {
                           </div>
                       </div>
                   ) : (
-                      <p className="comment_txt">{comment.content}</p>
+                      <p className="comment_txt" style={{ whiteSpace: 'pre-wrap' }}>{comment.content}</p>
                   )}
                   
                   <div className="like_comment_count">
