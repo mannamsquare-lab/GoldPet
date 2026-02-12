@@ -366,11 +366,13 @@ const ChatDetailPage = () => {
         // 한글 IME 조합 중이면 무시 (마지막 글자 중복 방지)
         if (e.nativeEvent.isComposing) return;
 
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage();
-        }
-        // Shift+Enter allows newline (default textarea behavior)
+        // Mobile: Enter for newline, send button for sending
+        // Desktop: Shift+Enter for newline, Enter for sending (optional - currently disabled)
+        // Uncomment below to enable Enter-to-send on desktop only:
+        // if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+        //     e.preventDefault();
+        //     handleSendMessage();
+        // }
     };
 
     // Auto-resize textarea based on content
