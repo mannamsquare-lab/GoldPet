@@ -30,6 +30,7 @@ class PushNotificationService {
       FlutterLocalNotificationsPlugin();
 
   RemoteMessage? _pendingInitialMessage;
+  String? _currentChatRoomId; // 현재 보고 있는 채팅방 ID (알림 필터링용)
 
   NativeBridge? get bridge => _bridge;
   set bridge(NativeBridge? value) {
@@ -107,6 +108,20 @@ class PushNotificationService {
       final notification = message.notification;
       if (notification != null) {
         debugPrint('[FCM] Notification: ${notification.title} - ${notification.body}');
+
+        // 현재 보고 있는 채팅방의 메시지면 알림 스킵
+        final messageChatRoomId = message.data['chatRoomId']?.toString();
+        if (messageChatRoomId != null && messageChatRoomId == _currentChatRoomId) {
+          debugPrint('[FCM] Skipping notification - user is viewing chat room $messageChatRoomId');
+
+          // React에는 이벤트 전달 (UI 업데이트용)
+          _bridge?.sendEventToReact('pushNotificationReceived', {
+            'title': notification.title,
+            'body': notification.body,
+            'data': message.data,
+          });
+          return;
+        }
 
         // 포그라운드에서 로컬 알림으로 표시
         _localNotifications.show(
@@ -234,5 +249,11 @@ class PushNotificationService {
   /// 토픽 구독
   Future<void> subscribeToTopic(String topic) async {
     await FirebaseMessaging.instance.subscribeToTopic(topic);
+  }
+
+  /// 현재 채팅방 설정 (푸시 알림 필터링용)
+  void setCurrentChatRoom(String? chatRoomId) {
+    _currentChatRoomId = chatRoomId;
+    debugPrint('[FCM] Current chat room set to: $chatRoomId');
   }
 }

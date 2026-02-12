@@ -263,6 +263,12 @@ class NativeBridge {
           );
           return {'success': true};
 
+        // 현재 채팅방 설정 (푸시 알림 필터링용)
+        case 'setCurrentChatRoom':
+          final chatRoomId = params?['chatRoomId'] as String?;
+          pushNotificationService.setCurrentChatRoom(chatRoomId);
+          return {'success': true};
+
         default:
           throw PlatformException(
             code: 'METHOD_NOT_FOUND',

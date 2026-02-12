@@ -8,6 +8,7 @@ import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useAuthStore } from '../../stores/authStore';
 import { Loading } from '../../components/common/Loading';
 import { useToast } from '../../contexts/ToastContext';
+import { nativeBridge } from '../../bridge/nativeBridge';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -206,6 +207,16 @@ const ChatDetailPage = () => {
         queryFn: () => chatService.getMessages(chatId!),
         enabled: !!chatId,
     });
+
+    // Notify Flutter when entering/leaving chat room (to suppress push notifications)
+    useEffect(() => {
+        if (chatId) {
+            nativeBridge.callMethod('setCurrentChatRoom', { chatRoomId: chatId });
+        }
+        return () => {
+            nativeBridge.callMethod('setCurrentChatRoom', { chatRoomId: null });
+        };
+    }, [chatId]);
 
     // Send Message Mutation
     const sendMutation = useMutation({
