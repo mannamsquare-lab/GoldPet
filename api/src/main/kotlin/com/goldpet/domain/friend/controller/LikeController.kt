@@ -77,7 +77,8 @@ class LikeController(
                 // 위치 기반 거리 계산은 위치 공유 기능 구현 시 추가
                 distance = 0.0,
                 status = "offline",
-                location = null
+                location = null,
+                locationText = user.mainLocationText
             )
         }
         return ResponseEntity.ok(responses)
@@ -111,7 +112,8 @@ class LikeController(
                 // 위치 기반 거리 계산은 위치 공유 기능 구현 시 추가
                 distance = 0.0,
                 status = "offline",
-                location = null
+                location = null,
+                locationText = user.mainLocationText
             )
         }
         return ResponseEntity.ok(responses)
@@ -145,7 +147,8 @@ class LikeController(
                 // 위치 기반 거리 계산은 위치 공유 기능 구현 시 추가
                 distance = 0.0,
                 status = "offline",
-                location = null
+                location = null,
+                locationText = user.mainLocationText
             )
         }
         return ResponseEntity.ok(responses)
