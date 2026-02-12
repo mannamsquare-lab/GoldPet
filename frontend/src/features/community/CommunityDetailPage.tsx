@@ -305,8 +305,14 @@ export default function CommunityDetailPage() {
                              onFocus={handleInputFocus}
                              onBlur={handleInputBlur}
                              value={editCommentInput}
-                             onChange={(e) => setEditCommentInput(e.target.value)}
-                             style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', resize: 'none', minHeight: '60px', fontFamily: 'inherit' }}
+                             onChange={(e) => {
+                               setEditCommentInput(e.target.value);
+                               e.target.style.height = '60px';
+                               e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                               e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
+                               e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                             }}
+                             style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', resize: 'none', minHeight: '60px', maxHeight: '120px', overflowY: 'hidden', fontFamily: 'inherit' }}
                           />
                           <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
                               <button onClick={() => setEditingCommentId(null)} style={{ padding: '6px 12px', borderRadius: '14px', border: '1px solid #ddd', background: '#fff', fontSize: '13px' }}>취소</button>
@@ -362,7 +368,9 @@ export default function CommunityDetailPage() {
                         }}
                         onChange={(e) => {
                             e.target.style.height = '40px';
-                            e.target.style.height = `${e.target.scrollHeight}px`;
+                            e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                            e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
+                            e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         }}
                       />
                       <button type="button" onClick={(e) => {
@@ -417,7 +425,8 @@ export default function CommunityDetailPage() {
               onChange={(e) => {
                 setCommentInput(e.target.value);
                 e.target.style.height = '40px';
-                e.target.style.height = `${e.target.scrollHeight}px`;
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
               }}
             />
             <button type="button" onClick={handleSubmitComment} style={{ height: '40px', padding: '0 16px', marginBottom: '1px', flexShrink: 0 }}>전송</button>

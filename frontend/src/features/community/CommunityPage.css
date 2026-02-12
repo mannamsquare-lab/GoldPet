@@ -575,3 +575,23 @@
     transform: translateY(0);
   }
 }
+
+/* Sticky main comment input bar - expands upward */
+#communityContainer .detail_wrap .comment_wrap > .comment_submit {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  z-index: 10;
+  padding: 3.33vw 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* Prevent last comment from being hidden behind sticky input bar */
+#communityContainer .detail_wrap .comment_list {
+  padding-bottom: 17vw;
+}
+
+/* Base textarea overflow - controlled by JS for scroll behavior */
+#communityContainer .comment_submit textarea {
+  overflow-y: hidden;
+}
