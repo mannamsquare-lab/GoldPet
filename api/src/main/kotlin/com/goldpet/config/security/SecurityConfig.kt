@@ -3,6 +3,7 @@ package com.goldpet.config.security
 import com.goldpet.config.jwt.JwtAuthenticationFilter
 import com.goldpet.service.oauth2.CustomOAuth2UserService
 import com.goldpet.service.oauth2.OAuth2AuthenticationSuccessHandler
+import com.goldpet.service.oauth2.OAuth2AuthenticationFailureHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -18,6 +19,7 @@ import org.springframework.http.HttpMethod
 class SecurityConfig(
     private val customOAuth2UserService: CustomOAuth2UserService,
     private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
+    private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter
 ) {
 
@@ -56,6 +58,7 @@ class SecurityConfig(
                 oauth2Login
                     .userInfoEndpoint { userInfo -> userInfo.userService(customOAuth2UserService) } // Use custom OAuth2 user service
                     .successHandler(oAuth2AuthenticationSuccessHandler) // Use custom success handler
+                    .failureHandler(oAuth2AuthenticationFailureHandler) // Use custom failure handler
             }
             .exceptionHandling {
                 it.authenticationEntryPoint(org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED))

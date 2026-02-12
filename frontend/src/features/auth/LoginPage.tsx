@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import apiClient from '../../services/api/client';
 import { authService } from '../../services/authService';
@@ -8,6 +8,7 @@ import './LoginPage.css';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const login = useAuthStore((state) => state.login);
   const { showAlert } = useAlert();
 
@@ -16,6 +17,17 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [autoLogin, setAutoLogin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for OAuth error in URL query parameters
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      showAlert(decodeURIComponent(error));
+      // Remove error from URL
+      searchParams.delete('error');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, showAlert]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

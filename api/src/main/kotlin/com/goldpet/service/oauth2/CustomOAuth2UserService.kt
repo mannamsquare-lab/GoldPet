@@ -127,36 +127,40 @@ class CustomOAuth2UserService(
         if (user == null) {
             // Check if a user with this email already exists (from a different OAuth provider)
             if (email != null) {
-                user = userRepository.findByEmail(email).orElse(null)
+                val existingUser = userRepository.findByEmail(email).orElse(null)
+                if (existingUser != null) {
+                    // Email already registered with a different OAuth provider
+                    val providerName = when (existingUser.oauthProvider) {
+                        "naver" -> "네이버"
+                        "kakao" -> "카카오"
+                        "google" -> "구글"
+                        "apple" -> "애플"
+                        else -> existingUser.oauthProvider
+                    }
+                    throw OAuth2EmailAlreadyExistsException(
+                        "이미 ${providerName}로 가입된 이메일입니다. ${providerName}로 로그인해주세요."
+                    )
+                }
             }
 
-            if (user != null) {
-                // User exists with same email but different OAuth provider - link the new provider
-                user.oauthProvider = registrationId
-                user.oauthId = oauth2Id
-                user.nickname = nickname ?: user.nickname
-                user.profileImageUrl = profileImage ?: user.profileImageUrl
-                user = userRepository.save(user)
-            } else {
-                // Create new user
-                user = User(
-                    oauthProvider = registrationId,
-                    oauthId = oauth2Id,
-                    email = email,
-                    nickname = nickname,
-                    gender = null,
-                    birthYear = null,
-                    mainLocationText = null,
-                    mainLocationGeom = null,
-                    profileImageUrl = profileImage,
-                    username = null,
-                    password = null,
-                    name = null,
-                    birthDate = null,
-                    phoneNumber = null
-                )
-                user = userRepository.save(user)
-            }
+            // Create new user
+            user = User(
+                oauthProvider = registrationId,
+                oauthId = oauth2Id,
+                email = email,
+                nickname = nickname,
+                gender = null,
+                birthYear = null,
+                mainLocationText = null,
+                mainLocationGeom = null,
+                profileImageUrl = profileImage,
+                username = null,
+                password = null,
+                name = null,
+                birthDate = null,
+                phoneNumber = null
+            )
+            user = userRepository.save(user)
         } else {
             // Update user details if necessary
             user.email = email ?: user.email
