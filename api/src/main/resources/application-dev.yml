@@ -31,3 +31,10 @@ S3_ENDPOINT: ${MINIO_ENDPOINT:http://minio:9000}
 S3_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT}
 S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
 S3_SECRET_KEY: ${MINIO_SECRET_KEY}
+
+# Naver Maps API (for geocoding location addresses)
+# TODO: Add actual NCP credentials to environment variables
+ncp:
+  maps:
+    client-id: ${NCP_MAPS_CLIENT_ID:}
+    client-secret: ${NCP_MAPS_CLIENT_SECRET:}

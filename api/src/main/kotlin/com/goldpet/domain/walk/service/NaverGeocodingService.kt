@@ -9,8 +9,8 @@ import org.springframework.http.HttpMethod
 
 @Service
 class NaverGeocodingService(
-    @Value("\${ncp.maps.client-id}") private val clientId: String,
-    @Value("\${ncp.maps.client-secret}") private val clientSecret: String
+    @Value("\${ncp.maps.client-id:}") private val clientId: String,
+    @Value("\${ncp.maps.client-secret:}") private val clientSecret: String
 ) {
     private val restTemplate = RestTemplate()
 
