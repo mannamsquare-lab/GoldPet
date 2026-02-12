@@ -88,7 +88,7 @@ export const LoginPage = () => {
     }
 
     if (import.meta.env.VITE_USE_MOCK === 'true') {
-        const testEmail = prompt('테스트 로그인할 이메일을 입력하세요', 'sungchuli@naver.com');
+        const testEmail = prompt('테스트 로그인할 이메일을 입력하세요', 'sungchuli@test.com');
         if (testEmail !== null) { // Cancel returns null
              executeLogin(testEmail);
         }
@@ -316,7 +316,7 @@ export const LoginPage = () => {
                 <input 
                     name="testEmail"
                     type="email" 
-                    defaultValue="sungchuli@naver.com"
+                    defaultValue="sungchuli@test.com"
                     className="flex-1 max-w-[200px] h-8 text-sm px-2 border border-gray-300 rounded focus:border-amber-500 outline-none"
                     placeholder="테스트 계정 이메일"
                 />
