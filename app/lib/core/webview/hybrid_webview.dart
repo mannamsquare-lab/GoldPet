@@ -269,8 +269,8 @@ class _HybridWebViewState extends State<HybridWebView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(
-        0xFFFFF7E6,
-      ), // React App의 메인 배경색 (#FFF7E6)과 일치시킴
+        0xFFEFE1C4,
+      ), // Header and bottom nav color (#EFE1C4) for seamless blend
       body: SafeArea(
         child: Platform.isAndroid
             ? WebViewWidget.fromPlatformCreationParams(

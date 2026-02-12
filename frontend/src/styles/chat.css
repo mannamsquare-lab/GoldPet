@@ -355,7 +355,7 @@
 /* Create Group Chat Button */
 .create_group_btn {
   position: fixed;
-  bottom: 26vw; /* bottomNav(22.22vw) + 여유 공간 */
+  bottom: 19.33vw; /* bottomNav(15.55vw) + 여유 공간 */
   right: 4.44vw;
   width: 15vw;
   height: 15vw;

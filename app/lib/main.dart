@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:goldpet_app/hybrid_app.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -12,6 +13,14 @@ import 'package:goldpet_app/core/services/push_notification_service.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
+  // Set system UI overlay style (status bar and navigation bar)
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Color(0xFFEFE1C4),
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarColor: Color(0xFFEFE1C4),
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
 
   // Firebase 초기화
   await Firebase.initializeApp();

@@ -10,8 +10,8 @@ export const BenefitsPage = () => {
   };
 
   return (
-    <div className="benefits-page" data-name="Benefit" data-node-id="4017:20935" style={{ padding: '22.22vw 4.44vw 0' }}>
-      
+    <div className="benefits-page" data-name="Benefit" data-node-id="4017:20935" style={{ padding: '15.28vw 4.44vw 0' }}>
+
       {/* Title Section */}
       <div className="benefits-title-section" data-name="Title" data-node-id="4017:21050">
         <h2 className="benefits-title">골드펫 혜택</h2>

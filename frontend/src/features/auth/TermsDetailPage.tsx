@@ -175,8 +175,8 @@ export const TermsDetailPage = () => {
   }
 
   return (
-    <div style={{ padding: '22.22vw 4.44vw 0' }}>
-      
+    <div style={{ padding: '15.28vw 4.44vw 0' }}>
+
       {/* Title Section */}
       <div className="page-title-section">
         <h2 className="page-title">{termsData.title}</h2>

@@ -98,7 +98,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className='login-page-container' style={{ padding: '22.22vw 4.44vw 0' }} data-name="로그인_텍스트홀더" data-node-id="4017:22523">
+    <div className='login-page-container' style={{ padding: '15.28vw 4.44vw 0' }} data-name="로그인_텍스트홀더" data-node-id="4017:22523">
       {/* Title Section */}
       <div className="login-title-section" data-name="Title" data-node-id="4017:22554">
         <div className="login-logo-container">

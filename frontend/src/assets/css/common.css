@@ -148,7 +148,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 }
 
 #wrap {
-	padding: 25.56vw 0 30.56vw;
+	padding: 18.62vw 0 23.89vw;
 	background-color: #FFF7E6;
 	min-height: 100vh;
 	overflow: hidden;
@@ -457,8 +457,8 @@ strong, h1, h2, h3, h4, h5, h6 {
 
 #header {
 	width: 100%;
-	height: 22.22vw;
-	padding: 11.67vw 0 0;
+	height: 15.28vw;
+	padding: 4.73vw 0 0;
 	position: fixed;
 	top: 0;
 	background-image: url(/assets/images/layout/header_bg_brown.svg);
@@ -471,9 +471,9 @@ strong, h1, h2, h3, h4, h5, h6 {
 	background-repeat: no-repeat;
 }
 #header:after {
+	display: none;
 	width: 100%;
 	height: 6.94vw;
-	display: block;
 	content: "";
 	position: fixed;
 	top: 0;
@@ -520,8 +520,8 @@ strong, h1, h2, h3, h4, h5, h6 {
 
 #bottomNav {
 	width: 100%;
-	height: 22.22vw;
-	padding: 0 0 6.67vw;
+	height: 15.55vw;
+	padding: 0;
 	position: fixed;
 	bottom: 0;
 	background-image: url(/assets/images/layout/b_bg_brown.svg);
@@ -534,9 +534,9 @@ strong, h1, h2, h3, h4, h5, h6 {
 	background-repeat: no-repeat;
 }
 #bottomNav:after {
+	display: none;
 	width: 100%;
 	height: 6.94vw;
-	display: block;
 	content: "";
 	position: fixed;
 	bottom: 0;
@@ -677,7 +677,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 #intro {
 	width: 100%;
 	overflow: hidden;
-	padding: 22.22vw 0 0;
+	padding: 15.28vw 0 0;
 	-webkit-box-sizing: border-box;
 	        box-sizing: border-box;
 }
@@ -2225,7 +2225,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	background-color: #26282B;
 	background-image: url(/assets/images/common/write_icon.svg);
 	position: fixed;
-	bottom: 27.78vw;
+	bottom: 21.11vw;
 	right: 5.56vw;
 	text-indent: -9999px;
 	-ms-background-position-x: 50%;
@@ -3161,7 +3161,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 #profileContainer .profile_info_wrap .submit_btn {
 	width: 91.11vw;
 	position: fixed;
-	bottom: 27.78vw;
+	bottom: 21.11vw;
 }
 #profileContainer .profile_write {
 	padding: 0 4.44vw 15.28vw;

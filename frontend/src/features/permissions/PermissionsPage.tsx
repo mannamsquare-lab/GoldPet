@@ -63,7 +63,7 @@ export const PermissionsPage = () => {
   };
 
   return (
-    <div className="permissions-page" style={{ padding: '22.22vw 4.44vw 0' }}>
+    <div className="permissions-page" style={{ padding: '15.28vw 4.44vw 0' }}>
       {/* Title Section */}
       <div className="permissions-title-section">
         <h2 className="permissions-title">앱 접근 권한 안내</h2>
