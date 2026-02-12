@@ -576,14 +576,10 @@
   }
 }
 
-/* Sticky main comment input bar - expands upward */
+/* Main comment input bar - expands upward using flex */
 #communityContainer .detail_wrap .comment_wrap > .comment_submit {
-  position: sticky;
-  bottom: 0;
-  background: #fff;
-  z-index: 10;
+  margin-top: auto;
   padding: 3.33vw 0;
-  border-top: 1px solid #f0f0f0;
 }
 
 /* Prevent last comment from being hidden behind sticky input bar */

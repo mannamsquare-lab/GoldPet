@@ -270,7 +270,7 @@ export default function CommunityDetailPage() {
         </div>
 
         {/* Comments */}
-        <div className="comment_wrap">
+        <div className="comment_wrap" style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
           <strong className="comment_count">댓글 {post.comments?.length || 0}</strong>
 
           {(!post.comments || post.comments.length === 0) && (
