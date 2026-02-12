@@ -15,7 +15,7 @@ export const LocationStatus: React.FC<LocationStatusProps> = ({
 }) => {
     const navigate = useNavigate();
     const user = useAuthStore(state => state.user);
-    const displayLocation = location || user?.mainLocationText || '위치를 설정해주세요';
+    const displayLocation = location || user?.mainLocationText || '위치 미설정';
 
     return (
         <div className={`talk_wrap ${className}`}>

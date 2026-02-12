@@ -63,6 +63,9 @@ class SocialLoginService(
 
         // 2. Find or Create User
         var user = userRepository.findByOauthProviderAndOauthId("kakao", kakaoId).orElse(null)
+        if (user == null && email != null) {
+            user = userRepository.findByEmail(email).orElse(null)
+        }
         if (user == null) {
             user = User(
                 oauthProvider = "kakao",
@@ -87,6 +90,7 @@ class SocialLoginService(
             if (email != null && user.email != email) { user.email = email; changed = true }
             if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
             if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
+            if (user.oauthProvider == null || user.oauthId == null) { user.oauthProvider = "kakao"; user.oauthId = kakaoId; changed = true }
             if (changed) userRepository.save(user)
         }
 
@@ -133,6 +137,9 @@ class SocialLoginService(
 
         // 2. Find or Create User
         var user = userRepository.findByOauthProviderAndOauthId("naver", naverId).orElse(null)
+        if (user == null && email != null) {
+            user = userRepository.findByEmail(email).orElse(null)
+        }
         if (user == null) {
             user = User(
                 oauthProvider = "naver",
@@ -157,6 +164,7 @@ class SocialLoginService(
             if (email != null && user.email != email) { user.email = email; changed = true }
             if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
             if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
+            if (user.oauthProvider == null || user.oauthId == null) { user.oauthProvider = "naver"; user.oauthId = naverId; changed = true }
             if (changed) userRepository.save(user)
         }
 
@@ -194,6 +202,9 @@ class SocialLoginService(
 
         // 2. Find or Create User
         var user = userRepository.findByOauthProviderAndOauthId("google", googleId).orElse(null)
+        if (user == null && email != null) {
+            user = userRepository.findByEmail(email).orElse(null)
+        }
         if (user == null) {
             user = User(
                 oauthProvider = "google",
@@ -218,6 +229,7 @@ class SocialLoginService(
             if (email != null && user.email != email) { user.email = email; changed = true }
             if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
             if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
+            if (user.oauthProvider == null || user.oauthId == null) { user.oauthProvider = "google"; user.oauthId = googleId; changed = true }
             if (changed) userRepository.save(user)
         }
 
@@ -280,6 +292,9 @@ class SocialLoginService(
         
         // 5. Find or Create User
         var user = userRepository.findByOauthProviderAndOauthId("apple", appleId).orElse(null)
+        if (user == null && email != null) {
+            user = userRepository.findByEmail(email).orElse(null)
+        }
         if (user == null) {
             user = User(
                 oauthProvider = "apple",
@@ -300,10 +315,10 @@ class SocialLoginService(
             user = userRepository.save(user)
         } else {
             // Update info if needed
-            if (email != null && user.email != email) {
-                user.email = email
-                userRepository.save(user)
-            }
+            var changed = false
+            if (email != null && user.email != email) { user.email = email; changed = true }
+            if (user.oauthProvider == null || user.oauthId == null) { user.oauthProvider = "apple"; user.oauthId = appleId; changed = true }
+            if (changed) userRepository.save(user)
         }
 
         // 6. Generate JWT
