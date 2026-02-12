@@ -16,9 +16,11 @@ import com.goldpet.domain.community.repository.CommunityPostLikeRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -383,7 +385,7 @@ class CommunityService(
     fun searchPosts(keyword: String, pageable: Pageable, currentUserId: Long?): Page<CommunityPostResponse> {
         val posts = postRepository.searchByKeyword(keyword, pageable)
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
-        
+
         return posts.map { post ->
             val isLiked = currentUser?.let { likeRepository.existsByPostAndUser(post, it) } ?: false
             CommunityPostResponse(
@@ -405,5 +407,81 @@ class CommunityService(
                 isMine = currentUser?.id == post.user.id
             )
         }
+    }
+
+    @Transactional
+    fun updateComment(commentId: Long, userId: Long, content: String): CommunityCommentResponse {
+        val comment = commentRepository.findById(commentId)
+            .orElseThrow { EntityNotFoundException("Comment not found") }
+
+        if (comment.user.id != userId) {
+            throw AccessDeniedException("Not authorized to update this comment")
+        }
+
+        comment.content = content
+        val saved = commentRepository.save(comment)
+
+        return CommunityCommentResponse(
+            id = saved.id,
+            postId = saved.post.id,
+            userId = saved.user.id,
+            userNickname = saved.user.nickname,
+            userProfileImage = saved.user.profileImageUrl,
+            content = saved.content,
+            createdAt = saved.createdAt,
+            parentCommentId = saved.parentComment?.id,
+            likeCount = saved.likeCount,
+            isMine = true
+        )
+    }
+
+    @Transactional
+    fun deleteComment(commentId: Long, userId: Long) {
+        val comment = commentRepository.findById(commentId)
+            .orElseThrow { EntityNotFoundException("Comment not found") }
+
+        if (comment.user.id != userId) {
+            throw AccessDeniedException("Not authorized to delete this comment")
+        }
+
+        // Step 1: Nullify adopted_comment_id FK if this comment is adopted on any post
+        val adoptingPost = postRepository.findByAdoptedComment(comment)
+        if (adoptingPost != null) {
+            adoptingPost.adoptedComment = null
+            postRepository.save(adoptingPost)
+        }
+
+        // Step 2: Recursively collect all descendant comments (depth-first)
+        val allDescendants = mutableListOf<CommunityComment>()
+        fun collectDescendants(parent: CommunityComment) {
+            val children = commentRepository.findAllByParentComment(parent)
+            for (child in children) {
+                collectDescendants(child) // recurse first (depth-first)
+                allDescendants.add(child)
+            }
+        }
+        collectDescendants(comment)
+
+        // Step 3: Delete likes on all descendant comments (batch)
+        if (allDescendants.isNotEmpty()) {
+            commentLikeRepository.deleteAllByCommentIn(allDescendants)
+        }
+
+        // Step 4: Delete likes on the target comment itself
+        commentLikeRepository.deleteAllByComment(comment)
+
+        // Step 5: Delete descendant comments (they are in leaf-first order from depth-first traversal)
+        for (descendant in allDescendants) {
+            // Also nullify adopted_comment_id for descendants if any
+            val descendantAdoptingPost = postRepository.findByAdoptedComment(descendant)
+            if (descendantAdoptingPost != null) {
+                descendantAdoptingPost.adoptedComment = null
+                postRepository.save(descendantAdoptingPost)
+            }
+            commentRepository.delete(descendant)
+        }
+
+        // Step 6: Delete the target comment
+        commentRepository.delete(comment)
     }
 }

@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface CommunityCommentRepository : JpaRepository<CommunityComment, Long> {
     fun findAllByPost(post: CommunityPost, pageable: Pageable): Page<CommunityComment>
-    
+
     // Admin methods
     fun findByPostIdOrderByCreatedAtAsc(postId: Long): List<CommunityComment>
     fun existsByPostAndUser(post: CommunityPost, user: com.goldpet.domain.user.entity.User): Boolean
@@ -16,5 +16,6 @@ interface CommunityCommentRepository : JpaRepository<CommunityComment, Long> {
     fun existsByParentCommentIdAndUserId(parentCommentId: Long, userId: Long): Boolean
     fun countByPostId(postId: Long): Long
     fun countByUserId(userId: Long): Long
+    fun findAllByParentComment(parentComment: CommunityComment): List<CommunityComment>
 }
 

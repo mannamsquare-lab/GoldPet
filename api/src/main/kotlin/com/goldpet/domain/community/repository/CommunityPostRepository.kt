@@ -1,6 +1,7 @@
 package com.goldpet.domain.community.repository
 
 import com.goldpet.domain.community.entity.CommunityCategory
+import com.goldpet.domain.community.entity.CommunityComment
 import com.goldpet.domain.community.entity.CommunityPost
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -20,7 +21,10 @@ interface CommunityPostRepository : JpaRepository<CommunityPost, Long> {
     
     // User post count
     fun countByUserId(userId: Long): Long
-    
+
+    // Adopted comment lookup
+    fun findByAdoptedComment(adoptedComment: CommunityComment): CommunityPost?
+
     // Visible posts
     override fun findAll(pageable: Pageable): Page<CommunityPost>
 }

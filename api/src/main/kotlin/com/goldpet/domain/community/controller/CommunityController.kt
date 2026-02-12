@@ -4,6 +4,7 @@ import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.community.dto.CommunityCategoryResponse
 import com.goldpet.domain.community.dto.CommunityCommentCreateRequest
 import com.goldpet.domain.community.dto.CommunityCommentResponse
+import com.goldpet.domain.community.dto.CommunityCommentUpdateRequest
 import com.goldpet.domain.community.dto.CommunityPostCreateRequest
 import com.goldpet.domain.community.dto.CommunityPostResponse
 import com.goldpet.domain.community.dto.CommunityPostUpdateRequest
@@ -128,5 +129,25 @@ class CommunityController(
     ): ResponseEntity<Boolean> {
         val isLiked = communityService.toggleCommentLike(principal.id, commentId)
         return ResponseEntity.ok(isLiked)
+    }
+
+    @Operation(summary = "댓글 수정")
+    @PutMapping("/comments/{commentId}")
+    fun updateComment(
+        @PathVariable commentId: Long,
+        @RequestBody request: CommunityCommentUpdateRequest,
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<CommunityCommentResponse> {
+        return ResponseEntity.ok(communityService.updateComment(commentId, principal.id, request.content))
+    }
+
+    @Operation(summary = "댓글 삭제")
+    @DeleteMapping("/comments/{commentId}")
+    fun deleteComment(
+        @PathVariable commentId: Long,
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<Void> {
+        communityService.deleteComment(commentId, principal.id)
+        return ResponseEntity.noContent().build()
     }
 }

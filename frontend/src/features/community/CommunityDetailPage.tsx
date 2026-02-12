@@ -40,6 +40,20 @@ export default function CommunityDetailPage() {
     }, 150);
   };
 
+  const handleReplyBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    // First, run the same bottom-nav restore logic
+    handleInputBlur();
+    // Then, after a delay (longer than handleInputBlur's 150ms to let it settle),
+    // check if focus moved to the send button within the same container
+    setTimeout(() => {
+      const active = document.activeElement;
+      const container = e.target.closest('.comment_submit');
+      if (!container?.contains(active as Node)) {
+        setReplyTargetId(null);
+      }
+    }, 200);
+  };
+
   const handleOptionClick = (type: 'POST' | 'COMMENT', id: number) => {
     setActionSheetTarget({ type, id });
   };
@@ -330,7 +344,7 @@ export default function CommunityDetailPage() {
                       <textarea
                         autoFocus
                         onFocus={handleInputFocus}
-                        onBlur={handleInputBlur}
+                        onBlur={handleReplyBlur}
                         placeholder="답글을 남겨보세요" 
                         rows={1}
                         style={{ 

@@ -8,6 +8,10 @@ data class CommunityPostUpdateRequest(
     val imageUrls: List<String>? = null
 )
 
+data class CommunityCommentUpdateRequest(
+    val content: String
+)
+
 data class PostDetailResponse(
     val id: Long,
     val userId: Long,
