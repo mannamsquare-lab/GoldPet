@@ -17,6 +17,7 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [autoLogin, setAutoLogin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const isAndroid = /Android/i.test(navigator.userAgent);
 
   // Check for OAuth error in URL query parameters
   useEffect(() => {
@@ -254,27 +255,29 @@ export const LoginPage = () => {
                 }}
               />
             </button>
-            <button
-              type="button"
-              className="login-sns-button login-sns-button-apple btn-effect"
-              onClick={() => handleSnsLogin('apple')}
-              aria-label="애플 로그인"
-            >
-              <img
-                src="/assets/images/auth/apple_logo.svg"
-                alt="애플"
-                className="login-sns-logo"
-                onError={(e) => {
-                  console.error('Apple logo failed to load');
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  if (target.parentElement) {
-                    target.parentElement.textContent = '🍎';
-                    target.parentElement.style.fontSize = '24px';
-                  }
-                }}
-              />
-            </button>
+            {!isAndroid && (
+              <button
+                type="button"
+                className="login-sns-button login-sns-button-apple btn-effect"
+                onClick={() => handleSnsLogin('apple')}
+                aria-label="애플 로그인"
+              >
+                <img
+                  src="/assets/images/auth/apple_logo.svg"
+                  alt="애플"
+                  className="login-sns-logo"
+                  onError={(e) => {
+                    console.error('Apple logo failed to load');
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    if (target.parentElement) {
+                      target.parentElement.textContent = '🍎';
+                      target.parentElement.style.fontSize = '24px';
+                    }
+                  }}
+                />
+              </button>
+            )}
             <button
               type="button"
               className="login-sns-button login-sns-button-google btn-effect"
