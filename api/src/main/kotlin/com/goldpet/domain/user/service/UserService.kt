@@ -6,6 +6,9 @@ import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.user.dto.FriendLocationResponse
 import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
 import com.goldpet.domain.user.entity.UserProfileImage
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -85,7 +88,16 @@ class UserService(
         request.hasPet?.let { user.hasPet = it }
         request.intro?.let { user.intro = it }
         request.mbti?.let { user.mbti = it }
-        
+
+        // Update location
+        if (request.mainLocationLat != null && request.mainLocationLng != null) {
+            val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
+            user.mainLocationGeom = geometryFactory.createPoint(
+                Coordinate(request.mainLocationLng, request.mainLocationLat)
+            )
+        }
+        request.mainLocationText?.let { user.mainLocationText = it }
+
         // Update tags
         if (request.interests.isNotEmpty()) {
             val interests = interestRepository.findByNameIn(request.interests)

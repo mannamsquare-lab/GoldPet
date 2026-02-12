@@ -15,7 +15,8 @@ data class FriendResponse(
     val images: List<String>,
     val distance: Double, // in meters
     val status: String, // "online", "offline", "walking"
-    val location: LocationDto?
+    val location: LocationDto?,
+    val locationText: String?
 )
 
 data class LocationDto(

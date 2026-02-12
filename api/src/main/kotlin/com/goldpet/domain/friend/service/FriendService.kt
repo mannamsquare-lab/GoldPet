@@ -114,7 +114,8 @@ class FriendService(
             images = petImages, // Pet images (large, main slider)
             distance = distance,
             status = "offline",
-            location = user.mainLocationGeom?.let { LocationDto(it.y, it.x) }
+            location = user.mainLocationGeom?.let { LocationDto(it.y, it.x) },
+            locationText = user.mainLocationText
         )
     }
 

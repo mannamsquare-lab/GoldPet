@@ -13,5 +13,8 @@ data class UserProfileUpdateRequest(
     val intro: String?,
     val mbti: String?,
     val interests: List<String> = emptyList(),
-    val hobbies: List<String> = emptyList()
+    val hobbies: List<String> = emptyList(),
+    val mainLocationText: String? = null,
+    val mainLocationLat: Double? = null,
+    val mainLocationLng: Double? = null
 )

@@ -55,6 +55,7 @@ import PlaceDetailPage from './features/checkin/PlaceDetailPage';
 import GoldMainPage from './features/gold/GoldMainPage';
 import GoldPurchasePage from './features/gold/GoldPurchasePage';
 import GoldHistoryPage from './features/gold/GoldHistoryPage';
+import LocationSettingPage from './features/location/LocationSettingPage';
 
 
 
@@ -120,6 +121,9 @@ function App() {
                 <Route path="/account/password-expiry" element={<PasswordExpiryPage />} />
                 <Route path="/account/auto-logout" element={<AutoLogoutPage />} />
               </Route>
+
+              {/* No Layout: Custom header pages */}
+              <Route path="/location/setting" element={<LocationSettingPage />} />
 
               {/* Type B Layout (Logo + Icons): Home, Main Features */}
               <Route element={<TypeBLayout variant="logo-with-icons" />}>

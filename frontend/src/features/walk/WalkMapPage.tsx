@@ -141,7 +141,7 @@ export const WalkMapPage = () => {
                     골드펫과 함께 <br />
                     즐거운 산책을 즐겨보세요.
                 </p>
-                <button type="button">
+                <button type="button" onClick={() => navigate('/location/setting')}>
                     <img src="/assets/images/common/pin_icon.svg" alt="지도 마커" />
                     {address}
                 </button>

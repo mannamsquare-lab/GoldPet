@@ -38,4 +38,46 @@ class NaverGeocodingService(
             "알 수 없는 위치"
         }
     }
+
+    data class GeocodeResult(
+        val address: String,
+        val lat: Double,
+        val lng: Double
+    )
+
+    fun geocode(address: String): List<GeocodeResult> {
+        val url = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode?query=$address"
+
+        val headers = HttpHeaders()
+        headers.set("x-ncp-apigw-api-key-id", clientId)
+        headers.set("x-ncp-apigw-api-key", clientSecret)
+
+        return try {
+            val response = restTemplate.exchange(url, HttpMethod.GET, HttpEntity<String>(headers), Map::class.java)
+            val body = response.body ?: return emptyList()
+
+            // Parse NCP geocoding response
+            // Response structure: { addresses: [{ roadAddress, jibunAddress, x, y }] }
+            val addresses = (body["addresses"] as? List<*>) ?: return emptyList()
+
+            addresses.mapNotNull { item ->
+                val addr = item as? Map<*, *> ?: return@mapNotNull null
+                val roadAddress = addr["roadAddress"] as? String
+                val jibunAddress = addr["jibunAddress"] as? String
+                val x = (addr["x"] as? String)?.toDoubleOrNull() ?: return@mapNotNull null
+                val y = (addr["y"] as? String)?.toDoubleOrNull() ?: return@mapNotNull null
+
+                // Prefer roadAddress over jibunAddress
+                val finalAddress = roadAddress?.takeIf { it.isNotBlank() } ?: jibunAddress ?: return@mapNotNull null
+
+                GeocodeResult(
+                    address = finalAddress,
+                    lat = y,  // Naver uses x=lng, y=lat
+                    lng = x
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 }

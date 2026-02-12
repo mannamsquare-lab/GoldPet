@@ -17,4 +17,12 @@ class MapController(
         val address = naverGeocodingService.reverseGeocode(lat, lng)
         return ResponseEntity.ok(mapOf("address" to address))
     }
+
+    @GetMapping("/geocode")
+    fun geocode(
+        @RequestParam address: String
+    ): ResponseEntity<Map<String, List<NaverGeocodingService.GeocodeResult>>> {
+        val results = naverGeocodingService.geocode(address)
+        return ResponseEntity.ok(mapOf("results" to results))
+    }
 }

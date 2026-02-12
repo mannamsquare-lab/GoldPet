@@ -15,6 +15,8 @@ export interface User {
   gender?: string;
   birthYear?: number;
   mainLocationText?: string;
+  mainLocationLat?: number;
+  mainLocationLng?: number;
   goldBalance?: number;
   phoneNumber?: string;
   name?: string;

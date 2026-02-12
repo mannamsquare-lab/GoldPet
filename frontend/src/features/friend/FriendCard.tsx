@@ -123,7 +123,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: Fr
             <div className="pet_detail">
                 <p>
                     {data.petAge}살 ∙ {data.petBreed} <br />
-                    서울 강남구 ∙ {formatDistance(data.distance)} 이내
+                    {data.locationText || '위치 미설정'} ∙ {formatDistance(data.distance)} 이내
                 </p>
                 <br />
                 <p>{data.description}</p>

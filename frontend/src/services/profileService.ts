@@ -54,7 +54,7 @@ const mockProfile: UserProfile = {
   email: 'user@goldpet.com',
   nickname: '지오',
   profileImageUrl: '/assets/images/main/main_slide_butler01.png',
-  location: '서울 강남구',
+  location: '위치 미설정',
   introduce: '골든 리트리버와 함께 산책하는 것을 좋아해요!',
   goldBalance: 1250,
   walkCount: 42,

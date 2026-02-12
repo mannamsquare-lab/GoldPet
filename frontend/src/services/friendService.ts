@@ -21,6 +21,7 @@ export interface Friend {
     lat: number;
     lng: number;
   };
+  locationText?: string;
 }
 
 export interface Species {

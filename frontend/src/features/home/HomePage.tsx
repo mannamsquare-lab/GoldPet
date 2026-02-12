@@ -117,7 +117,7 @@ export default function HomePage() {
                                 <div className="pet_detail">
                                     <p data-swiper-parallax="-300">
                                         {item.description} <br />
-                                        서울 강남구 ∙ {item.distance}
+                                        {item.locationText || '위치 미설정'} ∙ {item.distance}
                                     </p>
                                     <div className="like_wrap" data-swiper-parallax="-200">
                                         <button type="button">싫어요</button>
