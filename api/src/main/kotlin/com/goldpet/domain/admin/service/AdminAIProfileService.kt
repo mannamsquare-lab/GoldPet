@@ -122,8 +122,7 @@ class AdminAIProfileService(
         val successRate = if (total > 0) completed.toDouble() / total * 100 else 0.0
 
         val dailyBreakdown = all
-            .filter { it.createdAt != null }
-            .groupBy { it.createdAt!!.toLocalDate() }
+            .groupBy { it.createdAt.toLocalDate() }
             .map { (date, items) ->
                 DailyStatEntry(date = date, count = items.size, totalDistanceKm = 0.0)
             }
