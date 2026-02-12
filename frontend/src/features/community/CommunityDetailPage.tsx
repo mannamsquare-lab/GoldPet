@@ -102,6 +102,18 @@ export default function CommunityDetailPage() {
       }
   }, [commentInput]);
 
+  /* Enable sticky positioning by overriding #wrap overflow (fallback for older browsers) */
+  useEffect(() => {
+    const wrap = document.getElementById('wrap');
+    if (wrap) {
+      const originalOverflow = wrap.style.overflow;
+      wrap.style.overflow = 'visible';
+      return () => {
+        wrap.style.overflow = originalOverflow;
+      };
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       const nav = document.getElementById('bottomNav');

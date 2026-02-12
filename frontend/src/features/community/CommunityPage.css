@@ -576,10 +576,20 @@
   }
 }
 
-/* Main comment input bar - expands upward using flex */
+/* Override #wrap overflow to enable sticky positioning */
+#wrap:has(#communityContainer .detail_wrap) {
+  overflow: visible;
+}
+
+/* Main comment input bar - expands upward via sticky positioning */
 #communityContainer .detail_wrap .comment_wrap > .comment_submit {
-  margin-top: auto;
+  position: sticky;
+  position: -webkit-sticky; /* iOS Safari compatibility */
+  bottom: 0;
+  background: #fff;
+  z-index: 10;
   padding: 3.33vw 0;
+  border-top: 1px solid #f0f0f0;
 }
 
 /* Prevent last comment from being hidden behind sticky input bar */
