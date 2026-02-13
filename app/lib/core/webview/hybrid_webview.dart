@@ -26,6 +26,7 @@ class _HybridWebViewState extends State<HybridWebView> {
   late final LocationService _locationService;
   late final NativeBridge _bridge;
   late final BridgeMessageHandler _bridgeController;
+  Color _scaffoldColor = const Color(0xFFEFE1C4);
 
   @override
   void initState() {
@@ -54,6 +55,10 @@ class _HybridWebViewState extends State<HybridWebView> {
             widget.onAppLoaded?.call();
             // 페이지 로딩 완료 시 브릿지 초기화
             _bridgeController.injectBridgeScript();
+            // URL 변경 감지를 위한 JS 주입 (SPA pushState/popstate 모니터링)
+            _injectUrlChangeMonitor();
+            // 현재 URL 기반으로 시스템 바 컬러 업데이트
+            _updateSystemBarColors(url);
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint('WebView error: ${error.description}');
@@ -207,6 +212,14 @@ class _HybridWebViewState extends State<HybridWebView> {
       });
     }
 
+    // URL 변경 감지 채널 등록 (SPA 라우트 변경 시 시스템 바 컬러 업데이트)
+    await _controller.addJavaScriptChannel(
+      'UrlChangeChannel',
+      onMessageReceived: (JavaScriptMessage message) {
+        _updateSystemBarColors(message.message);
+      },
+    );
+
     // Bridge 초기화 (서비스는 Bridge 내부에서 생성됨)
     _bridge = NativeBridge(_controller);
 
@@ -259,6 +272,86 @@ class _HybridWebViewState extends State<HybridWebView> {
     }
   }
 
+  /// SPA 라우트 변경 감지를 위한 JS 주입
+  /// pushState/replaceState를 패치하고 popstate를 리스닝
+  Future<void> _injectUrlChangeMonitor() async {
+    const script = '''
+      (function() {
+        if (window._urlChangeMonitorInstalled) return;
+        window._urlChangeMonitorInstalled = true;
+
+        var notify = function() {
+          if (window.UrlChangeChannel) {
+            window.UrlChangeChannel.postMessage(window.location.href);
+          }
+        };
+
+        var origPushState = history.pushState;
+        history.pushState = function() {
+          origPushState.apply(this, arguments);
+          notify();
+        };
+
+        var origReplaceState = history.replaceState;
+        history.replaceState = function() {
+          origReplaceState.apply(this, arguments);
+          notify();
+        };
+
+        window.addEventListener('popstate', notify);
+      })();
+    ''';
+    try {
+      await _controller.runJavaScript(script);
+    } catch (e) {
+      debugPrint('Failed to inject URL change monitor: $e');
+    }
+  }
+
+  // TypeBLayout 라우트 (헤더/하단네비 컬러가 #EFE1C4인 페이지들)
+  static const _typeBExactRoutes = ['/home', '/friend-find', '/friend-list', '/chat', '/profile', '/settings'];
+  static const _typeBPrefixRoutes = ['/walk', '/places', '/gold'];
+  static const Color _colorEFE1C4 = Color(0xFFEFE1C4);
+  static const Color _colorFFF7E6 = Color(0xFFFFF7E6);
+
+  /// URL 경로에 따라 시스템 바 컬러 + Scaffold 배경색 업데이트
+  void _updateSystemBarColors(String? url) {
+    if (url == null) return;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    final path = uri.path;
+
+    bool isTypeB = false;
+
+    // Exact match
+    if (_typeBExactRoutes.contains(path)) {
+      isTypeB = true;
+    }
+    // Prefix match (/walk/*, /places/*, /gold/*)
+    else if (_typeBPrefixRoutes.any((p) => path.startsWith(p))) {
+      isTypeB = true;
+    }
+    // /community prefix, except /community/write
+    else if (path.startsWith('/community') && path != '/community/write') {
+      isTypeB = true;
+    }
+
+    final color = isTypeB ? _colorEFE1C4 : _colorFFF7E6;
+
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: color,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: color,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
+
+    if (_scaffoldColor != color) {
+      setState(() {
+        _scaffoldColor = color;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _locationService.dispose();
@@ -268,9 +361,7 @@ class _HybridWebViewState extends State<HybridWebView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFEFE1C4,
-      ), // Header and bottom nav color (#EFE1C4) for seamless blend
+      backgroundColor: _scaffoldColor,
       body: SafeArea(
         child: Platform.isAndroid
             ? WebViewWidget.fromPlatformCreationParams(
