@@ -24,6 +24,7 @@ class NativeBridge {
   late final CameraService cameraService;
   late final PushNotificationService pushNotificationService;
   late final NativeAuthService nativeAuthService;
+  final ValueNotifier<Color> scaffoldColorNotifier = ValueNotifier(const Color(0xFFEFE1C4));
 
   NativeBridge(this.webViewController) {
     locationService = LocationService();
@@ -269,6 +270,25 @@ class NativeBridge {
           pushNotificationService.setCurrentChatRoom(chatRoomId);
           return {'success': true};
 
+        // 시스템 바 컬러 변경
+        case BridgeProtocol.setSystemBarColors:
+          final statusBarColor = params?['statusBarColor'] as String?;
+          final navigationBarColor = params?['navigationBarColor'] as String?;
+          final parsedStatusBar = _parseColor(statusBarColor) ?? const Color(0xFFEFE1C4);
+          final parsedNavBar = _parseColor(navigationBarColor) ?? const Color(0xFFEFE1C4);
+
+          SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: parsedStatusBar,
+            statusBarIconBrightness: Brightness.dark,
+            systemNavigationBarColor: parsedNavBar,
+            systemNavigationBarIconBrightness: Brightness.dark,
+          ));
+
+          // Update Scaffold background to match status bar color (for SafeArea padding)
+          scaffoldColorNotifier.value = parsedStatusBar;
+
+          return {'success': true};
+
         default:
           throw PlatformException(
             code: 'METHOD_NOT_FOUND',
@@ -278,5 +298,12 @@ class NativeBridge {
     } catch (e) {
       throw PlatformException(code: 'METHOD_ERROR', message: e.toString());
     }
+  }
+
+  static Color? _parseColor(String? hex) {
+    if (hex == null) return null;
+    hex = hex.replaceFirst('#', '');
+    if (hex.length == 6) hex = 'FF$hex';
+    return Color(int.parse(hex, radix: 16));
   }
 }

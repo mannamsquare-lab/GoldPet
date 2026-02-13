@@ -40,6 +40,7 @@ import ChallengesPage from './features/gamification/ChallengesPage';
 import NotificationPage from './features/notification/NotificationPage';
 import { ProfileTermsPage } from './features/profile/ProfileTermsPage';
 import ScrollToTop from './components/common/ScrollToTop';
+import { SystemBarColorSync } from './components/common/SystemBarColorSync';
 import { PullToRefresh } from './components/common/PullToRefresh';
 import { PushNotificationHandler } from './components/common/PushNotificationHandler';
 import AIProfilePage from './features/aiprofile/AIProfilePage';
@@ -88,6 +89,7 @@ function App() {
           <ToastProvider>
            <BrowserRouter>
             <ScrollToTop />
+            <SystemBarColorSync />
             <PushNotificationHandler />
             <PullToRefresh />
             <Routes>

@@ -23,7 +23,9 @@ class BridgeProtocol {
   static const String getAppVersion = 'getAppVersion';
   static const String getDeviceInfo = 'getDeviceInfo';
   static const String openSettings = 'openSettings';
-  
+
+  static const String setSystemBarColors = 'setSystemBarColors';
+
   // 이벤트 타입
   static const String pushNotificationReceived = 'pushNotificationReceived';
   static const String locationUpdated = 'locationUpdated';

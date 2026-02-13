@@ -51,7 +51,9 @@ export type NativeMethod =
   // 앱 정보
   | 'getAppVersion'
   | 'getDeviceInfo'
-  | 'openSettings';
+  | 'openSettings'
+  // 시스템 바 컬러
+  | 'setSystemBarColors';
 
 export interface Location {
   latitude: number;
