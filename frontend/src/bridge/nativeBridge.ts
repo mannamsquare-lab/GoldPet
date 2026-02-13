@@ -120,12 +120,6 @@ class NativeBridge {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  setSystemBarColors(statusBarColor: string, navigationBarColor: string) {
-    if (!this.isAvailable()) return;
-    this.callMethod('setSystemBarColors', { statusBarColor, navigationBarColor })
-      .catch((e) => console.warn('setSystemBarColors failed:', e));
-  }
-
   isAvailable(): boolean {
     return this.isInitialized && !!(window as any).NativeBridge;
   }

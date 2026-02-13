@@ -267,26 +267,23 @@ class _HybridWebViewState extends State<HybridWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<Color>(
-      valueListenable: _bridge.scaffoldColorNotifier,
-      builder: (context, bgColor, _) {
-        return Scaffold(
-          backgroundColor: bgColor,
-          body: SafeArea(
-            child: Platform.isAndroid
-                ? WebViewWidget.fromPlatformCreationParams(
-                    params: AndroidWebViewWidgetCreationParams.fromPlatformWebViewWidgetCreationParams(
-                      PlatformWebViewWidgetCreationParams(
-                        controller: _controller.platform,
-                        layoutDirection: TextDirection.ltr,
-                      ),
-                      displayWithHybridComposition: true,
-                    ),
-                  )
-                : WebViewWidget(controller: _controller),
-          ),
-        );
-      },
+    return Scaffold(
+      backgroundColor: const Color(
+        0xFFEFE1C4,
+      ), // Header and bottom nav color (#EFE1C4) for seamless blend
+      body: SafeArea(
+        child: Platform.isAndroid
+            ? WebViewWidget.fromPlatformCreationParams(
+                params: AndroidWebViewWidgetCreationParams.fromPlatformWebViewWidgetCreationParams(
+                  PlatformWebViewWidgetCreationParams(
+                    controller: _controller.platform,
+                    layoutDirection: TextDirection.ltr,
+                  ),
+                  displayWithHybridComposition: true,
+                ),
+              )
+            : WebViewWidget(controller: _controller),
+      ),
     );
   }
 }
