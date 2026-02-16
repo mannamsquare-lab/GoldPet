@@ -1,11 +1,11 @@
 /* Place Card */
 .place-card {
   background-color: #fff;
-  border-radius: 4.44vw;
-  padding: 4.44vw;
-  margin-bottom: 4.44vw;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
   display: flex;
-  gap: 4.44vw;
+  gap: 16px;
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -15,9 +15,9 @@
 }
 
 .place-card .place-image {
-  width: 22.22vw;
-  height: 22.22vw;
-  border-radius: 4.44vw;
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
   object-fit: cover;
   flex-shrink: 0;
   background-color: #f5f5f5;
@@ -27,95 +27,95 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.11vw;
+  gap: 4px;
 }
 
 .place-card .place-name {
-  font-size: 4.44vw;
+  font-size: 16px;
   font-weight: 600;
-  color: #505050;
+  color: var(--color-text-secondary);
 }
 
 .place-card .place-category {
-  font-size: 3.33vw;
+  font-size: 12px;
   font-weight: 500;
-  padding: 1.11vw 2.22vw;
-  border-radius: 2.22vw;
+  padding: 4px 8px;
+  border-radius: 8px;
   display: inline-block;
   width: fit-content;
 }
 
 .place-card .place-address {
-  font-size: 3.33vw;
+  font-size: 12px;
   color: #727272;
 }
 
 .place-card .place-stats {
-  font-size: 3.33vw;
-  color: #614108;
+  font-size: 12px;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 /* Place Detail Info */
 .place-detail-info {
   background-color: #fff;
-  border-radius: 4.44vw;
-  padding: 6.67vw 4.44vw;
-  margin-bottom: 4.44vw;
+  border-radius: 16px;
+  padding: 24px 16px;
+  margin-bottom: 16px;
 }
 
 .place-detail-info .place-detail-image {
   width: 100%;
-  height: 55.56vw;
-  border-radius: 4.44vw;
+  height: 200px;
+  border-radius: 16px;
   object-fit: cover;
-  margin-bottom: 4.44vw;
+  margin-bottom: 16px;
   background-color: #f5f5f5;
 }
 
 .place-detail-info .place-detail-name {
-  font-size: 5.56vw;
+  font-size: 20px;
   font-weight: 700;
-  color: #505050;
-  margin-bottom: 2.22vw;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
 }
 
 .place-detail-info .place-detail-category {
-  font-size: 3.89vw;
+  font-size: 14px;
   font-weight: 500;
-  padding: 1.11vw 2.22vw;
-  border-radius: 2.22vw;
+  padding: 4px 8px;
+  border-radius: 8px;
   display: inline-block;
-  margin-bottom: 3.33vw;
+  margin-bottom: 12px;
 }
 
 .place-detail-info .place-detail-address {
-  font-size: 3.89vw;
+  font-size: 14px;
   color: #727272;
-  margin-bottom: 2.22vw;
+  margin-bottom: 8px;
 }
 
 .place-detail-info .place-detail-description {
-  font-size: 3.89vw;
-  color: #505050;
+  font-size: 14px;
+  color: var(--color-text-secondary);
   line-height: 1.5;
-  margin-bottom: 3.33vw;
+  margin-bottom: 12px;
 }
 
 .place-detail-info .place-detail-stats {
-  font-size: 3.89vw;
-  color: #614108;
+  font-size: 14px;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 /* Check-in Button */
 .checkin-btn {
   width: 100%;
-  height: 13.33vw;
-  border-radius: 13.33vw;
-  background-color: #614108;
+  height: 48px;
+  border-radius: 48px;
+  background-color: var(--color-primary);
   color: #fff;
-  font-size: 4.44vw;
+  font-size: 16px;
   font-weight: 600;
   border: none;
   cursor: pointer;
@@ -159,27 +159,27 @@
 /* Search Bar */
 .place-search {
   width: 100%;
-  height: 11.11vw;
-  border-radius: 11.11vw;
-  border: 1px solid #efe1c4;
-  padding: 0 4.44vw;
-  font-size: 4.44vw;
+  height: 40px;
+  border-radius: 40px;
+  border: 1px solid var(--color-border);
+  padding: 0 16px;
+  font-size: 16px;
   background-color: #fff;
-  margin-bottom: 4.44vw;
+  margin-bottom: 16px;
 }
 
 .place-search:focus {
-  border-color: #614108;
+  border-color: var(--color-primary);
   outline: none;
 }
 
 /* Category Filter */
 .category-filter {
   display: flex;
-  gap: 2.22vw;
-  margin-bottom: 4.44vw;
+  gap: 8px;
+  margin-bottom: 16px;
   overflow-x: auto;
-  padding-bottom: 2.22vw;
+  padding-bottom: 8px;
 }
 
 .category-filter::-webkit-scrollbar {
@@ -187,12 +187,12 @@
 }
 
 .category-filter button {
-  height: 8.89vw;
-  padding: 0 4.44vw;
-  border-radius: 8.89vw;
-  border: 1px solid #efe1c4;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 32px;
+  border: 1px solid var(--color-border);
   background-color: #fff;
-  font-size: 3.89vw;
+  font-size: 14px;
   color: #727272;
   white-space: nowrap;
   cursor: pointer;
@@ -200,36 +200,36 @@
 }
 
 .category-filter button.active {
-  background-color: #614108;
+  background-color: var(--color-primary);
   color: #fff;
-  border-color: #614108;
+  border-color: var(--color-primary);
 }
 
 .category-filter button:hover {
-  border-color: #614108;
+  border-color: var(--color-primary);
 }
 
 /* Check-in History */
 .checkin-history {
   background-color: #fff;
-  border-radius: 4.44vw;
-  padding: 4.44vw;
-  margin-bottom: 4.44vw;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
 }
 
 .checkin-history-title {
-  font-size: 4.44vw;
+  font-size: 16px;
   font-weight: 600;
-  color: #505050;
-  margin-bottom: 3.33vw;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
 }
 
 .checkin-history-item {
   display: flex;
   flex-direction: column;
-  gap: 1.11vw;
-  padding: 4.44vw 0;
-  border-bottom: 1px solid #efe1c4;
+  gap: 4px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .checkin-history-item:last-child {
@@ -243,40 +243,40 @@
 }
 
 .checkin-history-item .nickname {
-  font-size: 4.44vw;
+  font-size: 16px;
   font-weight: 600;
-  color: #505050;
+  color: var(--color-text-secondary);
 }
 
 .checkin-history-item .time {
-  font-size: 3.33vw;
+  font-size: 12px;
   color: #727272;
 }
 
 .checkin-history-item .memo {
-  font-size: 3.89vw;
-  color: #505050;
-  margin-top: 1.11vw;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
   line-height: 1.4;
 }
 
 /* Container */
 .checkin-container {
-  padding: 0 4.44vw;
+  padding: 0 16px;
   min-height: 100vh;
   background-color: #f9f9f9;
 }
 
 /* Place List */
 .place-list {
-  padding-bottom: 4.44vw;
+  padding-bottom: 16px;
 }
 
 .place-list-empty {
   text-align: center;
-  padding: 13.33vw 0;
+  padding: 48px 0;
   color: #727272;
-  font-size: 4.44vw;
+  font-size: 16px;
 }
 
 /* Place Marker */
@@ -293,45 +293,45 @@
 }
 
 .place-marker-icon {
-  width: 11.11vw;
-  height: 11.11vw;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background-color: #fff;
-  box-shadow: 0 0.56vw 1.67vw rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.11vw;
+  margin-bottom: 4px;
 }
 
 .place-marker-icon img {
-  width: 6.67vw;
-  height: 6.67vw;
+  width: 24px;
+  height: 24px;
 }
 
 .place-marker-label {
-  font-size: 3.33vw;
+  font-size: 12px;
   font-weight: 500;
-  color: #505050;
+  color: var(--color-text-secondary);
   background-color: #fff;
-  padding: 1.11vw 2.22vw;
-  border-radius: 2.22vw;
-  box-shadow: 0 0.56vw 1.67vw rgba(0, 0, 0, 0.1);
+  padding: 4px 8px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   white-space: nowrap;
 }
 
 /* Loading */
 .checkin-loading {
   text-align: center;
-  padding: 13.33vw 0;
+  padding: 48px 0;
   color: #727272;
-  font-size: 4.44vw;
+  font-size: 16px;
 }
 
 /* Error */
 .checkin-error {
   text-align: center;
-  padding: 13.33vw 0;
+  padding: 48px 0;
   color: #ff4444;
-  font-size: 4.44vw;
+  font-size: 16px;
 }

@@ -95,31 +95,33 @@ function App() {
               <Route path="/splash" element={<SplashPage />} />
               <Route path="/login" element={<LoginPage />} />
 
-              {/* Type A Layout (Logo Only): Onboarding, Permissions, Benefits, Terms Agreement */}
+              {/* Type A Layout (Logo Only): Onboarding, Permissions, Benefits, Terms Agreement, Signup Complete */}
               <Route element={<TypeALayout variant="logo-only" />}>
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/permissions" element={<PermissionsPage />} />
                 <Route path="/benefits" element={<BenefitsPage />} />
-                <Route path="/signup" element={<TermsAgreementPage />} />
+                <Route path="/signup/complete" element={<SignupCompletePage />} />
               </Route>
 
-              {/* Type A Layout (Back Only): Signup Form, Find Account */}
+              {/* Type A Layout (Back Only): Signup Form */}
               <Route element={<TypeALayout variant="back-only" />}>
+                <Route path="/signup" element={<TermsAgreementPage />} />
                 <Route path="/signup/form" element={<SignupPage />} />
                 <Route path="/signup/sns" element={<SnsSignupPage />} />
                 <Route path="/loginSuccess" element={<LoginSuccessPage />} />
-                <Route path="/signup/complete" element={<SignupCompletePage />} />
-                <Route path="/terms/:type" element={<TermsDetailPage />} />
-                <Route path="/find-username" element={<FindUsernamePage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
               </Route>
-            
-              {/* Type A Layout (Back Only): Account Edge Cases */}
-              <Route element={<TypeALayout variant="back-only" />}>
+
+              {/* No Layout: Find Account (custom header per state) */}
+              <Route path="/find-username" element={<FindUsernamePage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+              {/* Type A Layout (Close Only / Layout E): Account Edge Cases + Terms Detail */}
+              <Route element={<TypeALayout variant="close-only" />}>
                 <Route path="/account/dormant" element={<DormantAccountPage />} />
                 <Route path="/account/withdrawn" element={<WithdrawnAccountPage />} />
                 <Route path="/account/password-expiry" element={<PasswordExpiryPage />} />
                 <Route path="/account/auto-logout" element={<AutoLogoutPage />} />
+                <Route path="/terms/:type" element={<TermsDetailPage />} />
               </Route>
 
               {/* No Layout: Custom header pages */}
@@ -136,15 +138,20 @@ function App() {
                 <Route path="/walk/ranking" element={<WalkRankingPage />} />
                 <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
                 <Route path="/community" element={<CommunityListPage />} />
-                <Route path="/community/:postId" element={<CommunityDetailPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/places" element={<PlaceListPage />} />
                 <Route path="/places/:placeId" element={<PlaceDetailPage />} />
                 <Route path="/gold" element={<GoldMainPage />} />
                 <Route path="/gold/purchase" element={<GoldPurchasePage />} />
                 <Route path="/gold/history" element={<GoldHistoryPage />} />
               </Route>
+
+              {/* No Layout: Community Detail (uses own history_util header) */}
+              <Route path="/community/:postId" element={<CommunityDetailPage />} />
+
+              {/* Layout B pages using SubPageLayout internally */}
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/notifications" element={<NotificationPage />} />
               
               <Route path="/profile/owner/edit" element={<ProfileOwnerWritePage />} />
               <Route path="/profile/pet/edit" element={<ProfilePetWritePage />} />
@@ -166,7 +173,6 @@ function App() {
               <Route path="/pet/edit/:petId" element={<PetRegisterPage />} />
               <Route path="/my-badges" element={<BadgesPage />} />
               <Route path="/challenges" element={<ChallengesPage />} />
-              <Route path="/notifications" element={<NotificationPage />} />
 
 
 

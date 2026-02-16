@@ -160,7 +160,7 @@ export const ResetPasswordPage = () => {
               className="reset-password-button"
               onClick={() => setState('input-username')}
             >
-              문자 본인인증
+              PASS 본인인증 진행
             </button>
           </div>
 
@@ -291,7 +291,7 @@ export const ResetPasswordPage = () => {
                 className="reset-password-button"
                 disabled={isLoading || !isFormValid()}
               >
-                {isLoading ? '변경 중...' : '비밀번호 변경'}
+                {isLoading ? '변경 중...' : '변경하기'}
               </button>
             </div>
           </form>

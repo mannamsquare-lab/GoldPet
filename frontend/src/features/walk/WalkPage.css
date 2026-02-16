@@ -2,13 +2,13 @@
 #walkPage {
   width: 100%;
   min-height: 100vh;
-  background: #FFF7E6;
-  padding-bottom: 10vw;
+  background: var(--color-bg);
+  padding-bottom: 36px;
 }
 
 /* Header - talk_wrap과 동일 */
 .walk_header {
-  padding: 0 4.44vw;
+  padding: 0 16px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -23,42 +23,42 @@
 }
 
 .walk_header p {
-  font-size: 3.61vw;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .walk_header button {
-  padding: 2.22vw 4.44vw;
+  padding: 8px 16px;
   background-color: #fff;
-  gap: 1.11vw;
-  border-radius: 2.78vw;
+  gap: 4px;
+  border-radius: 10px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
   -webkit-box-pack: justify;
       -ms-flex-pack: justify;
           justify-content: space-between;
-  font-size: 3.61vw;
+  font-size: 13px;
   font-weight: 600;
-  color: #614108;
+  color: var(--color-primary);
   border: none;
   cursor: pointer;
 }
 
 .walk_header button img {
-  width: 4.44vw;
+  width: 16px;
 }
 
 /* Content */
 .walk_content {
   width: 100%;
-  padding: 4.44vw;
-  padding-bottom: 10vw;
+  padding: 16px;
+  padding-bottom: 36px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 11.11vw;
+  gap: 40px;
 }
 
 /* Today Stats Section */
@@ -68,23 +68,23 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 6.67vw;
+  gap: 24px;
 }
 
 .walk_today_card {
-  width: 91.11vw;
-  padding: 6.67vw 4.44vw;
+  width: 328px;
+  padding: 24px 16px;
   background: #D9FFA7;
   background-image: url('/assets/images/walk/BG.svg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  border-radius: 4.44vw;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  gap: 6.67vw;
+  gap: 24px;
 }
 
 .walk_today_title {
@@ -92,12 +92,12 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 1.11vw;
-  color: #614108;
-  font-size: 4.5vw;
+  gap: 4px;
+  color: var(--color-primary);
+  font-size: 16px;
   font-family: Pretendard, sans-serif;
   font-weight: 700;
-  line-height: 4.5vw;
+  line-height: 16px;
 }
 
 .walk_today_stats {
@@ -105,7 +105,7 @@
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
-  gap: 6.67vw;
+  gap: 24px;
 }
 
 .walk_stat_item {
@@ -113,7 +113,7 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 0.56vw;
+  gap: 2px;
 }
 
 .walk_stat_content {
@@ -122,7 +122,7 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  gap: 2.22vw;
+  gap: 8px;
 }
 
 .walk_stat_label {
@@ -130,11 +130,11 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  color: #505050;
-  font-size: 3.5vw;
+  color: var(--color-text-secondary);
+  font-size: 12px;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
-  line-height: 3.5vw;
+  line-height: 12px;
 }
 
 .walk_stat_value {
@@ -142,32 +142,32 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  color: #614108;
-  font-size: 6.67vw;
+  color: var(--color-primary);
+  font-size: 24px;
   font-family: Pretendard, sans-serif;
   font-weight: 700;
-  line-height: 6.67vw;
+  line-height: 24px;
 }
 
 .walk_stat_item svg {
-  width: 6.67vw;
-  height: 6.67vw;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
 /* Start Walk Button */
 .walk_start_btn {
   width: 100%;
-  height: 13.33vw;
-  padding: 0 5.56vw;
-  background: #614108;
+  height: 48px;
+  padding: 0 20px;
+  background: var(--color-primary);
   border-radius: 1000px;
   border: none;
   color: white;
-  font-size: 4.44vw;
+  font-size: 16px;
   font-family: Pretendard, sans-serif;
   font-weight: 600;
-  line-height: 6.22vw;
+  line-height: 22px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -182,42 +182,42 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  gap: 6.67vw;
+  gap: 24px;
 }
 
 .walk_tabs {
   width: 100%;
-  padding: 0 4.44vw;
+  padding: 0 16px;
   overflow: hidden;
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
-  gap: 6.67vw;
+  gap: 24px;
 }
 
 .walk_tab {
-  height: 12.78vw;
-  padding: 0 4.44vw;
-  border-top-left-radius: 4.44vw;
-  border-top-right-radius: 4.44vw;
+  height: 46px;
+  padding: 0 16px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
   border: none;
   background: transparent;
   color: #727272;
-  font-size: 4.44vw;
+  font-size: 16px;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
-  line-height: 6.22vw;
+  line-height: 22px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2.78vw;
+  gap: 10px;
   position: relative;
 }
 
 .walk_tab.active {
-  border-bottom: 0.56vw solid #614108;
-  color: #614108;
+  border-bottom: 2px solid var(--color-primary);
+  color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -227,43 +227,43 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 4.44vw;
+  gap: 16px;
 }
 
 .walk_records_card {
   width: 100%;
-  padding: 6.67vw 4.44vw;
+  padding: 24px 16px;
   background: white;
-  border-radius: 4.44vw;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  gap: 4.44vw;
+  gap: 16px;
 }
 
 .walk_record_item {
   width: 100%;
-  padding: 1.11vw 0;
+  padding: 4px 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  gap: 2.22vw;
+  gap: 8px;
 }
 
 .walk_record_header {
   width: 100%;
-  padding: 1.11vw 0;
+  padding: 4px 0;
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 2.22vw;
+  gap: 8px;
 }
 
 .walk_record_icon {
-  width: 4.44vw;
-  height: 4.44vw;
+  width: 16px;
+  height: 16px;
   position: relative;
   display: flex;
   align-items: center;
@@ -279,11 +279,11 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  color: #505050;
-  font-size: 3.5vw;
+  color: var(--color-text-secondary);
+  font-size: 12px;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
-  line-height: 3.5vw;
+  line-height: 12px;
 }
 
 .walk_record_info {
@@ -291,31 +291,31 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2.22vw;
+  gap: 8px;
 }
 
 .walk_record_stats {
-  padding-left: 6.67vw;
+  padding-left: 24px;
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 2.22vw;
+  gap: 8px;
 }
 
 .walk_record_stats > span {
   display: flex;
   justify-content: center;
   flex-direction: column;
-  color: #614108;
-  font-size: 4.44vw;
+  color: var(--color-primary);
+  font-size: 16px;
   font-family: Pretendard, sans-serif;
   font-weight: 700;
-  line-height: 4.44vw;
+  line-height: 16px;
 }
 
 .walk_record_stats svg {
-  width: 0.83vw;
-  height: 0.83vw;
+  width: 3px;
+  height: 3px;
   flex-shrink: 0;
 }
 
@@ -323,12 +323,12 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 2.22vw;
+  gap: 8px;
 }
 
 .walk_record_action_btn {
-  width: 6.67vw;
-  height: 6.67vw;
+  width: 24px;
+  height: 24px;
   background: #FFE5FA;
   border-radius: 100px;
   border: none;
@@ -340,8 +340,8 @@
 }
 
 .walk_record_action_btn svg {
-  width: 6.67vw;
-  height: 6.67vw;
+  width: 24px;
+  height: 24px;
 }
 
 .walk_record_action_btn svg path {
@@ -350,27 +350,27 @@
 
 .walk_record_divider {
   width: 100%;
-  height: 0.28vw;
+  height: 1px;
   position: relative;
-  background: #EFE1C4;
+  background: var(--color-border);
 }
 
 .walk_record_divider::before {
   content: '';
-  width: 82.22vw;
-  height: 0.28vw;
+  width: 296px;
+  height: 1px;
   position: absolute;
   left: 0;
   top: 0;
-  background: #EFE1C4;
+  background: var(--color-border);
 }
 
 .walk_ranking_placeholder {
   width: 100%;
-  padding: 11.11vw;
+  padding: 40px;
   text-align: center;
   color: #727272;
-  font-size: 4.44vw;
+  font-size: 16px;
   font-family: Pretendard, sans-serif;
 }
 

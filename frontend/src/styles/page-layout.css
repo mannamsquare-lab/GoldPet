@@ -4,10 +4,10 @@
 .page-container {
     width: 100%;
     min-height: 100vh;
-    background-color: #FFF7E6;
+    background-color: var(--color-bg);
     position: relative;
     padding: 0;
-    padding-top: calc(56px + env(safe-area-inset-top, 20px));
+    padding-top: 56px;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
@@ -17,7 +17,6 @@
 /* Title Section */
 .page-title-section {
     width: 100%;
-    max-width: 360px;
     padding: 24px 16px;
     text-align: center;
     display: flex;
@@ -30,7 +29,7 @@
     font-weight: 700;
     font-size: 24px;
     line-height: 1.33;
-    color: #614108;
+    color: var(--color-primary);
     letter-spacing: -0.48px;
     margin: 0;
 }
@@ -40,7 +39,7 @@
     font-weight: 500;
     font-size: 16px;
     line-height: 1.4;
-    color: #505050;
+    color: var(--color-text-secondary);
     letter-spacing: -0.32px;
     margin: 0;
 }
@@ -48,8 +47,6 @@
 /* Body Container */
 .page-body {
     width: 100%;
-    max-width: 360px;
-    margin: 0 auto;
     padding: 16px 16px 40px;
     display: flex;
     flex-direction: column;

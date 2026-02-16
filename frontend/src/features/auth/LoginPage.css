@@ -1,27 +1,26 @@
-.login-page {
+.login-page-container {
   width: 100%;
   min-height: 100vh;
-  background-color: #FFF7E6;
+  background-color: var(--color-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0;
+  padding: 0 16px;
   position: relative;
 }
 
 /* Title Section */
 .login-title-section {
   width: 100%;
-  max-width: 360px;
-  /* margin-top: 22.22vw; removed */
-  height: 32.22vw;
-  padding: 0;
+  padding: 24px 16px;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 16px;
   background-color: transparent;
+  margin-top: 56px;
 }
 
 .login-logo-container {
@@ -43,7 +42,7 @@
   font-weight: 500;
   font-size: 16px;
   line-height: 1.4;
-  color: #505050;
+  color: var(--color-text-secondary);
   letter-spacing: -0.32px;
   margin: 0;
 }
@@ -51,11 +50,11 @@
 /* Body */
 .login-body {
   width: 100%;
-  max-width: 360px;
   padding: 16px 16px 40px;
   display: flex;
   flex-direction: column;
   gap: 40px;
+  margin-top: 16px;
 }
 
 /* Login Form */
@@ -81,13 +80,13 @@
 .login-input {
   width: 100%;
   height: 48px;
-  background-color: #FFFFFF;
+  background-color: var(--color-bg-white);
   border: none;
   font-family: 'Pretendard', sans-serif;
   font-weight: 500;
   font-size: 16px;
   line-height: 1.4;
-  color: #727272;
+  color: var(--color-text-secondary);
   letter-spacing: -0.32px;
   padding: 0 16px;
   outline: none;
@@ -103,7 +102,7 @@
 }
 
 .login-input::placeholder {
-  color: #727272;
+  color: var(--color-text-placeholder);
 }
 
 .login-password-toggle {
@@ -138,10 +137,10 @@
 .login-button {
   width: 100%;
   height: 48px;
-  background-color: #614108;
+  background-color: var(--color-primary);
   border: none;
   border-radius: 1000px;
-  color: #FFFFFF;
+  color: var(--color-text-white);
   font-family: 'Pretendard', sans-serif;
   font-weight: 600;
   font-size: 16px;
@@ -157,7 +156,7 @@
 }
 
 .login-button:hover:not(:disabled) {
-  background-color: #4A3206;
+  opacity: 0.9;
 }
 
 .login-button:active:not(:disabled) {
@@ -189,7 +188,7 @@
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #614108;
+  accent-color: var(--color-primary);
 }
 
 .login-checkbox-label {
@@ -197,7 +196,7 @@
   font-weight: 500;
   font-size: 12px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-primary);
   letter-spacing: -0.24px;
   cursor: pointer;
 }
@@ -213,7 +212,7 @@
   font-weight: 500;
   font-size: 12px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-primary);
   letter-spacing: -0.24px;
   background: none;
   border: none;
@@ -240,7 +239,7 @@
   font-weight: 500;
   font-size: 14px;
   line-height: 1.4;
-  color: #505050;
+  color: var(--color-text-secondary);
   letter-spacing: -0.28px;
   margin: 0;
   white-space: nowrap;
@@ -272,11 +271,11 @@
 }
 
 .login-sns-button-apple {
-  background-color: #FFFFFF;
+  background-color: var(--color-bg-white);
 }
 
 .login-sns-button-google {
-  background-color: #FFFFFF;
+  background-color: var(--color-bg-white);
 }
 
 .login-sns-logo {
@@ -285,17 +284,4 @@
   object-fit: contain;
 }
 
-/* 반응형 */
-@media (max-width: 375px) {
-  .login-page {
-    padding: 0;
-  }
-  
-  .login-title-section,
-  .login-body {
-    max-width: 100%;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-}
 

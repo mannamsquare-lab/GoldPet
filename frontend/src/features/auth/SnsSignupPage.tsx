@@ -4,7 +4,6 @@ import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
 import './SnsSignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
-// import { Header } from '../../components/common/Header';
 
 export const SnsSignupPage = () => {
   const navigate = useNavigate();
@@ -133,12 +132,12 @@ export const SnsSignupPage = () => {
   };
 
   return (
-    <div style={{ padding: '0 4.44vw' }}>
-      
+    <div>
+
       {/* Title Section */}
-      <div className="page-title-section">
-        <h1 className="page-title">추가 정보 입력</h1>
-        <p className="page-subtitle">SNS 계정으로 가입하신 경우, 추가 정보를 입력해주세요.</p>
+      <div className="typea-title-group-bc">
+        <h1 className="typea-title">SNS 회원가입</h1>
+        <p className="typea-subtitle">추가 정보 입력을 통해 회원가입을 완료해주세요.</p>
       </div>
 
       <div className="sns-signup-body">

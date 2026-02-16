@@ -1,51 +1,18 @@
 .benefits-page {
   width: 100%;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--typea-header-height));
   background-color: transparent; /* Background handled by TypeALayout */
   display: flex;
   flex-direction: column;
-  /* padding handled inline or via common styles */
   position: relative;
 }
 
 /* Header styles removed */
 
-/* Title Section */
-.benefits-title-section {
-  height: 32.22vw;
-  padding: 0;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.benefits-title {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 700;
-  font-size: 8.89vw;
-  line-height: 1.2;
-  color: #614108;
-  letter-spacing: -0.08vw;
-  margin: 0;
-}
-
-.benefits-subtitle {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 500;
-  font-size: 4.44vw;
-  line-height: 1.4;
-  color: #505050;
-  letter-spacing: -0.32px;
-  margin: 0;
-}
-
 /* Content */
 .benefits-content {
   flex: 1;
   width: 100%;
-  max-width: 360px;
   margin: 0 auto; /* Removed fixed margin */
   padding: 16px 16px 40px;
   display: flex;
@@ -77,7 +44,7 @@
   font-weight: 800;
   font-size: 20px;
   line-height: 1;
-  color: #614108;
+  color: var(--color-primary);
   letter-spacing: -0.4px;
   display: flex;
   align-items: center;
@@ -128,7 +95,7 @@
   font-weight: 700;
   font-size: 14px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-primary);
   letter-spacing: -0.28px;
   margin: 0;
 }
@@ -138,7 +105,7 @@
   font-weight: 500;
   font-size: 14px;
   line-height: 1.4;
-  color: #505050;
+  color: var(--color-text-secondary);
   letter-spacing: -0.28px;
   margin: 0;
 }
@@ -146,7 +113,7 @@
 .benefit-divider {
   width: 100%;
   height: 1px;
-  background-color: #EFE1C4;
+  background-color: var(--color-border);
 }
 
 /* Footer */
@@ -161,10 +128,10 @@
 .benefits-button {
   width: 100%;
   height: 48px;
-  background-color: #614108;
+  background-color: var(--color-primary);
   border: none;
   border-radius: 1000px;
-  color: #FFFFFF;
+  color: var(--color-text-white);
   font-family: 'Pretendard', sans-serif;
   font-weight: 600;
   font-size: 16px;
@@ -176,11 +143,11 @@
   justify-content: center;
   gap: 4px;
 /*  padding: 0 20px; Removed to match simple button style */
-  transition: background-color 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .benefits-button:hover {
-  background-color: #4A3206;
+  opacity: 0.9;
 }
 
 .benefits-button:active {

@@ -192,7 +192,7 @@ const ProfilePetTab: React.FC = () => {
                 <div className="ai_generation_wrap" style={{ marginTop: '2.22vw' }}>
                     <button type="button" onClick={() => navigate('/ai-profile')} style={{
                         display: 'inline-flex', alignItems: 'center', gap: '1.11vw',
-                        background: 'none', border: 'none', fontSize: '3.33vw', color: '#614108',
+                        background: 'none', border: 'none', fontSize: '12px', color: 'var(--color-primary)',
                         fontWeight: 600, cursor: 'pointer'
                     }}>
                         <img src="/assets/images/common/ai_profile_icon.svg" alt="AI" style={{ width: '4.44vw', height: '4.44vw' }} />

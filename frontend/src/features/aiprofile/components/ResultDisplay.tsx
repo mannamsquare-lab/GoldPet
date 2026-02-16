@@ -21,7 +21,7 @@ export default function ResultDisplay({ imageUrl, promptText }: ResultDisplayPro
             padding: '3.61vw 4.44vw',
             fontSize: '3.89vw',
             fontWeight: 500,
-            color: '#614108',
+            color: 'var(--color-primary)',
             lineHeight: '140%',
             margin: '6.67vw 0 0',
           }}

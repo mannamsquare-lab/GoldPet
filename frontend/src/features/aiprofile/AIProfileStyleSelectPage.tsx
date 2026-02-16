@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { aiProfileService, type AIStyleOption } from '../../services/aiProfileService';
 import { goldService } from '../../services/goldService';
+import { useAlert } from '../../contexts/AlertContext';
 import StyleCard from './components/StyleCard';
 import PhotoUploader from './components/PhotoUploader';
 import './AIProfilePage.css';
@@ -10,6 +11,7 @@ import './AIProfilePage.css';
 export default function AIProfileStyleSelectPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { showAlert } = useAlert();
   const mode = searchParams.get('mode') || 'simple';
 
   const [selectedStyle, setSelectedStyle] = useState<AIStyleOption | null>(null);
@@ -37,12 +39,12 @@ export default function AIProfileStyleSelectPage() {
   const handleSubmit = () => {
     if (mode === 'simple') {
       if (!selectedStyle || !selectedPhoto) {
-        alert('스타일과 사진을 선택해주세요.');
+        showAlert('스타일과 사진을 선택해주세요.');
         return;
       }
 
       if (goldBalance && goldBalance.balance < selectedStyle.goldCost) {
-        alert('골드가 부족합니다.');
+        showAlert('골드가 부족합니다.');
         return;
       }
 
@@ -54,7 +56,7 @@ export default function AIProfileStyleSelectPage() {
       });
     } else {
       if (!customPrompt.trim()) {
-        alert('프롬프트를 입력해주세요.');
+        showAlert('프롬프트를 입력해주세요.');
         return;
       }
 
@@ -104,7 +106,7 @@ export default function AIProfileStyleSelectPage() {
 
           {selectedStyle && (
             <div style={{ textAlign: 'center', margin: '4.44vw 0' }}>
-              <p style={{ fontSize: '3.89vw', color: '#505050' }}>
+              <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
                 필요한 골드: <strong style={{ color: '#FF9800' }}>{selectedStyle.goldCost} G</strong>
               </p>
             </div>

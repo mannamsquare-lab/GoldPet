@@ -11,7 +11,7 @@ export default function StyleCard({ style, selected, onClick }: StyleCardProps) 
     <div
       onClick={onClick}
       style={{
-        border: selected ? '2px solid #614108' : '2px solid #F9ECD2',
+        border: selected ? '2px solid var(--color-primary)' : '2px solid #F9ECD2',
         borderRadius: '4.44vw',
         overflow: 'hidden',
         cursor: 'pointer',
@@ -26,11 +26,11 @@ export default function StyleCard({ style, selected, onClick }: StyleCardProps) 
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       </div>
-      <div style={{ padding: '3.33vw' }}>
-        <div style={{ fontSize: '4.44vw', fontWeight: 600, color: '#614108', marginBottom: '1.11vw' }}>
+      <div style={{ padding: '12px' }}>
+        <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-primary)', marginBottom: '1.11vw' }}>
           {style.name}
         </div>
-        <div style={{ fontSize: '3.33vw', color: '#505050', marginBottom: '2.22vw' }}>
+        <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '2.22vw' }}>
           {style.description}
         </div>
         <div style={{ fontSize: '3.89vw', fontWeight: 600, color: '#FF9800' }}>

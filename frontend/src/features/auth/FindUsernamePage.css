@@ -1,13 +1,11 @@
 .find-username-page {
   width: 100%;
   min-height: 100vh;
-  background-color: #FFF7E6;
+  background-color: var(--color-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: calc(56px + env(safe-area-inset-top, 20px));
-  /* Force space for absolute header */
-  /* Temporary fix to debug overlap */
+  padding-top: 56px;
   /* Space for absolute header */
 
   position: relative;
@@ -19,13 +17,12 @@
 /* Title Section */
 .find-username-title-section {
   width: 100%;
-  max-width: 360px;
   padding: 24px 16px;
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 80px;
+  margin-top: 0;
 }
 
 .find-username-logo-container {
@@ -47,7 +44,7 @@
   font-weight: 500;
   font-size: 16px;
   line-height: 1.4;
-  color: #505050;
+  color: var(--color-text-secondary);
   letter-spacing: -0.32px;
   margin: 0;
 }
@@ -55,7 +52,6 @@
 /* Body */
 .find-username-body {
   width: 100%;
-  max-width: 360px;
   padding: 16px 16px 40px;
   display: flex;
   flex-direction: column;
@@ -91,7 +87,8 @@
   font-weight: 700;
   font-size: 16px;
   line-height: 1.4;
-  color: #614108;
+  letter-spacing: -0.32px;
+  color: var(--color-primary);
   margin: 0;
 }
 
@@ -100,7 +97,8 @@
   font-weight: 500;
   font-size: 16px;
   line-height: 1.4;
-  color: #505050;
+  letter-spacing: -0.32px;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
@@ -118,7 +116,7 @@
   font-weight: 500;
   font-size: 14px;
   line-height: 1.4;
-  color: #505050;
+  color: var(--color-text-secondary);
   text-align: center;
   margin: 0;
 }
@@ -127,11 +125,11 @@
   width: 160px;
   height: 40px;
   background: none;
-  border: 1px solid #614108;
+  border: 1px solid var(--color-primary);
   /* Outline style based on SVG path stroke */
   border-radius: 1000px;
   /* Assuming rounded based on SVG */
-  color: #614108;
+  color: var(--color-primary);
   font-family: 'Pretendard', sans-serif;
   font-weight: 600;
   font-size: 13px;
@@ -165,25 +163,25 @@
 .find-username-input {
   width: 100%;
   height: 48px;
-  background-color: #FFFFFF;
+  background-color: var(--color-bg-white);
   border: none;
   border-radius: 16px;
   font-family: 'Pretendard', sans-serif;
   font-weight: 500;
   font-size: 16px;
   line-height: 1.4;
-  color: #1A1A1A;
+  color: var(--color-text-primary);
   letter-spacing: -0.32px;
   padding: 0 16px;
   outline: none;
 }
 
 .find-username-input:focus {
-  border: 1px solid #614108;
+  border: 1px solid var(--color-primary);
 }
 
 .find-username-input::placeholder {
-  color: #AAAAAA;
+  color: var(--color-text-placeholder);
 }
 
 .find-username-button-group {
@@ -202,10 +200,10 @@
 .find-username-button {
   width: 100%;
   height: 48px;
-  background-color: #614008;
+  background-color: var(--color-primary);
   border: none;
   border-radius: 1000px;
-  color: #FFFFFF;
+  color: var(--color-text-white);
   font-family: 'Pretendard', sans-serif;
   font-weight: 600;
   font-size: 16px;
@@ -221,7 +219,7 @@
 }
 
 .find-username-button:hover:not(:disabled) {
-  background-color: #4A3206;
+  opacity: 0.9;
 }
 
 .find-username-button:active:not(:disabled) {
@@ -229,14 +227,24 @@
 }
 
 .find-username-button:disabled {
-  background-color: #ABABAB;
+  background-color: var(--color-text-disabled);
   cursor: not-allowed;
+}
+
+.find-username-button.outlined {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+
+.find-username-button.outlined:hover {
+  background-color: rgba(97, 65, 8, 0.05);
 }
 
 .find-username-button.secondary {
   background-color: transparent;
-  color: #614108;
-  border: 1px solid #614108;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
 }
 
 .find-username-button.secondary:hover {
@@ -248,7 +256,7 @@
   height: 48px;
   background: none;
   border: none;
-  color: #727272;
+  color: var(--color-text-secondary);
   font-family: 'Pretendard', sans-serif;
   font-weight: 500;
   font-size: 14px;
@@ -263,7 +271,7 @@
 }
 
 .find-username-text-button:hover {
-  color: #505050;
+  color: var(--color-text-secondary);
 }
 
 /* Result */
@@ -289,7 +297,7 @@
   font-weight: 500;
   font-size: 16px;
   line-height: 1.6;
-  color: #1A1A1A;
+  color: var(--color-text-primary);
   letter-spacing: -0.32px;
   text-align: center;
   margin: 0;
@@ -297,8 +305,8 @@
 
 .find-username-result-box {
   width: 100%;
-  background-color: #FFFFFF;
-  border: 1px solid #EFE1C4;
+  background-color: var(--color-bg-white);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -313,7 +321,7 @@
   font-weight: 500;
   font-size: 14px;
   line-height: 1.4;
-  color: #727272;
+  color: var(--color-text-secondary);
   letter-spacing: -0.28px;
 }
 
@@ -322,14 +330,14 @@
   font-weight: 600;
   font-size: 18px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-primary);
   letter-spacing: -0.36px;
 }
 
 .find-username-sns-info {
   width: 100%;
   padding: 12px 16px;
-  background-color: #FFF7E6;
+  background-color: var(--color-bg);
   border-radius: 8px;
   text-align: center;
 }
@@ -339,18 +347,7 @@
   font-weight: 500;
   font-size: 14px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-primary);
   letter-spacing: -0.28px;
 }
 
-/* 반응형 */
-@media (max-width: 375px) {
-
-
-  .find-username-header,
-  .find-username-title-section,
-  .find-username-body {
-    width: 100%;
-    max-width: 360px;
-  }
-}

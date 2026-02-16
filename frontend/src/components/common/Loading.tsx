@@ -20,13 +20,13 @@ export const Loading = ({ description, size = 10, fullScreen = false }: LoadingP
         flex: 1,
       }}
     >
-      <BeatLoader color="#7F5018" size={size} margin={4} />
+      <BeatLoader color="var(--color-primary)" size={size} margin={4} />
       {description && (
         <p
             className="loading_text"
           style={{
             marginTop: '16px',
-            color: '#7F5018',
+            color: 'var(--color-primary)',
             fontSize: '14px',
             fontWeight: 500,
           }}

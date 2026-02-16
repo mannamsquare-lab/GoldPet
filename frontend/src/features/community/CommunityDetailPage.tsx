@@ -98,7 +98,7 @@ export default function CommunityDetailPage() {
   /* Reset main input height when cleared */
   useEffect(() => {
       if (commentInput === '' && mainInputRef.current) {
-          mainInputRef.current.style.height = '40px';
+          mainInputRef.current.style.height = '32px';
       }
   }, [commentInput]);
 
@@ -328,7 +328,7 @@ export default function CommunityDetailPage() {
                           />
                           <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
                               <button onClick={() => setEditingCommentId(null)} style={{ padding: '6px 12px', borderRadius: '14px', border: '1px solid #ddd', background: '#fff', fontSize: '13px' }}>취소</button>
-                              <button onClick={handleUpdateComment} style={{ padding: '6px 12px', borderRadius: '14px', border: 'none', background: '#614108', color: '#fff', fontSize: '13px' }}>저장</button>
+                              <button onClick={handleUpdateComment} style={{ padding: '6px 12px', borderRadius: '14px', border: 'none', background: 'var(--color-primary)', color: '#fff', fontSize: '13px' }}>저장</button>
                           </div>
                       </div>
                   ) : (
@@ -358,37 +358,24 @@ export default function CommunityDetailPage() {
                   
                   {/* Reply Input */}
                   {replyTargetId === comment.id && (
-                    <div className="comment_submit" style={{ marginTop: '10px', display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                    <div className="comment_submit" style={{ marginTop: '10px' }}>
                       <textarea
                         autoFocus
                         onFocus={handleInputFocus}
                         onBlur={handleReplyBlur}
-                        placeholder="답글을 남겨보세요" 
+                        placeholder="답글을 남겨보세요"
                         rows={1}
-                        style={{ 
-                            flex: 1,
-                            resize: 'none', 
-                            minHeight: '40px', 
-                            maxHeight: '120px',
-                            padding: '10px 16px', 
-                            borderRadius: '20px', 
-                            border: '1px solid #e0e0e0',
-                            fontFamily: 'inherit',
-                            fontSize: '14px',
-                            lineHeight: '1.4',
-                            overflow: 'hidden'
-                        }}
                         onChange={(e) => {
-                            e.target.style.height = '40px';
-                            e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                            e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
+                            e.target.style.height = '32px';
+                            e.target.style.height = `${Math.min(e.target.scrollHeight, 108)}px`;
+                            e.target.style.overflowY = e.target.scrollHeight > 108 ? 'auto' : 'hidden';
                             e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         }}
                       />
                       <button type="button" onClick={(e) => {
                         const input = e.currentTarget.previousSibling as HTMLTextAreaElement;
                         handleSubmitReply(comment.id, input.value);
-                      }} style={{ height: '40px', padding: '0 16px', marginBottom: '1px', flexShrink: 0 }}>전송</button>
+                      }}>전송</button>
                     </div>
                   )}
 
@@ -413,7 +400,7 @@ export default function CommunityDetailPage() {
           </ul>
 
           {/* Main Comment Input */}
-          <div className="comment_submit" style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+          <div className="comment_submit">
             <textarea
               ref={mainInputRef}
               placeholder="댓글을 남겨보세요"
@@ -421,27 +408,14 @@ export default function CommunityDetailPage() {
               rows={1}
               onFocus={() => { setReplyTargetId(null); handleInputFocus(); }}
               onBlur={handleInputBlur}
-              style={{ 
-                  flex: 1,
-                  resize: 'none', 
-                  minHeight: '40px', 
-                  maxHeight: '120px',
-                  padding: '10px 16px', 
-                  borderRadius: '20px', 
-                  border: '1px solid #e0e0e0',
-                  fontFamily: 'inherit',
-                  fontSize: '14px',
-                  lineHeight: '1.4',
-                  overflow: 'hidden'
-              }}
               onChange={(e) => {
                 setCommentInput(e.target.value);
-                e.target.style.height = '40px';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
+                e.target.style.height = '32px';
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 108)}px`;
+                e.target.style.overflowY = e.target.scrollHeight > 108 ? 'auto' : 'hidden';
               }}
             />
-            <button type="button" onClick={handleSubmitComment} style={{ height: '40px', padding: '0 16px', marginBottom: '1px', flexShrink: 0 }}>전송</button>
+            <button type="button" onClick={handleSubmitComment}>전송</button>
           </div>
         </div>
       </div>

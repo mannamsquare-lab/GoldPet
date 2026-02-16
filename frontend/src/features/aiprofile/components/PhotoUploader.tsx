@@ -32,7 +32,7 @@ export default function PhotoUploader({ onPhotoSelected, currentPhoto }: PhotoUp
           marginTop: '4.44vw',
           padding: '2.22vw 6.67vw',
           borderRadius: '6.67vw',
-          backgroundColor: '#614108',
+          backgroundColor: 'var(--color-primary)',
           color: '#fff',
           fontSize: '3.89vw',
           fontWeight: 500,

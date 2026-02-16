@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useAlert } from '../../contexts/AlertContext';
 import { useToast } from '../../contexts/ToastContext';
+import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { settingsService } from '../../services/settingsService';
 import type { NotificationSettings, PrivacySettings } from '../../services/settingsService';
 import './SettingsPage.css';
@@ -95,134 +96,136 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="settings-container">
-      {/* Notification Settings */}
-      <div className="settings-section">
-        <span className="section-title">알림 설정</span>
-        <div className="settings-toggle">
-          <span className="toggle-label">산책 알림</span>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              id="walk-alert"
-              checked={notificationSettings.walkAlert}
-              onChange={() => handleNotificationToggle('walkAlert')}
-            />
-            <label htmlFor="walk-alert"></label>
+    <SubPageLayout title="설정">
+      <div className="settings-container">
+        {/* Notification Settings */}
+        <div className="settings-section">
+          <span className="section-title">알림 설정</span>
+          <div className="settings-toggle">
+            <span className="toggle-label">산책 알림</span>
+            <div className="toggle-switch">
+              <input
+                type="checkbox"
+                id="walk-alert"
+                checked={notificationSettings.walkAlert}
+                onChange={() => handleNotificationToggle('walkAlert')}
+              />
+              <label htmlFor="walk-alert"></label>
+            </div>
+          </div>
+          <div className="settings-toggle">
+            <span className="toggle-label">채팅 알림</span>
+            <div className="toggle-switch">
+              <input
+                type="checkbox"
+                id="chat-alert"
+                checked={notificationSettings.chatAlert}
+                onChange={() => handleNotificationToggle('chatAlert')}
+              />
+              <label htmlFor="chat-alert"></label>
+            </div>
+          </div>
+          <div className="settings-toggle">
+            <span className="toggle-label">친구 알림</span>
+            <div className="toggle-switch">
+              <input
+                type="checkbox"
+                id="friend-alert"
+                checked={notificationSettings.friendAlert}
+                onChange={() => handleNotificationToggle('friendAlert')}
+              />
+              <label htmlFor="friend-alert"></label>
+            </div>
+          </div>
+          <div className="settings-toggle">
+            <span className="toggle-label">커뮤니티 알림</span>
+            <div className="toggle-switch">
+              <input
+                type="checkbox"
+                id="community-alert"
+                checked={notificationSettings.communityAlert}
+                onChange={() => handleNotificationToggle('communityAlert')}
+              />
+              <label htmlFor="community-alert"></label>
+            </div>
           </div>
         </div>
-        <div className="settings-toggle">
-          <span className="toggle-label">채팅 알림</span>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              id="chat-alert"
-              checked={notificationSettings.chatAlert}
-              onChange={() => handleNotificationToggle('chatAlert')}
-            />
-            <label htmlFor="chat-alert"></label>
-          </div>
-        </div>
-        <div className="settings-toggle">
-          <span className="toggle-label">친구 알림</span>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              id="friend-alert"
-              checked={notificationSettings.friendAlert}
-              onChange={() => handleNotificationToggle('friendAlert')}
-            />
-            <label htmlFor="friend-alert"></label>
-          </div>
-        </div>
-        <div className="settings-toggle">
-          <span className="toggle-label">커뮤니티 알림</span>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              id="community-alert"
-              checked={notificationSettings.communityAlert}
-              onChange={() => handleNotificationToggle('communityAlert')}
-            />
-            <label htmlFor="community-alert"></label>
-          </div>
-        </div>
-      </div>
 
-      {/* Privacy Settings */}
-      <div className="settings-section">
-        <span className="section-title">개인정보 설정</span>
-        <div className="settings-toggle">
-          <span className="toggle-label">위치 공유</span>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              id="location-sharing"
-              checked={privacySettings.locationSharing}
-              onChange={() => handlePrivacyToggle('locationSharing')}
-            />
-            <label htmlFor="location-sharing"></label>
+        {/* Privacy Settings */}
+        <div className="settings-section">
+          <span className="section-title">개인정보 설정</span>
+          <div className="settings-toggle">
+            <span className="toggle-label">위치 공유</span>
+            <div className="toggle-switch">
+              <input
+                type="checkbox"
+                id="location-sharing"
+                checked={privacySettings.locationSharing}
+                onChange={() => handlePrivacyToggle('locationSharing')}
+              />
+              <label htmlFor="location-sharing"></label>
+            </div>
+          </div>
+          <div className="settings-toggle">
+            <span className="toggle-label">프로필 공개</span>
+            <div className="toggle-switch">
+              <input
+                type="checkbox"
+                id="profile-public"
+                checked={privacySettings.profilePublic}
+                onChange={() => handlePrivacyToggle('profilePublic')}
+              />
+              <label htmlFor="profile-public"></label>
+            </div>
           </div>
         </div>
-        <div className="settings-toggle">
-          <span className="toggle-label">프로필 공개</span>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              id="profile-public"
-              checked={privacySettings.profilePublic}
-              onChange={() => handlePrivacyToggle('profilePublic')}
-            />
-            <label htmlFor="profile-public"></label>
+
+        {/* Account Management */}
+        <div className="settings-section">
+          <span className="section-title">계정 관리</span>
+          <div className="settings-link" onClick={handlePasswordChange}>
+            <span>비밀번호 변경</span>
+            <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </div>
+          <div className="settings-link" onClick={handleLogout}>
+            <span>로그아웃</span>
+            <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
           </div>
         </div>
-      </div>
 
-      {/* Account Management */}
-      <div className="settings-section">
-        <span className="section-title">계정 관리</span>
-        <div className="settings-link" onClick={handlePasswordChange}>
-          <span>비밀번호 변경</span>
-          <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 6l6 6-6 6" />
-          </svg>
+        {/* Danger Zone */}
+        <div className="settings-danger">
+          <button type="button" className="danger-link" onClick={handleDeleteAccount}>
+            회원탈퇴
+          </button>
         </div>
-        <div className="settings-link" onClick={handleLogout}>
-          <span>로그아웃</span>
-          <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 6l6 6-6 6" />
-          </svg>
-        </div>
-      </div>
 
-      {/* Danger Zone */}
-      <div className="settings-danger">
-        <button type="button" className="danger-link" onClick={handleDeleteAccount}>
-          회원탈퇴
-        </button>
-      </div>
-
-      {/* App Info */}
-      <div className="settings-section">
-        <span className="section-title">앱 정보</span>
-        <div className="settings-link" onClick={handleTermsClick}>
-          <span>이용약관</span>
-          <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 6l6 6-6 6" />
-          </svg>
+        {/* App Info */}
+        <div className="settings-section">
+          <span className="section-title">앱 정보</span>
+          <div className="settings-link" onClick={handleTermsClick}>
+            <span>이용약관</span>
+            <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </div>
+          <div className="settings-link" onClick={handlePrivacyPolicyClick}>
+            <span>개인정보처리방침</span>
+            <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </div>
         </div>
-        <div className="settings-link" onClick={handlePrivacyPolicyClick}>
-          <span>개인정보처리방침</span>
-          <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 6l6 6-6 6" />
-          </svg>
+
+        <div className="settings-app-info">
+          <span className="version">앱 버전 v1.0.0</span>
         </div>
       </div>
-
-      <div className="settings-app-info">
-        <span className="version">앱 버전 v1.0.0</span>
-      </div>
-    </div>
+    </SubPageLayout>
   );
 };
 

@@ -85,10 +85,10 @@ function GoldHistoryPage() {
               height: '10vw',
               padding: '0 6.67vw',
               borderRadius: '10vw',
-              border: '1px solid #EFE1C4',
+              border: '1px solid var(--color-border)',
               backgroundColor: '#fff',
-              fontSize: '3.89vw',
-              color: '#614108',
+              fontSize: '14px',
+              color: 'var(--color-primary)',
               cursor: 'pointer',
             }}
           >

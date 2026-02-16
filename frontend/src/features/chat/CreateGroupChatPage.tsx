@@ -4,10 +4,12 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { friendService, type Friend } from '../../services/friendService';
 import { chatService } from '../../services/chatService';
 import { Loading } from '../../components/common/Loading';
+import { useAlert } from '../../contexts/AlertContext';
 import '../../styles/chat.css';
 
 const CreateGroupChatPage = () => {
     const navigate = useNavigate();
+    const { showAlert } = useAlert();
     const [selectedFriends, setSelectedFriends] = useState<Set<number>>(new Set());
     const [groupName, setGroupName] = useState('');
     const [step, setStep] = useState<'select' | 'name'>('select');
@@ -28,7 +30,7 @@ const CreateGroupChatPage = () => {
             navigate(`/chat/group/${room.id}`, { replace: true });
         },
         onError: () => {
-            alert('그룹 채팅 생성에 실패했습니다.');
+            showAlert('그룹 채팅 생성에 실패했습니다.');
         },
     });
 
@@ -46,7 +48,7 @@ const CreateGroupChatPage = () => {
 
     const handleNext = () => {
         if (selectedFriends.size < 2) {
-            alert('그룹 채팅은 2명 이상 선택해야 합니다.');
+            showAlert('그룹 채팅은 2명 이상 선택해야 합니다.');
             return;
         }
         setStep('name');

@@ -5,21 +5,33 @@ import './DormantAccountPage.css';
 const DormantAccountPage: React.FC = () => {
   const navigate = useNavigate();
 
+  const handleActivate = () => {
+    // TODO: Call API to activate dormant account
+    navigate('/login');
+  };
+
   return (
-    <div className="account-notice-container">
-      <img src="/assets/images/icon_dormant.svg" alt="휴면 계정" className="account-notice-icon" />
-      <h1 className="account-notice-title">휴면 계정 안내</h1>
-      <p className="account-notice-desc">
-        장기간 미접속으로 계정이 휴면 상태입니다.<br />
-        계정을 다시 활성화하시려면<br />
-        고객센터로 문의해 주세요.
-      </p>
-      <button className="account-notice-btn" onClick={() => window.open('mailto:support@goldpet.com')}>
-        고객센터 문의
-      </button>
-      <button className="account-notice-link" onClick={() => navigate('/login')}>
-        로그인으로 돌아가기
-      </button>
+    <div className="dormant-account-page">
+      <div className="dormant-account-body">
+        <div className="typea-title-group-bc">
+          <h1 className="typea-title">휴면 계정 안내</h1>
+        </div>
+        <div className="dormant-account-description">
+          <p>고객님은 OOO을 1년 동안 이용하지 않아<br />휴면상태가 되었습니다.</p>
+          <p>OOO 서비스를 다시 이용하시려면 버튼을<br />클릭해주세요.</p>
+        </div>
+
+        <div className="dormant-account-info-box">
+          <p>최근 접속일 : 2021. 01. 29</p>
+          <p>휴면 전환일 : 2022. 01. 29</p>
+        </div>
+      </div>
+
+      <div className="dormant-account-button-container">
+        <button className="dormant-account-button" onClick={handleActivate}>
+          휴면 해제
+        </button>
+      </div>
     </div>
   );
 };

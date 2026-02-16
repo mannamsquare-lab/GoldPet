@@ -10,12 +10,12 @@ export const BenefitsPage = () => {
   };
 
   return (
-    <div className="benefits-page" data-name="Benefit" data-node-id="4017:20935" style={{ padding: '15.28vw 4.44vw 0' }}>
+    <div className="benefits-page" data-name="Benefit" data-node-id="4017:20935">
 
       {/* Title Section */}
-      <div className="benefits-title-section" data-name="Title" data-node-id="4017:21050">
-        <h2 className="benefits-title">골드펫 혜택</h2>
-        <p className="benefits-subtitle">다양한 맞춤형 혜택을 누려보세요!</p>
+      <div className="typea-title-group-a" data-name="Title" data-node-id="4017:21050">
+        <h1 className="typea-title">골드펫 혜택</h1>
+        <p className="typea-subtitle">다양한 맞춤형 혜택을 누려보세요!</p>
       </div>
 
       {/* Content */}

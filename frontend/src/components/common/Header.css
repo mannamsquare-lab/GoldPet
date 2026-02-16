@@ -1,18 +1,27 @@
 .app-header {
     position: absolute;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
     width: 100%;
-    max-width: 360px;
     z-index: 100;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 0 16px;
-    /* Safe area handling */
-    padding-top: env(safe-area-inset-top, 20px);
-    height: calc(56px + env(safe-area-inset-top, 20px));
+    height: 56px;
     background-color: transparent;
+    box-sizing: border-box;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-right-action {
+    display: flex;
+    align-items: center;
 }
 
 .header-back-button {
@@ -42,10 +51,5 @@
     font-family: 'Pretendard', sans-serif;
     font-weight: 600;
     font-size: 18px;
-    color: #1A1A1A;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    padding-top: env(safe-area-inset-top, 20px);
-    /* Match header padding */
+    color: var(--color-text-primary);
 }

@@ -1,10 +1,10 @@
 .sns-signup-page {
   width: 100%;
-  min-height: 100vh;
-  background-color: #FFF7E6;
+  min-height: calc(100vh - var(--typea-header-height));
+  background-color: var(--color-bg);
   position: relative;
   padding: 0;
-  padding-top: calc(56px + env(safe-area-inset-top, 20px));
+  padding-top: 0;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
@@ -17,8 +17,6 @@
 /* Body */
 .sns-signup-body {
   width: 100%;
-  max-width: 360px;
-  margin: 0 auto;
   padding: 16px 16px 40px;
   display: flex;
   flex-direction: column;
@@ -42,10 +40,10 @@
 
 .sns-signup-input-label {
   font-family: 'Pretendard', sans-serif;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-text-secondary);
   letter-spacing: -0.28px;
   margin: 0;
 }
@@ -60,8 +58,8 @@
 .sns-signup-input {
   width: 100%;
   height: 48px;
-  background-color: #FFFFFF;
-  border: 1px solid #EFE1C4;
+  background-color: var(--color-bg-white);
+  border: 1px solid var(--color-border);
   font-family: 'Pretendard', sans-serif;
   font-weight: 500;
   font-size: 16px;
@@ -90,11 +88,11 @@
 }
 
 .sns-signup-input:focus {
-  border-color: #614108;
+  border-color: var(--color-primary);
 }
 
 .sns-signup-input.error {
-  border-color: #FF4444;
+  border-color: var(--color-accent-red);
 }
 
 .sns-signup-input.success {
@@ -102,7 +100,7 @@
 }
 
 .sns-signup-input::placeholder {
-  color: #727272;
+  color: var(--color-text-placeholder);
 }
 
 .sns-signup-check-button {
@@ -124,8 +122,8 @@
 }
 
 .sns-signup-check-button.active {
-  background-color: #614008;
-  color: #FFFFFF;
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
   cursor: pointer;
 }
 
@@ -151,7 +149,7 @@
   font-weight: 400;
   font-size: 12px;
   line-height: 1.4;
-  color: #FF4444;
+  color: var(--color-accent-red);
   padding-left: 4px;
 }
 
@@ -185,8 +183,8 @@
 }
 
 .sns-signup-button:not(:disabled) {
-  background-color: #614008;
-  color: #FFFFFF;
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
   cursor: pointer;
 }
 
@@ -202,16 +200,3 @@
   cursor: not-allowed;
 }
 
-/* 반응형 */
-@media (max-width: 375px) {
-  .sns-signup-page {
-    padding: 0;
-  }
-
-  .sns-signup-header,
-  .sns-signup-title-section,
-  .sns-signup-body {
-    width: 100%;
-    max-width: 360px;
-  }
-}

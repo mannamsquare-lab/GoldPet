@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import SwiperCore from 'swiper';
 import { Navigation, Parallax } from 'swiper/modules';
 import { useQuery } from '@tanstack/react-query';
 import { homeService } from '../../services/homeService';
+import { friendService, formatPetTag } from '../../services/friendService';
+import { useAlert } from '../../contexts/AlertContext';
 
 import { Loading } from '../../components/common/Loading';
 import { LocationStatus } from '../../components/common/LocationStatus';
@@ -22,6 +24,44 @@ export default function HomePage() {
     const mainSlideRef = useRef<HTMLDivElement>(null);
     const mainSwiperRef = useRef<SwiperCore | null>(null);
     const insideSwiperRefs = useRef<SwiperCore[]>([]);
+    const { showAlert } = useAlert();
+    const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
+    const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
+    const [loadingId, setLoadingId] = useState<number | null>(null);
+
+    const handleLike = async (id: number, name: string) => {
+        if (loadingId) return;
+        setLoadingId(id);
+        try {
+            const result = await friendService.likeUser(id);
+            setLikedIds(prev => new Set(prev).add(id));
+            if (result.isMutual) {
+                showAlert(`${name}과 서로 좋아해가 되었어요! 💕`);
+            } else {
+                showAlert(`${name}에게 좋아요를 보냈어요! ❤️`);
+            }
+        } catch {
+            showAlert('좋아요를 보내는데 실패했습니다.');
+        } finally {
+            setLoadingId(null);
+        }
+    };
+
+    const handleDislike = async (id: number, name: string) => {
+        if (loadingId) return;
+        setLoadingId(id);
+        try {
+            await friendService.unlikeUser(id);
+            setHiddenIds(prev => new Set(prev).add(id));
+            showAlert(`${name}님을 패스했어요 🙅`);
+            // Slide to next after dislike
+            mainSwiperRef.current?.slideNext();
+        } catch {
+            showAlert('작업에 실패했습니다.');
+        } finally {
+            setLoadingId(null);
+        }
+    };
 
     const { data: homeData, isLoading } = useQuery({
         queryKey: ['homeData'],
@@ -116,12 +156,29 @@ export default function HomePage() {
 
                                 <div className="pet_detail">
                                     <p data-swiper-parallax="-300">
-                                        {item.description} <br />
+                                        {item.petAge}살 ∙ {item.petBreed} <br />
                                         {item.locationText || '위치 미설정'} ∙ {item.distance}
                                     </p>
-                                    <div className="like_wrap" data-swiper-parallax="-200">
-                                        <button type="button">싫어요</button>
-                                        <button type="button" className="active">좋아요</button>
+                                    <br />
+                                    {item.description && <p data-swiper-parallax="-250">{item.description}</p>}
+                                    {item.tags.length > 0 && (
+                                        <div className="wish_dot" data-swiper-parallax="-200">
+                                            {item.tags
+                                                .map(tag => formatPetTag(tag))
+                                                .filter(tag => tag !== '')
+                                                .map((tag, i) => (
+                                                    <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
+                                                ))
+                                            }
+                                        </div>
+                                    )}
+                                    <div className="like_wrap" data-swiper-parallax="-150">
+                                        <button type="button" onClick={() => handleDislike(item.id, item.name)} disabled={loadingId === item.id}>
+                                            <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
+                                        </button>
+                                        <button type="button" className="active" onClick={() => handleLike(item.id, item.name)} disabled={loadingId === item.id || likedIds.has(item.id)}>
+                                            <img src="/assets/images/common/like_btn.svg" alt="" />{likedIds.has(item.id) ? '좋아요 완료' : '좋아요'}
+                                        </button>
                                     </div>
                                 </div>
                             </div>

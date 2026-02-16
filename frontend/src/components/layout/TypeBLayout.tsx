@@ -8,7 +8,7 @@ interface TypeBLayoutProps {
 
 export const TypeBLayout = ({ variant = 'logo-with-icons' }: TypeBLayoutProps) => {
     return (
-        <div id="wrap" style={{ backgroundColor: '#FFF7E6', minHeight: '100vh' }}>
+        <div id="wrap" className="gp-layout-page">
             <MainHeader variant={variant} />
             <Outlet />
             <BottomNav />

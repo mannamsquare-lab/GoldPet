@@ -5,6 +5,7 @@ import com.goldpet.domain.friend.dto.FriendResponse
 import com.goldpet.domain.friend.dto.LikeResponse
 import com.goldpet.domain.friend.service.FriendService
 import com.goldpet.domain.friend.service.LikeService
+import com.goldpet.domain.friend.service.parseTemperamentTags
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -59,6 +60,8 @@ class LikeController(
             val pets = petRepository.findByOwnerId(user.id)
             val mainPet = pets.firstOrNull()
             
+            val parsed1 = parseTemperamentTags(mainPet?.temperamentTags)
+
             FriendResponse(
                 id = user.id,
                 nickname = user.nickname ?: "Unknown",
@@ -68,13 +71,10 @@ class LikeController(
                 petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
                 petGender = mainPet?.gender ?: "UNKNOWN",
                 isNeutered = mainPet?.isNeutered ?: false,
-                // Walk 레코드는 산책 완료 후 생성됨 (startTime, endTime 모두 NOT NULL).
-                // 실시간 산책 상태는 앱 클라이언트에서 관리하며, 서버에 별도 tracking API 구현 시 연동 가능.
                 onWalking = false,
-                description = user.intro ?: "",
-                tags = mainPet?.temperamentTags?.split(",")?.map { it.trim() } ?: emptyList(),
+                description = parsed1.note,
+                tags = parsed1.tags,
                 images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
-                // 위치 기반 거리 계산은 위치 공유 기능 구현 시 추가
                 distance = 0.0,
                 status = "offline",
                 location = null,
@@ -94,6 +94,8 @@ class LikeController(
             val pets = petRepository.findByOwnerId(user.id)
             val mainPet = pets.firstOrNull()
 
+            val parsed2 = parseTemperamentTags(mainPet?.temperamentTags)
+
             FriendResponse(
                 id = user.id,
                 nickname = user.nickname ?: "Unknown",
@@ -103,13 +105,10 @@ class LikeController(
                 petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
                 petGender = mainPet?.gender ?: "UNKNOWN",
                 isNeutered = mainPet?.isNeutered ?: false,
-                // Walk 레코드는 산책 완료 후 생성됨 (startTime, endTime 모두 NOT NULL).
-                // 실시간 산책 상태는 앱 클라이언트에서 관리하며, 서버에 별도 tracking API 구현 시 연동 가능.
                 onWalking = false,
-                description = user.intro ?: "",
-                tags = mainPet?.temperamentTags?.split(",")?.map { it.trim() } ?: emptyList(),
+                description = parsed2.note,
+                tags = parsed2.tags,
                 images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
-                // 위치 기반 거리 계산은 위치 공유 기능 구현 시 추가
                 distance = 0.0,
                 status = "offline",
                 location = null,
@@ -129,6 +128,8 @@ class LikeController(
             val pets = petRepository.findByOwnerId(user.id)
             val mainPet = pets.firstOrNull()
 
+            val parsed3 = parseTemperamentTags(mainPet?.temperamentTags)
+
             FriendResponse(
                 id = user.id,
                 nickname = user.nickname ?: "Unknown",
@@ -138,11 +139,9 @@ class LikeController(
                 petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
                 petGender = mainPet?.gender ?: "UNKNOWN",
                 isNeutered = mainPet?.isNeutered ?: false,
-                // Walk 레코드는 산책 완료 후 생성됨 (startTime, endTime 모두 NOT NULL).
-                // 실시간 산책 상태는 앱 클라이언트에서 관리하며, 서버에 별도 tracking API 구현 시 연동 가능.
                 onWalking = false,
-                description = user.intro ?: "",
-                tags = mainPet?.temperamentTags?.split(",")?.map { it.trim() } ?: emptyList(),
+                description = parsed3.note,
+                tags = parsed3.tags,
                 images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
                 // 위치 기반 거리 계산은 위치 공유 기능 구현 시 추가
                 distance = 0.0,

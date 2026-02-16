@@ -1,5 +1,6 @@
 package com.goldpet.domain.walk.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
@@ -12,6 +13,7 @@ class NaverGeocodingService(
     @Value("\${ncp.maps.client-id:}") private val clientId: String,
     @Value("\${ncp.maps.client-secret:}") private val clientSecret: String
 ) {
+    private val log = LoggerFactory.getLogger(NaverGeocodingService::class.java)
     private val restTemplate = RestTemplate()
 
     fun reverseGeocode(lat: Double, lng: Double): String {
@@ -33,8 +35,11 @@ class NaverGeocodingService(
             val area2 = (region?.get("area2") as? Map<*, *>)?.get("name") as? String ?: ""
             val area3 = (region?.get("area3") as? Map<*, *>)?.get("name") as? String ?: ""
 
-            listOf(area1, area2, area3).filter { it.isNotBlank() }.joinToString(" ").ifBlank { "알 수 없는 위치" }
+            val result = listOf(area1, area2, area3).filter { it.isNotBlank() }.joinToString(" ").ifBlank { "알 수 없는 위치" }
+            log.debug("Reverse geocode ({},{}) = '{}'", lat, lng, result)
+            result
         } catch (e: Exception) {
+            log.warn("Reverse geocoding failed for lat={}, lng={}: {}", lat, lng, e.message)
             "알 수 없는 위치"
         }
     }
@@ -58,9 +63,16 @@ class NaverGeocodingService(
 
             // Parse NCP geocoding response
             // Response structure: { addresses: [{ roadAddress, jibunAddress, x, y }] }
-            val addresses = (body["addresses"] as? List<*>) ?: return emptyList()
+            val addresses = (body["addresses"] as? List<*>) ?: run {
+                log.warn("Geocoding returned no addresses field for query: {}", address)
+                return emptyList()
+            }
+            if (addresses.isEmpty()) {
+                log.warn("Geocoding returned empty results for query: {}", address)
+                return emptyList()
+            }
 
-            addresses.mapNotNull { item ->
+            val result = addresses.mapNotNull { item ->
                 val addr = item as? Map<*, *> ?: return@mapNotNull null
                 val roadAddress = addr["roadAddress"] as? String
                 val jibunAddress = addr["jibunAddress"] as? String
@@ -76,7 +88,10 @@ class NaverGeocodingService(
                     lng = x
                 )
             }
+            log.debug("Geocode '{}' returned {} results", address, result.size)
+            result
         } catch (e: Exception) {
+            log.error("Geocoding failed for query '{}': {}", address, e.message)
             emptyList()
         }
     }

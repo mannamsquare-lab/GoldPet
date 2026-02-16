@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import apiClient from '../../services/api/client';
+import { useAlert } from '../../contexts/AlertContext';
 import './WalkPage.css';
 
 const DEFAULT_LAT = 37.5665;
@@ -9,6 +10,7 @@ const DEFAULT_LNG = 126.9780;
 
 export const WalkMapPage = () => {
     const navigate = useNavigate();
+    const { showAlert } = useAlert();
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<naver.maps.Map | null>(null);
     const markerRef = useRef<naver.maps.Marker | null>(null);
@@ -178,10 +180,10 @@ export const WalkMapPage = () => {
                             try {
                                 await nativeBridge.callMethod('openCamera');
                             } catch (e) {
-                                alert('카메라를 열 수 없습니다: ' + e);
+                                showAlert('카메라를 열 수 없습니다.');
                             }
                         } else {
-                            alert('모바일 앱에서만 가능한 기능입니다.');
+                            showAlert('모바일 앱에서만 가능한 기능입니다.');
                         }
                     }}>
                         <img src="/assets/images/walk/camera_icon.svg" alt="" />
@@ -193,11 +195,11 @@ export const WalkMapPage = () => {
                             try {
                                 await nativeBridge.callMethod('startWalk');
                             } catch (e) {
-                                alert('산책 시작 실패: ' + e);
+                                showAlert('산책 시작에 실패했습니다.');
                             }
                         } else {
                             // Web Fallback
-                            alert('모바일 앱에서만 가능한 기능입니다.');
+                            showAlert('모바일 앱에서만 가능한 기능입니다.');
                             navigate('/walk');
                         }
                     }}>

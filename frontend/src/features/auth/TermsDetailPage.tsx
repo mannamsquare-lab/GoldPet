@@ -1,6 +1,5 @@
 import { useParams } from 'react-router-dom';
 import './TermsDetailPage.css';
-// import { Header } from '../../components/common/Header';
 
 const TERMS_CONTENT: { [key: string]: { title: string; content: string } } = {
   service: {
@@ -159,6 +158,22 @@ const TERMS_CONTENT: { [key: string]: { title: string; content: string } } = {
   },
 };
 
+const renderTermsContent = (content: string) => {
+  const lines = content.split('\n');
+  return lines.map((line, index) => {
+    // 제X조 패턴 - 볼드 처리
+    if (/^제\d+조/.test(line.trim())) {
+      return (
+        <span key={index}>
+          <strong className="terms-article-heading">{line}</strong>
+          {'\n'}
+        </span>
+      );
+    }
+    return <span key={index}>{line}{'\n'}</span>;
+  });
+};
+
 export const TermsDetailPage = () => {
   const { type } = useParams<{ type: string }>();
 
@@ -166,7 +181,7 @@ export const TermsDetailPage = () => {
 
   if (!termsData) {
     return (
-      <div style={{ padding: '0 4.44vw' }}>
+      <div>
         <div className="terms-detail-content">
           <p>약관을 찾을 수 없습니다.</p>
         </div>
@@ -175,17 +190,17 @@ export const TermsDetailPage = () => {
   }
 
   return (
-    <div style={{ padding: '15.28vw 4.44vw 0' }}>
+    <div>
 
       {/* Title Section */}
-      <div className="page-title-section">
-        <h2 className="page-title">{termsData.title}</h2>
+      <div className="typea-title-group-bc">
+        <h2 className="typea-title">{termsData.title}</h2>
       </div>
 
       {/* Content */}
       <div className="terms-detail-body">
         <div className="terms-detail-content">
-          <pre className="terms-detail-text">{termsData.content}</pre>
+          <pre className="terms-detail-text">{renderTermsContent(termsData.content)}</pre>
         </div>
       </div>
     </div>

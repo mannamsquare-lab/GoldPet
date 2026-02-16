@@ -1,12 +1,18 @@
-/* Header styles removed - using shared Header component */
-/* Page container and title styles moved to page-layout.css */
+/* Page Container */
+.signup-page-container {
+  width: 100%;
+  min-height: calc(100vh - var(--typea-header-height));
+  background-color: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px;
+  position: relative;
+}
 
-/* Body */
 /* Body */
 .signup-body {
   width: 100%;
-  max-width: 360px;
-  margin: 0 auto;
   padding: 16px 16px 40px;
   display: flex;
   flex-direction: column;
@@ -28,43 +34,12 @@
   gap: 8px;
 }
 
-/* Page Title Section */
-.page-title-section {
-  height: 32.22vw;
-  padding: 0;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.page-title {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 700;
-  font-size: 8.89vw;
-  line-height: 1.2;
-  color: #614108;
-  letter-spacing: -0.08vw;
-  margin: 0;
-}
-
-.page-subtitle {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 500;
-  font-size: 4.44vw;
-  line-height: 1.4;
-  color: #505050;
-  letter-spacing: -0.32px;
-  margin: 0;
-}
-
 .signup-input-label {
   font-family: 'Pretendard', sans-serif;
   font-weight: 600;
   font-size: 14px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-primary);
   letter-spacing: -0.28px;
   margin: 0;
 }
@@ -84,13 +59,13 @@
 .signup-input {
   width: 100%;
   height: 48px;
-  background-color: #FFFFFF;
-  border: none;
+  background-color: var(--color-bg-white);
+  border: 1px solid transparent;
   font-family: 'Pretendard', sans-serif;
   font-weight: 500;
   font-size: 16px;
   line-height: 1.4;
-  color: #727272;
+  color: var(--color-text-primary);
   letter-spacing: -0.32px;
   padding: 0 16px;
   outline: none;
@@ -107,42 +82,43 @@
 }
 
 .signup-input:focus {
-  border-color: #614108;
+  border-color: var(--color-primary);
 }
 
 .signup-input.error {
-  border-color: #FF4444;
+  border: 1px solid var(--color-accent-red);
 }
 
 .signup-input.success {
-  border-color: #4CAF50;
+  border: 1px solid #4CAF50;
 }
 
 .signup-input::placeholder {
-  color: #727272;
+  color: var(--color-text-placeholder);
 }
 
 .signup-check-button {
   height: 48px;
   padding: 0 16px;
-  background-color: #ABABAB;
+  background-color: var(--color-text-placeholder);
   border: none;
   border-radius: 16px;
   font-family: 'Pretendard', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.4;
-  color: #FFFFFF;
-  letter-spacing: -0.28px;
+  color: var(--color-text-white);
+  letter-spacing: -0.26px;
   cursor: not-allowed;
   white-space: nowrap;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  min-width: 55px;
 }
 
 .signup-check-button.active {
-  background-color: #614008;
-  color: #FFFFFF;
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
   cursor: pointer;
 }
 
@@ -210,7 +186,7 @@
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-color: #FFFFFF; /* Ensure background covers default arrow if any */
+  background-color: var(--color-bg-white); /* Ensure background covers default arrow if any */
 }
 
 /* Date Input Styling Override (optional, to ensure text doesn't overlap icon) */
@@ -229,7 +205,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 400;
   font-size: 12px;
   line-height: 1.4;
-  color: #FF4444;
+  color: var(--color-accent-red);
   padding-left: 4px;
 }
 
@@ -244,10 +220,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .signup-button {
   width: 100%;
   height: 48px;
-  background-color: #ABABAB;
+  background-color: var(--color-text-placeholder);
   border: none;
   border-radius: 1000px;
-  color: #FFFFFF;
+  color: var(--color-text-white);
   font-family: 'Pretendard', sans-serif;
   font-weight: 600;
   font-size: 16px;
@@ -263,13 +239,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .signup-button:not(:disabled) {
-  background-color: #614008;
-  color: #FFFFFF;
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
   cursor: pointer;
 }
 
 .signup-button:hover:not(:disabled) {
-  background-color: #4A3206;
+  opacity: 0.9;
 }
 
 .signup-button:active:not(:disabled) {
@@ -288,7 +264,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 500;
   font-size: 14px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-primary);
   letter-spacing: -0.28px;
   background: none;
   border: none;
@@ -300,16 +276,3 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   text-decoration: underline;
 }
 
-/* 반응형 */
-@media (max-width: 375px) {
-  .signup-page {
-    padding: 0;
-  }
-
-  .signup-header,
-  .signup-title-section,
-  .signup-body {
-    width: 100%;
-    max-width: 360px;
-  }
-}

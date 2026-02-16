@@ -1,7 +1,7 @@
 .signup-complete-page {
   width: 100%;
-  min-height: 100vh;
-  background-color: #FFF7E6;
+  min-height: calc(100vh - var(--typea-header-height));
+  background-color: var(--color-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,7 +11,6 @@
 
 .signup-complete-content {
   width: 100%;
-  max-width: 360px;
   padding: 40px 16px;
   display: flex;
   flex-direction: column;
@@ -19,40 +18,23 @@
   gap: 24px;
 }
 
-.signup-complete-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background-color: #614008;
-  color: #FFFFFF;
-  font-size: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  margin-bottom: 8px;
+.signup-complete-logo {
+  width: 100.45px;
+  height: 27px;
+  object-fit: contain;
+  margin-bottom: 16px;
 }
 
-.signup-complete-title {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 700;
-  font-size: 28px;
-  line-height: 1.3;
-  color: #614108;
-  letter-spacing: -0.56px;
-  text-align: center;
-  margin: 0;
-}
-
-.signup-complete-subtitle {
+.signup-complete-message {
   font-family: 'Pretendard', sans-serif;
   font-weight: 500;
   font-size: 16px;
-  line-height: 1.6;
-  color: #505050;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
   letter-spacing: -0.32px;
   text-align: center;
   margin: 0;
+  white-space: pre-wrap;
 }
 
 .signup-complete-button-group {
@@ -66,10 +48,10 @@
 .signup-complete-button {
   width: 100%;
   height: 48px;
-  background-color: #614008;
+  background-color: var(--color-primary);
   border: none;
   border-radius: 1000px;
-  color: #FFFFFF;
+  color: var(--color-text-white);
   font-family: 'Pretendard', sans-serif;
   font-weight: 600;
   font-size: 16px;
@@ -92,11 +74,4 @@
   transform: scale(0.98);
 }
 
-/* 반응형 */
-@media (max-width: 375px) {
-  .signup-complete-content {
-    width: 100%;
-    max-width: 360px;
-  }
-}
 

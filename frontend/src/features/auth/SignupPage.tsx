@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import './SignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
-// import { Header } from '../../components/common/Header';
 
 export const SignupPage = () => {
   const navigate = useNavigate();
@@ -276,12 +275,11 @@ export const SignupPage = () => {
   };
 
   return (
-    <div style={{ padding: '15.28vw 4.44vw 0' }}>
-
+    <div className="signup-page-container">
       {/* Title Section */}
-      <div className="page-title-section">
-        <h2 className="page-title">회원가입</h2>
-        <p className="page-subtitle">서비스 이용을 위해 필요한 정보를 입력해주세요.</p>
+      <div className="typea-title-group-bc">
+        <h2 className="typea-title">회원가입</h2>
+        <p className="typea-subtitle">서비스 이용을 위해 필요한 정보를 입력해주세요.</p>
       </div>
 
       {/* Signup Form */}

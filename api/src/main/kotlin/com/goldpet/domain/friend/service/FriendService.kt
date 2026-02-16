@@ -14,6 +14,22 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.Period
 
+data class ParsedTags(val note: String, val tags: List<String>)
+
+fun parseTemperamentTags(raw: String?): ParsedTags {
+    if (raw.isNullOrBlank()) return ParsedTags("", emptyList())
+    val tagPattern = Regex("""(?:^|,)([A-Za-z]+):""")
+    val matches = tagPattern.findAll(raw).toList()
+    val parsed = matches.mapIndexed { i, match ->
+        val start = match.range.first + (if (match.value.startsWith(",")) 1 else 0)
+        val end = if (i + 1 < matches.size) matches[i + 1].range.first else raw.length
+        raw.substring(start, end).trimEnd(',')
+    }
+    val note = parsed.find { it.startsWith("Note:") }?.substringAfter("Note:")?.trim() ?: ""
+    val tags = parsed.filter { it.isNotBlank() && !it.startsWith("Note:") }
+    return ParsedTags(note, tags)
+}
+
 @Service
 @Transactional(readOnly = true)
 class FriendService(
@@ -99,6 +115,8 @@ class FriendService(
             images
         } ?: emptyList()
 
+        val parsed = parseTemperamentTags(mainPet?.temperamentTags)
+
         return FriendResponse(
             id = user.id,
             nickname = user.nickname ?: "Unknown",
@@ -109,8 +127,8 @@ class FriendService(
             petGender = mainPet?.gender ?: "UNKNOWN",
             isNeutered = mainPet?.isNeutered ?: false,
             onWalking = false,
-            description = user.intro ?: "",
-            tags = mainPet?.temperamentTags?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+            description = parsed.note,
+            tags = parsed.tags,
             images = petImages, // Pet images (large, main slider)
             distance = distance,
             status = "offline",

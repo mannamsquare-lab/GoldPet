@@ -63,16 +63,18 @@ export const PermissionsPage = () => {
   };
 
   return (
-    <div className="permissions-page" style={{ padding: '15.28vw 4.44vw 0' }}>
+    <div className="permissions-page">
       {/* Title Section */}
-      <div className="permissions-title-section">
-        <h2 className="permissions-title">앱 접근 권한 안내</h2>
+      <div className="typea-title-group-a">
+        <h1 className="typea-title">앱 접근 권한 안내</h1>
       </div>
 
       <div className="permissions-content">
         <div className="permissions-list">
           <div className="permission-item">
-            <div className="permission-icon-item">📍</div>
+            <div className="permission-icon-wrap">
+              <img src="/assets/images/permissions/icon_location.png" alt="위치" />
+            </div>
             <div className="permission-text">
               <h3>위치 정보</h3>
               <p>주변 친구 찾기 및 산책 경로 기록에 필요합니다.</p>
@@ -80,7 +82,9 @@ export const PermissionsPage = () => {
           </div>
 
           <div className="permission-item">
-            <div className="permission-icon-item">📷</div>
+            <div className="permission-icon-wrap">
+              <img src="/assets/images/permissions/icon_camera.png" alt="카메라" />
+            </div>
             <div className="permission-text">
               <h3>카메라</h3>
               <p>펫 사진 촬영 및 산책 중 사진 기록에 필요합니다.</p>
@@ -88,7 +92,9 @@ export const PermissionsPage = () => {
           </div>
 
           <div className="permission-item">
-            <div className="permission-icon-item">🖼️</div>
+            <div className="permission-icon-wrap">
+              <img src="/assets/images/permissions/icon_photo.png" alt="사진" />
+            </div>
             <div className="permission-text">
               <h3>사진 라이브러리</h3>
               <p>앨범에서 사진을 선택하여 업로드할 때 필요합니다.</p>
@@ -99,17 +105,17 @@ export const PermissionsPage = () => {
 
       <div className="permissions-footer">
         <button
+          className="permissions-button secondary"
+          onClick={handleSkip}
+        >
+          나중에 설정할게요
+        </button>
+        <button
           className="permissions-button primary"
           onClick={handleRequestPermissions}
           disabled={isLoading}
         >
           {isLoading ? '요청 중...' : '권한 허용하기'}
-        </button>
-        <button
-          className="permissions-button secondary"
-          onClick={handleSkip}
-        >
-          나중에 설정할게요
         </button>
       </div>
     </div>

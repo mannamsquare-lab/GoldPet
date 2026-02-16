@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { locationService } from '../../services/locationService';
 import { useAuthStore } from '../../stores/authStore';
+import { useAlert } from '../../contexts/AlertContext';
 import './LocationSettingPage.css';
 
 // 지역 데이터 구조
@@ -297,11 +298,23 @@ const REGION_KEYS = Object.keys(REGIONS);
 export const LocationSettingPage = () => {
   const navigate = useNavigate();
   const currentUser = useAuthStore((state) => state.user);
+  const { showAlert } = useAlert();
 
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [centroids, setCentroids] = useState<{
+    dong: Record<string, [number, number]>;
+    sgg: Record<string, [number, number]>;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch('/data/region-centroids.json')
+      .then(res => res.json())
+      .then(data => setCentroids(data))
+      .catch(err => console.error('Failed to load centroids:', err));
+  }, []);
 
   const handleProvinceSelect = (province: string) => {
     setSelectedProvince(province);
@@ -320,32 +333,59 @@ export const LocationSettingPage = () => {
 
   const handleConfirm = async () => {
     if (!selectedProvince || !selectedCity) {
-      alert('지역을 선택해주세요');
+      showAlert('지역을 선택해주세요');
       return;
     }
 
-    // 동 데이터가 있는 도시의 경우 동 선택 필수
-    if (selectedProvince && NEIGHBORHOODS[selectedProvince]?.[selectedCity] && !selectedNeighborhood) {
-      alert('동을 선택해주세요');
+    if (!selectedNeighborhood) {
+      showAlert('동까지 선택해주세요');
       return;
     }
 
     setIsSaving(true);
     try {
-      // 선택된 지역으로 geocode하여 좌표 얻기
       const fullAddress = selectedNeighborhood
         ? `${selectedProvince} ${selectedCity} ${selectedNeighborhood}`
         : `${selectedProvince} ${selectedCity}`;
 
-      const results = await locationService.geocode(fullAddress);
+      // Look up centroid from static data
+      let lat: number | undefined;
+      let lng: number | undefined;
 
-      if (results.length === 0) {
-        alert('선택한 지역의 위치 정보를 찾을 수 없습니다.');
+      if (centroids) {
+        if (selectedNeighborhood) {
+          // Try dong-level lookup
+          const dongKey = `${selectedProvince}|${selectedCity}|${selectedNeighborhood}`;
+          const dongCoord = centroids.dong[dongKey];
+          if (dongCoord) {
+            [lat, lng] = dongCoord;
+          }
+        }
+
+        if (lat === undefined || lng === undefined) {
+          // Fall back to sgg-level lookup
+          const sggKey = `${selectedProvince}|${selectedCity}`;
+          const sggCoord = centroids.sgg[sggKey];
+          if (sggCoord) {
+            [lat, lng] = sggCoord;
+          }
+        }
+      }
+
+      // Final fallback: try geocode API
+      if (lat === undefined || lng === undefined) {
+        const results = await locationService.geocode(fullAddress);
+        if (results.length > 0) {
+          lat = results[0].lat;
+          lng = results[0].lng;
+        }
+      }
+
+      if (lat === undefined || lng === undefined) {
+        showAlert('선택한 지역의 위치 정보를 찾을 수 없습니다.');
         setIsSaving(false);
         return;
       }
-
-      const { lat, lng } = results[0];
 
       // 위치 저장
       await locationService.updateMyLocation(lat, lng, fullAddress);
@@ -363,7 +403,7 @@ export const LocationSettingPage = () => {
       navigate(-1);
     } catch (error) {
       console.error('Failed to save location:', error);
-      alert('위치 저장에 실패했습니다. 다시 시도해주세요.');
+      showAlert('위치 저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSaving(false);
     }
@@ -489,7 +529,7 @@ export const LocationSettingPage = () => {
         <button
           className="confirm-button"
           onClick={handleConfirm}
-          disabled={!selectedProvince || !selectedCity || isSaving}
+          disabled={!selectedProvince || !selectedCity || !selectedNeighborhood || isSaving}
         >
           {isSaving ? '저장 중...' : '확인'}
         </button>

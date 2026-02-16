@@ -7,26 +7,10 @@ interface OnboardingScreen2Props {
 export const OnboardingScreen2 = ({ onNext }: OnboardingScreen2Props) => {
   return (
     <div className="onboarding-screen" data-name="인트로_2" data-node-id="4017:20342">
-      {/* Header */}
-      <div className="onboarding-header" data-name="Header" data-node-id="4017:20539">
-        <div className="onboarding-logo-area">
-          <div className="onboarding-logo">
-            <img
-              src="/assets/images/common/logo.svg"
-              alt="GoldPet"
-              className="onboarding-logo-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Title Section */}
-      <div className="onboarding-title-section" data-name="Title" data-node-id="4017:20536">
-        <h1 className="onboarding-title">실시간 채팅</h1>
-        <p className="onboarding-subtitle">채팅으로 먼저 얘기 나눠보세요</p>
+      <div className="typea-title-group-a" data-name="Title" data-node-id="4017:20536">
+        <h1 className="typea-title">실시간 채팅</h1>
+        <p className="typea-subtitle">채팅으로 먼저 얘기 나눠보세요</p>
       </div>
 
       {/* Main Content */}

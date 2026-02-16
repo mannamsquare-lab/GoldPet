@@ -2,8 +2,8 @@
 .walk-ranking-page {
   width: 100%;
   min-height: 100vh;
-  background: #FFF7E6;
-  padding-bottom: 10vw;
+  background: var(--color-bg);
+  padding-bottom: 36px;
 }
 
 /* Header */
@@ -11,19 +11,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4.44vw;
-  background: #FFF7E6;
+  padding: 16px;
+  background: var(--color-bg);
 }
 
 .walk-ranking-header h1 {
-  font-size: 4.44vw;
+  font-size: 16px;
   font-weight: 700;
-  color: #614108;
+  color: var(--color-primary);
 }
 
 .walk-ranking-header .back-btn {
-  width: 6.67vw;
-  height: 6.67vw;
+  width: 24px;
+  height: 24px;
   background: none;
   border: none;
   padding: 0;
@@ -38,9 +38,9 @@
 /* Record Tabs */
 .record_tab {
   display: flex;
-  gap: 6.67vw;
-  padding: 0 4.44vw;
-  margin-bottom: 6.67vw;
+  gap: 24px;
+  padding: 0 16px;
+  margin-bottom: 24px;
   list-style: none;
 }
 
@@ -49,8 +49,8 @@
 }
 
 .record_tab button {
-  height: 12.78vw;
-  font-size: 4.44vw;
+  height: 46px;
+  font-size: 16px;
   font-weight: 500;
   color: #727272;
   background: none;
@@ -62,7 +62,7 @@
 
 .record_tab button.active {
   font-weight: 700;
-  color: #614108;
+  color: var(--color-primary);
 }
 
 .record_tab button.active::after {
@@ -72,13 +72,13 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background-color: #614108;
+  background-color: var(--color-primary);
 }
 
 /* Best Couple Section */
 .best_couple {
-  padding: 0 4.44vw;
-  margin-bottom: 6.67vw;
+  padding: 0 16px;
+  margin-bottom: 24px;
 }
 
 .best_couple .tit {
@@ -86,31 +86,31 @@
   width: 100%;
   align-items: center;
   justify-content: center;
-  height: 11.11vw;
-  border-radius: 11.11vw;
+  height: 40px;
+  border-radius: 40px;
   background-color: #FFE5FA;
   color: #8A497D;
-  font-size: 4.44vw;
+  font-size: 16px;
   font-weight: 700;
-  padding: 0 4.44vw;
-  gap: 2.22vw;
+  padding: 0 16px;
+  gap: 8px;
 }
 
 .best_couple .tit img {
-  width: 5.56vw;
-  height: 5.56vw;
+  width: 20px;
+  height: 20px;
 }
 
 .walk-ranking-page .couple_img {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 8.89vw 0 0;
+  margin: 32px 0 0;
 }
 
 .walk-ranking-page .couple_img .blob_avatar {
-  width: 20vw;
-  height: 20vw;
+  width: 72px;
+  height: 72px;
   border-radius: 57% 50% 58% 49%/38% 40% 43% 48%;
   background-color: #fff;
   overflow: hidden;
@@ -123,33 +123,33 @@
 }
 
 .walk-ranking-page .couple_img .blob_avatar + .blob_avatar {
-  margin-left: -1.39vw;
+  margin-left: -5px;
 }
 
 .couple_btn {
   width: 100%;
-  margin: 4.44vw 0 0;
-  padding: 2.22vw;
+  margin: 16px 0 0;
+  padding: 8px;
   background: none;
   border: none;
-  font-size: 5.56vw;
+  font-size: 20px;
   font-weight: 700;
-  color: #614108;
+  color: var(--color-primary);
   text-align: center;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2.22vw;
+  gap: 8px;
 }
 
 .couple_detail {
   background-color: #F5F5F5;
-  border-radius: 4.44vw;
-  padding: 4.44vw;
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   justify-content: space-between;
-  margin: 6.67vw 0 0;
+  margin: 24px 0 0;
 }
 
 .couple_detail > div {
@@ -158,29 +158,29 @@
 }
 
 .couple_detail dt {
-  font-size: 3.33vw;
+  font-size: 12px;
   color: #727272;
 }
 
 .couple_detail dd {
-  font-size: 4.44vw;
+  font-size: 16px;
   font-weight: 700;
-  color: #614108;
-  padding: 1.67vw 0 0;
+  color: var(--color-primary);
+  padding: 6px 0 0;
 }
 
 /* Ranking List */
 .ranking_list {
-  padding: 0 4.44vw;
+  padding: 0 16px;
   list-style: none;
 }
 
 .ranking_list li {
   display: flex;
   align-items: center;
-  gap: 4.44vw;
-  padding: 5.56vw 0;
-  border-top: 1px solid #EFE1C4;
+  gap: 16px;
+  padding: 20px 0;
+  border-top: 1px solid var(--color-border);
 }
 
 .ranking_img {
@@ -190,8 +190,8 @@
 }
 
 .ranking_img .blob_avatar {
-  width: 16.67vw;
-  height: 16.67vw;
+  width: 60px;
+  height: 60px;
   border-radius: 57% 50% 58% 49%/38% 40% 43% 48%;
   background-color: #fff;
   overflow: hidden;
@@ -208,12 +208,12 @@
   top: 0;
   left: 0;
   z-index: 11;
-  width: 6.67vw;
-  height: 6.67vw;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background-color: #614108;
+  background-color: var(--color-primary);
   color: #fff;
-  font-size: 3.33vw;
+  font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -225,14 +225,14 @@
 }
 
 .ranking_txt .name {
-  font-size: 4.44vw;
+  font-size: 16px;
   font-weight: 700;
-  color: #614108;
-  margin-bottom: 1.11vw;
+  color: var(--color-primary);
+  margin-bottom: 4px;
 }
 
 .ranking_txt .stats {
-  font-size: 3.89vw;
+  font-size: 14px;
   font-weight: 500;
   color: #727272;
 }

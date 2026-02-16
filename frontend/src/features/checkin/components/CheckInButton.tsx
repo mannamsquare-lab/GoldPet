@@ -59,7 +59,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
             style={{
               fontSize: '4.44vw',
               fontWeight: '600',
-              color: '#505050',
+              color: 'var(--color-text-secondary)',
               marginBottom: '3.33vw',
             }}
           >
@@ -74,7 +74,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
               minHeight: '22.22vw',
               padding: '3.33vw',
               borderRadius: '2.22vw',
-              border: '1px solid #EFE1C4',
+              border: '1px solid var(--color-border)',
               fontSize: '3.89vw',
               resize: 'vertical',
             }}
@@ -88,7 +88,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
               height: '13.33vw',
               borderRadius: '13.33vw',
               backgroundColor: '#fff',
-              border: '1px solid #EFE1C4',
+              border: '1px solid var(--color-border)',
               color: '#727272',
               fontSize: '4.44vw',
               fontWeight: '600',

@@ -62,16 +62,16 @@ export const FriendsListPage = () => {
             <div className="find_filter" style={{ paddingBottom: '16px' }}>
                  <div className="filter_list" style={{ display: 'flex', gap: '8px', width: '100%' }}>
                     {/* Tab 1: Mutual */}
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onClick={() => setActiveSubTab('mutual')}
                         style={{
                             flex: 1,
                             height: '42px',
                             background: activeSubTab === 'mutual' ? '#FFFDF1' : '#F9ECD2',
-                            border: activeSubTab === 'mutual' ? '1.5px solid #614108' : 'none',
+                            border: activeSubTab === 'mutual' ? '1.5px solid var(--color-primary)' : 'none',
                             borderRadius: '16px',
-                            color: '#614108',
+                            color: 'var(--color-primary)',
                             fontWeight: activeSubTab === 'mutual' ? 600 : 500,
                             fontSize: '14px',
                             cursor: 'pointer'
@@ -81,16 +81,16 @@ export const FriendsListPage = () => {
                     </button>
 
                     {/* Tab 2: I Like */}
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onClick={() => setActiveSubTab('i_like')}
                         style={{
                             flex: 1,
                             height: '42px',
                             background: activeSubTab === 'i_like' ? '#FFFDF1' : '#F9ECD2',
-                            border: activeSubTab === 'i_like' ? '1.5px solid #614108' : 'none',
+                            border: activeSubTab === 'i_like' ? '1.5px solid var(--color-primary)' : 'none',
                             borderRadius: '16px',
-                            color: '#614108',
+                            color: 'var(--color-primary)',
                             fontWeight: activeSubTab === 'i_like' ? 600 : 500,
                             fontSize: '14px',
                             cursor: 'pointer'
@@ -100,16 +100,16 @@ export const FriendsListPage = () => {
                     </button>
 
                     {/* Tab 3: Likes Me */}
-                    <button 
-                         type="button" 
+                    <button
+                         type="button"
                          onClick={() => setActiveSubTab('likes_me')}
                          style={{
                             flex: 1,
                             height: '42px',
                             background: activeSubTab === 'likes_me' ? '#FFFDF1' : '#F9ECD2',
-                            border: activeSubTab === 'likes_me' ? '1.5px solid #614108' : 'none',
+                            border: activeSubTab === 'likes_me' ? '1.5px solid var(--color-primary)' : 'none',
                             borderRadius: '16px',
-                            color: '#614108',
+                            color: 'var(--color-primary)',
                             fontWeight: activeSubTab === 'likes_me' ? 600 : 500,
                             fontSize: '14px',
                             cursor: 'pointer'

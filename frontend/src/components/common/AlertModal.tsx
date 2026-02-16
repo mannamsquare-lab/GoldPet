@@ -10,43 +10,28 @@ interface AlertModalProps {
     cancelText?: string;
 }
 
-export const AlertModal = ({ 
-    isOpen, 
-    message, 
-    onConfirm, 
-    onCancel, 
-    confirmText = '확인', 
-    cancelText = '취소' 
+export const AlertModal = ({
+    isOpen,
+    message,
+    onConfirm,
+    onCancel,
+    confirmText = '확인',
+    cancelText = '취소'
 }: AlertModalProps) => {
     if (!isOpen) return null;
 
-    // Portal to mount directly to body or a specific root, ensuring z-index handling
-    // However, given the CSS structure of .alert_modal (fixed position usually), direct rendering might work if z-index is high enough.
-    // React Portals are safer for modals.
-    
     const content = (
-        <div className="alert_modal" style={{ display: 'flex' }}>
-            <div className="alert_wrap">
-                <div className="txt_wrap">
-                    <p style={{ whiteSpace: 'pre-line' }}>{message.replace(/\\n/g, '\n')}</p>
-                </div>
-                <div className="btn_wrap">
+        <div className="gp-alert-overlay">
+            <div className="gp-alert-container">
+                <p className="gp-alert-message">{message.replace(/\\n/g, '\n')}</p>
+                <div className="gp-alert-buttons">
                     {onCancel ? (
-                        /* 2 Buttons Case (Confirm) */
                         <>
-                            <button type="button" className="brown2" onClick={onCancel}>{cancelText}</button>
-                            <button type="button" className="brown1" onClick={onConfirm}>{confirmText}</button>
+                            <button type="button" className="gp-btn-half-secondary" onClick={onCancel}>{cancelText}</button>
+                            <button type="button" className="gp-btn-half-primary" onClick={onConfirm}>{confirmText}</button>
                         </>
                     ) : (
-                        /* 1 Button Case (Alert) */
-                        <button 
-                            type="button" 
-                            className="brown1" 
-                            onClick={onConfirm} 
-                            style={{ width: '100%' }}
-                        >
-                            {confirmText}
-                        </button>
+                        <button type="button" className="gp-btn-full" onClick={onConfirm}>{confirmText}</button>
                     )}
                 </div>
             </div>

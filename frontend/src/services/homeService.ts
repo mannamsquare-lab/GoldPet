@@ -5,6 +5,8 @@ import apiClient from './api/client';
 export interface HomeRecommendation {
   id: number;
   name: string;
+  petAge: number;
+  petBreed: string;
   description: string;
   distance: string;
   images: string[];
@@ -13,6 +15,7 @@ export interface HomeRecommendation {
   nickname: string;
   profileImageUrl?: string;
   locationText?: string;
+  tags: string[];
 }
 
 export interface HomeRecentWalk {
@@ -45,7 +48,9 @@ const mockHomeData: HomeDataResponse = {
     {
       id: 1,
       name: '멍텅구리',
-      description: '5개월 ∙ 코숏 치즈',
+      petAge: 0,
+      petBreed: '코숏 치즈',
+      description: '',
       distance: '1km 이내',
       images: ['/assets/images/main/main_slide_img01.png', '/assets/images/main/main_slide_img01.png'],
       isNeutered: true,
@@ -53,11 +58,14 @@ const mockHomeData: HomeDataResponse = {
       nickname: '지오',
       profileImageUrl: '/assets/images/main/main_slide_butler01.jpg',
       locationText: undefined,
+      tags: [],
     },
     {
       id: 2,
       name: '냥냥냥',
-      description: '5개월 ∙ 코숏 치즈',
+      petAge: 0,
+      petBreed: '코숏 치즈',
+      description: '',
       distance: '1km 이내',
       images: ['/assets/images/main/main_slide_img02.png', '/assets/images/main/main_slide_img02.png'],
       isNeutered: true,
@@ -65,11 +73,14 @@ const mockHomeData: HomeDataResponse = {
       nickname: '냥집사',
       profileImageUrl: '/assets/images/main/main_slide_butler02.jpg',
       locationText: undefined,
+      tags: [],
     },
     {
       id: 3,
       name: '멍멍이',
-      description: '5개월 ∙ 코숏 치즈',
+      petAge: 0,
+      petBreed: '코숏 치즈',
+      description: '',
       distance: '1km 이내',
       images: ['/assets/images/main/main_slide_img03.png', '/assets/images/main/main_slide_img03.png'],
       isNeutered: true,
@@ -77,6 +88,7 @@ const mockHomeData: HomeDataResponse = {
       nickname: '멍집사',
       profileImageUrl: '/assets/images/main/main_slide_butler03.jpg',
       locationText: undefined,
+      tags: [],
     },
   ],
   recentWalk: null,
@@ -96,7 +108,9 @@ export const homeService = {
       const recommendations: HomeRecommendation[] = (data.recommendations || []).map((r: any) => ({
         id: r.id,
         name: r.petName,
-        description: `${r.petAge}개월 ∙ ${r.petBreed}`,
+        petAge: r.petAge,
+        petBreed: r.petBreed,
+        description: r.description || '',
         distance: formatDistance(r.distance),
         images: r.images.length > 0 ? r.images : ['/assets/images/common/pet_none_img02.svg'],
         isNeutered: r.isNeutered,
@@ -104,6 +118,7 @@ export const homeService = {
         nickname: r.nickname,
         profileImageUrl: r.profileImageUrl,
         locationText: r.locationText,
+        tags: r.tags || [],
       }));
 
       return {

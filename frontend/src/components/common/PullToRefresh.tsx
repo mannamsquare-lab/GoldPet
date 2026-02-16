@@ -84,7 +84,7 @@ export const PullToRefresh = () => {
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                backgroundColor: pastThreshold ? '#614108' : '#fff',
+                backgroundColor: pastThreshold ? 'var(--color-primary)' : '#fff',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
                 display: 'flex',
                 alignItems: 'center',
@@ -95,7 +95,7 @@ export const PullToRefresh = () => {
             }}>
                 <svg
                     width="22" height="22" viewBox="0 0 24 24" fill="none"
-                    stroke={pastThreshold ? '#fff' : '#614108'}
+                    stroke={pastThreshold ? '#fff' : 'var(--color-primary)'}
                     strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                     style={{
                         transform: `rotate(${progress * 360}deg)`,

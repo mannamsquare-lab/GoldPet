@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goldService } from '../../services/goldService';
+import { useAlert } from '../../contexts/AlertContext';
 import GoldProductCard from './components/GoldProductCard';
 import './GoldPage.css';
 
 function GoldPurchasePage() {
   const queryClient = useQueryClient();
+  const { showAlert, showConfirm } = useAlert();
 
   const { data: balanceData } = useQuery({
     queryKey: ['gold', 'balance'],
@@ -21,10 +23,10 @@ function GoldPurchasePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gold', 'balance'] });
       queryClient.invalidateQueries({ queryKey: ['gold', 'transactions'] });
-      alert('골드 충전이 완료되었습니다.');
+      showAlert('골드 충전이 완료되었습니다.');
     },
     onError: () => {
-      alert('골드 충전에 실패했습니다.');
+      showAlert('골드 충전에 실패했습니다.');
     },
   });
 
@@ -32,13 +34,10 @@ function GoldPurchasePage() {
     const product = productsData?.find((p) => p.id === productId);
     if (!product) return;
 
-    const confirmed = window.confirm(
-      `${product.name}을(를) ${product.price.toLocaleString()}원에 구매하시겠습니까?`
+    showConfirm(
+      `${product.name}을(를) ${product.price.toLocaleString()}원에 구매하시겠습니까?`,
+      () => { chargeMutation.mutate({ productId, paymentMethod: 'CARD' }); }
     );
-
-    if (confirmed) {
-      chargeMutation.mutate({ productId, paymentMethod: 'CARD' });
-    }
   };
 
   const balance = balanceData?.balance ?? 0;

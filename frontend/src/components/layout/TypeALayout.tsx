@@ -2,12 +2,12 @@ import { Outlet } from 'react-router-dom';
 import { MainHeader } from '../common/MainHeader';
 
 interface TypeALayoutProps {
-    variant: 'logo-only' | 'back-only';
+    variant: 'logo-only' | 'back-only' | 'close-only';
 }
 
 export const TypeALayout = ({ variant }: TypeALayoutProps) => {
     return (
-        <div style={{ backgroundColor: '#FFF7E6', minHeight: '100vh', paddingBottom: 0, position: 'relative' }}>
+        <div className="gp-layout-page">
             <MainHeader variant={variant} className="intro_header" />
             <div id="mainContainer">
                 <Outlet />

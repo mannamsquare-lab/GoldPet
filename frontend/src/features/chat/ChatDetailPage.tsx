@@ -8,6 +8,7 @@ import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useAuthStore } from '../../stores/authStore';
 import { Loading } from '../../components/common/Loading';
 import { useToast } from '../../contexts/ToastContext';
+import { useAlert } from '../../contexts/AlertContext';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import '../../styles/chat-detail.css';
 
@@ -125,8 +126,8 @@ const getFileIcon = (file: File | { mimeType?: string; url?: string }) => {
     // Default file icon
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M14 2V8H20" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M14 2V8H20" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
     );
 };
@@ -155,6 +156,7 @@ const ChatDetailPage = () => {
     const queryClient = useQueryClient();
 
     const { showToast } = useToast();
+    const { showAlert } = useAlert();
 
     // Get current user ID from auth store (needed for WebSocket)
     const { user } = useAuthStore();
@@ -350,7 +352,7 @@ const ChatDetailPage = () => {
             setMessage('');
         } catch (error) {
             console.error('Failed to send files:', error);
-            alert('파일 전송에 실패했습니다.');
+            showAlert('파일 전송에 실패했습니다.');
         } finally {
             setIsUploading(false);
             setUploadProgress(0);
@@ -435,7 +437,7 @@ const ChatDetailPage = () => {
         }
 
         if (files.length > remainingSlots) {
-            alert(`최대 ${MAX_FILES}개까지만 첨부할 수 있습니다.`);
+            showAlert(`최대 ${MAX_FILES}개까지만 첨부할 수 있습니다.`);
         }
 
         setSelectedFiles(prev => [...prev, ...newFiles]);
@@ -544,7 +546,7 @@ const ChatDetailPage = () => {
                             onClick={() => navigate('/chat', { state: { activeTab: isGroupChat ? 'group' : 'one' } })}
                         >
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M15 18L9 12L15 6" stroke="#614108" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M15 18L9 12L15 6" stroke="var(--color-primary)" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                         </button>
                         <div className="chat_detail_user_info">
@@ -663,7 +665,7 @@ const ChatDetailPage = () => {
                                     onClick={() => handleCancelFile(index)}
                                 >
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                                        <path d="M18 6L6 18M6 6L18 18" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
+                                        <path d="M18 6L6 18M6 6L18 18" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round"/>
                                     </svg>
                                 </button>
                             </div>
@@ -705,23 +707,23 @@ const ChatDetailPage = () => {
                         <div className="chat_detail_attach_menu">
                             <button type="button" onClick={() => handleFileSelect('image/*,video/*', 'environment')}>
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <circle cx="12" cy="13" r="4" stroke="#614108" strokeWidth="2"/>
+                                    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <circle cx="12" cy="13" r="4" stroke="var(--color-primary)" strokeWidth="2"/>
                                 </svg>
                                 <span>카메라</span>
                             </button>
                             <button type="button" onClick={() => handleFileSelect('image/*,video/*')}>
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="#614108" strokeWidth="2"/>
-                                    <circle cx="8.5" cy="8.5" r="1.5" fill="#614108"/>
-                                    <path d="M21 15L16 10L5 21" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="var(--color-primary)" strokeWidth="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5" fill="var(--color-primary)"/>
+                                    <path d="M21 15L16 10L5 21" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                                 <span>앨범</span>
                             </button>
                             <button type="button" onClick={() => handleFileSelect()}>
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M14 2V8H20" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M14 2V8H20" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                                 <span>파일</span>
                             </button>
@@ -735,7 +737,7 @@ const ChatDetailPage = () => {
                             onClick={handleAttachClick}
                         >
                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12.544 4.3847L5.44005 11.4887C3.59572 13.333 3.75132 16.4789 5.57312 18.3007C7.39492 20.1225 10.6668 20.4041 12.5111 18.5597L19.6151 11.4558C20.9564 10.1144 20.8255 8.09719 19.5006 6.77225C18.1756 5.44731 16.1584 5.31639 14.817 6.65773L8.82838 12.6464C8.0265 13.4483 7.60881 14.6088 8.4369 15.4369C9.26499 16.265 10.4255 15.8473 11.2274 15.0454L16.6368 9.63603" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
+                                <path d="M12.544 4.3847L5.44005 11.4887C3.59572 13.333 3.75132 16.4789 5.57312 18.3007C7.39492 20.1225 10.6668 20.4041 12.5111 18.5597L19.6151 11.4558C20.9564 10.1144 20.8255 8.09719 19.5006 6.77225C18.1756 5.44731 16.1584 5.31639 14.817 6.65773L8.82838 12.6464C8.0265 13.4483 7.60881 14.6088 8.4369 15.4369C9.26499 16.265 10.4255 15.8473 11.2274 15.0454L16.6368 9.63603" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round"/>
                             </svg>
                         </button>
                         <textarea

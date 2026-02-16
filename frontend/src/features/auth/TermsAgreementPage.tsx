@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './TermsAgreementPage.css';
 
-// import { Header } from '../../components/common/Header';
-
 export const TermsAgreementPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,12 +67,12 @@ export const TermsAgreementPage = () => {
   };
 
   return (
-    <div style={{ padding: '15.28vw 4.44vw 0' }}>
+    <div>
 
       {/* Title Section */}
-      <div className="page-title-section">
-        <h2 className="page-title">약관 동의</h2>
-        <p className="page-subtitle">서비스 이용을 위해 약관에 동의해주세요.</p>
+      <div className="typea-title-group-bc">
+        <h2 className="typea-title">약관 동의</h2>
+        <p className="typea-subtitle">서비스 이용을 위해 약관에 동의해주세요.</p>
       </div>
 
       {/* Terms Content */}
@@ -204,7 +202,7 @@ export const TermsAgreementPage = () => {
             onClick={handleNext}
             disabled={!termsAgreed || !privacyAgreed}
           >
-            다음
+            지금 골드펫 시작하기
           </button>
         </div>
       </div>

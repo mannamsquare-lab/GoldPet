@@ -19,13 +19,16 @@ export const SignupCompletePage = () => {
   };
 
   return (
-    <div style={{ padding: '0 4.44vw' }}>
+    <div>
       <div className="signup-complete-content">
-        <div className="signup-complete-icon">✓</div>
-        <h1 className="signup-complete-title">회원가입이 완료되었습니다</h1>
-        <p className="signup-complete-subtitle">
-          골드펫과 함께<br />
-          반려동물과의 특별한 시간을 만들어보세요!
+        <img
+          src="/assets/images/logo.png"
+          alt="Gold Pet Logo"
+          className="signup-complete-logo"
+        />
+        <p className="signup-complete-message">
+          회원가입이 완료되었습니다.<br />
+          OOO님 회원이 되신 것을 환영합니다!
         </p>
         <div className="signup-complete-button-group">
           <button
@@ -33,7 +36,7 @@ export const SignupCompletePage = () => {
             className="signup-complete-button"
             onClick={handleGoToHome}
           >
-            홈으로 가기
+            로그인
           </button>
         </div>
       </div>

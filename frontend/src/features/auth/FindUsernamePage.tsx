@@ -91,7 +91,7 @@ export const FindUsernamePage = () => {
               className="find-username-button"
               onClick={() => setResultState('input')}
             >
-              문자 본인인증
+              PASS 본인인증 진행
             </button>
           </div>
 

@@ -1,35 +1,11 @@
 .permissions-page {
   width: 100%;
-  min-height: 100vh;
-  background-color: transparent; /* Background handled by TypeALayout */
+  min-height: calc(100vh - var(--typea-header-height));
+  background-color: transparent;
   position: relative;
-  /* padding handled inline or via common styles */
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-}
-
-/* Header styles removed */
-
-/* Title Section */
-.permissions-title-section {
-  height: 32.22vw;
-  padding: 0;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.permissions-title {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 700;
-  font-size: 8.89vw;
-  line-height: 1.2;
-  color: #614108;
-  letter-spacing: -0.08vw;
-  margin: 0;
 }
 
 .permissions-content {
@@ -38,29 +14,38 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 40px 16px;
-  gap: 40px;
-  margin-top: 0; /* Removed fixed margin */
+  padding: 24px 16px;
+  gap: 24px;
 }
 
 .permissions-list {
   width: 100%;
-  max-width: 328px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .permission-item {
   display: flex;
   gap: 16px;
-  align-items: flex-start;
+  align-items: center;
 }
 
-.permission-icon-item {
-  font-size: 32px;
-  line-height: 1;
+.permission-icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  background-color: var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.permission-icon-wrap img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
 }
 
 .permission-text {
@@ -69,32 +54,32 @@
 
 .permission-text h3 {
   font-family: 'Pretendard', sans-serif;
-  font-weight: 600;
-  font-size: 18px;
+  font-weight: 700;
+  font-size: 16px;
   line-height: 1.4;
-  color: #614108;
+  color: var(--color-primary);
   margin: 0 0 4px 0;
 }
 
 .permission-text p {
   font-family: 'Pretendard', sans-serif;
-  font-weight: 400;
+  font-weight: 500;
   font-size: 14px;
   line-height: 1.5;
-  color: #666666;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
 .permissions-footer {
   width: 100%;
-  padding: 24px 16px 40px;
+  padding: 16px 16px 32px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-direction: row;
+  gap: 10px;
 }
 
 .permissions-button {
-  width: 100%;
+  flex: 1;
   height: 48px;
   border: none;
   border-radius: 1000px;
@@ -102,31 +87,35 @@
   font-weight: 600;
   font-size: 16px;
   line-height: 1.4;
-  letter-spacing: -0.32px;
+  letter-spacing: -0.64px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .permissions-button.primary {
-  background-color: #614108;
-  color: #FFFFFF;
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
 }
 
 .permissions-button.primary:hover {
-  background-color: #4A3206;
+  opacity: 0.9;
+}
+
+.permissions-button.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .permissions-button.secondary {
-  background-color: transparent;
-  color: #614108;
-  border: 1px solid #614108;
+  background-color: var(--color-border);
+  color: var(--color-primary);
+  border: none;
 }
 
 .permissions-button.secondary:hover {
-  background-color: rgba(97, 65, 8, 0.05);
+  opacity: 0.9;
 }
 
 .permissions-button:active {
   transform: scale(0.98);
 }
-

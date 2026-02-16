@@ -309,7 +309,7 @@ class _HybridWebViewState extends State<HybridWebView> {
   }
 
   // TypeBLayout 라우트 (헤더/하단네비 컬러가 #EFE1C4인 페이지들)
-  static const _typeBExactRoutes = ['/home', '/friend-find', '/friend-list', '/chat', '/profile', '/settings'];
+  static const _typeBExactRoutes = ['/home', '/friend-find', '/friend-list', '/chat'];
   static const _typeBPrefixRoutes = ['/walk', '/places', '/gold'];
   static const Color _colorEFE1C4 = Color(0xFFEFE1C4);
   static const Color _colorFFF7E6 = Color(0xFFFFF7E6);

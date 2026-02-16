@@ -103,11 +103,11 @@ const ProfileOwnerTab: React.FC = () => {
             {/* Gold Balance */}
             <div className="gold-balance-link" onClick={() => navigate('/gold')} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                backgroundColor: '#FFF7E6', borderRadius: '4.44vw', padding: '4.44vw',
+                backgroundColor: 'var(--color-bg)', borderRadius: '4.44vw', padding: '4.44vw',
                 margin: '4.44vw 0', cursor: 'pointer'
             }}>
-                <span style={{ fontSize: '3.89vw', color: '#727272' }}>보유 골드</span>
-                <span style={{ fontSize: '4.44vw', fontWeight: 700, color: '#614108' }}>
+                <span style={{ fontSize: '14px', color: '#727272' }}>보유 골드</span>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' }}>
                     {goldBalance?.balance?.toLocaleString() || '0'}G
                 </span>
             </div>

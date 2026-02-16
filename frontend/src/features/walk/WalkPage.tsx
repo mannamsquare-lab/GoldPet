@@ -191,8 +191,8 @@ export const WalkPage = () => {
                                 style={{
                                     background: 'none',
                                     border: 'none',
-                                    color: '#614108',
-                                    fontSize: '3.89vw',
+                                    color: 'var(--color-primary)',
+                                    fontSize: '14px',
                                     fontWeight: 600,
                                     textDecoration: 'underline',
                                     cursor: 'pointer'

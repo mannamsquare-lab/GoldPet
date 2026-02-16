@@ -7,26 +7,10 @@ interface OnboardingScreen3Props {
 export const OnboardingScreen3 = ({ onNext }: OnboardingScreen3Props) => {
   return (
     <div className="onboarding-screen" data-name="인트로_3" data-node-id="4017:20540">
-      {/* Header */}
-      <div className="onboarding-header" data-name="Header" data-node-id="4017:20736">
-        <div className="onboarding-logo-area">
-          <div className="onboarding-logo">
-            <img
-              src="/assets/images/common/logo.svg"
-              alt="GoldPet"
-              className="onboarding-logo-img"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Title Section */}
-      <div className="onboarding-title-section" data-name="Title" data-node-id="4017:20733">
-        <h1 className="onboarding-title">AI 펫 프로필</h1>
-        <p className="onboarding-subtitle">반려동물이 내 폰으로 쏘옥!</p>
+      <div className="typea-title-group-a" data-name="Title" data-node-id="4017:20733">
+        <h1 className="typea-title">AI 펫 프로필</h1>
+        <p className="typea-subtitle">반려동물이 내 폰으로 쏘옥!</p>
       </div>
 
       {/* Main Content */}

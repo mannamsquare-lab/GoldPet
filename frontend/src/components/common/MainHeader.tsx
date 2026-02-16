@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { homeService } from '../../services/homeService';
 
 interface MainHeaderProps {
-    variant: 'logo-only' | 'back-only' | 'logo-with-icons' | 'back-with-menu';
+    variant: 'logo-only' | 'back-only' | 'logo-with-icons' | 'back-with-menu' | 'close-only';
     className?: string;
 }
 
@@ -47,11 +47,22 @@ export const MainHeader = ({ variant, className = '' }: MainHeaderProps) => {
                             <li><button type="button" onClick={() => navigate('/profile')}><img src="/assets/images/layout/header_icon03.svg" alt="프로필" /></button></li>
                         </>
                     )}
-                    
+
                     {variant === 'back-with-menu' && (
                         <li><button type="button"><img src="/assets/images/layout/header_icon_menu.svg" alt="메뉴" /></button></li>
                     )}
                 </ul>
+
+                {/* Variant: Close Only (Layout E) */}
+                {variant === 'close-only' && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+                        <button type="button" className="btn_close" onClick={handleBack}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                )}
             </div>
         </header>
     );

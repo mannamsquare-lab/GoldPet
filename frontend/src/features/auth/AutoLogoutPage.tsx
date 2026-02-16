@@ -10,17 +10,21 @@ const AutoLogoutPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="account-notice-container">
-      <img src="/assets/images/icon_auto_logout.svg" alt="자동 로그아웃" className="account-notice-icon" />
-      <h1 className="account-notice-title">자동 로그아웃 되었습니다</h1>
-      <p className="account-notice-desc">
-        장시간 활동이 없어<br />
-        자동으로 로그아웃 되었습니다.<br />
-        다시 로그인해 주세요.
-      </p>
-      <button className="account-notice-btn" onClick={() => navigate('/login')}>
-        다시 로그인
-      </button>
+    <div className="auto-logout-page">
+      <div className="auto-logout-body">
+        <div className="typea-title-group-bc">
+          <h1 className="typea-title">자동 로그아웃</h1>
+        </div>
+        <div className="auto-logout-description">
+          <p>일정시간 동안 서비스 미사용으로<br />OOO 서비스에서 자동으로 로그아웃 되었습니다.</p>
+        </div>
+      </div>
+
+      <div className="auto-logout-button-container">
+        <button className="auto-logout-button" onClick={() => navigate('/login')}>
+          로그인
+        </button>
+      </div>
     </div>
   );
 };
