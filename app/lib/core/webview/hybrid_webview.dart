@@ -309,8 +309,9 @@ class _HybridWebViewState extends State<HybridWebView> {
   }
 
   // TypeBLayout 라우트 (헤더/하단네비 컬러가 #EFE1C4인 페이지들)
-  static const _typeBExactRoutes = ['/home', '/friend-find', '/friend-list', '/chat'];
-  static const _typeBPrefixRoutes = ['/walk', '/places', '/gold'];
+  // community, chat은 리스트만 TypeB, 상세/작성 페이지는 TypeA
+  static const _typeBExactRoutes = ['/home', '/friend-find', '/friend-list', '/chat', '/walk', '/community', '/places', '/gold'];
+  static const _typeBPrefixRoutes = ['/walk/', '/places/', '/gold/'];
   static const Color _colorEFE1C4 = Color(0xFFEFE1C4);
   static const Color _colorFFF7E6 = Color(0xFFFFF7E6);
 
@@ -323,16 +324,12 @@ class _HybridWebViewState extends State<HybridWebView> {
 
     bool isTypeB = false;
 
-    // Exact match
+    // Exact match (main tab pages only)
     if (_typeBExactRoutes.contains(path)) {
       isTypeB = true;
     }
-    // Prefix match (/walk/*, /places/*, /gold/*)
+    // Prefix match - sub-pages within TypeBLayout (/walk/*, /places/*, /gold/*)
     else if (_typeBPrefixRoutes.any((p) => path.startsWith(p))) {
-      isTypeB = true;
-    }
-    // /community prefix, except /community/write
-    else if (path.startsWith('/community') && path != '/community/write') {
       isTypeB = true;
     }
 

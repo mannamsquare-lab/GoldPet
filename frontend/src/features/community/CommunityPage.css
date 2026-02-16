@@ -576,9 +576,10 @@
   }
 }
 
-/* Override #wrap overflow to enable sticky positioning */
+/* Override #wrap overflow to enable sticky positioning + remove bottom padding (nav hidden) */
 #wrap:has(#communityContainer .detail_wrap) {
   overflow: visible;
+  padding-bottom: 0;
 }
 
 /* Main comment input bar - chat-style sticky bar (full width) */
