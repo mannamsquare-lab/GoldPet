@@ -240,6 +240,7 @@ class UserService(
 
         // Anonymize PII fields
         user.email = "deleted_${userId}@withdrawn.goldpet.com"
+        user.emailHash = null
         user.nickname = "탈퇴한 사용자"
         user.name = null
         user.phoneNumber = null
