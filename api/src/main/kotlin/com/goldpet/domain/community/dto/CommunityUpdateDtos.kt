@@ -1,5 +1,7 @@
 package com.goldpet.domain.community.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class CommunityPostUpdateRequest(
     val title: String? = null,
     val content: String? = null,
@@ -28,6 +30,7 @@ data class PostDetailResponse(
     val commentCount: Int,
     val createdAt: java.time.LocalDateTime?,
     val updatedAt: java.time.LocalDateTime?,
+    @get:JsonProperty("isLikedByMe")
     val isLikedByMe: Boolean = false,
     val comments: List<CommunityCommentResponse> = emptyList()
 )

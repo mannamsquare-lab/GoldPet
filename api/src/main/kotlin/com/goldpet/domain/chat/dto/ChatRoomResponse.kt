@@ -1,5 +1,6 @@
 package com.goldpet.domain.chat.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.chat.entity.ChatRoom
 import com.goldpet.domain.chat.entity.ChatRoomType
 import java.time.LocalDateTime
@@ -23,6 +24,7 @@ data class ChatRoomResponse(
     val lastMessage: String?,
     val lastMessageTime: LocalDateTime?,
     val unreadCount: Int,
+    @get:JsonProperty("isGroup")
     val isGroup: Boolean
 ) {
     companion object {

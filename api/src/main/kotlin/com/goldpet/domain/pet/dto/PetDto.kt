@@ -1,5 +1,6 @@
 package com.goldpet.domain.pet.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.pet.entity.Pet
 import java.time.LocalDate
 
@@ -40,6 +41,7 @@ data class PetResponse(
     val gender: String?,
     val birthDate: LocalDate?,
     val weightKg: Double?,
+    @get:JsonProperty("isNeutered")
     val isNeutered: Boolean?,
     val profileImageUrl: String?,
     val profileImageUrls: List<String>,

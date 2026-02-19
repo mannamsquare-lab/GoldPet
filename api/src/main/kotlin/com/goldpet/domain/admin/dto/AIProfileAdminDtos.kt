@@ -1,5 +1,6 @@
 package com.goldpet.domain.admin.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.aiprofile.entity.AIProfileRequest
 import com.goldpet.domain.aiprofile.entity.AIRequestStatus
 import com.goldpet.domain.aiprofile.entity.AIRequestType
@@ -59,6 +60,7 @@ data class AIStyleAdminResponse(
     val description: String?,
     val previewUrl: String?,
     val goldCost: Int,
+    @get:JsonProperty("isActive")
     val isActive: Boolean,
     val displayOrder: Int,
     val createdAt: LocalDateTime,

@@ -19,13 +19,13 @@ data class CommunityPostResponse(
     val likeCount: Int,
     val commentCount: Long = 0,
     val createdAt: LocalDateTime,
-    @JsonProperty("isLikedByMe")
+    @get:JsonProperty("isLikedByMe")
     val isLikedByMe: Boolean = false,
-    @JsonProperty("isCommentedByMe")
+    @get:JsonProperty("isCommentedByMe")
     val isCommentedByMe: Boolean = false,
     val imageUrls: List<String> = emptyList(),
     val comments: List<CommunityCommentResponse> = emptyList(),
-    @JsonProperty("isMine")
+    @get:JsonProperty("isMine")
     val isMine: Boolean = false
 )
 
@@ -48,13 +48,13 @@ data class CommunityCommentResponse(
     val createdAt: LocalDateTime,
     val parentCommentId: Long?,
     val likeCount: Int = 0,
-    @JsonProperty("isLikedByMe")
+    @get:JsonProperty("isLikedByMe")
     val isLikedByMe: Boolean = false,
-    @JsonProperty("isRepliedByMe")
+    @get:JsonProperty("isRepliedByMe")
     val isRepliedByMe: Boolean = false,
     val depth: Int = 1,
     val replyCount: Int = 0,
-    @JsonProperty("isMine")
+    @get:JsonProperty("isMine")
     val isMine: Boolean = false,
     val postTitle: String? = null
 )

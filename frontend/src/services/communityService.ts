@@ -154,7 +154,8 @@ export const communityService = {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
+      formData.append('category', 'community');
+
       const response = await apiClient.post('/files/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',

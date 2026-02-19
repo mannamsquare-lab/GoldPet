@@ -1,5 +1,6 @@
 package com.goldpet.domain.checkin.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.checkin.entity.CheckIn
 import com.goldpet.domain.checkin.entity.Place
 import com.goldpet.domain.checkin.entity.PlaceCategory
@@ -14,6 +15,7 @@ data class PlaceResponse(
     val longitude: Double,
     val description: String?,
     val imageUrl: String?,
+    @get:JsonProperty("isVerified")
     val isVerified: Boolean,
     val checkinCount: Int
 ) {

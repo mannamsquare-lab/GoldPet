@@ -1,5 +1,6 @@
 package com.goldpet.domain.user.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.user.entity.User
 import org.locationtech.jts.geom.Point
 
@@ -23,6 +24,7 @@ data class UserResponse(
     val interests: List<String>,
     val hobbies: List<String>,
     val goldBalance: Int,
+    @get:JsonProperty("isActive")
     val isActive: Boolean
 ) {
     companion object {

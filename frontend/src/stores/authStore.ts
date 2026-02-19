@@ -65,8 +65,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      // Only persist safe, non-sensitive data. Tokens and PII remain in-memory only.
       partialize: (state) => ({
+        token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
         user: state.user ? {
           id: state.user.id,

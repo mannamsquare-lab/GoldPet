@@ -1,5 +1,6 @@
 package com.goldpet.domain.notification.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.notification.entity.Notification
 import com.goldpet.domain.notification.entity.NotificationType
 import java.time.LocalDateTime
@@ -11,6 +12,7 @@ data class NotificationResponse(
     val message: String,
     val targetId: Long?,
     val targetType: String?,
+    @get:JsonProperty("isRead")
     val isRead: Boolean,
     val senderId: Long?,
     val senderNickname: String?,

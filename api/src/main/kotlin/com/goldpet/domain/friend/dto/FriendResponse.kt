@@ -1,5 +1,7 @@
 package com.goldpet.domain.friend.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class FriendResponse(
     val id: Long,
     val nickname: String,
@@ -8,6 +10,7 @@ data class FriendResponse(
     val petBreed: String,
     val petAge: Int,
     val petGender: String, // "MALE" | "FEMALE"
+    @get:JsonProperty("isNeutered")
     val isNeutered: Boolean,
     val onWalking: Boolean,
     val description: String,

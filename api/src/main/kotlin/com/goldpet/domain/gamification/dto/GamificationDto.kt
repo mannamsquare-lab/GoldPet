@@ -1,5 +1,6 @@
 package com.goldpet.domain.gamification.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.gamification.entity.Badge
 import com.goldpet.domain.gamification.entity.UserBadge
 import java.time.LocalDateTime
@@ -14,6 +15,7 @@ data class BadgeResponse(
     val rewardGold: Int? = null,
     val startDate: LocalDateTime? = null,
     val endDate: LocalDateTime? = null,
+    @get:JsonProperty("isRepeatable")
     val isRepeatable: Boolean = false,
     val repeatCycle: String? = null,
     val acquiredAt: LocalDateTime? = null

@@ -1,10 +1,13 @@
 package com.goldpet.domain.admin.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class BannerResponse(
     val id: Long,
     val title: String,
     val imageUrl: String?,
     val link: String?,
+    @get:JsonProperty("isActive")
     val isActive: Boolean,
     val displayOrder: Int
 )
