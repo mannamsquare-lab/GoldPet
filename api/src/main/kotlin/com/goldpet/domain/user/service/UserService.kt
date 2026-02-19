@@ -1,5 +1,8 @@
 package com.goldpet.domain.user.service
 
+import com.goldpet.domain.friend.entity.LikeStatus
+import com.goldpet.domain.friend.repository.LikeRepository
+import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.user.entity.DeletedUser
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
@@ -10,14 +13,17 @@ import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.user.dto.FriendLocationResponse
 import com.goldpet.domain.user.dto.NotificationSettingsRequest
 import com.goldpet.domain.user.dto.NotificationSettingsResponse
+import com.goldpet.domain.user.dto.ChangePasswordRequest
 import com.goldpet.domain.user.dto.PrivacySettingsRequest
 import com.goldpet.domain.user.dto.PrivacySettingsResponse
 import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
+import com.goldpet.domain.user.dto.UserStatsResponse
 import com.goldpet.domain.user.entity.UserProfileImage
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.MessageDigest
@@ -29,7 +35,10 @@ class UserService(
     private val deletedUserRepository: DeletedUserRepository,
     private val interestRepository: com.goldpet.domain.user.repository.InterestRepository,
     private val hobbyRepository: com.goldpet.domain.user.repository.HobbyRepository,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val matchRepository: MatchRepository,
+    private val likeRepository: LikeRepository,
+    private val passwordEncoder: PasswordEncoder
 ) {
     fun findUserById(userId: Long): User? {
         return userRepository.findById(userId).orElse(null)
@@ -216,6 +225,46 @@ class UserService(
 
     fun isNicknameAvailable(nickname: String): Boolean {
         return !userRepository.findByNickname(nickname).isPresent
+    }
+
+    fun getUserStats(userId: Long): UserStatsResponse {
+        val matchingCount = matchRepository.countByUserId(userId)
+        val likesCount = likeRepository.countByToUserIdAndStatus(userId, LikeStatus.ACTIVE)
+        return UserStatsResponse(
+            matchingCount = matchingCount,
+            likesCount = likesCount,
+            friendsCount = matchingCount
+        )
+    }
+
+    @Transactional
+    fun changePassword(userId: Long, request: ChangePasswordRequest) {
+        val user = userRepository.findById(userId)
+            .orElseThrow { IllegalArgumentException("사용자를 찾을 수 없습니다.") }
+
+        if (user.oauthProvider != "LOCAL") {
+            throw IllegalArgumentException("소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다.")
+        }
+
+        if (user.password == null) {
+            throw IllegalArgumentException("비밀번호가 설정되지 않은 계정입니다.")
+        }
+
+        if (!passwordEncoder.matches(request.currentPassword, user.password)) {
+            throw IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.")
+        }
+
+        val passwordRegex = Regex("^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#\$%^&*()_+\\-=\\[\\]{}|;:',.<>?/~`]).{8,}$")
+        if (!passwordRegex.matches(request.newPassword)) {
+            throw IllegalArgumentException("비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 포함해야 합니다.")
+        }
+
+        if (passwordEncoder.matches(request.newPassword, user.password)) {
+            throw IllegalArgumentException("새 비밀번호는 현재 비밀번호와 달라야 합니다.")
+        }
+
+        user.password = passwordEncoder.encode(request.newPassword)
+        userRepository.save(user)
     }
 
     /**

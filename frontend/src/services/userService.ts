@@ -17,6 +17,12 @@ export interface UpdateProfileRequest {
     hobbies?: string[];
 }
 
+export interface UserStats {
+  matchingCount: number;
+  likesCount: number;
+  friendsCount: number;
+}
+
 export const userService = {
     getMe: async (): Promise<User> => {
         try {
@@ -123,7 +129,7 @@ export const userService = {
 
     updateNotification: async (enabled: boolean): Promise<User> => {
         try {
-            // Assuming we use PATCH /users/me or a specific endpoint. 
+            // Assuming we use PATCH /users/me or a specific endpoint.
             // For now, reuse updateProfile if backend supports it, or create specific endpoint.
             // I will create a specific endpoint in Controller: PATCH /users/me/notification
             const response = await apiClient.patch('/users/me/notification', { enabled });
@@ -131,5 +137,14 @@ export const userService = {
         } catch (error: any) {
              throw new Error(error.response?.data?.message || '알림 설정 변경에 실패했습니다.');
         }
-    }
+    },
+
+    getMyStats: async (): Promise<UserStats> => {
+        const response = await apiClient.get('/users/me/stats');
+        return response.data;
+    },
+
+    changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+        await apiClient.put('/users/me/password', { currentPassword, newPassword });
+    },
 };

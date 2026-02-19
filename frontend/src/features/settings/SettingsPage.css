@@ -117,6 +117,52 @@
   flex-shrink: 0;
 }
 
+/* Password Change Form */
+.pw-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-main);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.pw-input:focus {
+  border-color: var(--color-primary);
+}
+
+.pw-input::placeholder {
+  color: var(--color-text-placeholder, #AAAAAA);
+}
+
+.pw-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-accent-red);
+  letter-spacing: -0.24px;
+}
+
+.pw-submit-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background-color: var(--color-primary);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: -0.32px;
+}
+
+.pw-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Social Icons */
 .settings-social-icons {
   display: flex;

@@ -45,6 +45,7 @@ import AIProfilePage from './features/aiprofile/AIProfilePage';
 import AIProfileStyleSelectPage from './features/aiprofile/AIProfileStyleSelectPage';
 import AIProfileResultPage from './features/aiprofile/AIProfileResultPage';
 import SettingsPage from './features/settings/SettingsPage';
+import PasswordChangePage from './features/settings/PasswordChangePage';
 import MyPage from './features/mypage/MyPage';
 import MyPostsPage from './features/mypage/MyPostsPage';
 import BlockManagementPage from './features/mypage/BlockManagementPage';
@@ -156,6 +157,7 @@ function App() {
               <Route path="/block-management" element={<BlockManagementPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/password" element={<PasswordChangePage />} />
               <Route path="/notifications" element={<NotificationPage />} />
               
               <Route path="/profile/owner/edit" element={<ProfileOwnerWritePage />} />

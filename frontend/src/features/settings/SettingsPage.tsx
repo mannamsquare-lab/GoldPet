@@ -194,6 +194,14 @@ const SettingsPage: React.FC = () => {
               </div>
             </div>
           </div>
+          {user?.oauthProvider === 'LOCAL' && (
+            <div className="settings-card settings-card-link" onClick={() => navigate('/settings/password')}>
+              <div className="settings-row">
+                <span className="settings-label">비밀번호 변경</span>
+                <ChevronRight />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 내 데이터 */}

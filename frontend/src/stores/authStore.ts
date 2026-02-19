@@ -28,6 +28,7 @@ export interface User {
   hasPet?: boolean;
   isNotificationEnabled?: boolean;
   isActive?: boolean;
+  oauthProvider?: string;
 }
 
 interface AuthState {
@@ -77,6 +78,7 @@ export const useAuthStore = create<AuthState>()(
           hasPet: state.user.hasPet,
           isNotificationEnabled: state.user.isNotificationEnabled,
           isActive: state.user.isActive,
+          oauthProvider: state.user.oauthProvider,
         } : null,
       }),
     }

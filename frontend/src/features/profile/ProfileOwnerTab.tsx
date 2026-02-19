@@ -31,11 +31,14 @@ const ProfileOwnerTab: React.FC = () => {
         queryFn: goldService.getBalance,
     });
 
-    // Mock counts for now as they are not in User store yet
-    const counts = {
-        matching: 128,
-        likes: '2.4K',
-        friends: 48
+    const { data: stats } = useQuery({
+        queryKey: ['users', 'stats'],
+        queryFn: () => userService.getMyStats(),
+    });
+
+    const formatCount = (n: number): string => {
+        if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+        return String(n);
     };
 
     if (isUserLoading) {
@@ -85,17 +88,17 @@ const ProfileOwnerTab: React.FC = () => {
                 <div className="count_wrap">
                     <dl>
                         <dt>매칭</dt>
-                        <dd>{counts.matching}</dd>
+                        <dd>{formatCount(stats?.matchingCount ?? 0)}</dd>
                     </dl>
                     <div></div>
                     <dl>
                         <dt>좋아요</dt>
-                        <dd>{counts.likes}</dd>
+                        <dd>{formatCount(stats?.likesCount ?? 0)}</dd>
                     </dl>
                     <div></div>
                     <dl>
                         <dt>친구</dt>
-                        <dd>{counts.friends}</dd>
+                        <dd>{formatCount(stats?.friendsCount ?? 0)}</dd>
                     </dl>
                 </div>
             </div>

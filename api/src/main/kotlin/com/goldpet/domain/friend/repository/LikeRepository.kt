@@ -52,16 +52,18 @@ interface LikeRepository : JpaRepository<Like, Long> {
 
     // Find likes sent ONLY (excluding mutual) - so they disappear from "My Likes" when mutual
     @Query(value = """
-        SELECT l.* FROM likes l 
-        WHERE l.from_user_id = :userId 
+        SELECT l.* FROM likes l
+        WHERE l.from_user_id = :userId
         AND l.status = 'ACTIVE'
         AND NOT EXISTS (
-            SELECT 1 FROM likes l2 
-            WHERE l2.from_user_id = l.to_user_id 
-            AND l2.to_user_id = :userId 
+            SELECT 1 FROM likes l2
+            WHERE l2.from_user_id = l.to_user_id
+            AND l2.to_user_id = :userId
             AND l2.status = 'ACTIVE'
         )
         ORDER BY l.created_at DESC
     """, nativeQuery = true)
     fun findSentOnlyLikes(@Param("userId") userId: Long): List<Like>
+
+    fun countByToUserIdAndStatus(toUserId: Long, status: LikeStatus): Long
 }

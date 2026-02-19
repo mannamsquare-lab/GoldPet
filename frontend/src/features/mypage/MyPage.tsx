@@ -59,10 +59,17 @@ const MyPage: React.FC = () => {
     queryFn: goldService.getBalance,
   });
 
-  const user = apiUser || authUser;
+  const { data: stats } = useQuery({
+    queryKey: ['users', 'stats'],
+    queryFn: () => userService.getMyStats(),
+  });
 
-  // TODO: replace with real API counts when available
-  const counts = { matching: 128, likes: '2.4K', friends: 48 };
+  const formatCount = (n: number): string => {
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(n);
+  };
+
+  const user = apiUser || authUser;
 
   const profileImages = user?.profileImageUrls?.length
     ? user.profileImageUrls
@@ -116,17 +123,17 @@ const MyPage: React.FC = () => {
           <div className="mypage-stats">
             <dl className="mypage-stats-item">
               <dt>매칭</dt>
-              <dd>{counts.matching}</dd>
+              <dd>{formatCount(stats?.matchingCount ?? 0)}</dd>
             </dl>
             <div className="mypage-stats-divider" />
             <dl className="mypage-stats-item">
               <dt>좋아요</dt>
-              <dd>{counts.likes}</dd>
+              <dd>{formatCount(stats?.likesCount ?? 0)}</dd>
             </dl>
             <div className="mypage-stats-divider" />
             <dl className="mypage-stats-item">
               <dt>친구</dt>
-              <dd>{counts.friends}</dd>
+              <dd>{formatCount(stats?.friendsCount ?? 0)}</dd>
             </dl>
           </div>
         </div>

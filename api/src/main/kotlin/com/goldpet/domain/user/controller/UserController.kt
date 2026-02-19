@@ -1,5 +1,6 @@
 package com.goldpet.domain.user.controller
 
+import com.goldpet.domain.user.dto.ChangePasswordRequest
 import com.goldpet.domain.user.dto.DeleteAccountRequest
 import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
 import com.goldpet.domain.user.dto.UserProfileUpdateRequest
@@ -9,6 +10,7 @@ import com.goldpet.domain.user.dto.NotificationSettingsRequest
 import com.goldpet.domain.user.dto.NotificationSettingsResponse
 import com.goldpet.domain.user.dto.PrivacySettingsRequest
 import com.goldpet.domain.user.dto.PrivacySettingsResponse
+import com.goldpet.domain.user.dto.UserStatsResponse
 import com.goldpet.domain.user.entity.ConsentType
 import com.goldpet.domain.user.service.ConsentHistoryResponse
 import com.goldpet.domain.user.service.ConsentService
@@ -143,6 +145,16 @@ class UserController(
         return ResponseEntity.ok().build()
     }
 
+    @PutMapping("/me/password")
+    fun changePassword(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestBody request: ChangePasswordRequest
+    ): ResponseEntity<Void> {
+        val userId = userDetails.username.toLong()
+        userService.changePassword(userId, request)
+        return ResponseEntity.ok().build()
+    }
+
     @GetMapping("/search")
     fun searchFriendsInArea(
         @RequestParam minLat: Double,
@@ -202,6 +214,12 @@ class UserController(
             ipAddress = httpRequest.remoteAddr
         )
         return ResponseEntity.ok(ConsentHistoryResponse.from(consent))
+    }
+
+    @GetMapping("/me/stats")
+    fun getMyStats(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<UserStatsResponse> {
+        val userId = userDetails.username.toLong()
+        return ResponseEntity.ok(userService.getUserStats(userId))
     }
 
     @GetMapping("/me/data-export")
