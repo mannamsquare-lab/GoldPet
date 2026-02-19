@@ -314,6 +314,7 @@ class _HybridWebViewState extends State<HybridWebView> {
   static const _typeBPrefixRoutes = ['/walk/', '/places/', '/gold/'];
   static const Color _colorEFE1C4 = Color(0xFFEFE1C4);
   static const Color _colorFFF7E6 = Color(0xFFFFF7E6);
+  static const Color _colorF9ECD2 = Color(0xFFF9ECD2);
 
   /// URL 경로에 따라 시스템 바 컬러 + Scaffold 배경색 업데이트
   void _updateSystemBarColors(String? url) {
@@ -335,10 +336,16 @@ class _HybridWebViewState extends State<HybridWebView> {
 
     final color = isTypeB ? _colorEFE1C4 : _colorFFF7E6;
 
+    // 하단 입력창이 있는 페이지: 입력창 배경색(#F9ECD2)에 맞춰 네비게이션 바 색상 변경
+    final isCommunityDetail = path.startsWith('/community/') && path != '/community/write';
+    final isChatDetail = path.startsWith('/chat/') && path != '/chat';
+    final hasBottomInput = isCommunityDetail || isChatDetail;
+    final navBarColor = hasBottomInput ? _colorF9ECD2 : color;
+
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: color,
       statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: color,
+      systemNavigationBarColor: navBarColor,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
 
