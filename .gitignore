@@ -144,3 +144,31 @@ docs/기획문서/
 .playwright-mcp/
 .claude/settings.local.json
 *.log.*.gz
+
+# -----------------
+# 10. Work Artifacts (screenshots, temp docs, scripts)
+# -----------------
+# Figma/design comparison screenshots
+design-compare/
+*.png
+!frontend/public/**/*.png
+!app/android/**/res/**/*.png
+!app/ios/**/*.png
+
+# Temp documentation & notes
+goldpet_figma_nodes.txt
+figma_title_node.txt
+goldpet_layout.md
+onboarding_nodes.html
+onboarding_preview.html
+frontend/LAYOUT_STRUCTURE.md
+PRIVACY_AUDIT_REPORT.md
+
+# Temp scripts & tools
+get.py
+scripts/
+
+# Root-level node (puppeteer/playwright)
+/node_modules/
+/package.json
+/package-lock.json
