@@ -150,7 +150,7 @@ const ProfileOwnerTab: React.FC = () => {
                     </dl>
                     <dl className="full_w">
                         <dt>간단한 자기소개</dt>
-                        <dd>{user.intro || '-'}</dd>
+                        <dd style={{ whiteSpace: 'pre-line' }}>{user.intro || '-'}</dd>
                     </dl>
                 </div>
 

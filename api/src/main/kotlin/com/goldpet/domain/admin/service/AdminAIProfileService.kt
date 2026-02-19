@@ -60,7 +60,7 @@ class AdminAIProfileService(
         }
         request.status = AIRequestStatus.REFUNDED
         aiRequestRepository.save(request)
-        goldService.grantReward(request.user.id, request.goldCost, "AI 프로필 생성 실패 환불")
+        goldService.systemRefund(request.user.id, request.goldCost, "AI 프로필 생성 실패 환불 (관리자)", "AI_PROFILE_FAIL", requestId)
     }
 
     // Style Management

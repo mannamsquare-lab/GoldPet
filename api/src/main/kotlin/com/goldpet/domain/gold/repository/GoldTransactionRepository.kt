@@ -35,4 +35,8 @@ interface GoldTransactionRepository : JpaRepository<GoldTransaction, Long> {
     """,
     countQuery = "SELECT COUNT(t) FROM GoldTransaction t WHERE (:type IS NULL OR t.type = :type)")
     fun findAllForAdmin(@Param("type") type: TransactionType?, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<GoldTransaction>
+
+    fun existsByOriginalTransactionId(originalTransactionId: Long): Boolean
+
+    fun findAllByUserIdAndTypeOrderByCreatedAtDesc(userId: Long, type: TransactionType, pageable: Pageable): Page<GoldTransaction>
 }

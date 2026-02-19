@@ -37,6 +37,10 @@
 /* Section Title */
 .gold-section-title { font-size: 16px; font-weight: 700; color: var(--color-primary); margin-bottom: 16px; }
 
+/* Load More */
+.gold-load-more { text-align: center; padding: 16px 0; }
+.gold-load-more-btn { height: 36px; padding: 0 24px; border-radius: 36px; border: 1px solid var(--color-border); background-color: #fff; font-size: 14px; color: var(--color-primary); cursor: pointer; }
+
 /* Small Balance Display */
 .gold-balance-small { background-color: var(--color-bg); border-radius: 16px; padding: 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
 .gold-balance-small .label { font-size: 14px; color: #727272; }

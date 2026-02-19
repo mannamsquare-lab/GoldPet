@@ -55,7 +55,8 @@ data class CommunityCommentResponse(
     val depth: Int = 1,
     val replyCount: Int = 0,
     @JsonProperty("isMine")
-    val isMine: Boolean = false
+    val isMine: Boolean = false,
+    val postTitle: String? = null
 )
 
 data class CommunityCommentCreateRequest(

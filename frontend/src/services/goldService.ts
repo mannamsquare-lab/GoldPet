@@ -1,23 +1,23 @@
 import apiClient from './api/client';
 
-// Interfaces
+// Interfaces - aligned with backend DTOs
 export interface GoldBalance {
   balance: number;
-  lastUpdated: string;
+  totalCharged: number;
+  totalSpent: number;
 }
 
 export interface GoldProduct {
-  id: number;
+  id: string;           // productCode (string, not number)
   name: string;
-  description: string;
   goldAmount: number;
   price: number;
-  bonusAmount?: number;
+  bonus: number;
 }
 
 export interface GoldTransaction {
   id: number;
-  type: 'CHARGE' | 'SPEND' | 'EARN' | 'REFUND';
+  type: 'CHARGE' | 'SPEND' | 'REWARD' | 'REFUND' | 'ADMIN_ADJUST';
   amount: number;
   description: string;
   createdAt: string;
@@ -25,171 +25,53 @@ export interface GoldTransaction {
 }
 
 export interface ChargeGoldRequest {
-  productId: number;
+  amount: number;
+  bonus?: number;
   paymentMethod: string;
+  externalTransactionId?: string;
 }
 
 export interface SpendGoldRequest {
   amount: number;
-  purpose: string;
-  referenceId?: string;
+  description: string;
+  referenceType?: string;
+  referenceId?: number;
 }
 
-// Mock Data
-const mockBalance: GoldBalance = {
-  balance: 1250,
-  lastUpdated: '2025-12-21T10:00:00',
-};
-
-const mockProducts: GoldProduct[] = [
-  {
-    id: 1,
-    name: '골드 100',
-    description: '100 골드',
-    goldAmount: 100,
-    price: 1100,
-  },
-  {
-    id: 2,
-    name: '골드 500',
-    description: '500 골드 + 50 보너스',
-    goldAmount: 500,
-    price: 5500,
-    bonusAmount: 50,
-  },
-  {
-    id: 3,
-    name: '골드 1000',
-    description: '1000 골드 + 150 보너스',
-    goldAmount: 1000,
-    price: 11000,
-    bonusAmount: 150,
-  },
-  {
-    id: 4,
-    name: '골드 3000',
-    description: '3000 골드 + 500 보너스',
-    goldAmount: 3000,
-    price: 33000,
-    bonusAmount: 500,
-  },
-];
-
-const mockTransactions: GoldTransaction[] = [
-  {
-    id: 1,
-    type: 'EARN',
-    amount: 10,
-    description: '산책 완료 보상',
-    createdAt: '2025-12-21',
-    balanceAfter: 1250,
-  },
-  {
-    id: 2,
-    type: 'SPEND',
-    amount: -50,
-    description: 'AI 프로필 생성',
-    createdAt: '2025-12-20',
-    balanceAfter: 1240,
-  },
-  {
-    id: 3,
-    type: 'CHARGE',
-    amount: 500,
-    description: '골드 500 충전',
-    createdAt: '2025-12-19',
-    balanceAfter: 1290,
-  },
-  {
-    id: 4,
-    type: 'EARN',
-    amount: 25,
-    description: '산책 완료 보상',
-    createdAt: '2025-12-18',
-    balanceAfter: 790,
-  },
-];
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-
-// Service
+// Service - real API calls only, no mock fallbacks
 export const goldService = {
   getBalance: async (): Promise<GoldBalance> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      return mockBalance;
-    }
-
-    try {
-      const response = await apiClient.get('/gold/balance');
-      return response.data;
-    } catch {
-      return mockBalance;
-    }
+    const response = await apiClient.get('/gold/balance');
+    return response.data;
   },
 
   getProducts: async (): Promise<GoldProduct[]> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      return mockProducts;
-    }
-
-    try {
-      const response = await apiClient.get('/gold/products');
-      return response.data;
-    } catch {
-      return mockProducts;
-    }
+    const response = await apiClient.get('/gold/products');
+    return response.data;
   },
 
   getTransactions: async (
     page = 0,
-    size = 20
-  ): Promise<GoldTransaction[]> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      return mockTransactions;
-    }
-
-    try {
-      const response = await apiClient.get('/gold/transactions', {
-        params: { page, size },
-      });
-      return response.data;
-    } catch {
-      return mockTransactions;
-    }
+    size = 20,
+    type?: string
+  ): Promise<{ content: GoldTransaction[]; totalPages: number; totalElements: number }> => {
+    const params: Record<string, any> = { page, size };
+    if (type && type !== 'ALL') params.type = type;
+    const response = await apiClient.get('/gold/transactions', { params });
+    return response.data;
   },
 
   chargeGold: async (
     request: ChargeGoldRequest
-  ): Promise<{ success: boolean }> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      return { success: true };
-    }
-
-    try {
-      const response = await apiClient.post('/gold/charge', request);
-      return response.data;
-    } catch {
-      return { success: false };
-    }
+  ): Promise<GoldTransaction> => {
+    const response = await apiClient.post('/gold/charge', request);
+    return response.data;
   },
 
   spendGold: async (
     request: SpendGoldRequest
-  ): Promise<{ success: boolean }> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      return { success: true };
-    }
-
-    try {
-      const response = await apiClient.post('/gold/spend', request);
-      return response.data;
-    } catch {
-      return { success: false };
-    }
+  ): Promise<GoldTransaction> => {
+    const response = await apiClient.post('/gold/spend', request);
+    return response.data;
   },
 };

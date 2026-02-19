@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walkService } from '../../services/walkService';
+import { BackButton } from '../../components/common/BackButton';
 import './WalkRankingPage.css';
 
 const WalkRankingPage = () => {
@@ -20,11 +21,9 @@ const WalkRankingPage = () => {
     <div className="walk-ranking-page">
       {/* Header */}
       <div className="walk-ranking-header">
-        <button type="button" onClick={() => navigate('/walk')} className="back-btn">
-          <img src="/assets/images/common/back_icon.svg" alt="뒤로가기" />
-        </button>
+        <BackButton onClick={() => navigate('/walk')} />
         <h1>산책 랭킹</h1>
-        <div style={{ width: '6.67vw' }} />
+        <div style={{ width: 32 }} />
       </div>
 
       {/* Period Tabs */}

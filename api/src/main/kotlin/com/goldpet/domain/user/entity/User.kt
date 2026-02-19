@@ -1,5 +1,7 @@
 package com.goldpet.domain.user.entity
 
+import com.goldpet.config.crypto.EncryptionConverter
+import com.goldpet.config.crypto.LocalDateEncryptionConverter
 import com.goldpet.domain.common.entity.BaseTimeEntity
 import java.time.LocalDate
 import jakarta.persistence.*
@@ -12,6 +14,7 @@ class User(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
+    @Convert(converter = EncryptionConverter::class)
     @Column(unique = true)
     var email: String?,
 
@@ -25,10 +28,13 @@ class User(
 
     var nickname: String?,
     
+    @Convert(converter = EncryptionConverter::class)
     var name: String?,
     
-    var birthDate: LocalDate?, // "YYYY-MM-DD"
+    @Convert(converter = LocalDateEncryptionConverter::class)
+    var birthDate: LocalDate?, // "YYYY-MM-DD" → AES-256-GCM encrypted
     
+    @Convert(converter = EncryptionConverter::class)
     var phoneNumber: String?,
 
     var gender: String?,
@@ -60,6 +66,21 @@ class User(
 
     @Column(name = "is_notification_enabled", nullable = false)
     var isNotificationEnabled: Boolean = true,
+
+    @Column(name = "is_chat_alert_enabled", nullable = false)
+    var isChatAlertEnabled: Boolean = true,
+
+    @Column(name = "is_community_alert_enabled", nullable = false)
+    var isCommunityAlertEnabled: Boolean = true,
+
+    @Column(name = "is_marketing_alert_enabled", nullable = false)
+    var isMarketingAlertEnabled: Boolean = false,
+
+    @Column(name = "is_location_sharing_enabled", nullable = false)
+    var isLocationSharingEnabled: Boolean = true,
+
+    @Column(name = "is_profile_public", nullable = false)
+    var isProfilePublic: Boolean = true,
 
     @Column(name = "fcm_token")
     var fcmToken: String? = null,

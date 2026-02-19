@@ -13,6 +13,8 @@ data class GoldBalanceResponse(
 
 data class ChargeRequest(
     val amount: Int,
+    /** 보너스 골드량. 총 지급량 = amount + bonus. 현재 description으로만 추적되며, 추후 별도 컬럼 추가 가능. */
+    val bonus: Int = 0,
     val paymentMethod: String,
     val externalTransactionId: String? = null
 )
@@ -52,4 +54,16 @@ data class GoldProductResponse(
     val goldAmount: Int,
     val price: Int,
     val bonus: Int = 0
+)
+
+data class RefundRequest(
+    val transactionId: Long,
+    val reason: String? = null
+)
+
+data class RefundResponse(
+    val refundTransactionId: Long,
+    val originalTransactionId: Long,
+    val refundedAmount: Int,
+    val balanceAfter: Int
 )

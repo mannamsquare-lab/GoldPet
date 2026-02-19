@@ -14,6 +14,7 @@ import '../services/camera_service.dart';
 import '../services/push_notification_service.dart';
 import '../../services/native_auth_service.dart';
 import '../constants/keys.dart';
+import '../constants/app_constants.dart';
 import '../api/api_client.dart';
 import '../../features/walk/screens/walk_screen.dart';
 
@@ -39,7 +40,8 @@ class NativeBridge {
   /// React로 이벤트 전송
   void sendEventToReact(String eventName, Map<String, dynamic> data) {
     final message = jsonEncode({'type': eventName, 'data': data});
-    webViewController.runJavaScript("window.postMessage($message, '*')");
+    final targetOrigin = currentEnv.appBaseUrl;
+    webViewController.runJavaScript("window.postMessage($message, '$targetOrigin')");
   }
 
   /// 메서드 호출 처리

@@ -2,6 +2,7 @@ package com.goldpet.domain.gold.controller
 
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.gold.dto.*
+import com.goldpet.domain.gold.entity.TransactionType
 import com.goldpet.domain.gold.service.GoldService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -34,9 +35,10 @@ class GoldController(
     @GetMapping("/transactions")
     fun getTransactions(
         @AuthenticationPrincipal principal: UserPrincipal,
-        @PageableDefault(size = 20) pageable: Pageable
+        @PageableDefault(size = 20) pageable: Pageable,
+        @RequestParam(required = false) type: TransactionType?
     ): ResponseEntity<Page<TransactionResponse>> {
-        return ResponseEntity.ok(goldService.getTransactions(principal.id, pageable))
+        return ResponseEntity.ok(goldService.getTransactions(principal.id, pageable, type))
     }
 
     @Operation(summary = "골드 충전", description = "IAP 후 골드 지급 처리")
@@ -55,5 +57,14 @@ class GoldController(
         @RequestBody request: SpendRequest
     ): ResponseEntity<TransactionResponse> {
         return ResponseEntity.ok(goldService.spendGold(principal.id, request))
+    }
+
+    @Operation(summary = "골드 환불", description = "SPEND 거래에 대한 환불 처리")
+    @PostMapping("/refund")
+    fun refundGold(
+        @AuthenticationPrincipal principal: UserPrincipal,
+        @RequestBody request: RefundRequest
+    ): ResponseEntity<RefundResponse> {
+        return ResponseEntity.ok(goldService.refundTransaction(principal.id, request))
     }
 }

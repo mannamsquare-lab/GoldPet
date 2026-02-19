@@ -6,6 +6,7 @@ import com.goldpet.domain.community.repository.CommunityPostRepository
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.user.service.UserService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -17,7 +18,8 @@ class AdminUserManagementService(
     private val userRepository: UserRepository,
     private val petRepository: PetRepository,
     private val postRepository: CommunityPostRepository,
-    private val commentRepository: CommunityCommentRepository
+    private val commentRepository: CommunityCommentRepository,
+    private val userService: UserService
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
@@ -78,11 +80,7 @@ class AdminUserManagementService(
 
     @Transactional
     fun deleteUser(userId: Long) {
-        val user = userRepository.findById(userId)
-            .orElseThrow { NoSuchElementException("User not found: $userId") }
-        
-        user.isActive = false
-        userRepository.save(user)
+        userService.adminDeleteAccount(userId, reason = "관리자에 의한 삭제")
     }
 
     fun searchUsers(query: String, limit: Int): List<UserListItemResponse> {

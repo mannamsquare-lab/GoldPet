@@ -15,6 +15,7 @@ data class FriendResponse(
     val images: List<String>,
     val distance: Double, // in meters
     val status: String, // "online", "offline", "walking"
+    @Deprecated("Location coordinates removed for privacy. Use locationText and distance instead.")
     val location: LocationDto?,
     val locationText: String?
 )

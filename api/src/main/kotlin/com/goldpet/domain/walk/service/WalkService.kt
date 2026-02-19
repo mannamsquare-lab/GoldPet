@@ -1,5 +1,8 @@
 package com.goldpet.domain.walk.service
 
+import com.goldpet.domain.gamification.entity.BadgeConditionType
+import com.goldpet.domain.gamification.service.BadgeAwardService
+import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkResponse
@@ -8,6 +11,7 @@ import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.entity.Walk
 import com.goldpet.domain.walk.repository.WalkRepository
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -16,9 +20,10 @@ import org.springframework.transaction.annotation.Transactional
 class WalkService(
     private val walkRepository: WalkRepository,
     private val userRepository: UserRepository,
-    private val gamificationService: com.goldpet.domain.gamification.service.GamificationService,
-    private val goldTransactionRepository: com.goldpet.domain.gold.repository.GoldTransactionRepository
+    private val goldService: GoldService,
+    private val badgeAwardService: BadgeAwardService
 ) {
+    private val log = LoggerFactory.getLogger(WalkService::class.java)
 
     @Transactional
     fun createWalk(userId: Long, request: CreateWalkRequest): WalkResponse {
@@ -51,20 +56,18 @@ class WalkService(
 
         val savedWalk = walkRepository.save(walk)
 
-        // Update Gamification Challenge (Walk Distance)
+        // 산책 골드 보상 (거리 기반) — walk save와 원자적: 골드 실패 시 walk도 롤백
+        val goldReward = calculateWalkReward(savedWalk.distanceKm)
+        if (goldReward > 0) {
+            goldService.grantReward(userId, goldReward, "산책 완료 보상 (${String.format("%.1f", savedWalk.distanceKm)}km)")
+        }
+
+        // Evaluate badge award conditions
         try {
-            // distanceKm is double, challenge goal is usually int (e.g. meters or just km count).
-            // Assuming goal value is in KM for simplicity or let's convert to Meters?
-            // Existing DB schema says goal_value is INT. Let's assume it's Meters.
-            val distMeters = (savedWalk.distanceKm * 1000).toInt()
-            gamificationService.updateChallengeProgress(
-                userId, 
-                com.goldpet.domain.gamification.entity.Challenge.GoalType.WALK_DISTANCE_TOTAL, 
-                distMeters
-            )
+            badgeAwardService.checkAndAwardBadges(userId, BadgeConditionType.WALK_COUNT)
+            badgeAwardService.checkAndAwardBadges(userId, BadgeConditionType.WALK_DISTANCE_TOTAL)
         } catch (e: Exception) {
-            // Log error but don't fail the walk creation
-            println("Failed to update gamification progress: ${e.message}")
+            log.warn("Failed to update gamification progress", e)
         }
 
         return WalkResponse.from(savedWalk)
@@ -114,11 +117,7 @@ class WalkService(
         val totalDuration = walkRepository.sumDurationByUserId(userId)
         val totalCalories = walkRepository.sumCaloriesByUserId(userId)
         val totalWalks = walkRepository.countByUserId(userId)
-        val totalGold = goldTransactionRepository.sumAmountByUserAndTypeSince(
-            userId,
-            com.goldpet.domain.gold.entity.TransactionType.REWARD,
-            java.time.LocalDateTime.of(2020, 1, 1, 0, 0)
-        ) ?: 0
+        val totalGold = goldService.getTotalRewardAmount(userId)
 
         return com.goldpet.domain.walk.dto.WalkStatsResponse(
             totalDistanceKm = totalDistance,
@@ -127,5 +126,15 @@ class WalkService(
             totalGoldEarned = totalGold,
             totalWalks = totalWalks
         )
+    }
+
+    private fun calculateWalkReward(distanceKm: Double): Int {
+        return when {
+            distanceKm < 0.5 -> 0       // 500m 미만: 보상 없음
+            distanceKm < 1.0 -> 1       // 500m~1km: 1골드
+            distanceKm < 3.0 -> 3       // 1km~3km: 3골드
+            distanceKm < 5.0 -> 5       // 3km~5km: 5골드
+            else -> 10                   // 5km 이상: 10골드
+        }
     }
 }

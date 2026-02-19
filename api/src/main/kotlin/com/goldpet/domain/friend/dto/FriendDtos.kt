@@ -20,5 +20,7 @@ data class BlockedUserResponse(
     val blockId: Long,
     val blockedUserId: Long,
     val blockedNickname: String?,
+    val blockedProfileImageUrl: String?,
+    val blockedPetName: String?,
     val blockedAt: String?
 )

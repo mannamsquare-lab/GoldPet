@@ -27,6 +27,7 @@ export interface User {
   intro?: string;
   hasPet?: boolean;
   isNotificationEnabled?: boolean;
+  isActive?: boolean;
 }
 
 interface AuthState {
@@ -48,7 +49,6 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       login: (token, refreshToken, user) => {
         set({ token, refreshToken, user, isAuthenticated: true });
-        localStorage.setItem('accessToken', token);
         if (nativeBridge.isAvailable()) {
           // Sync auth tokens to Flutter secure storage for native API calls
           nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch(() => {});
@@ -58,7 +58,6 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: () => {
         set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
-        localStorage.removeItem('accessToken');
       },
       updateUser: (user) => {
         set({ user });
@@ -66,6 +65,19 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      // Only persist safe, non-sensitive data. Tokens and PII remain in-memory only.
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+        user: state.user ? {
+          id: state.user.id,
+          nickname: state.user.nickname,
+          profileImageUrl: state.user.profileImageUrl,
+          profileImageUrls: state.user.profileImageUrls,
+          hasPet: state.user.hasPet,
+          isNotificationEnabled: state.user.isNotificationEnabled,
+          isActive: state.user.isActive,
+        } : null,
+      }),
     }
   )
 );

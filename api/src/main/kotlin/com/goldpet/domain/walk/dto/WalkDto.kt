@@ -75,6 +75,21 @@ data class WalkResponse(
                 notes = walk.notes
             )
         }
+
+        fun publicFrom(walk: Walk): WalkResponse {
+            return WalkResponse(
+                id = walk.id,
+                userId = walk.user.id,
+                startTime = walk.startTime,
+                endTime = walk.endTime,
+                distanceKm = walk.distanceKm,
+                durationSeconds = walk.durationSeconds,
+                path = emptyList(), // Hide detailed route for non-owner views
+                spots = emptyList(), // Hide spots for non-owner views
+                caloriesBurned = walk.caloriesBurned,
+                notes = null // Hide notes for non-owner views
+            )
+        }
     }
 }
 

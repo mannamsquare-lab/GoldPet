@@ -50,5 +50,31 @@ data class UserResponse(
                 isActive = user.isActive
             )
         }
+
+        /** Public view of another user's profile. Hides PII and precise location. */
+        fun publicFrom(user: User): UserResponse {
+            return UserResponse(
+                id = user.id,
+                email = null,
+                nickname = user.nickname,
+                gender = user.gender,
+                birthYear = null,
+                mainLocationText = user.mainLocationText,
+                mainLocationLat = null,
+                mainLocationLng = null,
+                profileImageUrl = user.profileImageUrl,
+                profileImageUrls = user.profileImages.map { it.imageUrl },
+                name = null,
+                birthDate = null,
+                phoneNumber = null,
+                hasPet = user.hasPet,
+                intro = user.intro,
+                mbti = user.mbti,
+                interests = user.interests.map { it.name },
+                hobbies = user.hobbies.map { it.name },
+                goldBalance = 0,
+                isActive = user.isActive
+            )
+        }
     }
 }

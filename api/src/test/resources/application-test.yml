@@ -18,6 +18,10 @@ spring:
   cache:
     type: simple
 
+app:
+  encryption:
+    key: "test-encryption-key-32-chars!!!"
+
 jwt:
   secret: test-secret-key-for-testing-purposes-must-be-at-least-256-bits-long
   expiration: 3600000

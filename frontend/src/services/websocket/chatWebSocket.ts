@@ -6,6 +6,7 @@ import { Client } from '@stomp/stompjs';
 import type { IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import type { ChatMessage } from '../chatService';
+import { useAuthStore } from '../../stores/authStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 const WS_URL = `${API_BASE_URL}/ws`;
@@ -35,7 +36,7 @@ class ChatWebSocketService {
 
     this.connectPromise = new Promise((resolve, reject) => {
 
-      const token = localStorage.getItem('accessToken');
+      const token = useAuthStore.getState().token;
 
       this.client = new Client({
         webSocketFactory: () => new SockJS(WS_URL),

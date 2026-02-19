@@ -16,6 +16,8 @@ spring:
 
 # 개발 서버 환경 URL 설정 (mannamsquare.com)
 app:
+  encryption:
+    key: "${ENCRYPTION_KEY:dev-encryption-key-32-characters!}"
   frontend:
     url: https://app.mannamsquare.com
   admin:
@@ -31,6 +33,8 @@ S3_ENDPOINT: ${MINIO_ENDPOINT:http://minio:9000}
 S3_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT}
 S3_ACCESS_KEY: ${MINIO_ACCESS_KEY}
 S3_SECRET_KEY: ${MINIO_SECRET_KEY}
+S3_PUBLIC_BUCKET_NAME: ${MINIO_PUBLIC_BUCKET:goldpet-public}
+S3_PRIVATE_BUCKET_NAME: ${MINIO_PRIVATE_BUCKET:goldpet-private}
 
 # Naver Maps API (for geocoding location addresses)
 ncp:

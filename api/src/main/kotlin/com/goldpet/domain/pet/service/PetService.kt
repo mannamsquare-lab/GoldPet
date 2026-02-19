@@ -8,10 +8,13 @@ import com.goldpet.domain.pet.dto.UpdatePetRequest
 import com.goldpet.domain.pet.entity.Pet
 import com.goldpet.domain.pet.entity.PetProfileImage
 import com.goldpet.domain.pet.repository.PetBreedRepository
+import com.goldpet.domain.gamification.entity.BadgeConditionType
+import com.goldpet.domain.gamification.service.BadgeAwardService
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.pet.repository.PetSpeciesRepository
 import com.goldpet.domain.user.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,8 +26,10 @@ class PetService(
     private val userRepository: UserRepository,
     private val petSpeciesRepository: PetSpeciesRepository,
     private val petBreedRepository: PetBreedRepository,
-    private val petAttributeRepository: com.goldpet.domain.pet.repository.PetAttributeRepository
+    private val petAttributeRepository: com.goldpet.domain.pet.repository.PetAttributeRepository,
+    private val badgeAwardService: BadgeAwardService
 ) {
+    private val log = LoggerFactory.getLogger(PetService::class.java)
 
     @Transactional
     fun createPet(userId: Long, request: CreatePetRequest): PetResponse {
@@ -50,6 +55,13 @@ class PetService(
         }
 
         val savedPet = petRepository.save(pet)
+
+        try {
+            badgeAwardService.checkAndAwardBadges(userId, BadgeConditionType.PET_REGISTER)
+        } catch (e: Exception) {
+            log.warn("Badge check failed for userId={}", userId, e)
+        }
+
         return PetResponse.from(savedPet)
     }
 

@@ -7,11 +7,14 @@ import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.repository.ChatRoomRepository
 import com.goldpet.domain.friend.repository.MatchRepository
+import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class ChatService(
@@ -20,7 +23,8 @@ class ChatService(
     private val chatMessageRepository: ChatMessageRepository,
     private val userRepository: UserRepository,
     private val matchRepository: MatchRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val userBlockRepository: UserBlockRepository
 ) {
 
     @Transactional
@@ -108,6 +112,16 @@ class ChatService(
                 .orElseThrow { IllegalStateException("Sender is not a participant of this chat room.") }
         }
 
+        // Block check: verify no block relationship with the other participant in 1:1 chat
+        val otherParticipant = chatRoom.participants.firstOrNull { it.user.id != request.senderId }
+        if (otherParticipant != null) {
+            val otherId = otherParticipant.user.id
+            if (userBlockRepository.existsByBlockerIdAndBlockedId(request.senderId, otherId)
+                || userBlockRepository.existsByBlockerIdAndBlockedId(otherId, request.senderId)) {
+                throw ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot send message to blocked user")
+            }
+        }
+
         val chatMessage = ChatMessage(
             chatRoom = chatRoom,
             sender = sender,
@@ -154,7 +168,16 @@ class ChatService(
     @Transactional(readOnly = true)
     fun getUserChatRooms(userId: Long): List<ChatRoom> {
         userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
-        return chatRoomParticipantRepository.findAllByUserId(userId).map { it.chatRoom }
+        val myRooms = chatRoomParticipantRepository.findAllByUserId(userId).map { it.chatRoom }
+        return myRooms.filter { room ->
+            val otherParticipant = room.participants.firstOrNull { it.user.id != userId }
+            if (otherParticipant == null) true
+            else {
+                val otherId = otherParticipant.user.id
+                !userBlockRepository.existsByBlockerIdAndBlockedId(userId, otherId)
+                    && !userBlockRepository.existsByBlockerIdAndBlockedId(otherId, userId)
+            }
+        }
     }
 
     @Transactional
@@ -183,6 +206,12 @@ class ChatService(
      */
     @Transactional
     fun getOrCreateDirectRoom(userId: Long, targetUserId: Long): ChatRoom {
+        // Block check
+        if (userBlockRepository.existsByBlockerIdAndBlockedId(userId, targetUserId)
+            || userBlockRepository.existsByBlockerIdAndBlockedId(targetUserId, userId)) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Blocked user")
+        }
+
         val user = userRepository.findById(userId)
             .orElseThrow { NoSuchElementException("User not found: $userId") }
         val targetUser = userRepository.findById(targetUserId)

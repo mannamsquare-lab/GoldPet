@@ -8,4 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface UserBadgeRepository : JpaRepository<UserBadge, Long> {
     fun findAllByUser(user: User): List<UserBadge>
     fun existsByUserAndBadge(user: User, badge: Badge): Boolean
+    fun existsByUserAndBadgeAndCycleKey(user: User, badge: Badge, cycleKey: String?): Boolean
+    fun findByUserAndBadgeAndCycleKey(user: User, badge: Badge, cycleKey: String?): UserBadge?
+    fun countByBadgeId(badgeId: Long): Long
 }

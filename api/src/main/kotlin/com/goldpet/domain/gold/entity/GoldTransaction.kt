@@ -5,10 +5,11 @@ import com.goldpet.domain.user.entity.User
 import jakarta.persistence.*
 
 enum class TransactionType {
-    CHARGE,     // 충전
-    SPEND,      // 사용
-    REWARD,     // 보상
-    REFUND      // 환불
+    CHARGE,         // 충전
+    SPEND,          // 사용
+    REWARD,         // 보상
+    REFUND,         // 환불
+    ADMIN_ADJUST    // 관리자 수동 조정
 }
 
 enum class TransactionStatus {
@@ -47,6 +48,9 @@ class GoldTransaction(
 
     @Column(name = "reference_id")
     val referenceId: Long? = null,
+
+    @Column(name = "original_transaction_id")
+    val originalTransactionId: Long? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

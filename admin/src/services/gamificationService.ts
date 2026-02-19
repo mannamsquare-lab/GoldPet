@@ -2,23 +2,18 @@ import { apiClient } from './apiClient';
 
 export interface Badge {
   id: number;
-  code: string;
   name: string;
   description: string;
   imageUrl: string | null;
+  conditionType: string | null;
+  conditionValue: number | null;
+  isActive: boolean;
+  rewardGold: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  isRepeatable: boolean;
+  repeatCycle: string | null;
   earnedCount: number;
-}
-
-export interface Challenge {
-  id: number;
-  title: string;
-  description: string;
-  goalType: string;
-  goalValue: number;
-  startDate: string;
-  endDate: string;
-  participantCount: number;
-  completedCount: number;
 }
 
 export const gamificationService = {
@@ -27,25 +22,36 @@ export const gamificationService = {
     return response.data;
   },
 
-  async createBadge(data: { code: string; name: string; description: string; imageUrl?: string }): Promise<Badge> {
+  async createBadge(data: {
+    name: string;
+    description: string;
+    imageUrl?: string;
+    conditionType?: string;
+    conditionValue?: number;
+    rewardGold?: number;
+    startDate?: string;
+    endDate?: string;
+    isRepeatable?: boolean;
+    repeatCycle?: string;
+  }): Promise<Badge> {
     const response = await apiClient.post('/gamification/badges', data);
     return response.data;
   },
 
-  async getChallenges(): Promise<Challenge[]> {
-    const response = await apiClient.get('/gamification/challenges');
-    return response.data;
-  },
-
-  async createChallenge(data: {
-    title: string;
-    description: string;
-    goalType: string;
-    goalValue: number;
-    startDate: string;
-    endDate: string;
-  }): Promise<Challenge> {
-    const response = await apiClient.post('/gamification/challenges', data);
+  async updateBadge(badgeId: number, data: {
+    name?: string;
+    description?: string;
+    imageUrl?: string;
+    conditionType?: string;
+    conditionValue?: number;
+    isActive?: boolean;
+    rewardGold?: number;
+    startDate?: string;
+    endDate?: string;
+    isRepeatable?: boolean;
+    repeatCycle?: string;
+  }): Promise<Badge> {
+    const response = await apiClient.put(`/gamification/badges/${badgeId}`, data);
     return response.data;
   },
 };

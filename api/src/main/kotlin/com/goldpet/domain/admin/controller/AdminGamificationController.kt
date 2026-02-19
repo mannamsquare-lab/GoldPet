@@ -24,52 +24,55 @@ class AdminGamificationController(
         return ResponseEntity.ok(adminGamificationService.createBadge(request))
     }
 
-    @Operation(summary = "챌린지 목록 조회")
-    @GetMapping("/challenges")
-    fun getChallenges(): ResponseEntity<List<ChallengeAdminResponse>> {
-        return ResponseEntity.ok(adminGamificationService.getChallenges())
-    }
-
-    @Operation(summary = "챌린지 생성")
-    @PostMapping("/challenges")
-    fun createChallenge(@RequestBody request: CreateChallengeRequest): ResponseEntity<ChallengeAdminResponse> {
-        return ResponseEntity.ok(adminGamificationService.createChallenge(request))
+    @Operation(summary = "뱃지 수정")
+    @PutMapping("/badges/{badgeId}")
+    fun updateBadge(
+        @PathVariable badgeId: Long,
+        @RequestBody request: UpdateBadgeRequest
+    ): ResponseEntity<BadgeAdminResponse> {
+        return ResponseEntity.ok(adminGamificationService.updateBadge(badgeId, request))
     }
 }
 
 data class BadgeAdminResponse(
     val id: Long,
-    val code: String,
     val name: String,
     val description: String,
     val imageUrl: String?,
+    val conditionType: String?,
+    val conditionValue: Int?,
+    val isActive: Boolean,
+    val rewardGold: Int?,
+    val startDate: String?,
+    val endDate: String?,
+    val isRepeatable: Boolean,
+    val repeatCycle: String?,
     val earnedCount: Int
 )
 
 data class CreateBadgeRequest(
-    val code: String,
     val name: String,
     val description: String,
-    val imageUrl: String?
+    val imageUrl: String?,
+    val conditionType: String?,
+    val conditionValue: Int?,
+    val rewardGold: Int?,
+    val startDate: String?,
+    val endDate: String?,
+    val isRepeatable: Boolean?,
+    val repeatCycle: String?
 )
 
-data class ChallengeAdminResponse(
-    val id: Long,
-    val title: String,
-    val description: String,
-    val goalType: String,
-    val goalValue: Int,
-    val startDate: String,
-    val endDate: String,
-    val participantCount: Int,
-    val completedCount: Int
-)
-
-data class CreateChallengeRequest(
-    val title: String,
-    val description: String,
-    val goalType: String,
-    val goalValue: Int,
-    val startDate: String,
-    val endDate: String
+data class UpdateBadgeRequest(
+    val name: String?,
+    val description: String?,
+    val imageUrl: String?,
+    val conditionType: String?,
+    val conditionValue: Int?,
+    val isActive: Boolean?,
+    val rewardGold: Int?,
+    val startDate: String?,
+    val endDate: String?,
+    val isRepeatable: Boolean?,
+    val repeatCycle: String?
 )

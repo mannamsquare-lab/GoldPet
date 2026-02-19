@@ -3,7 +3,7 @@ import '../GoldPage.css';
 
 interface GoldProductCardProps {
   product: GoldProduct;
-  onPurchase: (productId: number) => void;
+  onPurchase: (productId: string) => void;
 }
 
 function GoldProductCard({ product, onPurchase }: GoldProductCardProps) {
@@ -13,10 +13,10 @@ function GoldProductCard({ product, onPurchase }: GoldProductCardProps) {
         <div className="product-name">{product.name}</div>
         <div className="product-amount">
           {product.goldAmount.toLocaleString()}G
-          {(product.bonusAmount ?? 0) > 0 && ` + 보너스 ${product.bonusAmount!.toLocaleString()}G`}
+          {product.bonus > 0 && ` + 보너스 ${product.bonus.toLocaleString()}G`}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1.11vw' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
         <div className="product-price">{product.price.toLocaleString()}원</div>
         <button className="product-buy-btn" onClick={() => onPurchase(product.id)}>
           구매하기

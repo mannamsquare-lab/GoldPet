@@ -19,6 +19,8 @@ spring:
 
 # 로컬 환경 URL 설정
 app:
+  encryption:
+    key: "local-dev-encryption-key-32ch!!"
   frontend:
     url: http://localhost:5173
   admin:
@@ -37,6 +39,8 @@ S3_ENDPOINT: http://localhost:9100
 S3_PUBLIC_ENDPOINT: http://192.168.0.87:9100
 S3_ACCESS_KEY: goldpet-s3-access-key
 S3_SECRET_KEY: goldpet-s3-secret-key
+S3_PUBLIC_BUCKET_NAME: goldpet-public
+S3_PRIVATE_BUCKET_NAME: goldpet-private
 
 # NCP Maps API
 ncp:

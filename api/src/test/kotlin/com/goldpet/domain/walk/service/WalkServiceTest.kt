@@ -1,6 +1,10 @@
 package com.goldpet.domain.walk.service
 
-import com.goldpet.domain.gamification.service.GamificationService
+import com.goldpet.domain.gamification.service.BadgeAwardService
+import com.goldpet.domain.gold.dto.TransactionResponse
+import com.goldpet.domain.gold.entity.TransactionStatus
+import com.goldpet.domain.gold.entity.TransactionType
+import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
@@ -16,9 +20,7 @@ import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doNothing
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 import java.time.LocalDateTime
 import java.util.*
 import jakarta.persistence.EntityNotFoundException
@@ -32,10 +34,10 @@ class WalkServiceTest {
     private lateinit var userRepository: UserRepository
 
     @Mock
-    private lateinit var gamificationService: GamificationService
+    private lateinit var goldService: GoldService
 
     @Mock
-    private lateinit var goldTransactionRepository: com.goldpet.domain.gold.repository.GoldTransactionRepository
+    private lateinit var badgeAwardService: BadgeAwardService
 
     private lateinit var walkService: WalkService
 
@@ -45,7 +47,7 @@ class WalkServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        walkService = WalkService(walkRepository, userRepository, gamificationService, goldTransactionRepository)
+        walkService = WalkService(walkRepository, userRepository, goldService, badgeAwardService)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
     }
@@ -70,9 +72,53 @@ class WalkServiceTest {
         )
     }
 
+    private fun mockTransactionResponse(amount: Int): TransactionResponse {
+        return TransactionResponse(
+            id = 1L,
+            type = TransactionType.REWARD,
+            amount = amount,
+            balanceAfter = 100,
+            description = "산책 보상",
+            status = TransactionStatus.COMPLETED,
+            createdAt = LocalDateTime.now()
+        )
+    }
+
+    private fun createWalkRequest(distanceKm: Double): CreateWalkRequest {
+        return CreateWalkRequest(
+            startTime = LocalDateTime.now().minusHours(1),
+            endTime = LocalDateTime.now(),
+            distanceKm = distanceKm,
+            durationSeconds = 3600,
+            path = listOf(listOf(37.5665, 126.9780), listOf(37.5670, 126.9785)),
+            caloriesBurned = null,
+            notes = null
+        )
+    }
+
+    private fun mockWalkSave() {
+        whenever(walkRepository.save(any<Walk>())).thenAnswer { invocation ->
+            val walk = invocation.getArgument<Walk>(0)
+            Walk(
+                id = 1L,
+                user = walk.user,
+                startTime = walk.startTime,
+                endTime = walk.endTime,
+                distanceKm = walk.distanceKm,
+                durationSeconds = walk.durationSeconds,
+                path = walk.path,
+                caloriesBurned = walk.caloriesBurned,
+                notes = walk.notes
+            ).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+                walk.spots.forEach { spot -> spots.add(spot) }
+            }
+        }
+    }
+
     @Test
     fun `createWalk should create walk with path and spots`() {
-        // Given
         val startTime = LocalDateTime.now().minusHours(1)
         val endTime = LocalDateTime.now()
         val request = CreateWalkRequest(
@@ -81,7 +127,7 @@ class WalkServiceTest {
             distanceKm = 2.5,
             durationSeconds = 3600,
             path = listOf(
-                listOf(37.5665, 126.9780),  // 서울시청 근처
+                listOf(37.5665, 126.9780),
                 listOf(37.5670, 126.9785),
                 listOf(37.5675, 126.9790)
             ),
@@ -99,40 +145,13 @@ class WalkServiceTest {
             notes = "오늘 산책 좋았음"
         )
 
-        val lineString = geometryFactory.createLineString(arrayOf(
-            Coordinate(126.9780, 37.5665),
-            Coordinate(126.9785, 37.5670),
-            Coordinate(126.9790, 37.5675)
-        ))
-
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(walkRepository.save(any<Walk>())).thenAnswer { invocation ->
-            val walk = invocation.getArgument<Walk>(0)
-            Walk(
-                id = 1L,
-                user = walk.user,
-                startTime = walk.startTime,
-                endTime = walk.endTime,
-                distanceKm = walk.distanceKm,
-                durationSeconds = walk.durationSeconds,
-                path = walk.path,
-                caloriesBurned = walk.caloriesBurned,
-                notes = walk.notes
-            ).apply {
-                createdAt = LocalDateTime.now()
-                updatedAt = LocalDateTime.now()
-                // Copy spots from the original walk
-                walk.spots.forEach { spot ->
-                    spots.add(spot)
-                }
-            }
-        }
-        doNothing().whenever(gamificationService).updateChallengeProgress(any(), any(), any())
+        mockWalkSave()
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(3))
+        whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
 
-        // When
         val result = walkService.createWalk(1L, request)
 
-        // Then
         assertNotNull(result)
         assertEquals(1L, result.id)
         assertEquals(1L, result.userId)
@@ -147,19 +166,9 @@ class WalkServiceTest {
 
     @Test
     fun `createWalk should throw exception when user not found`() {
-        // Given
-        val request = CreateWalkRequest(
-            startTime = LocalDateTime.now().minusHours(1),
-            endTime = LocalDateTime.now(),
-            distanceKm = 2.5,
-            durationSeconds = 3600,
-            path = listOf(listOf(37.5665, 126.9780), listOf(37.5670, 126.9785)),
-            caloriesBurned = null,
-            notes = null
-        )
+        val request = createWalkRequest(2.5)
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
-        // When & Then
         assertThrows<EntityNotFoundException> {
             walkService.createWalk(999L, request)
         }
@@ -167,7 +176,6 @@ class WalkServiceTest {
 
     @Test
     fun `getWalk should return walk when exists`() {
-        // Given
         val lineString = geometryFactory.createLineString(arrayOf(
             Coordinate(126.9780, 37.5665),
             Coordinate(126.9785, 37.5670),
@@ -191,10 +199,8 @@ class WalkServiceTest {
 
         whenever(walkRepository.findById(1L)).thenReturn(Optional.of(walk))
 
-        // When
         val result = walkService.getWalk(1L)
 
-        // Then
         assertNotNull(result)
         assertEquals(1L, result.id)
         assertEquals(2.5, result.distanceKm)
@@ -203,10 +209,8 @@ class WalkServiceTest {
 
     @Test
     fun `getWalk should throw exception when walk not found`() {
-        // Given
         whenever(walkRepository.findById(999L)).thenReturn(Optional.empty())
 
-        // When & Then
         assertThrows<EntityNotFoundException> {
             walkService.getWalk(999L)
         }
@@ -214,7 +218,6 @@ class WalkServiceTest {
 
     @Test
     fun `getWalksByUser should return list of walks`() {
-        // Given
         val lineString = geometryFactory.createLineString(arrayOf(
             Coordinate(126.9780, 37.5665),
             Coordinate(126.9785, 37.5670)
@@ -252,59 +255,101 @@ class WalkServiceTest {
 
         whenever(walkRepository.findByUserId(1L)).thenReturn(listOf(walk1, walk2))
 
-        // When
         val result = walkService.getWalksByUser(1L)
 
-        // Then
         assertEquals(2, result.size)
         assertEquals(2.0, result[0].distanceKm)
         assertEquals(3.0, result[1].distanceKm)
     }
 
     @Test
-    fun `createWalk should handle gamification error gracefully`() {
-        // Given
-        val request = CreateWalkRequest(
-            startTime = LocalDateTime.now().minusHours(1),
-            endTime = LocalDateTime.now(),
-            distanceKm = 2.5,
-            durationSeconds = 3600,
-            path = listOf(listOf(37.5665, 126.9780), listOf(37.5670, 126.9785)),
-            caloriesBurned = null,
-            notes = null
-        )
-
-        val lineString = geometryFactory.createLineString(arrayOf(
-            Coordinate(126.9780, 37.5665),
-            Coordinate(126.9785, 37.5670)
-        ))
+    fun `createWalk should handle badge award error gracefully`() {
+        val request = createWalkRequest(2.5)
 
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(walkRepository.save(any<Walk>())).thenAnswer { invocation ->
-            val walk = invocation.getArgument<Walk>(0)
-            Walk(
-                id = 1L,
-                user = walk.user,
-                startTime = walk.startTime,
-                endTime = walk.endTime,
-                distanceKm = walk.distanceKm,
-                durationSeconds = walk.durationSeconds,
-                path = walk.path,
-                caloriesBurned = walk.caloriesBurned,
-                notes = walk.notes
-            ).apply {
-                createdAt = LocalDateTime.now()
-                updatedAt = LocalDateTime.now()
-            }
-        }
-        whenever(gamificationService.updateChallengeProgress(any(), any(), any()))
-            .thenThrow(RuntimeException("Gamification service error"))
+        mockWalkSave()
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(3))
+        whenever(badgeAwardService.checkAndAwardBadges(any(), any()))
+            .thenThrow(RuntimeException("Badge award service error"))
 
-        // When - should not throw exception even if gamification fails
         val result = walkService.createWalk(1L, request)
 
-        // Then
         assertNotNull(result)
         assertEquals(1L, result.id)
+    }
+
+    // === Gold Reward Tests ===
+
+    @Test
+    fun `createWalk should grant gold reward for walk over 0_5km`() {
+        val request = createWalkRequest(1.5) // 1km~3km = 3 gold
+
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        mockWalkSave()
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(3))
+        whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
+
+        walkService.createWalk(1L, request)
+
+        verify(goldService).grantReward(eq(1L), eq(3), argThat { contains("1.5km") })
+    }
+
+    @Test
+    fun `createWalk should not grant gold reward for walk under 0_5km`() {
+        val request = createWalkRequest(0.3) // < 0.5km = no reward
+
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        mockWalkSave()
+        whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
+
+        walkService.createWalk(1L, request)
+
+        verify(goldService, never()).grantReward(any(), any(), any())
+    }
+
+    @Test
+    fun `createWalk should grant 10 gold for walk over 5km`() {
+        val request = createWalkRequest(7.2) // >= 5km = 10 gold
+
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        mockWalkSave()
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(10))
+        whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
+
+        walkService.createWalk(1L, request)
+
+        verify(goldService).grantReward(eq(1L), eq(10), any())
+    }
+
+    @Test
+    fun `createWalk should grant 1 gold for walk between 0_5km and 1km`() {
+        val request = createWalkRequest(0.7) // 0.5~1km = 1 gold
+
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        mockWalkSave()
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(1))
+        whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
+
+        walkService.createWalk(1L, request)
+
+        verify(goldService).grantReward(eq(1L), eq(1), any())
+    }
+
+    @Test
+    fun `getMyStats should return total gold earned via GoldService`() {
+        whenever(walkRepository.sumDistanceByUserId(1L)).thenReturn(10.0)
+        whenever(walkRepository.sumDurationByUserId(1L)).thenReturn(7200L)
+        whenever(walkRepository.sumCaloriesByUserId(1L)).thenReturn(500.0)
+        whenever(walkRepository.countByUserId(1L)).thenReturn(5)
+        whenever(goldService.getTotalRewardAmount(1L)).thenReturn(30)
+
+        val result = walkService.getMyStats(1L)
+
+        assertEquals(10.0, result.totalDistanceKm)
+        assertEquals(120L, result.totalDurationMinutes)
+        assertEquals(500.0, result.totalCalories)
+        assertEquals(5, result.totalWalks)
+        assertEquals(30, result.totalGoldEarned)
+        verify(goldService).getTotalRewardAmount(1L)
     }
 }

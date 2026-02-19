@@ -384,7 +384,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  height: 56px;
+  padding: 0 16px;
+  box-sizing: border-box;
   background-color: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
@@ -393,11 +395,12 @@
 }
 
 .create_group_header .back_btn {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: -8px;
 }
 
 .create_group_header .back_btn img {

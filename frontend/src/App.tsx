@@ -35,8 +35,7 @@ import ProfilePage from './features/profile/ProfilePage';
 import ProfileOwnerWritePage from './features/profile/ProfileOwnerWritePage';
 import ProfilePetWritePage from './features/profile/ProfilePetWritePage';
 import PetRegisterPage from './features/pet/PetRegisterPage';
-import BadgesPage from './features/gamification/BadgesPage';
-import ChallengesPage from './features/gamification/ChallengesPage';
+import GamificationTabPage from './features/gamification/GamificationTabPage';
 import NotificationPage from './features/notification/NotificationPage';
 import { ProfileTermsPage } from './features/profile/ProfileTermsPage';
 import ScrollToTop from './components/common/ScrollToTop';
@@ -46,6 +45,9 @@ import AIProfilePage from './features/aiprofile/AIProfilePage';
 import AIProfileStyleSelectPage from './features/aiprofile/AIProfileStyleSelectPage';
 import AIProfileResultPage from './features/aiprofile/AIProfileResultPage';
 import SettingsPage from './features/settings/SettingsPage';
+import MyPage from './features/mypage/MyPage';
+import MyPostsPage from './features/mypage/MyPostsPage';
+import BlockManagementPage from './features/mypage/BlockManagementPage';
 import DormantAccountPage from './features/auth/DormantAccountPage';
 import WithdrawnAccountPage from './features/auth/WithdrawnAccountPage';
 import PasswordExpiryPage from './features/auth/PasswordExpiryPage';
@@ -149,6 +151,9 @@ function App() {
               <Route path="/community/:postId" element={<CommunityDetailPage />} />
 
               {/* Layout B pages using SubPageLayout internally */}
+              <Route path="/mypage" element={<MyPage />} />
+              <Route path="/mypage/posts" element={<MyPostsPage />} />
+              <Route path="/block-management" element={<BlockManagementPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/notifications" element={<NotificationPage />} />
@@ -171,8 +176,8 @@ function App() {
               <Route path="/community/write" element={<CommunityWritePage />} />
               <Route path="/pet/register" element={<PetRegisterPage />} />
               <Route path="/pet/edit/:petId" element={<PetRegisterPage />} />
-              <Route path="/my-badges" element={<BadgesPage />} />
-              <Route path="/challenges" element={<ChallengesPage />} />
+              <Route path="/my-badges" element={<GamificationTabPage />} />
+              <Route path="/missions" element={<GamificationTabPage />} />
 
 
 

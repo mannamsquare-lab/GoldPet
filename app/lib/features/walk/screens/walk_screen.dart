@@ -40,6 +40,12 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
   final Set<NMarker> _markers = {};
 
   StreamSubscription<Position>? _positionStreamSubscription;
+  Position? _lastAcceptedPosition;
+
+  // GPS filtering thresholds
+  static const double _maxAccuracyMeters = 20.0;
+  static const double _maxWalkSpeedMps = 4.2; // ~15 km/h
+  static const double _minDistanceMeters = 5.0;
 
   @override
   void initState() {
@@ -185,6 +191,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
     _path = [];
     _spots.clear();
     _markers.clear();
+    _lastAcceptedPosition = null;
     _mapController?.clearOverlays(); // Clear previous path/markers
     _startTime = DateTime.now();
 
@@ -196,7 +203,10 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
       _durationNotifier.value++;
     });
 
-    const locationSettings = LocationSettings(accuracy: LocationAccuracy.best);
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 3, // OS-level pre-filter; app-level filter is stricter
+    );
 
     _positionStreamSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
@@ -207,23 +217,45 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
   }
 
   void _updateLocation(Position position) {
+    // 1. Accuracy filter — reject unreliable GPS readings
+    if (position.accuracy > _maxAccuracyMeters) {
+      debugPrint('[Walk] Rejected: accuracy ${position.accuracy.toStringAsFixed(1)}m > ${_maxAccuracyMeters}m');
+      return;
+    }
+
     final latLng = NLatLng(position.latitude, position.longitude);
 
-    if (_path.isNotEmpty) {
-      final last = _path.last;
+    if (_path.isNotEmpty && _lastAcceptedPosition != null) {
+      final last = _lastAcceptedPosition!;
       final dist = Geolocator.distanceBetween(
         last.latitude,
         last.longitude,
         position.latitude,
         position.longitude,
       );
-      if (dist > 2.0) {
-        _distanceNotifier.value += (dist / 1000.0);
-        _path.add(latLng);
-        _updatePolyline();
+
+      // 2. Minimum distance filter — ignore micro-movements
+      if (dist < _minDistanceMeters) return;
+
+      // 3. Speed filter — reject GPS jumps (unrealistic teleportation)
+      final timeDiffSec = position.timestamp
+          .difference(last.timestamp)
+          .inMilliseconds / 1000.0;
+      if (timeDiffSec > 0) {
+        final speedMps = dist / timeDiffSec;
+        if (speedMps > _maxWalkSpeedMps) {
+          debugPrint('[Walk] Rejected: speed ${(speedMps * 3.6).toStringAsFixed(1)}km/h > ${(_maxWalkSpeedMps * 3.6).toStringAsFixed(1)}km/h');
+          return;
+        }
       }
+
+      _distanceNotifier.value += (dist / 1000.0);
+      _path.add(latLng);
+      _lastAcceptedPosition = position;
+      _updatePolyline();
     } else {
       _path.add(latLng);
+      _lastAcceptedPosition = position;
       _updatePolyline();
     }
 

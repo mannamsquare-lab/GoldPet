@@ -11,28 +11,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  height: 56px;
+  padding: 0 16px;
   background: var(--color-bg);
+  box-sizing: border-box;
 }
 
 .walk-ranking-header h1 {
   font-size: 16px;
   font-weight: 700;
   color: var(--color-primary);
-}
-
-.walk-ranking-header .back-btn {
-  width: 24px;
-  height: 24px;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.walk-ranking-header .back-btn img {
-  width: 100%;
-  height: 100%;
 }
 
 /* Record Tabs */

@@ -37,6 +37,9 @@ class CheckInServiceTest {
     @Mock
     private lateinit var userRepository: UserRepository
 
+    @Mock
+    private lateinit var badgeAwardService: com.goldpet.domain.gamification.service.BadgeAwardService
+
     private lateinit var checkInService: CheckInService
 
     private lateinit var testUser: User
@@ -46,7 +49,7 @@ class CheckInServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        checkInService = CheckInService(placeRepository, checkInRepository, userRepository)
+        checkInService = CheckInService(placeRepository, checkInRepository, userRepository, badgeAwardService)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
 

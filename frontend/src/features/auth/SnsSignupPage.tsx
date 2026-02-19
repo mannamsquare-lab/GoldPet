@@ -116,11 +116,7 @@ export const SnsSignupPage = () => {
 
       // Auto login after signup
       const { user, accessToken, refreshToken } = response;
-      const currentToken = localStorage.getItem('accessToken') || accessToken;
-
-      if (currentToken) {
-        login(currentToken, refreshToken || '', user);
-      }
+      login(accessToken, refreshToken || '', user);
 
       navigate('/signup/complete');
     } catch (error: any) {

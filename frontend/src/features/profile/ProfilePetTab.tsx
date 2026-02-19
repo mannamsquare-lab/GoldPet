@@ -100,7 +100,7 @@ const ProfilePetTab: React.FC = () => {
                         return (
                             <dl key={attr.code} className="full_w">
                                 <dt>{attr.name}</dt>
-                                <dd>{value ? value : '-'}</dd>
+                                <dd style={{ whiteSpace: 'pre-line' }}>{value ? value : '-'}</dd>
                             </dl>
                         );
                     }

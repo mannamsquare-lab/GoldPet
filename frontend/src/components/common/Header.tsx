@@ -1,3 +1,4 @@
+import { BackButton } from './BackButton';
 import './Header.css';
 
 interface HeaderProps {
@@ -10,11 +11,7 @@ export const Header = ({ onBack, title, rightAction }: HeaderProps) => {
     return (
         <header className="app-header">
             <div className="header-left">
-                {onBack && (
-                    <button type="button" className="header-back-button" onClick={onBack}>
-                        <img src="/assets/images/layout/header_icon_back.svg" alt="Back" />
-                    </button>
-                )}
+                {onBack && <BackButton onClick={onBack} />}
                 {title && <h1 className="header-title">{title}</h1>}
             </div>
             {rightAction && (

@@ -8,23 +8,33 @@ import { settingsService } from '../../services/settingsService';
 import type { NotificationSettings, PrivacySettings } from '../../services/settingsService';
 import './SettingsPage.css';
 
+const ChevronRight = () => (
+  <svg className="settings-chevron" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M9 6l6 6-6 6" />
+  </svg>
+);
+
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const logout = useAuthStore((state) => state.logout);
   const { showConfirm } = useAlert();
   const { showToast } = useToast();
 
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
-    walkAlert: true,
+    pushAlert: true,
     chatAlert: true,
-    friendAlert: true,
     communityAlert: true,
+    marketingAlert: false,
   });
 
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
     locationSharing: true,
     profilePublic: true,
   });
+
+  // Extended privacy state for Figma design fields
+  const [activityPublic, setActivityPublic] = useState(true);
 
   useEffect(() => {
     loadSettings();
@@ -38,7 +48,7 @@ const SettingsPage: React.FC = () => {
       ]);
       setNotificationSettings(notifications);
       setPrivacySettings(privacy);
-    } catch (error) {
+    } catch {
       showToast('설정을 불러오는데 실패했습니다.', 'error');
     }
   };
@@ -48,7 +58,6 @@ const SettingsPage: React.FC = () => {
     setNotificationSettings(newSettings);
     try {
       await settingsService.updateNotificationSettings(newSettings);
-      showToast('알림 설정이 변경되었습니다.', 'success');
     } catch (error) {
       setNotificationSettings(notificationSettings);
       showToast('알림 설정 변경에 실패했습니다.', 'error');
@@ -60,15 +69,10 @@ const SettingsPage: React.FC = () => {
     setPrivacySettings(newSettings);
     try {
       await settingsService.updatePrivacySettings(newSettings);
-      showToast('개인정보 설정이 변경되었습니다.', 'success');
     } catch (error) {
       setPrivacySettings(privacySettings);
       showToast('개인정보 설정 변경에 실패했습니다.', 'error');
     }
-  };
-
-  const handlePasswordChange = () => {
-    navigate('/profile/password-change');
   };
 
   const handleLogout = () => {
@@ -87,142 +91,157 @@ const SettingsPage: React.FC = () => {
     });
   };
 
-  const handleTermsClick = () => {
-    navigate('/profile/terms');
-  };
-
-  const handlePrivacyPolicyClick = () => {
-    navigate('/profile/privacy-policy');
+  const handleDataExport = async () => {
+    try {
+      await settingsService.exportMyData();
+      showToast('데이터 다운로드가 시작되었습니다.', 'success');
+    } catch {
+      showToast('데이터 다운로드에 실패했습니다.', 'error');
+    }
   };
 
   return (
     <SubPageLayout title="설정">
       <div className="settings-container">
-        {/* Notification Settings */}
-        <div className="settings-section">
-          <span className="section-title">알림 설정</span>
-          <div className="settings-toggle">
-            <span className="toggle-label">산책 알림</span>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="walk-alert"
-                checked={notificationSettings.walkAlert}
-                onChange={() => handleNotificationToggle('walkAlert')}
-              />
-              <label htmlFor="walk-alert"></label>
+        {/* 알림 설정 */}
+        <div className="settings-group">
+          <div className="settings-group-title">알림 설정</div>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">푸시 알림</span>
+              <div className="toggle-switch">
+                <input type="checkbox" id="push-alert" checked={notificationSettings.pushAlert} onChange={() => handleNotificationToggle('pushAlert')} />
+                <label htmlFor="push-alert"></label>
+              </div>
             </div>
           </div>
-          <div className="settings-toggle">
-            <span className="toggle-label">채팅 알림</span>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="chat-alert"
-                checked={notificationSettings.chatAlert}
-                onChange={() => handleNotificationToggle('chatAlert')}
-              />
-              <label htmlFor="chat-alert"></label>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">채팅 알림</span>
+              <div className="toggle-switch">
+                <input type="checkbox" id="chat-alert" checked={notificationSettings.chatAlert} onChange={() => handleNotificationToggle('chatAlert')} />
+                <label htmlFor="chat-alert"></label>
+              </div>
             </div>
           </div>
-          <div className="settings-toggle">
-            <span className="toggle-label">친구 알림</span>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="friend-alert"
-                checked={notificationSettings.friendAlert}
-                onChange={() => handleNotificationToggle('friendAlert')}
-              />
-              <label htmlFor="friend-alert"></label>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">커뮤니티 알림</span>
+              <div className="toggle-switch">
+                <input type="checkbox" id="community-alert" checked={notificationSettings.communityAlert} onChange={() => handleNotificationToggle('communityAlert')} />
+                <label htmlFor="community-alert"></label>
+              </div>
             </div>
           </div>
-          <div className="settings-toggle">
-            <span className="toggle-label">커뮤니티 알림</span>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="community-alert"
-                checked={notificationSettings.communityAlert}
-                onChange={() => handleNotificationToggle('communityAlert')}
-              />
-              <label htmlFor="community-alert"></label>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">마케팅 알림</span>
+              <div className="toggle-switch">
+                <input type="checkbox" id="marketing-alert" checked={notificationSettings.marketingAlert} onChange={() => handleNotificationToggle('marketingAlert')} />
+                <label htmlFor="marketing-alert"></label>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Privacy Settings */}
-        <div className="settings-section">
-          <span className="section-title">개인정보 설정</span>
-          <div className="settings-toggle">
-            <span className="toggle-label">위치 공유</span>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="location-sharing"
-                checked={privacySettings.locationSharing}
-                onChange={() => handlePrivacyToggle('locationSharing')}
-              />
-              <label htmlFor="location-sharing"></label>
+        {/* 공개 설정 */}
+        <div className="settings-group">
+          <div className="settings-group-title">공개 설정</div>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">프로필 공개</span>
+              <div className="toggle-switch">
+                <input type="checkbox" id="profile-public" checked={privacySettings.profilePublic} onChange={() => handlePrivacyToggle('profilePublic')} />
+                <label htmlFor="profile-public"></label>
+              </div>
             </div>
           </div>
-          <div className="settings-toggle">
-            <span className="toggle-label">프로필 공개</span>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                id="profile-public"
-                checked={privacySettings.profilePublic}
-                onChange={() => handlePrivacyToggle('profilePublic')}
-              />
-              <label htmlFor="profile-public"></label>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">위치 표시</span>
+              <div className="toggle-switch">
+                <input type="checkbox" id="location-sharing" checked={privacySettings.locationSharing} onChange={() => handlePrivacyToggle('locationSharing')} />
+                <label htmlFor="location-sharing"></label>
+              </div>
+            </div>
+          </div>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">활동 공개</span>
+              <div className="toggle-switch">
+                <input type="checkbox" id="activity-public" checked={activityPublic} onChange={() => setActivityPublic(!activityPublic)} />
+                <label htmlFor="activity-public"></label>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Account Management */}
-        <div className="settings-section">
-          <span className="section-title">계정 관리</span>
-          <div className="settings-link" onClick={handlePasswordChange}>
-            <span>비밀번호 변경</span>
-            <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 6l6 6-6 6" />
-            </svg>
+        {/* 계정 */}
+        <div className="settings-group">
+          <div className="settings-group-title">계정</div>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">이메일</span>
+              <span className="settings-value">{user?.email || '-'}</span>
+            </div>
           </div>
-          <div className="settings-link" onClick={handleLogout}>
-            <span>로그아웃</span>
-            <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 6l6 6-6 6" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Danger Zone */}
-        <div className="settings-danger">
-          <button type="button" className="danger-link" onClick={handleDeleteAccount}>
-            회원탈퇴
-          </button>
-        </div>
-
-        {/* App Info */}
-        <div className="settings-section">
-          <span className="section-title">앱 정보</span>
-          <div className="settings-link" onClick={handleTermsClick}>
-            <span>이용약관</span>
-            <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 6l6 6-6 6" />
-            </svg>
-          </div>
-          <div className="settings-link" onClick={handlePrivacyPolicyClick}>
-            <span>개인정보처리방침</span>
-            <svg className="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 6l6 6-6 6" />
-            </svg>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">연동 계정</span>
+              <div className="settings-social-icons">
+                <img src="/assets/images/auth/kakao_logo.svg" alt="카카오" className="settings-social-icon" />
+                <img src="/assets/images/auth/google_logo.svg" alt="구글" className="settings-social-icon" />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="settings-app-info">
-          <span className="version">앱 버전 v1.0.0</span>
+        {/* 내 데이터 */}
+        <div className="settings-group">
+          <div className="settings-group-title">내 데이터</div>
+          <div className="settings-card settings-card-link" onClick={handleDataExport}>
+            <div className="settings-row">
+              <span className="settings-label">내 데이터 다운로드</span>
+              <ChevronRight />
+            </div>
+          </div>
+        </div>
+
+        {/* 고객지원 */}
+        <div className="settings-group">
+          <div className="settings-group-title">고객지원</div>
+          <div className="settings-card settings-card-link" onClick={() => navigate('/terms/service')}>
+            <div className="settings-row">
+              <span className="settings-label">서비스 이용약관</span>
+              <ChevronRight />
+            </div>
+          </div>
+          <div className="settings-card settings-card-link" onClick={() => navigate('/terms/privacy')}>
+            <div className="settings-row">
+              <span className="settings-label">개인정보 처리방침</span>
+              <ChevronRight />
+            </div>
+          </div>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">버전 정보</span>
+              <span className="settings-value">1.0.0</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 로그아웃 / 회원탈퇴 */}
+        <div className="settings-group">
+          <div className="settings-card settings-card-link" onClick={handleLogout}>
+            <div className="settings-row">
+              <span className="settings-label settings-label-primary">로그아웃</span>
+            </div>
+          </div>
+          <div className="settings-card settings-card-link" onClick={handleDeleteAccount}>
+            <div className="settings-row">
+              <span className="settings-label settings-label-danger">회원 탈퇴</span>
+            </div>
+          </div>
         </div>
       </div>
     </SubPageLayout>

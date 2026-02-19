@@ -34,6 +34,12 @@ class MatchServiceTest {
     @Mock
     private lateinit var userRepository: UserRepository
 
+    @Mock
+    private lateinit var badgeAwardService: com.goldpet.domain.gamification.service.BadgeAwardService
+
+    @Mock
+    private lateinit var petRepository: com.goldpet.domain.pet.repository.PetRepository
+
     @InjectMocks
     private lateinit var matchService: MatchService
 
@@ -177,7 +183,7 @@ class MatchServiceTest {
         `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(true)
 
         // When / Then
-        assertThrows<IllegalStateException> {
+        assertThrows<org.springframework.web.server.ResponseStatusException> {
             matchService.likeUser(user1.id, user2.id)
         }
         verify(likeRepository, never()).save(any(Like::class.java))

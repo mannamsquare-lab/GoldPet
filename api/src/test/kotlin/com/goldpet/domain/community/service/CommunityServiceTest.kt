@@ -51,6 +51,12 @@ class CommunityServiceTest {
     @Mock
     private lateinit var systemSettingService: SystemSettingService
 
+    @Mock
+    private lateinit var badgeAwardService: com.goldpet.domain.gamification.service.BadgeAwardService
+
+    @Mock
+    private lateinit var userBlockRepository: com.goldpet.domain.friend.repository.UserBlockRepository
+
     private lateinit var communityService: CommunityService
 
     private lateinit var testUser: User
@@ -68,7 +74,9 @@ class CommunityServiceTest {
             commentLikeRepository,
             userRepository,
             fileRepository,
-            systemSettingService
+            systemSettingService,
+            badgeAwardService,
+            userBlockRepository
         )
 
         testUser = createTestUser(1L, "testuser", "테스트유저")

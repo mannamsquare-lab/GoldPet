@@ -14,6 +14,8 @@ interface FriendRepository : JpaRepository<User, Long> {
         FROM users u
         WHERE u.id != :myUserId
         AND u.is_active = true
+        AND u.is_profile_public = true
+        AND u.is_location_sharing_enabled = true
         AND EXISTS (SELECT 1 FROM pets p WHERE p.owner_user_id = u.id)
         AND ST_DWithin(
             CAST(u.main_location_geom AS geography),
@@ -26,6 +28,11 @@ interface FriendRepository : JpaRepository<User, Long> {
             AND l.to_user_id = u.id
             AND l.status = 'ACTIVE'
         )
+        AND NOT EXISTS (
+            SELECT 1 FROM user_blocks ub
+            WHERE (ub.blocker_id = :myUserId AND ub.blocked_id = u.id)
+               OR (ub.blocker_id = u.id AND ub.blocked_id = :myUserId)
+        )
         ORDER BY u.created_at DESC
     """, countQuery = """
         SELECT count(DISTINCT u.id)
@@ -33,16 +40,23 @@ interface FriendRepository : JpaRepository<User, Long> {
         INNER JOIN pets p ON u.id = p.owner_user_id
         WHERE u.id != :myUserId
         AND u.is_active = true
+        AND u.is_profile_public = true
+        AND u.is_location_sharing_enabled = true
         AND ST_DWithin(
             CAST(u.main_location_geom AS geography),
             CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
             :radiusMeters
         )
         AND NOT EXISTS (
-            SELECT 1 FROM likes l 
-            WHERE l.from_user_id = :myUserId 
-            AND l.to_user_id = u.id 
+            SELECT 1 FROM likes l
+            WHERE l.from_user_id = :myUserId
+            AND l.to_user_id = u.id
             AND l.status = 'ACTIVE'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM user_blocks ub
+            WHERE (ub.blocker_id = :myUserId AND ub.blocked_id = u.id)
+               OR (ub.blocker_id = u.id AND ub.blocked_id = :myUserId)
         )
     """, nativeQuery = true)
     fun findFriendsNearbyByRegistered(
@@ -61,6 +75,8 @@ interface FriendRepository : JpaRepository<User, Long> {
         LEFT JOIN likes l2 ON u.id = l2.to_user_id AND l2.status = 'ACTIVE'
         WHERE u.id != :myUserId
         AND u.is_active = true
+        AND u.is_profile_public = true
+        AND u.is_location_sharing_enabled = true
         AND ST_DWithin(
             CAST(u.main_location_geom AS geography),
             CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
@@ -71,6 +87,11 @@ interface FriendRepository : JpaRepository<User, Long> {
             WHERE l.from_user_id = :myUserId
             AND l.to_user_id = u.id
             AND l.status = 'ACTIVE'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM user_blocks ub
+            WHERE (ub.blocker_id = :myUserId AND ub.blocked_id = u.id)
+               OR (ub.blocker_id = u.id AND ub.blocked_id = :myUserId)
         )
         GROUP BY u.id
         ORDER BY like_count DESC, u.created_at DESC
@@ -80,6 +101,8 @@ interface FriendRepository : JpaRepository<User, Long> {
         INNER JOIN pets p ON u.id = p.owner_user_id
         WHERE u.id != :myUserId
         AND u.is_active = true
+        AND u.is_profile_public = true
+        AND u.is_location_sharing_enabled = true
         AND ST_DWithin(
             CAST(u.main_location_geom AS geography),
             CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
@@ -90,6 +113,11 @@ interface FriendRepository : JpaRepository<User, Long> {
             WHERE l.from_user_id = :myUserId
             AND l.to_user_id = u.id
             AND l.status = 'ACTIVE'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM user_blocks ub
+            WHERE (ub.blocker_id = :myUserId AND ub.blocked_id = u.id)
+               OR (ub.blocker_id = u.id AND ub.blocked_id = :myUserId)
         )
     """, nativeQuery = true)
     fun findFriendsNearbyByPopular(
@@ -107,6 +135,8 @@ interface FriendRepository : JpaRepository<User, Long> {
         INNER JOIN pets p ON u.id = p.owner_user_id
         WHERE u.id != :myUserId
         AND u.is_active = true
+        AND u.is_profile_public = true
+        AND u.is_location_sharing_enabled = true
         AND ST_DWithin(
             CAST(u.main_location_geom AS geography),
             CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
@@ -117,6 +147,11 @@ interface FriendRepository : JpaRepository<User, Long> {
             WHERE l.from_user_id = :myUserId
             AND l.to_user_id = u.id
             AND l.status = 'ACTIVE'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM user_blocks ub
+            WHERE (ub.blocker_id = :myUserId AND ub.blocked_id = u.id)
+               OR (ub.blocker_id = u.id AND ub.blocked_id = :myUserId)
         )
         GROUP BY u.id
         ORDER BY dist ASC
@@ -126,6 +161,8 @@ interface FriendRepository : JpaRepository<User, Long> {
         INNER JOIN pets p ON u.id = p.owner_user_id
         WHERE u.id != :myUserId
         AND u.is_active = true
+        AND u.is_profile_public = true
+        AND u.is_location_sharing_enabled = true
         AND ST_DWithin(
             CAST(u.main_location_geom AS geography),
             CAST(ST_SetSRID(ST_MakePoint(:myLng, :myLat), 4326) AS geography),
@@ -136,6 +173,11 @@ interface FriendRepository : JpaRepository<User, Long> {
             WHERE l.from_user_id = :myUserId
             AND l.to_user_id = u.id
             AND l.status = 'ACTIVE'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM user_blocks ub
+            WHERE (ub.blocker_id = :myUserId AND ub.blocked_id = u.id)
+               OR (ub.blocker_id = u.id AND ub.blocked_id = :myUserId)
         )
     """, nativeQuery = true)
     fun findFriendsNearbyByDistance(

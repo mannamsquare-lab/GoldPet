@@ -30,13 +30,13 @@ function GoldPurchasePage() {
     },
   });
 
-  const handlePurchase = (productId: number) => {
+  const handlePurchase = (productId: string) => {
     const product = productsData?.find((p) => p.id === productId);
     if (!product) return;
 
     showConfirm(
       `${product.name}을(를) ${product.price.toLocaleString()}원에 구매하시겠습니까?`,
-      () => { chargeMutation.mutate({ productId, paymentMethod: 'CARD' }); }
+      () => { chargeMutation.mutate({ amount: product.goldAmount, bonus: product.bonus, paymentMethod: 'CARD' }); }
     );
   };
 

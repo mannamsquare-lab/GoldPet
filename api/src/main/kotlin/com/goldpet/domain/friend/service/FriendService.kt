@@ -1,7 +1,6 @@
 package com.goldpet.domain.friend.service
 
 import com.goldpet.domain.friend.dto.FriendResponse
-import com.goldpet.domain.friend.dto.LocationDto
 import com.goldpet.domain.friend.repository.FriendRepository
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.entity.User
@@ -132,7 +131,7 @@ class FriendService(
             images = petImages, // Pet images (large, main slider)
             distance = distance,
             status = "offline",
-            location = user.mainLocationGeom?.let { LocationDto(it.y, it.x) },
+            location = null, // Privacy: precise coordinates not exposed
             locationText = user.mainLocationText
         )
     }

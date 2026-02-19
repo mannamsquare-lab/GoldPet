@@ -37,9 +37,6 @@ class AdminTotpService {
      * Validate a 6-digit code against the secret.
      */
     fun validateCode(secret: String, code: Int): Boolean {
-        println("AdminTotpService: Validating code $code for secret $secret")
-        val result = gAuth.authorize(secret, code)
-        println("AdminTotpService: Result: $result")
-        return result
+        return gAuth.authorize(secret, code)
     }
 }

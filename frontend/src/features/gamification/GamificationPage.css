@@ -1,50 +1,53 @@
 /* Gamification Pages Styles */
 
+#gamificationTabPage,
 #badgesPage,
-#challengesPage {
-  min-height: 100vh;
-  background: #FAFAFA;
+#missionsPage {
   padding-bottom: 80px;
 }
 
-.gamification_header {
+/* Tab Menu */
+.gamification_tabs {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #FFF;
-  border-bottom: 1px solid #F0F0F0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  border-bottom: 1px solid #EFE1C4;
+  margin: 0 16px;
+  gap: 0;
 }
 
-.gamification_header h1 {
-  font-size: 16px;
+.gamification_tab {
+  flex: 1;
+  padding: 14px 0;
+  font-size: 15px;
   font-weight: 600;
-}
-
-.back_btn {
+  color: #999;
   background: none;
   border: none;
-  padding: 4px;
+  border-bottom: 2px solid transparent;
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.gamification_tab.active {
+  color: #614108;
+  border-bottom-color: #614108;
 }
 
 /* Progress Summary */
 .progress_summary {
-  background: linear-gradient(135deg, #FFF5FC 0%, #FFFBF0 100%);
+  background: #FFF7E6;
   padding: 24px;
   text-align: center;
-  margin: 0 16px 16px;
+  margin: 16px 16px;
   border-radius: 16px;
-  margin-top: 16px;
+  border: 1px solid #EFE1C4;
 }
 
 .progress_circle {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF8AF5 0%, #FFBF00 100%);
+  background: linear-gradient(135deg, #C49A3C 0%, #614108 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -111,7 +114,8 @@
   object-fit: contain;
 }
 
-.locked_icon {
+.locked_icon,
+.fallback_icon {
   font-size: 32px;
 }
 
@@ -131,7 +135,7 @@
 
 .badge_date {
   font-size: 10px;
-  color: #FF8AF5;
+  color: #C49A3C;
 }
 
 /* Challenges Section */
@@ -200,7 +204,7 @@
 
 .progress_fill {
   height: 100%;
-  background: linear-gradient(90deg, #FF8AF5 0%, #FFBF00 100%);
+  background: linear-gradient(90deg, #C49A3C 0%, #614108 100%);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -227,14 +231,14 @@
 .reward_badge {
   font-size: 12px;
   padding: 4px 8px;
-  background: #FFF5E6;
+  background: #FFF7E6;
   border-radius: 12px;
-  color: #FF9800;
+  color: #C49A3C;
 }
 
 .reward_badge {
-  background: #F5F5FF;
-  color: #7C4DFF;
+  background: #FFF7E6;
+  color: #614108;
 }
 
 .days_remaining {
@@ -244,7 +248,7 @@
 
 /* Join Button */
 .join_btn {
-  background: #FF8AF5;
+  background: #614108;
   color: #FFF;
   border: none;
   padding: 6px 14px;
@@ -256,8 +260,40 @@
 /* Completed Badge */
 .completed_badge {
   font-size: 12px;
-  color: #4CAF50;
+  color: #614108;
   font-weight: 600;
+}
+
+/* Mission Type Badge */
+.mission_type_badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: #FFF7E6;
+  color: #C49A3C;
+  white-space: nowrap;
+}
+
+/* Mission Condition */
+.mission_condition {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #F9F5ED;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.condition_label {
+  color: #614108;
+  font-weight: 600;
+}
+
+.condition_value {
+  color: #999;
 }
 
 /* Empty State */

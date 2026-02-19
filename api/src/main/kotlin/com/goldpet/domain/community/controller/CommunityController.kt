@@ -51,6 +51,24 @@ class CommunityController(
         return ResponseEntity.ok(communityService.getPostDetail(postId, principal?.id))
     }
 
+    @Operation(summary = "내가 쓴 글 목록")
+    @GetMapping("/posts/me")
+    fun getMyPosts(
+        @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC) pageable: Pageable,
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<Page<CommunityPostResponse>> {
+        return ResponseEntity.ok(communityService.getMyPosts(principal.id, pageable))
+    }
+
+    @Operation(summary = "내가 쓴 댓글 목록")
+    @GetMapping("/comments/me")
+    fun getMyComments(
+        @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC) pageable: Pageable,
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<Page<CommunityCommentResponse>> {
+        return ResponseEntity.ok(communityService.getMyComments(principal.id, pageable))
+    }
+
     @Operation(summary = "게시글 검색")
     @GetMapping("/posts/search")
     fun searchPosts(

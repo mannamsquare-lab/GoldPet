@@ -4,7 +4,7 @@ import { goldService } from '../../services/goldService';
 import TransactionItem from './components/TransactionItem';
 import './GoldPage.css';
 
-type FilterType = 'ALL' | 'CHARGE' | 'SPEND' | 'EARN';
+type FilterType = 'ALL' | 'CHARGE' | 'SPEND' | 'REWARD' | 'REFUND';
 
 function GoldHistoryPage() {
   const [filter, setFilter] = useState<FilterType>('ALL');
@@ -17,14 +17,13 @@ function GoldHistoryPage() {
 
   const { data: transactionsData } = useQuery({
     queryKey: ['gold', 'transactions', filter, page],
-    queryFn: () => goldService.getTransactions(page, 20),
+    queryFn: () => goldService.getTransactions(page, 20, filter === 'ALL' ? undefined : filter),
   });
 
   const balance = balanceData?.balance ?? 0;
-  const transactions = (transactionsData ?? []).filter(
-    tx => filter === 'ALL' || tx.type === filter
-  );
-  const hasMore = false; // Pagination not implemented in mock service
+  const transactions = transactionsData?.content ?? [];
+  const totalPages = transactionsData?.totalPages ?? 0;
+  const hasMore = page < totalPages - 1;
 
   const handleLoadMore = () => {
     if (hasMore) {
@@ -64,10 +63,16 @@ function GoldHistoryPage() {
           사용
         </button>
         <button
-          className={filter === 'EARN' ? 'active' : ''}
-          onClick={() => handleFilterChange('EARN')}
+          className={filter === 'REWARD' ? 'active' : ''}
+          onClick={() => handleFilterChange('REWARD')}
         >
           적립
+        </button>
+        <button
+          className={filter === 'REFUND' ? 'active' : ''}
+          onClick={() => handleFilterChange('REFUND')}
+        >
+          환불
         </button>
       </div>
 
@@ -78,20 +83,8 @@ function GoldHistoryPage() {
       </div>
 
       {hasMore && (
-        <div style={{ textAlign: 'center', padding: '4.44vw 0' }}>
-          <button
-            onClick={handleLoadMore}
-            style={{
-              height: '10vw',
-              padding: '0 6.67vw',
-              borderRadius: '10vw',
-              border: '1px solid var(--color-border)',
-              backgroundColor: '#fff',
-              fontSize: '14px',
-              color: 'var(--color-primary)',
-              cursor: 'pointer',
-            }}
-          >
+        <div className="gold-load-more">
+          <button onClick={handleLoadMore} className="gold-load-more-btn">
             더 보기
           </button>
         </div>

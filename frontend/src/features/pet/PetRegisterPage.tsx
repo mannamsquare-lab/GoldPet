@@ -4,6 +4,7 @@ import { useAlert } from '../../contexts/AlertContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { petService } from '../../services/petService';
 import type { CreatePetRequest } from '../../services/petService';
+import { BackButton } from '../../components/common/BackButton';
 import './PetPage.css';
 
 export default function PetRegisterPage() {
@@ -151,13 +152,9 @@ export default function PetRegisterPage() {
     <div id="petRegisterPage">
       {/* Header */}
       <div className="pet_header">
-        <button type="button" className="back_btn btn-effect" onClick={() => navigate(-1)}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18L9 12L15 6" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </button>
+        <BackButton onClick={() => navigate(-1)} />
         <h1>{isEdit ? '반려동물 수정' : '반려동물 등록'}</h1>
-        <div style={{ width: 24 }} />
+        <div style={{ width: 32 }} />
       </div>
 
       <form onSubmit={handleSubmit} className="pet_form">

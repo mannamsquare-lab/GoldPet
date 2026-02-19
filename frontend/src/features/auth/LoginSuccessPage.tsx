@@ -11,11 +11,8 @@ export const LoginSuccessPage = () => {
     useEffect(() => {
         const token = searchParams.get('token');
         if (token) {
-            // 1. Store token temporarily to fetch user info
-            localStorage.setItem('accessToken', token);
-
-            // 2. Fetch user info
-            apiClient.get('/users/me')
+            // Fetch user info using the token directly in the Authorization header
+            apiClient.get('/users/me', { headers: { Authorization: `Bearer ${token}` } })
                 .then((response) => {
                     const user = response.data;
 

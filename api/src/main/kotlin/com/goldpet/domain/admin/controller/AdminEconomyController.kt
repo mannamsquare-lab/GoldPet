@@ -35,6 +35,38 @@ class AdminEconomyController(
         adminEconomyService.adjustGold(request)
         return ResponseEntity.ok().build()
     }
+
+    @Operation(summary = "상품 목록 조회")
+    @GetMapping("/products")
+    fun getProducts(): ResponseEntity<List<GoldProductAdminResponse>> {
+        return ResponseEntity.ok(adminEconomyService.getProducts())
+    }
+
+    @Operation(summary = "상품 등록")
+    @PostMapping("/products")
+    fun createProduct(@RequestBody request: GoldProductCreateRequest): ResponseEntity<GoldProductAdminResponse> {
+        return ResponseEntity.ok(adminEconomyService.createProduct(request))
+    }
+
+    @Operation(summary = "상품 수정")
+    @PutMapping("/products/{id}")
+    fun updateProduct(@PathVariable id: Long, @RequestBody request: GoldProductUpdateRequest): ResponseEntity<GoldProductAdminResponse> {
+        return ResponseEntity.ok(adminEconomyService.updateProduct(id, request))
+    }
+
+    @Operation(summary = "상품 삭제")
+    @DeleteMapping("/products/{id}")
+    fun deleteProduct(@PathVariable id: Long): ResponseEntity<Void> {
+        adminEconomyService.deleteProduct(id)
+        return ResponseEntity.ok().build()
+    }
+
+    @Operation(summary = "환불 처리")
+    @PostMapping("/refund")
+    fun refundTransaction(@RequestBody request: AdminRefundRequest): ResponseEntity<Void> {
+        adminEconomyService.refundTransaction(request)
+        return ResponseEntity.ok().build()
+    }
 }
 
 data class EconomyStatsResponse(
@@ -58,5 +90,39 @@ data class TransactionAdminResponse(
 data class GoldAdjustRequest(
     val userId: Long,
     val amount: Int,
+    val reason: String
+)
+
+data class GoldProductAdminResponse(
+    val id: Long,
+    val productCode: String,
+    val name: String,
+    val goldAmount: Int,
+    val price: Int,
+    val bonus: Int,
+    val isActive: Boolean,
+    val displayOrder: Int
+)
+
+data class GoldProductCreateRequest(
+    val productCode: String,
+    val name: String,
+    val goldAmount: Int,
+    val price: Int,
+    val bonus: Int = 0,
+    val displayOrder: Int = 0
+)
+
+data class GoldProductUpdateRequest(
+    val name: String? = null,
+    val goldAmount: Int? = null,
+    val price: Int? = null,
+    val bonus: Int? = null,
+    val isActive: Boolean? = null,
+    val displayOrder: Int? = null
+)
+
+data class AdminRefundRequest(
+    val transactionId: Long,
     val reason: String
 )

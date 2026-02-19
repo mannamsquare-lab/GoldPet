@@ -169,8 +169,6 @@ class CustomOAuth2UserService(
             user = userRepository.save(user)
         }
 
-        println("DEBUG: User saved. ID: ${user.id}, OAuthID: ${user.oauthId}")
-
         return UserPrincipal.create(user, oAuth2User.attributes)
     }
 

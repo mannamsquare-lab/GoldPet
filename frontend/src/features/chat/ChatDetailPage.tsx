@@ -7,9 +7,11 @@ import type { FileInfo } from '../../services/chatService';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useAuthStore } from '../../stores/authStore';
 import { Loading } from '../../components/common/Loading';
+import { BackButton } from '../../components/common/BackButton';
 import { useToast } from '../../contexts/ToastContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { nativeBridge } from '../../bridge/nativeBridge';
+import { blockService } from '../../services/blockService';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -156,7 +158,8 @@ const ChatDetailPage = () => {
     const queryClient = useQueryClient();
 
     const { showToast } = useToast();
-    const { showAlert } = useAlert();
+    const { showAlert, showConfirm } = useAlert();
+    const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
     // Get current user ID from auth store (needed for WebSocket)
     const { user } = useAuthStore();
@@ -364,6 +367,28 @@ const ChatDetailPage = () => {
         sendMutation.mutate({ content: text });
     };
 
+    const handleBlockUser = () => {
+        setShowHeaderMenu(false);
+        if (!otherParticipant) return;
+        showConfirm('이 사용자를 차단하시겠습니까?\n차단하면 서로의 게시글과 프로필이 보이지 않습니다.', async () => {
+            try {
+                await blockService.blockUser(otherParticipant.id);
+                showAlert('사용자를 차단했습니다.', () => {
+                    navigate('/chat', { state: { activeTab: 'one' } });
+                });
+            } catch {
+                showAlert('차단에 실패했습니다.');
+            }
+        });
+    };
+
+    const handleLeaveRoom = () => {
+        setShowHeaderMenu(false);
+        showConfirm('채팅방을 나가시겠습니까?', () => {
+            navigate('/chat', { state: { activeTab: isGroupChat ? 'group' : 'one' } });
+        });
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         // 한글 IME 조합 중이면 무시 (마지막 글자 중복 방지)
         if (e.nativeEvent.isComposing) return;
@@ -540,15 +565,7 @@ const ChatDetailPage = () => {
                 </div>
                 <div className="chat_detail_header_content">
                     <div className="chat_detail_header_inner">
-                        <button
-                            type="button"
-                            className="chat_detail_back_btn btn-effect"
-                            onClick={() => navigate('/chat', { state: { activeTab: isGroupChat ? 'group' : 'one' } })}
-                        >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M15 18L9 12L15 6" stroke="var(--color-primary)" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                        </button>
+                        <BackButton onClick={() => navigate('/chat', { state: { activeTab: isGroupChat ? 'group' : 'one' } })} />
                         <div className="chat_detail_user_info">
                                 {isGroupChat && 'profileImgs' in chatUser ? (
                                 <div className="chat_detail_profile_img chat_detail_profile_img_group">
@@ -569,10 +586,25 @@ const ChatDetailPage = () => {
                             )}
                             <div className="chat_detail_user_name">{chatUser.name}</div>
                         </div>
+                        {!isGroupChat && (
+                            <button className="chat_detail_menu_btn" onClick={() => setShowHeaderMenu(!showHeaderMenu)}>
+                                <img src="/assets/images/common/option_icon.svg" alt="메뉴" />
+                            </button>
+                        )}
                     </div>
                     <div className="chat_detail_header_divider"></div>
                 </div>
             </div>
+
+            {/* Header Menu Dropdown */}
+            {showHeaderMenu && (
+                <div className="chat_detail_menu_overlay" onClick={() => setShowHeaderMenu(false)}>
+                    <div className="chat_detail_menu_dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" onClick={handleBlockUser}>차단하기</button>
+                        <button type="button" onClick={handleLeaveRoom}>나가기</button>
+                    </div>
+                </div>
+            )}
 
             {/* Messages */}
             <div className="chat_detail_messages">

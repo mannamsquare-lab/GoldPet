@@ -5,6 +5,7 @@ import com.goldpet.domain.friend.entity.LikeStatus
 import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
+import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
@@ -32,6 +33,9 @@ class LikeServiceTest {
     @Mock
     private lateinit var notificationService: NotificationService
 
+    @Mock
+    private lateinit var userBlockRepository: UserBlockRepository
+
     private lateinit var likeService: LikeService
 
     private lateinit var testUser: User
@@ -40,7 +44,7 @@ class LikeServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        likeService = LikeService(likeRepository, matchRepository, userRepository, notificationService)
+        likeService = LikeService(likeRepository, matchRepository, userRepository, notificationService, userBlockRepository)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
         targetUser = createTestUser(2L, "targetuser", "대상유저")

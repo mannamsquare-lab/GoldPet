@@ -44,7 +44,7 @@ export const MainHeader = ({ variant, className = '' }: MainHeaderProps) => {
                         <>
                             <li><button type="button"><img src="/assets/images/layout/header_icon01.svg" alt="G아이콘" /></button></li>
                             <li style={{ position: 'relative' }}><button type="button" onClick={() => navigate('/notifications')}><img src="/assets/images/layout/header_icon02.svg" alt="알림" /></button>{notificationStatus?.hasUnread && <span className="notification_dot" />}</li>
-                            <li><button type="button" onClick={() => navigate('/profile')}><img src="/assets/images/layout/header_icon03.svg" alt="프로필" /></button></li>
+                            <li><button type="button" onClick={() => navigate('/mypage')}><img src="/assets/images/layout/header_icon03.svg" alt="마이페이지" /></button></li>
                         </>
                     )}
 

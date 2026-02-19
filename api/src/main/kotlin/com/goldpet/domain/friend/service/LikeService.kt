@@ -6,13 +6,16 @@ import com.goldpet.domain.friend.entity.LikeStatus
 import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
+import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.notification.dto.CreateNotificationRequest
 import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 @Transactional
@@ -20,7 +23,8 @@ class LikeService(
     private val likeRepository: LikeRepository,
     private val matchRepository: MatchRepository,
     private val userRepository: UserRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val userBlockRepository: UserBlockRepository
 ) {
     /**
      * Like a user. Creates new like or reactivates canceled one.
@@ -28,13 +32,19 @@ class LikeService(
      * Returns mutual status (true if target also likes me).
      */
     fun likeUser(fromUserId: Long, toUserId: Long): LikeResponse {
-        val fromUser = userRepository.findById(fromUserId).orElseThrow { 
-            IllegalArgumentException("User not found: $fromUserId") 
+        val fromUser = userRepository.findById(fromUserId).orElseThrow {
+            IllegalArgumentException("User not found: $fromUserId")
         }
-        val toUser = userRepository.findById(toUserId).orElseThrow { 
-            IllegalArgumentException("User not found: $toUserId") 
+        val toUser = userRepository.findById(toUserId).orElseThrow {
+            IllegalArgumentException("User not found: $toUserId")
         }
-        
+
+        // Bidirectional block check
+        if (userBlockRepository.existsByBlockerAndBlocked(fromUser, toUser)
+            || userBlockRepository.existsByBlockerAndBlocked(toUser, fromUser)) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Blocked user")
+        }
+
         // Find existing like or create new
         val existingLike = likeRepository.findByFromUserAndToUser(fromUser, toUser)
         val like = if (existingLike.isPresent) {
@@ -92,21 +102,18 @@ class LikeService(
             val like = existingLike.get()
             like.status = LikeStatus.CANCELED
             likeRepository.save(like)
-            println("LikeService: Canceled like from ${fromUser.id} to ${toUser.id}")
-            
+
             // If mutual, also cancel the other side (clean break -> return to friend find)
             val reverseLike = likeRepository.findByFromUserAndToUser(toUser, fromUser)
             if (reverseLike.isPresent && reverseLike.get().status == LikeStatus.ACTIVE) {
                 val rLike = reverseLike.get()
                 rLike.status = LikeStatus.CANCELED
                 likeRepository.save(rLike)
-                println("LikeService: Canceled reverse like from ${toUser.id} to ${fromUser.id}")
             }
 
             // Delete match if exists
             matchRepository.findByUserIds(fromUserId, toUserId).ifPresent { match ->
                 matchRepository.delete(match)
-                println("LikeService: Deleted match between ${fromUser.id} and ${toUser.id}")
             }
 
             return true
@@ -127,10 +134,7 @@ class LikeService(
             val l = like.get()
             l.status = LikeStatus.CANCELED
             likeRepository.save(l)
-            println("LikeService: Rejected (Canceled) like from ${sender.id} to ${user.id}")
             return true
-        } else {
-            println("LikeService: Like not found for rejection from ${sender.id} to ${user.id}")
         }
         return false
     }

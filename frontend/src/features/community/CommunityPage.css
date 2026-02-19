@@ -190,12 +190,6 @@
   z-index: 10;
 }
 
-.back_btn {
-  background: none;
-  border: none;
-  padding: 4px;
-}
-
 .icon_img.like_icon {
   background-image: url(/assets/images/common/like_btn02.svg);
   background-size: contain;

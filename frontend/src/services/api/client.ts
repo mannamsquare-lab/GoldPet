@@ -3,6 +3,7 @@
  */
 
 import axios from 'axios';
+import { useAuthStore } from '../../stores/authStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
@@ -16,7 +17,7 @@ export const apiClient = axios.create({
 
 // 요청 인터셉터: 토큰 추가
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -29,15 +30,15 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // 토큰 만료 시 처리
-      localStorage.removeItem('accessToken');
+      useAuthStore.getState().logout();
       window.location.href = '/login';
     } else if (error.response?.status === 403) {
       const errorCode = error.response?.data?.errorCode;
       if (errorCode === 'DORMANT_ACCOUNT') {
-        localStorage.removeItem('accessToken');
+        useAuthStore.getState().logout();
         window.location.href = '/account/dormant';
       } else if (errorCode === 'WITHDRAWN_ACCOUNT') {
-        localStorage.removeItem('accessToken');
+        useAuthStore.getState().logout();
         window.location.href = '/account/withdrawn';
       }
     }

@@ -39,7 +39,14 @@ class NativeBridge {
     }) as EventListener);
 
     // Flutter WebView의 window.postMessage() 수신
+    // WebView에서 runJavaScript()로 주입된 스크립트는 페이지 origin과 동일하거나 'null'
+    const expectedOrigin = window.location.origin;
     window.addEventListener('message', (e: MessageEvent) => {
+      // origin 검증: same-origin 또는 WebView 내부 'null' origin만 허용
+      if (e.origin && e.origin !== 'null' && e.origin !== expectedOrigin) {
+        console.warn('[NativeBridge] Rejected message from unknown origin:', e.origin);
+        return;
+      }
       // Flutter sendEventToReact 형식: { type: eventName, data: {...} }
       if (e.data && typeof e.data === 'object' && e.data.type) {
         this.emitEvent(e.data.type, e.data.data);

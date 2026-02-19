@@ -5,6 +5,7 @@ import com.goldpet.domain.notification.dto.NotificationResponse
 import com.goldpet.domain.notification.entity.Notification
 import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.repository.NotificationRepository
+import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -95,7 +96,7 @@ class NotificationService(
         val saved = notificationRepository.save(notification)
 
         // Send FCM push if user has a token and notifications enabled
-        if (user.isNotificationEnabled && user.fcmToken != null) {
+        if (user.isNotificationEnabled && user.fcmToken != null && isCategoryEnabled(user, request.type)) {
             fcmPushSender.send(
                 fcmToken = user.fcmToken!!,
                 title = request.title,
@@ -110,6 +111,15 @@ class NotificationService(
         }
 
         return NotificationResponse.from(saved)
+    }
+
+    private fun isCategoryEnabled(user: User, type: NotificationType): Boolean {
+        return when (type) {
+            NotificationType.MESSAGE -> user.isChatAlertEnabled
+            NotificationType.COMMENT, NotificationType.FOLLOW -> user.isCommunityAlertEnabled
+            NotificationType.NOTICE, NotificationType.EVENT -> user.isMarketingAlertEnabled
+            else -> true // MATCH, LIKE, WALK, SYSTEM - always allowed
+        }
     }
 
     // 편의 메서드: 특정 이벤트에 대한 알림 생성

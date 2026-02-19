@@ -4,6 +4,7 @@ import apiClient from './api/client';
 
 export interface CommunityPost {
   id: number;
+  authorId: number;
   categoryId: number;
   categoryName: string;
   title: string;
@@ -33,6 +34,7 @@ export interface CommunityCategory {
 
 export interface CommunityComment {
   id: number;
+  postId: number;
   content: string;
   authorNickname: string;
   authorProfileUrl?: string;
@@ -46,6 +48,7 @@ export interface CommunityComment {
   depth: number;
   replyCount: number;
   isMine: boolean;
+  postTitle?: string;
 }
 
 export interface CreatePostRequest {
@@ -79,6 +82,7 @@ export const communityService = {
       
       const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
         ...p,
+        authorId: p.userId,
         isLiked: p.isLikedByMe ?? p.isLiked ?? false,
         isCommentedByMe: p.isCommentedByMe ?? false,
         isMine: p.isMine ?? false,
@@ -109,6 +113,7 @@ export const communityService = {
 
       return {
         ...data,
+        authorId: data.userId,
         isLiked: data.isLikedByMe ?? data.isLiked ?? false,
         isCommentedByMe: data.isCommentedByMe ?? false,
         isMine: data.isMine ?? false,
@@ -221,5 +226,50 @@ export const communityService = {
       } catch {
           throw new Error('댓글 수정에 실패했습니다.');
       }
-  }
+  },
+
+  getMyPosts: async (page = 0, size = 20): Promise<{ posts: CommunityPost[]; hasMore: boolean; totalCount: number }> => {
+    try {
+      const response = await apiClient.get(`/community/posts/me?page=${page}&size=${size}`);
+      const rawPosts = response.data.content || [];
+
+      const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
+        ...p,
+        isLiked: p.isLikedByMe ?? p.isLiked ?? false,
+        isCommentedByMe: p.isCommentedByMe ?? false,
+        isMine: true,
+      })) : [];
+
+      return {
+        posts,
+        hasMore: !response.data.last,
+        totalCount: response.data.totalElements || 0,
+      };
+    } catch {
+      return { posts: [], hasMore: false, totalCount: 0 };
+    }
+  },
+
+  getMyComments: async (page = 0, size = 20): Promise<{ comments: CommunityComment[]; hasMore: boolean; totalCount: number }> => {
+    try {
+      const response = await apiClient.get(`/community/comments/me?page=${page}&size=${size}`);
+      const rawComments = response.data.content || [];
+
+      const comments = Array.isArray(rawComments) ? rawComments.map((c: any) => ({
+        ...c,
+        authorNickname: c.userNickname ?? c.authorNickname ?? '',
+        authorProfileUrl: c.userProfileImage ?? c.authorProfileUrl,
+        isMine: true,
+        postTitle: c.postTitle ?? '',
+      })) : [];
+
+      return {
+        comments,
+        hasMore: !response.data.last,
+        totalCount: response.data.totalElements || 0,
+      };
+    } catch {
+      return { comments: [], hasMore: false, totalCount: 0 };
+    }
+  },
 };

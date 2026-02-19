@@ -6,10 +6,13 @@ import com.goldpet.domain.checkin.entity.Place
 import com.goldpet.domain.checkin.entity.PlaceCategory
 import com.goldpet.domain.checkin.repository.CheckInRepository
 import com.goldpet.domain.checkin.repository.PlaceRepository
+import com.goldpet.domain.gamification.entity.BadgeConditionType
+import com.goldpet.domain.gamification.service.BadgeAwardService
 import com.goldpet.domain.user.repository.UserRepository
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -21,8 +24,10 @@ import java.time.LocalDateTime
 class CheckInService(
     private val placeRepository: PlaceRepository,
     private val checkInRepository: CheckInRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val badgeAwardService: BadgeAwardService
 ) {
+    private val log = LoggerFactory.getLogger(CheckInService::class.java)
     private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
 
     // Place methods
@@ -102,6 +107,13 @@ class CheckInService(
         placeRepository.save(place)
         
         val saved = checkInRepository.save(checkIn)
+
+        try {
+            badgeAwardService.checkAndAwardBadges(userId, BadgeConditionType.CHECK_IN)
+        } catch (e: Exception) {
+            log.warn("Badge check failed for userId={}", userId, e)
+        }
+
         return CheckInResponse.from(saved)
     }
 

@@ -5,6 +5,7 @@ import { Navigation } from 'swiper/modules';
 import type { Friend } from '../../services/friendService';
 import { friendService, formatPetTag } from '../../services/friendService';
 import { chatService } from '../../services/chatService';
+import { blockService } from '../../services/blockService';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import { useAlert } from '../../contexts/AlertContext';
 
@@ -16,10 +17,11 @@ interface FriendCardProps {
 
 export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: FriendCardProps) => {
     const navigate = useNavigate();
-    const { showAlert } = useAlert();
+    const { showAlert, showConfirm } = useAlert();
     const [isLoading, setIsLoading] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [isMutual, setIsMutual] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
 
     const handleStartChat = async () => {
         if (isLoading) return;
@@ -89,8 +91,37 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: Fr
         }
     };
 
+    const handleBlockUser = () => {
+        setShowMenu(false);
+        showConfirm('이 사용자를 차단하시겠습니까?\n차단하면 서로의 게시글과 프로필이 보이지 않습니다.', async () => {
+            try {
+                await blockService.blockUser(data.id);
+                showAlert('사용자를 차단했습니다.');
+                onLikeStateChange?.();
+            } catch {
+                showAlert('차단에 실패했습니다.');
+            }
+        });
+    };
+
     return (
-        <div className="list_wrap">
+        <div className="list_wrap" style={{ position: 'relative' }}>
+            {/* Menu Button */}
+            <button
+                className="friend_card_menu_btn"
+                onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+            >
+                <img src="/assets/images/common/option_icon.svg" alt="메뉴" />
+            </button>
+            {showMenu && (
+                <>
+                    <div className="friend_card_menu_overlay" onClick={() => setShowMenu(false)} />
+                    <div className="friend_card_menu_dropdown">
+                        <button type="button" onClick={handleBlockUser}>차단하기</button>
+                    </div>
+                </>
+            )}
+
             <ProfileImageSlider
                 className="img_wrap"
                 swiperWrapperClass="pet_img_wrap"

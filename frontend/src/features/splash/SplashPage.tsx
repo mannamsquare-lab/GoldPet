@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../stores/authStore';
 import './SplashPage.css';
 
 // 이미지 경로
@@ -14,7 +15,7 @@ export const SplashPage = () => {
       const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
       const hasSeenPermissions = localStorage.getItem('hasSeenPermissions');
       const hasSeenBenefits = localStorage.getItem('hasSeenBenefits');
-      const isAuthenticated = localStorage.getItem('accessToken');
+      const isAuthenticated = useAuthStore.getState().isAuthenticated;
 
       if (!hasSeenOnboarding) {
         navigate('/onboarding');

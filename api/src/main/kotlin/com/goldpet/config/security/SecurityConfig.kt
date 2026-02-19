@@ -4,6 +4,7 @@ import com.goldpet.config.jwt.JwtAuthenticationFilter
 import com.goldpet.service.oauth2.CustomOAuth2UserService
 import com.goldpet.service.oauth2.OAuth2AuthenticationSuccessHandler
 import com.goldpet.service.oauth2.OAuth2AuthenticationFailureHandler
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -23,6 +24,9 @@ class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter
 ) {
 
+    @Value("\${app.cors.allowed-origins:*}")
+    private lateinit var corsAllowedOrigins: String
+
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
@@ -39,14 +43,12 @@ class SecurityConfig(
                     .requestMatchers("/actuator/**").permitAll() // Allow actuator endpoints (health, metrics for monitoring)
                     .requestMatchers("/api/v1/admin/auth/login", "/api/v1/admin/auth/verify-2fa").permitAll() // Allow Admin login & verify
                     .requestMatchers(HttpMethod.POST, "/api/v1/admin/auth/**").authenticated() // Secure other admin auth endpoints (setup, confirm, remove)
-                    .requestMatchers("/api/v1/pets/**").permitAll() // Allow access to pet API for now (should be secured later)
-                    .requestMatchers("/api/v1/walks/**").permitAll() // Allow access to walk API for now (should be secured later)
+                    .requestMatchers(HttpMethod.GET, "/api/v1/walks/ranking").permitAll() // Allow public walk ranking
                     .requestMatchers("/oauth2/**").permitAll() // Allow access to OAuth2 endpoints
                     .requestMatchers("/cdn-cgi/**").permitAll() // Allow Cloudflare RUM
                     .requestMatchers(HttpMethod.GET, "/api/v1/community/**").permitAll() // Allow community read access
 
                     .requestMatchers("/ws/**").permitAll() // Allow WebSocket connection
-                    .requestMatchers("/api/v1/chat/**").permitAll() // Allow chat API
                     .requestMatchers("/uploads/**").permitAll() // Allow static file access
 
                     .requestMatchers("/api/v1/settings/**").permitAll() // Allow public settings
@@ -64,14 +66,15 @@ class SecurityConfig(
                 it.authenticationEntryPoint(org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED))
             }
             .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter::class.java) // Add JWT filter
-        
+
         return http.build()
     }
 
     @Bean
     fun corsConfigurationSource(): org.springframework.web.cors.CorsConfigurationSource {
         val configuration = org.springframework.web.cors.CorsConfiguration()
-        configuration.allowedOriginPatterns = listOf("*") // Allow all origins for dev
+        val origins = corsAllowedOrigins.split(",").map { it.trim() }
+        configuration.allowedOriginPatterns = origins
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true

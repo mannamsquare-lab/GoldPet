@@ -6,9 +6,9 @@ interface TransactionItemProps {
 }
 
 function TransactionItem({ transaction }: TransactionItemProps) {
-  const isEarn = transaction.type === 'EARN' || transaction.type === 'CHARGE';
-  const amountClass = isEarn ? 'earn' : 'spend';
-  const amountPrefix = isEarn ? '+' : '-';
+  const isPositive = transaction.amount > 0;
+  const amountClass = isPositive ? 'earn' : 'spend';
+  const amountPrefix = isPositive ? '+' : '-';
 
   return (
     <div className="transaction-item">

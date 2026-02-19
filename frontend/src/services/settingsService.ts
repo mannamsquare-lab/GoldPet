@@ -1,10 +1,10 @@
 import apiClient from './api/client';
 
 export interface NotificationSettings {
-  walkAlert: boolean;
+  pushAlert: boolean;
   chatAlert: boolean;
-  friendAlert: boolean;
   communityAlert: boolean;
+  marketingAlert: boolean;
 }
 
 export interface PrivacySettings {
@@ -12,72 +12,45 @@ export interface PrivacySettings {
   profilePublic: boolean;
 }
 
-const mockNotificationSettings: NotificationSettings = {
-  walkAlert: true,
-  chatAlert: true,
-  friendAlert: true,
-  communityAlert: true,
-};
-
-const mockPrivacySettings: PrivacySettings = {
-  locationSharing: true,
-  profilePublic: true,
-};
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-
 export const settingsService = {
   getNotificationSettings: async (): Promise<NotificationSettings> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      return mockNotificationSettings;
-    }
-    try {
-      const response = await apiClient.get('/settings/notifications');
-      return response.data;
-    } catch {
-      return mockNotificationSettings;
-    }
+    const response = await apiClient.get('/users/me/notification-settings');
+    return response.data;
   },
 
   updateNotificationSettings: async (settings: NotificationSettings): Promise<NotificationSettings> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      Object.assign(mockNotificationSettings, settings);
-      return mockNotificationSettings;
-    }
-    try {
-      const response = await apiClient.put('/settings/notifications', settings);
-      return response.data;
-    } catch {
-      return settings;
-    }
+    const response = await apiClient.put('/users/me/notification-settings', settings);
+    return response.data;
   },
 
   getPrivacySettings: async (): Promise<PrivacySettings> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      return mockPrivacySettings;
-    }
-    try {
-      const response = await apiClient.get('/settings/privacy');
-      return response.data;
-    } catch {
-      return mockPrivacySettings;
-    }
+    const response = await apiClient.get('/users/me/privacy-settings');
+    return {
+      locationSharing: response.data.isLocationSharingEnabled,
+      profilePublic: response.data.isProfilePublic,
+    };
   },
 
   updatePrivacySettings: async (settings: PrivacySettings): Promise<PrivacySettings> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 400));
-      Object.assign(mockPrivacySettings, settings);
-      return mockPrivacySettings;
-    }
+    await apiClient.put('/users/me/privacy-settings', {
+      isLocationSharingEnabled: settings.locationSharing,
+      isProfilePublic: settings.profilePublic,
+    });
+    return settings;
+  },
+
+  exportMyData: async (): Promise<void> => {
     try {
-      const response = await apiClient.put('/settings/privacy', settings);
-      return response.data;
+      const response = await apiClient.get('/users/me/data-export');
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'goldpet-data-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
     } catch {
-      return settings;
+      throw new Error('데이터 다운로드에 실패했습니다.');
     }
   },
 };

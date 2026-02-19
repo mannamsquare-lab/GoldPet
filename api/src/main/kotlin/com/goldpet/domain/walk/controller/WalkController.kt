@@ -53,6 +53,7 @@ class WalkController(
 
     @GetMapping("/search")
     fun searchWalksInArea(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
         @RequestParam minLat: Double,
         @RequestParam minLon: Double,
         @RequestParam maxLat: Double,
@@ -60,7 +61,23 @@ class WalkController(
     ): ResponseEntity<List<WalkResponse>> {
         val request = BoundingBoxRequest(minLat, minLon, maxLat, maxLon)
         val walkResponses = walkService.findWalksInArea(request)
-        return ResponseEntity.ok(walkResponses)
+        // Return public (route-stripped) view; owner detail available via GET /walks/{id}
+        val currentUserId = userDetails?.id
+        return ResponseEntity.ok(walkResponses.map { response ->
+            if (currentUserId != null && response.userId == currentUserId) response
+            else WalkResponse(
+                id = response.id,
+                userId = response.userId,
+                startTime = response.startTime,
+                endTime = response.endTime,
+                distanceKm = response.distanceKm,
+                durationSeconds = response.durationSeconds,
+                path = emptyList(),
+                spots = emptyList(),
+                caloriesBurned = response.caloriesBurned,
+                notes = null
+            )
+        })
     }
 
     @GetMapping("/ranking")

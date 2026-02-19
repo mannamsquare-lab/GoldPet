@@ -93,6 +93,7 @@ class AuthServiceTest {
             )
         }
         whenever(jwtTokenProvider.generateToken(any())).thenReturn("test-access-token")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("test-refresh-token")
 
         // When
         val response = authService.signup(request)
@@ -156,6 +157,7 @@ class AuthServiceTest {
 
         whenever(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user))
         whenever(jwtTokenProvider.generateToken(any())).thenReturn("test-access-token")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("test-refresh-token")
 
         // When
         val response = authService.login(request)
@@ -245,6 +247,7 @@ class AuthServiceTest {
         val user = createTestUser(1L, "devuser", "개발유저")
 
         whenever(jwtTokenProvider.generateToken(any())).thenReturn("test-access-token")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("test-refresh-token")
 
         // When
         val response = authService.devLogin(user)

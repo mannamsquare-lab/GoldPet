@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
+import { blockService } from '../../services/blockService';
+import { BackButton } from '../../components/common/BackButton';
 import './CommunityPage.css';
 import { useAlert } from '../../contexts/AlertContext';
 
@@ -14,7 +16,7 @@ export default function CommunityDetailPage() {
   const [replyTargetId, setReplyTargetId] = useState<number | null>(null);
 
   /* Action Sheet State */
-  const [actionSheetTarget, setActionSheetTarget] = useState<{ type: 'POST' | 'COMMENT', id: number } | null>(null);
+  const [actionSheetTarget, setActionSheetTarget] = useState<{ type: 'POST' | 'COMMENT' | 'OTHER_POST', id: number } | null>(null);
 
   /* Editing State */
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -54,7 +56,7 @@ export default function CommunityDetailPage() {
     }, 200);
   };
 
-  const handleOptionClick = (type: 'POST' | 'COMMENT', id: number) => {
+  const handleOptionClick = (type: 'POST' | 'COMMENT' | 'OTHER_POST', id: number) => {
     setActionSheetTarget({ type, id });
   };
 
@@ -192,6 +194,26 @@ export default function CommunityDetailPage() {
     }
   };
 
+  const handleBlockUser = () => {
+      if (!actionSheetTarget || !post) return;
+      setActionSheetTarget(null);
+      showConfirm('이 사용자를 차단하시겠습니까?\n차단하면 서로의 게시글과 프로필이 보이지 않습니다.', async () => {
+          try {
+              await blockService.blockUser(post.authorId);
+              showAlert('사용자를 차단했습니다.', () => {
+                  navigate('/community', { replace: true });
+              });
+          } catch {
+              showAlert('차단에 실패했습니다.');
+          }
+      });
+  };
+
+  const handleReport = () => {
+      setActionSheetTarget(null);
+      showAlert('신고 기능 준비 중입니다.');
+  };
+
   const handleDelete = () => {
       if (!actionSheetTarget) return;
 
@@ -220,13 +242,11 @@ export default function CommunityDetailPage() {
     <div id="communityContainer">
       {/* Top Header */}
       <div className="history_util">
-        <button type="button" className="back_btn" onClick={() => navigate(-1)}>
-          <img src="/assets/images/common/more_btn.svg" alt="Back" />
-        </button>
+        <BackButton onClick={() => navigate(-1)} />
         <button 
             type="button" 
             className="option_btn" 
-            onClick={() => post.isMine ? handleOptionClick('POST', post.id) : showAlert('신고 기능 준비 중')}
+            onClick={() => post.isMine ? handleOptionClick('POST', post.id) : handleOptionClick('OTHER_POST', post.id)}
         >
           <img src="/assets/images/common/option_icon.svg" alt="Option" />
         </button>
@@ -424,8 +444,17 @@ export default function CommunityDetailPage() {
           <div className="comment_edit_modal" style={{ display: 'block' }}>
               <div className="modal_wrap">
                   <div className="action_list">
-                      <button type="button" onClick={handleEdit}>수정</button>
-                      <button type="button" onClick={handleDelete}>삭제</button>
+                      {actionSheetTarget.type === 'OTHER_POST' ? (
+                          <>
+                              <button type="button" onClick={handleReport}>신고하기</button>
+                              <button type="button" onClick={handleBlockUser}>차단하기</button>
+                          </>
+                      ) : (
+                          <>
+                              <button type="button" onClick={handleEdit}>수정</button>
+                              <button type="button" onClick={handleDelete}>삭제</button>
+                          </>
+                      )}
                   </div>
                   <button type="button" className="close_btn" onClick={() => setActionSheetTarget(null)}>닫기</button>
               </div>

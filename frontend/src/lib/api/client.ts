@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../../stores/authStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
@@ -12,7 +13,7 @@ export const apiClient = axios.create({
 
 // Request interceptor to add JWT token if present
 apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = useAuthStore.getState().token;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,7 +25,7 @@ apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Optionally redirect to login page
+            useAuthStore.getState().logout();
             window.location.href = '/login';
         }
         return Promise.reject(error);

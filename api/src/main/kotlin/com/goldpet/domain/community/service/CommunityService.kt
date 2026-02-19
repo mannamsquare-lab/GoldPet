@@ -14,9 +14,13 @@ import com.goldpet.domain.community.repository.CommunityCategoryRepository
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostLikeRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
+import com.goldpet.domain.friend.repository.UserBlockRepository
+import com.goldpet.domain.gamification.entity.BadgeConditionType
+import com.goldpet.domain.gamification.service.BadgeAwardService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -34,15 +38,28 @@ class CommunityService(
     private val commentLikeRepository: com.goldpet.domain.community.repository.CommunityCommentLikeRepository,
     private val userRepository: UserRepository,
     private val fileRepository: com.goldpet.domain.common.repository.FileAttachmentRepository,
-    private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService
+    private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService,
+    private val badgeAwardService: BadgeAwardService,
+    private val userBlockRepository: UserBlockRepository
 ) {
+    private val log = LoggerFactory.getLogger(CommunityService::class.java)
     // Assuming UserRepository needs to be injected or used to fetch currentUser
     fun getPosts(categoryId: Long?, pageable: Pageable, currentUserId: Long?): Page<CommunityPostResponse> {
+        val blockedUserIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) } ?: emptyList()
+
         val posts = if (categoryId != null) {
             val category = categoryRepository.findById(categoryId).orElseThrow { IllegalArgumentException("Category not found") }
-            postRepository.findAllByCategory(category, pageable)
+            if (blockedUserIds.isNotEmpty()) {
+                postRepository.findAllByCategoryExcludingUsers(category, blockedUserIds, pageable)
+            } else {
+                postRepository.findAllByCategory(category, pageable)
+            }
         } else {
-            postRepository.findAll(pageable)
+            if (blockedUserIds.isNotEmpty()) {
+                postRepository.findAllExcludingUsers(blockedUserIds, pageable)
+            } else {
+                postRepository.findAll(pageable)
+            }
         }
 
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
@@ -84,10 +101,10 @@ class CommunityService(
 
     @Cacheable("community:categories")
     fun getCategories(): List<CommunityCategoryResponse> {
-        println("DEBUG: getCategories called (Cache Miss if seeing this)")
+        log.debug("getCategories called (Cache Miss if seeing this)")
         return getCachedCategoryEntities().map { category ->
             val count = postRepository.countByCategory(category)
-            println("DEBUG: Category ${category.name} count: $count")
+            log.debug("Category {} count: {}", category.name, count)
             CommunityCategoryResponse(
                 id = category.id,
                 name = category.name,
@@ -105,7 +122,7 @@ class CommunityService(
     @Transactional
     @org.springframework.cache.annotation.CacheEvict(value = ["community:categories"], allEntries = true)
     fun createPost(userId: Long, request: CommunityPostCreateRequest): CommunityPostResponse {
-        println("DEBUG: createPost called for user $userId, category ${request.categoryId}")
+        log.debug("createPost called for user {}, category {}", userId, request.categoryId)
         val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
         val category = categoryRepository.findById(request.categoryId).orElseThrow { IllegalArgumentException("Category not found") }
         
@@ -130,7 +147,13 @@ class CommunityService(
         }
         
         val savedPost = postRepository.save(post)
-        
+
+        try {
+            badgeAwardService.checkAndAwardBadges(userId, BadgeConditionType.COMMUNITY_POST)
+        } catch (e: Exception) {
+            log.warn("Badge check failed for userId={}", userId, e)
+        }
+
         return CommunityPostResponse(
             id = savedPost.id,
             userId = user.id,
@@ -185,7 +208,13 @@ class CommunityService(
         )
         
         val savedComment = commentRepository.save(comment)
-        
+
+        try {
+            badgeAwardService.checkAndAwardBadges(userId, BadgeConditionType.COMMUNITY_COMMENT)
+        } catch (e: Exception) {
+            log.warn("Badge check failed for userId={}", userId, e)
+        }
+
         return CommunityCommentResponse(
             id = savedComment.id,
             postId = post.id,
@@ -234,8 +263,10 @@ class CommunityService(
 
         val commentCount = commentRepository.countByPostId(postId)
 
-        // Fetch all comments and sort recursively
+        // Fetch all comments, filter blocked users, and sort recursively
+        val blockedIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) }?.toSet() ?: emptySet()
         val allComments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId)
+            .filter { it.user.id !in blockedIds }
         val commentMap = allComments.groupBy { it.parentComment?.id }
         val sortedComments = mutableListOf<CommunityCommentResponse>()
 
@@ -382,8 +413,66 @@ class CommunityService(
         postRepository.delete(post)
     }
 
+    fun getMyPosts(userId: Long, pageable: Pageable): Page<CommunityPostResponse> {
+        val posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+        val previewLength = systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100)
+
+        return posts.map { post ->
+            val commentCount = commentRepository.countByPostId(post.id)
+            val contentPreview = if (post.content.length > previewLength) {
+                post.content.substring(0, previewLength) + "..."
+            } else {
+                post.content
+            }
+
+            CommunityPostResponse(
+                id = post.id,
+                userId = post.user.id,
+                userNickname = post.user.nickname,
+                userProfileImage = post.user.profileImageUrl,
+                categoryId = post.category.id,
+                categoryName = post.category.name,
+                title = post.title,
+                content = contentPreview,
+                visibility = post.visibility,
+                postType = post.postType,
+                viewCount = post.viewCount,
+                likeCount = post.likeCount,
+                commentCount = commentCount,
+                createdAt = post.createdAt,
+                imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
+                isMine = true
+            )
+        }
+    }
+
+    fun getMyComments(userId: Long, pageable: Pageable): Page<CommunityCommentResponse> {
+        val comments = commentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+
+        return comments.map { comment ->
+            CommunityCommentResponse(
+                id = comment.id,
+                postId = comment.post.id,
+                userId = comment.user.id,
+                userNickname = comment.user.nickname,
+                userProfileImage = comment.user.profileImageUrl,
+                content = comment.content,
+                createdAt = comment.createdAt,
+                parentCommentId = comment.parentComment?.id,
+                likeCount = comment.likeCount,
+                isMine = true,
+                postTitle = comment.post.title
+            )
+        }
+    }
+
     fun searchPosts(keyword: String, pageable: Pageable, currentUserId: Long?): Page<CommunityPostResponse> {
-        val posts = postRepository.searchByKeyword(keyword, pageable)
+        val blockedUserIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) } ?: emptyList()
+        val posts = if (blockedUserIds.isNotEmpty()) {
+            postRepository.searchByKeywordExcludingUsers(keyword, blockedUserIds, pageable)
+        } else {
+            postRepository.searchByKeyword(keyword, pageable)
+        }
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
 
         return posts.map { post ->

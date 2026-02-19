@@ -112,7 +112,7 @@ class AIProfileService(
         }
         
         // 골드 환불
-        goldService.grantReward(userId, request.goldCost, "AI 프로필 요청 취소 환불")
+        goldService.systemRefund(userId, request.goldCost, "AI 프로필 요청 취소 환불", "AI_PROFILE_CANCEL", requestId)
         
         aiRequestRepository.delete(request)
     }

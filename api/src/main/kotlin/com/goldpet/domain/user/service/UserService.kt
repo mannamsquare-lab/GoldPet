@@ -1,23 +1,35 @@
 package com.goldpet.domain.user.service
 
+import com.goldpet.domain.user.entity.DeletedUser
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.entity.UserStatus
+import com.goldpet.domain.user.event.UserDeletedEvent
+import com.goldpet.domain.user.repository.DeletedUserRepository
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.user.dto.FriendLocationResponse
+import com.goldpet.domain.user.dto.NotificationSettingsRequest
+import com.goldpet.domain.user.dto.NotificationSettingsResponse
+import com.goldpet.domain.user.dto.PrivacySettingsRequest
+import com.goldpet.domain.user.dto.PrivacySettingsResponse
 import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
 import com.goldpet.domain.user.entity.UserProfileImage
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.security.MessageDigest
 
 @Service
 @Transactional(readOnly = true)
 class UserService(
     private val userRepository: UserRepository,
+    private val deletedUserRepository: DeletedUserRepository,
     private val interestRepository: com.goldpet.domain.user.repository.InterestRepository,
-    private val hobbyRepository: com.goldpet.domain.user.repository.HobbyRepository
+    private val hobbyRepository: com.goldpet.domain.user.repository.HobbyRepository,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
     fun findUserById(userId: Long): User? {
         return userRepository.findById(userId).orElse(null)
@@ -66,6 +78,22 @@ class UserService(
         return userRepository.save(user)
     }
 
+    fun getNotificationSettings(userId: Long): NotificationSettingsResponse {
+        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        return NotificationSettingsResponse.from(user)
+    }
+
+    @Transactional
+    fun updateNotificationSettings(userId: Long, request: NotificationSettingsRequest): NotificationSettingsResponse {
+        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        user.isNotificationEnabled = request.pushAlert
+        user.isChatAlertEnabled = request.chatAlert
+        user.isCommunityAlertEnabled = request.communityAlert
+        user.isMarketingAlertEnabled = request.marketingAlert
+        userRepository.save(user)
+        return NotificationSettingsResponse.from(user)
+    }
+
     @Transactional
     fun updateFcmToken(userId: Long, fcmToken: String?): User {
         val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
@@ -77,9 +105,6 @@ class UserService(
     fun updateUserProfile(userId: Long, request: com.goldpet.domain.user.dto.UserProfileUpdateRequest): User {
         val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
         
-        println("DEBUG: Updating user profile. Request hasPet: ${request.hasPet}")
-
-
         request.name?.let { user.name = it }
         request.nickname?.let { user.nickname = it }
         request.birthDate?.let { user.birthDate = java.time.LocalDate.parse(it) }
@@ -169,7 +194,95 @@ class UserService(
         return R * c
     }
 
+    fun getPrivacySettings(userId: Long): PrivacySettingsResponse {
+        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        return PrivacySettingsResponse(
+            isLocationSharingEnabled = user.isLocationSharingEnabled,
+            isProfilePublic = user.isProfilePublic
+        )
+    }
+
+    @Transactional
+    fun updatePrivacySettings(userId: Long, request: PrivacySettingsRequest): PrivacySettingsResponse {
+        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        request.isLocationSharingEnabled?.let { user.isLocationSharingEnabled = it }
+        request.isProfilePublic?.let { user.isProfilePublic = it }
+        userRepository.save(user)
+        return PrivacySettingsResponse(
+            isLocationSharingEnabled = user.isLocationSharingEnabled,
+            isProfilePublic = user.isProfilePublic
+        )
+    }
+
     fun isNicknameAvailable(nickname: String): Boolean {
         return !userRepository.findByNickname(nickname).isPresent
+    }
+
+    /**
+     * Self-deletion: anonymize PII and publish UserDeletedEvent for cross-domain cleanup.
+     */
+    @Transactional
+    fun deleteMyAccount(userId: Long, reason: String?) {
+        anonymizeAndDelete(userId, reason, deletedBy = "SELF")
+    }
+
+    /**
+     * Admin-initiated deletion: same anonymization with ADMIN attribution.
+     */
+    @Transactional
+    fun adminDeleteAccount(userId: Long, reason: String?) {
+        anonymizeAndDelete(userId, reason, deletedBy = "ADMIN")
+    }
+
+    private fun anonymizeAndDelete(userId: Long, reason: String?, deletedBy: String) {
+        val user = userRepository.findById(userId)
+            .orElseThrow { NoSuchElementException("User not found with id: $userId") }
+
+        // Anonymize PII fields
+        user.email = "deleted_${userId}@withdrawn.goldpet.com"
+        user.nickname = "탈퇴한 사용자"
+        user.name = null
+        user.phoneNumber = null
+        user.birthDate = null
+        user.birthYear = null
+        user.mainLocationGeom = null
+        user.mainLocationText = null
+        user.profileImageUrl = null
+        user.fcmToken = null
+        user.intro = null
+        user.mbti = null
+        user.gender = null
+        user.password = null
+
+        // Hash oauthId for re-signup prevention
+        user.oauthId = sha256(user.oauthId)
+
+        // Mark as withdrawn
+        user.isActive = false
+        user.status = UserStatus.WITHDRAWN
+
+        // Clear collections
+        user.profileImages.clear()
+        user.interests.clear()
+        user.hobbies.clear()
+
+        userRepository.save(user)
+
+        // Record deletion
+        deletedUserRepository.save(
+            DeletedUser(
+                userId = userId,
+                reason = reason,
+                deletedBy = deletedBy
+            )
+        )
+
+        // Publish event for cross-domain anonymization
+        eventPublisher.publishEvent(UserDeletedEvent(this, userId))
+    }
+
+    private fun sha256(input: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 }

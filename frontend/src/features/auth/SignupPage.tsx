@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
+import { useAuthStore } from '../../stores/authStore';
 import './SignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
 
 export const SignupPage = () => {
   const navigate = useNavigate();
   const { showAlert } = useAlert();
+  const login = useAuthStore((state) => state.login);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -261,9 +263,8 @@ export const SignupPage = () => {
         gender: formData.gender as 'MALE' | 'FEMALE',
         phoneNumber: formData.phoneNumber,
       });
-      // Store tokens
-      localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
+      // Store tokens in memory via authStore (not localStorage)
+      login(response.accessToken, response.refreshToken, response.user);
       // Navigate after successful signup
       navigate('/signup/complete');
     } catch (error: any) {

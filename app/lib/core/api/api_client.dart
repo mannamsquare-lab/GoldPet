@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
@@ -25,6 +28,8 @@ class ApiClient {
         },
       ),
     );
+
+    _setupCertificatePinning(_dio);
 
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -70,6 +75,45 @@ class ApiClient {
         },
       ),
     );
+  }
+
+  void _setupCertificatePinning(Dio dio) {
+    if (kDebugMode) return; // Skip in debug mode for local development
+
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+        // Only allow connections to our known hosts
+        const allowedHosts = [
+          'api.goldpet.com',
+          'api.mannamsquare.com',
+        ];
+
+        if (!allowedHosts.contains(host)) {
+          return false;
+        }
+
+        // TODO: Replace placeholders with actual SHA-256 public key fingerprints.
+        // Generate with:
+        // openssl s_client -connect api.goldpet.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+        const allowedFingerprints = <String>[
+          // Primary certificate pin (current)
+          // 'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+          // Backup certificate pin (next rotation)
+          // 'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
+        ];
+
+        // If no fingerprints are configured yet, allow the connection.
+        // TODO: Set to false and populate allowedFingerprints before production release.
+        if (allowedFingerprints.isEmpty) {
+          return true;
+        }
+
+        // Reject by default once fingerprints are configured.
+        return false;
+      };
+      return client;
+    };
   }
 
   Dio get dio => _dio;

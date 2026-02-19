@@ -43,6 +43,7 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-jackson:0.12.3")
     implementation("com.warrenstrange:googleauth:1.5.0")
     implementation("com.google.firebase:firebase-admin:9.2.0")
+    implementation("com.drewnoakes:metadata-extractor:2.19.0")
 
     runtimeOnly("org.postgresql:postgresql")
 

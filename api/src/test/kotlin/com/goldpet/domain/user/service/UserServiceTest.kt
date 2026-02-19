@@ -5,6 +5,7 @@ import com.goldpet.domain.user.dto.UserProfileUpdateRequest
 import com.goldpet.domain.user.entity.Hobby
 import com.goldpet.domain.user.entity.Interest
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.repository.DeletedUserRepository
 import com.goldpet.domain.user.repository.HobbyRepository
 import com.goldpet.domain.user.repository.InterestRepository
 import com.goldpet.domain.user.repository.UserRepository
@@ -16,6 +17,7 @@ import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import org.springframework.context.ApplicationEventPublisher
 import java.time.LocalDateTime
 import java.util.*
 
@@ -25,10 +27,16 @@ class UserServiceTest {
     private lateinit var userRepository: UserRepository
 
     @Mock
+    private lateinit var deletedUserRepository: DeletedUserRepository
+
+    @Mock
     private lateinit var interestRepository: InterestRepository
 
     @Mock
     private lateinit var hobbyRepository: HobbyRepository
+
+    @Mock
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     private lateinit var userService: UserService
 
@@ -37,7 +45,7 @@ class UserServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        userService = UserService(userRepository, interestRepository, hobbyRepository)
+        userService = UserService(userRepository, deletedUserRepository, interestRepository, hobbyRepository, eventPublisher)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
     }

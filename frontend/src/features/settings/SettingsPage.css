@@ -1,136 +1,132 @@
-/* Container */
+/* SettingsPage - Figma node 506:60965 */
+
 .settings-container {
-  padding: 0 16px;
+  padding: 16px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
 }
 
-/* Section Cards */
-.settings-section {
-  background-color: var(--color-bg-white);
+/* Section Group */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-group-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-primary);
+  padding: 0 16px;
+  letter-spacing: -0.32px;
+}
+
+/* Individual Card */
+.settings-card {
+  background: var(--color-bg-white);
   border-radius: 16px;
   padding: 24px 16px;
-  margin-bottom: 16px;
 }
 
-/* Section Headers */
-.settings-section .section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-primary);
-  display: block;
-  margin-bottom: 16px;
+.settings-card-link {
+  cursor: pointer;
 }
 
-/* Toggle Switch Track */
-.settings-toggle {
+.settings-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
+  gap: 16px;
 }
 
-.settings-toggle .toggle-label {
-  font-size: 16px;
-  font-weight: 500;
+.settings-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--color-text-secondary);
+  letter-spacing: -0.28px;
+  line-height: 1.4;
 }
 
-.settings-toggle .toggle-switch {
+.settings-label-primary {
+  color: var(--color-primary);
+}
+
+.settings-label-danger {
+  color: var(--color-accent-red);
+}
+
+.settings-value {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-align: right;
+  letter-spacing: -0.28px;
+  line-height: 1.4;
+}
+
+/* Toggle Switch - matches Figma BtnToggle (50x24) */
+.toggle-switch {
   position: relative;
-  width: 40px;
-  height: 22px;
+  width: 50px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
-.settings-toggle .toggle-switch input {
+.toggle-switch input {
   display: none;
 }
 
-.settings-toggle .toggle-switch label {
+.toggle-switch label {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 22px;
-  background-color: var(--color-toggle-off);
+  border-radius: 100px;
+  background-color: #AAAAAA;
   cursor: pointer;
   transition: background-color 0.2s;
   position: relative;
 }
 
-.settings-toggle .toggle-switch input:checked + label {
+.toggle-switch input:checked + label {
   background-color: var(--color-primary);
 }
 
-.settings-toggle .toggle-switch label::after {
+.toggle-switch label::after {
   content: '';
   position: absolute;
-  top: 50%;
+  top: 2px;
   left: 2px;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background-color: var(--color-bg-white);
-  transition: left 0.2s;
+  width: 20px;
+  height: 20px;
+  border-radius: 100px;
+  background-color: white;
+  transition: transform 0.2s;
 }
 
-.settings-toggle .toggle-switch input:checked + label::after {
-  left: calc(100% - 20px);
+.toggle-switch input:checked + label::after {
+  transform: translateX(26px);
 }
 
-/* Link Items (chevron list) */
-.settings-link {
+/* Chevron */
+.settings-chevron {
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+/* Social Icons */
+.settings-social-icons {
   display: flex;
+  gap: 8px;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 0;
-  font-size: 16px;
-  color: var(--color-text-secondary);
-  border-bottom: 1px solid var(--color-border);
-  cursor: pointer;
 }
 
-.settings-link:last-child {
-  border-bottom: none;
-}
-
-.settings-link .link-arrow {
-  width: 16px;
-  height: 16px;
-}
-
-/* Danger Zone */
-.settings-danger {
-  margin-top: 16px;
-}
-
-.settings-danger .danger-btn {
-  width: 100%;
-  height: 48px;
-  border-radius: 48px;
-  background-color: var(--color-primary);
-  color: var(--color-text-white);
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  margin-bottom: 8px;
-}
-
-.settings-danger .danger-link {
-  display: block;
-  text-align: center;
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  padding: 8px;
-  cursor: pointer;
-}
-
-/* App Info */
-.settings-app-info {
-  text-align: center;
-  padding: 16px 0;
-}
-
-.settings-app-info .version {
-  font-size: 12px;
-  color: var(--color-text-secondary);
+.settings-social-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 100px;
+  overflow: hidden;
 }
