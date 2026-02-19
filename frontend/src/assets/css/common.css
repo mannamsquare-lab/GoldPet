@@ -182,8 +182,6 @@ strong, h1, h2, h3, h4, h5, h6 {
 }
 #mainContainer .main_slide .img_wrap .pet_img {
 	width: 100%;
-	height: 252px;
-	object-fit: cover;
 }
 #mainContainer .main_slide .img_wrap .butler_img {
 	right: 5%;
@@ -195,7 +193,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 }
 #mainContainer .main_slide .main_slide_inside:after {
 	width: 100%;
-	height: 584px;
+	height: 162.22vw;
 	display: block;
 	content: "";
 	position: absolute;
@@ -203,10 +201,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	left: 0;
 	z-index: 5;
 	background-image: url(/assets/images/main/main_slide_mask.png);
-	-ms-background-position-x: 0;
-	background-position-x: 0;
-	-ms-background-position-y: 100%;
-	background-position-y: 100%;
+	background-position: 0 bottom;
 	background-size: 100% auto;
 	background-repeat: no-repeat;
 }
