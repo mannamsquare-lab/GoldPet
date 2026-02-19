@@ -221,7 +221,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	-webkit-box-align: center;
 	    -ms-flex-align: center;
 	        align-items: center;
-	padding: 0 5%;
+	padding: 0 16px;
 }
 #mainContainer .main_slide .txt_wrap h2 {
 	font-size: 24px;
@@ -252,7 +252,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 }
 #mainContainer .main_slide .pet_detail {
 	font-size: 14px;
-	padding: 12px 5% 0;
+	padding: 12px 16px 0;
 }
 #mainContainer .main_slide .pet_detail > p {
 	font-size: 14px;
@@ -289,7 +289,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	gap: 16px;
 }
 #mainContainer .main_slide .pet_detail .like_wrap button {
-	width: 160px;
+	flex: 1;
 	height: 48px;
 	border-radius: 20px;
 	display: flex;
@@ -345,8 +345,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	rotate: 180deg;
 }
 #mainContainer .ai_profile_banner {
-	width: 328px;
-	margin: 24px 0 0 16px;
+	margin: 24px 16px 0;
 	padding: 0 0 0 20px;
 	background-image: -webkit-gradient(linear, right top, left top, from(#BE64CC), to(#EB77AC));
 	background-image: linear-gradient(to left, #BE64CC, #EB77AC);
