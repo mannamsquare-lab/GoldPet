@@ -11,7 +11,7 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5432:5432" # localhost만 허용
+      - "0.0.0.0:5432:5432" # localhost만 허용
     networks:
       - goldpet-net
     shm_size: 1g
