@@ -12,7 +12,7 @@ export const OnboardingScreen4 = ({ onNext }: OnboardingScreen4Props) => {
     localStorage.setItem('hasSeenOnboarding', 'true');
     onNext();
     // 권한 안내 화면으로 이동
-    navigate('/permissions');
+    navigate('/permissions', { replace: true });
   };
 
   return (

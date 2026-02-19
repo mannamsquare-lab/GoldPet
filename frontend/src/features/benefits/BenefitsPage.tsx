@@ -6,7 +6,7 @@ export const BenefitsPage = () => {
 
   const handleStart = () => {
     localStorage.setItem('hasSeenBenefits', 'true');
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
