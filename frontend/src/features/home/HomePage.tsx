@@ -26,7 +26,7 @@ export default function HomePage() {
     const insideSwiperRefs = useRef<SwiperCore[]>([]);
     const { showAlert } = useAlert();
     const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
-    const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
+    const [, setHiddenIds] = useState<Set<number>>(new Set());
     const [loadingId, setLoadingId] = useState<number | null>(null);
 
     const handleLike = async (id: number, name: string) => {

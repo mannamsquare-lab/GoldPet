@@ -19,7 +19,7 @@ function GoldMainPage() {
   });
 
   const balance = balanceData?.balance ?? 0;
-  const recentTransactions = transactionsData ?? [];
+  const recentTransactions = transactionsData?.content ?? [];
 
   return (
     <div className="gold-container">
