@@ -570,47 +570,20 @@
   }
 }
 
-/* Override #wrap overflow to enable sticky positioning + remove bottom padding (nav hidden) */
-#wrap:has(#communityContainer .detail_wrap) {
-  overflow: visible;
-  padding-bottom: 0;
-}
-
-/* Fill viewport so sticky comment input stays at bottom even with short content */
-#communityContainer:has(.detail_wrap) {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-#communityContainer .detail_wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-#communityContainer .detail_wrap .comment_wrap {
-  flex: 1;
-}
-
-/* Main comment input bar - chat-style sticky bar (full width) */
+/* Main comment input bar - fixed at viewport bottom */
 #communityContainer .detail_wrap .comment_wrap > .comment_submit {
-  position: sticky;
-  position: -webkit-sticky; /* iOS Safari compatibility */
+  position: fixed;
   bottom: 0;
+  left: 0;
+  right: 0;
   background: var(--color-border);
   z-index: 10;
-  padding: 8px;
-  margin-left: -16px;
-  margin-right: -16px;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding: 8px 16px;
 }
 
-/* Prevent last comment from being hidden behind sticky input bar */
-#communityContainer .detail_wrap .comment_list {
-  padding-bottom: 61px;
+/* Prevent last content from being hidden behind fixed input bar */
+#communityContainer .detail_wrap .comment_wrap {
+  padding-bottom: 70px;
 }
 
 /* Base textarea overflow - controlled by JS for scroll behavior */
