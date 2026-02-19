@@ -3,8 +3,8 @@
   padding: 10px 0 0;
 }
 #chatOne .group_tab {
-  width: 328px;
-  margin: 0 0 0 16px;
+  width: calc(100% - 32px);
+  margin: 0 16px;
   position: relative;
   display: -webkit-box;
   display: -ms-flexbox;

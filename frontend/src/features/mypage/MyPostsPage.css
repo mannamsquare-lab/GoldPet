@@ -1,6 +1,6 @@
 /* Tab menu - matches #friendFind .group_tab style */
 #myPostsContainer .group_tab {
-  width: 328px;
+  width: calc(100% - 32px);
   margin: 14px auto 0;
   position: relative;
   display: flex;
@@ -20,7 +20,7 @@
 }
 
 #myPostsContainer .group_tab button {
-  width: 155px;
+  flex: 1;
   height: 46px;
   box-sizing: border-box;
   position: relative;

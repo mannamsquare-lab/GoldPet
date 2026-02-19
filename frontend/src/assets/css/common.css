@@ -721,7 +721,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	padding: 10px 0 0;
 }
 #friendFind .group_tab {
-	width: 328px;
+	width: calc(100% - 32px);
 	margin: 14px auto 0;
 	position: relative;
 	display: -webkit-box;
@@ -743,7 +743,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	background-color: #614108;
 }
 #friendFind .group_tab button {
-	width: 155px;
+	flex: 1;
 	height: 46px;
 	-webkit-box-sizing: border-box;
 	        box-sizing: border-box;
@@ -1097,7 +1097,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	        justify-content: space-between;
 }
 #friendFind .friend_list .list_wrap .pet_detail .like_wrap button {
-	width: 160px;
+	flex: 1;
 	height: 48px;
 	border-radius: 20px;
 	font-weight: 500;
@@ -1156,7 +1156,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	/* 대화요청 */
 }
 #chatOne .group_tab {
-	width: 328px;
+	width: calc(100% - 32px);
 	margin: 14px auto 0;
 	position: relative;
 	display: -webkit-box;
@@ -1178,7 +1178,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	background-color: #614108;
 }
 #chatOne .group_tab button {
-	width: 102px;
+	flex: 1;
 	height: 46px;
 	-webkit-box-sizing: border-box;
 	        box-sizing: border-box;
@@ -1252,7 +1252,8 @@ strong, h1, h2, h3, h4, h5, h6 {
 	   object-fit: cover;
 }
 #chatOne .chat_list .txt_wrap {
-	width: 200px;
+	flex: 1;
+	min-width: 0;
 	text-align: left;
 }
 #chatOne .chat_list .txt_wrap strong {
@@ -2789,7 +2790,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	padding: 12px 16px;
 }
 #profileContainer .group_tab {
-	width: 328px;
+	width: calc(100% - 32px);
 	position: relative;
 	display: -webkit-box;
 	display: -ms-flexbox;
@@ -2811,7 +2812,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	background-color: #614108;
 }
 #profileContainer .group_tab button {
-	width: 155px;
+	flex: 1;
 	height: 46px;
 	-webkit-box-sizing: border-box;
 	        box-sizing: border-box;

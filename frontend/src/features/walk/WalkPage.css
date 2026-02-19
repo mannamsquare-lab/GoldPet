@@ -72,7 +72,7 @@
 }
 
 .walk_today_card {
-  width: 328px;
+  width: calc(100% - 32px);
   padding: 24px 16px;
   background: #D9FFA7;
   background-image: url('/assets/images/walk/BG.svg');
