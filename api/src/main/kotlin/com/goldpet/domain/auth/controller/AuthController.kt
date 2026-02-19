@@ -62,7 +62,7 @@ class AuthController(
     fun devLogin(@RequestBody(required = false) body: Map<String, String>?): ResponseEntity<AuthResponse> {
         val testEmail = body?.get("email") ?: "test@goldpet.com"
         val testNickname = body?.get("nickname") ?: "테스트유저"
-        val existingUser = userRepository.findByEmail(testEmail).orElse(null)
+        val existingUser = userRepository.findByEmailHash(testEmail).orElse(null)
         
         val user = if (existingUser == null) {
             val newUser = com.goldpet.domain.user.entity.User(

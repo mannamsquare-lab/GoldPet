@@ -64,7 +64,7 @@ class SocialLoginService(
         // 2. Find or Create User
         var user = userRepository.findByOauthProviderAndOauthId("kakao", kakaoId).orElse(null)
         if (user == null && email != null) {
-            user = userRepository.findByEmail(email).orElse(null)
+            user = userRepository.findByEmailHash(email).orElse(null)
         }
         if (user == null) {
             user = User(
@@ -138,7 +138,7 @@ class SocialLoginService(
         // 2. Find or Create User
         var user = userRepository.findByOauthProviderAndOauthId("naver", naverId).orElse(null)
         if (user == null && email != null) {
-            user = userRepository.findByEmail(email).orElse(null)
+            user = userRepository.findByEmailHash(email).orElse(null)
         }
         if (user == null) {
             user = User(
@@ -203,7 +203,7 @@ class SocialLoginService(
         // 2. Find or Create User
         var user = userRepository.findByOauthProviderAndOauthId("google", googleId).orElse(null)
         if (user == null && email != null) {
-            user = userRepository.findByEmail(email).orElse(null)
+            user = userRepository.findByEmailHash(email).orElse(null)
         }
         if (user == null) {
             user = User(
@@ -293,7 +293,7 @@ class SocialLoginService(
         // 5. Find or Create User
         var user = userRepository.findByOauthProviderAndOauthId("apple", appleId).orElse(null)
         if (user == null && email != null) {
-            user = userRepository.findByEmail(email).orElse(null)
+            user = userRepository.findByEmailHash(email).orElse(null)
         }
         if (user == null) {
             user = User(
