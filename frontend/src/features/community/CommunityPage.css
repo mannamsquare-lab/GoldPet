@@ -576,6 +576,24 @@
   padding-bottom: 0;
 }
 
+/* Fill viewport so sticky comment input stays at bottom even with short content */
+#communityContainer:has(.detail_wrap) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#communityContainer .detail_wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#communityContainer .detail_wrap .comment_wrap {
+  flex: 1;
+}
+
 /* Main comment input bar - chat-style sticky bar (full width) */
 #communityContainer .detail_wrap .comment_wrap > .comment_submit {
   position: sticky;
