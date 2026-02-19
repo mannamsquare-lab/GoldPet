@@ -18,15 +18,15 @@ export const SplashPage = () => {
       const isAuthenticated = useAuthStore.getState().isAuthenticated;
 
       if (!hasSeenOnboarding) {
-        navigate('/onboarding');
+        navigate('/onboarding', { replace: true });
       } else if (!hasSeenPermissions) {
-        navigate('/permissions');
+        navigate('/permissions', { replace: true });
       } else if (!hasSeenBenefits) {
-        navigate('/benefits');
+        navigate('/benefits', { replace: true });
       } else if (isAuthenticated) {
-        navigate('/home');
+        navigate('/home', { replace: true });
       } else {
-        navigate('/login');
+        navigate('/login', { replace: true });
       }
     }, 2000);
 

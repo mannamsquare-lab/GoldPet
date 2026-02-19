@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:image_picker/image_picker.dart';
 import '../bridge/bridge_message_handler.dart';
@@ -27,10 +28,17 @@ class _HybridWebViewState extends State<HybridWebView> {
   late final NativeBridge _bridge;
   late final BridgeMessageHandler _bridgeController;
   Color _scaffoldColor = const Color(0xFFEFE1C4);
+  Color _bottomSafeAreaColor = const Color(0xFFEFE1C4);
+  DateTime? _lastBackPressTime;
 
   @override
   void initState() {
     super.initState();
+    // Edge-to-edge 모드: 시스템 네비게이션 바를 투명하게 하여 앱 콘텐츠 위에 오버레이
+    // 이렇게 하면 네비게이션 바 경계선(divider)이 사라짐
+    if (Platform.isAndroid) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
     _initializeWebView();
   }
 
@@ -141,6 +149,12 @@ class _HybridWebViewState extends State<HybridWebView> {
     // Enable WebView debugging in debug mode
     if (_controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(true);
+    }
+
+    // iOS: 왼→오 스와이프 백 제스처로 WebView 히스토리 네비게이션 활성화
+    if (_controller.platform is WebKitWebViewController) {
+      final wkController = _controller.platform as WebKitWebViewController;
+      await wkController.setAllowsBackForwardNavigationGestures(true);
     }
 
     // Android file upload support via content:// URIs
@@ -340,19 +354,46 @@ class _HybridWebViewState extends State<HybridWebView> {
     final isCommunityDetail = path.startsWith('/community/') && path != '/community/write';
     final isChatDetail = path.startsWith('/chat/') && path != '/chat';
     final hasBottomInput = isCommunityDetail || isChatDetail;
-    final navBarColor = hasBottomInput ? _colorF9ECD2 : color;
+    final navBarColor = hasBottomInput ? _colorEFE1C4 : color;
 
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: color,
       statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: navBarColor,
+      systemNavigationBarColor: Platform.isAndroid ? const Color(0x00000000) : navBarColor,
+      systemNavigationBarDividerColor: Platform.isAndroid ? const Color(0x00000000) : navBarColor,
+      systemNavigationBarContrastEnforced: false,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
 
-    if (_scaffoldColor != color) {
+    final needsUpdate = _scaffoldColor != color || _bottomSafeAreaColor != navBarColor;
+    if (needsUpdate) {
       setState(() {
         _scaffoldColor = color;
+        _bottomSafeAreaColor = navBarColor;
       });
+    }
+  }
+
+  /// Android 뒤로가기 버튼 처리: WebView 히스토리 → 더블탭 종료
+  Future<void> _handleBackNavigation() async {
+    if (await _controller.canGoBack()) {
+      await _controller.goBack();
+      return;
+    }
+    final now = DateTime.now();
+    if (_lastBackPressTime != null &&
+        now.difference(_lastBackPressTime!) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastBackPressTime = now;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('한 번 더 누르면 종료합니다'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -364,20 +405,36 @@ class _HybridWebViewState extends State<HybridWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _scaffoldColor,
-      body: SafeArea(
-        child: Platform.isAndroid
-            ? WebViewWidget.fromPlatformCreationParams(
-                params: AndroidWebViewWidgetCreationParams.fromPlatformWebViewWidgetCreationParams(
-                  PlatformWebViewWidgetCreationParams(
-                    controller: _controller.platform,
-                    layoutDirection: TextDirection.ltr,
-                  ),
-                  displayWithHybridComposition: true,
-                ),
-              )
-            : WebViewWidget(controller: _controller),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (!Platform.isAndroid) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        backgroundColor: _scaffoldColor,
+        body: SafeArea(
+          bottom: false,
+          child: ColoredBox(
+            color: _bottomSafeAreaColor,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: bottomPadding),
+              child: Platform.isAndroid
+                  ? WebViewWidget.fromPlatformCreationParams(
+                      params: AndroidWebViewWidgetCreationParams.fromPlatformWebViewWidgetCreationParams(
+                        PlatformWebViewWidgetCreationParams(
+                          controller: _controller.platform,
+                          layoutDirection: TextDirection.ltr,
+                        ),
+                        displayWithHybridComposition: true,
+                      ),
+                    )
+                  : WebViewWidget(controller: _controller),
+            ),
+          ),
+        ),
       ),
     );
   }

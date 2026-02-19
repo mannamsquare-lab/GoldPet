@@ -53,7 +53,7 @@ export const LoginPage = () => {
         localStorage.setItem('autoLogin', 'true');
       }
 
-      navigate('/home');
+      navigate('/home', { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
       showAlert(error.response?.data?.message || '로그인에 실패했습니다.');
@@ -70,7 +70,7 @@ export const LoginPage = () => {
             // AuthResponse type - login succeeded
             if (result.accessToken) {
               login(result.accessToken, result.refreshToken, result.user);
-              navigate('/home');
+              navigate('/home', { replace: true });
             }
           } catch (error: any) {
             console.error('SNS Login failed:', error);

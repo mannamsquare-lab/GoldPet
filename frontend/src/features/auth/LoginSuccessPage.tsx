@@ -51,21 +51,21 @@ export const LoginSuccessPage = () => {
                             navigate('/signup', { state: { isSns: true, provider: user.oauthProvider } });
                         } else {
                             login(token, '', user);
-                            navigate('/home');
+                            navigate('/home', { replace: true });
                         }
                     }
                 })
                 .catch((error) => {
                     console.error('Failed to fetch user info', error);
                     if (!window.opener) {
-                        navigate('/login');
+                        navigate('/login', { replace: true });
                     } else {
                         window.close();
                     }
                 });
         } else {
             if (!window.opener) {
-                navigate('/login');
+                navigate('/login', { replace: true });
             } else {
                 window.close();
             }

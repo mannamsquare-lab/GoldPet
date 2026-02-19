@@ -8,14 +8,14 @@ export const SignupCompletePage = () => {
   useEffect(() => {
     // 3초 후 자동으로 홈 화면으로 이동
     const timer = setTimeout(() => {
-      navigate('/home');
+      navigate('/home', { replace: true });
     }, 3000);
 
     return () => clearTimeout(timer);
   }, [navigate]);
 
   const handleGoToHome = () => {
-    navigate('/home');
+    navigate('/home', { replace: true });
   };
 
   return (

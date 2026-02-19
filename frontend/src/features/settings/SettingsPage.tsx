@@ -78,7 +78,7 @@ const SettingsPage: React.FC = () => {
   const handleLogout = () => {
     showConfirm('로그아웃 하시겠습니까?', () => {
       logout();
-      navigate('/login');
+      navigate('/login', { replace: true });
       showToast('로그아웃 되었습니다.', 'success');
     });
   };
@@ -87,7 +87,7 @@ const SettingsPage: React.FC = () => {
     showConfirm('정말로 회원탈퇴 하시겠습니까?\n모든 데이터가 삭제되며 복구할 수 없습니다.', () => {
       showToast('회원탈퇴가 처리되었습니다.', 'success');
       logout();
-      navigate('/login');
+      navigate('/login', { replace: true });
     });
   };
 
