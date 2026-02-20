@@ -105,6 +105,8 @@ export const communityService = {
       
       const comments = data.comments?.map((c: any) => ({
           ...c,
+          authorNickname: c.userNickname ?? c.authorNickname ?? '',
+          authorProfileUrl: c.userProfileImage ?? c.authorProfileUrl,
           isLikedByMe: c.isLikedByMe ?? false,
           isRepliedByMe: c.isRepliedByMe ?? false,
           isMine: c.isMine ?? false,

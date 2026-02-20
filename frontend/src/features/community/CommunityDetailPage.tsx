@@ -43,20 +43,6 @@ export default function CommunityDetailPage() {
     }, 150);
   };
 
-  const handleReplyBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    // First, run the same bottom-nav restore logic
-    handleInputBlur();
-    // Then, after a delay (longer than handleInputBlur's 150ms to let it settle),
-    // check if focus moved to the send button within the same container
-    setTimeout(() => {
-      const active = document.activeElement;
-      const container = e.target.closest('.comment_submit');
-      if (!container?.contains(active as Node)) {
-        setReplyTargetId(null);
-      }
-    }, 200);
-  };
-
   const handleOptionClick = (type: 'POST' | 'COMMENT' | 'OTHER_POST', id: number) => {
     setActionSheetTarget({ type, id });
   };
@@ -120,6 +106,10 @@ export default function CommunityDetailPage() {
     ...CACHE_TIME.DYNAMIC,
   });
 
+  const replyTargetNickname = replyTargetId
+    ? post?.comments?.find(c => c.id === replyTargetId)?.authorNickname
+    : null;
+
   const likeMutation = useMutation({
     mutationFn: () => communityService.toggleLike(Number(postId)),
     onSuccess: () => {
@@ -175,13 +165,10 @@ export default function CommunityDetailPage() {
 
   const handleSubmitComment = () => {
     if (commentInput.trim()) {
-      commentMutation.mutate({ content: commentInput });
-    }
-  };
-
-  const handleSubmitReply = (parentId: number, content: string) => {
-    if (content.trim()) {
-      commentMutation.mutate({ content, parentId });
+      commentMutation.mutate({
+        content: commentInput,
+        parentId: replyTargetId ?? undefined,
+      });
     }
   };
 
@@ -361,34 +348,17 @@ export default function CommunityDetailPage() {
                       </div>
                       {/* Allow reply only if depth < 3 */}
                       {comment.depth < 3 && (
-                        <button type="button" onClick={() => setReplyTargetId(replyTargetId === comment.id ? null : comment.id)}>
-                            답글 쓰기
+                        <button type="button" onClick={() => {
+                            const newTarget = replyTargetId === comment.id ? null : comment.id;
+                            setReplyTargetId(newTarget);
+                            if (newTarget) {
+                              setTimeout(() => mainInputRef.current?.focus(), 100);
+                            }
+                        }}>
+                            답글쓰기
                         </button>
                       )}
                   </div>
-                  
-                  {/* Reply Input */}
-                  {replyTargetId === comment.id && (
-                    <div className="comment_submit" style={{ marginTop: '10px' }}>
-                      <textarea
-                        autoFocus
-                        onFocus={handleInputFocus}
-                        onBlur={handleReplyBlur}
-                        placeholder="답글을 남겨보세요"
-                        rows={1}
-                        onChange={(e) => {
-                            e.target.style.height = '32px';
-                            e.target.style.height = `${Math.min(e.target.scrollHeight, 108)}px`;
-                            e.target.style.overflowY = e.target.scrollHeight > 108 ? 'auto' : 'hidden';
-                            e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }}
-                      />
-                      <button type="button" onClick={(e) => {
-                        const input = e.currentTarget.previousSibling as HTMLTextAreaElement;
-                        handleSubmitReply(comment.id, input.value);
-                      }}>전송</button>
-                    </div>
-                  )}
 
                 </div>
 
@@ -412,21 +382,29 @@ export default function CommunityDetailPage() {
 
           {/* Main Comment Input */}
           <div className="comment_submit">
-            <textarea
-              ref={mainInputRef}
-              placeholder="댓글을 남겨보세요"
-              value={commentInput}
-              rows={1}
-              onFocus={() => { setReplyTargetId(null); handleInputFocus(); }}
-              onBlur={handleInputBlur}
-              onChange={(e) => {
-                setCommentInput(e.target.value);
-                e.target.style.height = '32px';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 108)}px`;
-                e.target.style.overflowY = e.target.scrollHeight > 108 ? 'auto' : 'hidden';
-              }}
-            />
-            <button type="button" onClick={handleSubmitComment}>전송</button>
+            {replyTargetId && replyTargetNickname && (
+              <div className="reply_indicator">
+                <span>@{replyTargetNickname} 에게 답글 중</span>
+                <button type="button" onClick={() => setReplyTargetId(null)}>✕</button>
+              </div>
+            )}
+            <div className="comment_input_row">
+              <textarea
+                ref={mainInputRef}
+                placeholder={replyTargetId ? '답글을 남겨보세요' : '댓글을 남겨보세요'}
+                value={commentInput}
+                rows={1}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                onChange={(e) => {
+                  setCommentInput(e.target.value);
+                  e.target.style.height = '32px';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 108)}px`;
+                  e.target.style.overflowY = e.target.scrollHeight > 108 ? 'auto' : 'hidden';
+                }}
+              />
+              <button type="button" onClick={handleSubmitComment}>전송</button>
+            </div>
           </div>
         </div>
       </div>

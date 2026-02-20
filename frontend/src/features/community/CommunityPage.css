@@ -574,11 +574,45 @@
   background: var(--color-border);
   z-index: 10;
   padding: 8px 16px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+}
+
+#communityContainer .detail_wrap .comment_wrap > .comment_submit .comment_input_row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Reply indicator bar above input */
+#communityContainer .reply_indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  margin-bottom: 6px;
+  background: #F5E6C8;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #614108;
+  font-weight: 500;
+}
+
+#communityContainer .reply_indicator button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #999;
+  padding: 0 0 0 8px;
+  line-height: 1;
 }
 
 /* Prevent last content from being hidden behind fixed input bar */
 #communityContainer .detail_wrap .comment_wrap {
-  padding-bottom: 90px;
+  padding-bottom: 120px;
 }
 
 /* Base textarea overflow - controlled by JS for scroll behavior */

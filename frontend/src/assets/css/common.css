@@ -149,7 +149,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 }
 
 #wrap {
-	padding: 56px 0 56px;
+	padding: 56px 0 72px;
 	background-color: #FFF7E6;
 	min-height: 100vh;
 	overflow: hidden;
@@ -2326,7 +2326,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	width: 100%;
 }
 #communityContainer .detail_wrap .comment_wrap {
-	padding: 24px 0 0;
+	padding: 24px 0 120px;
 	margin: 24px 0 0;
 	border-top: 1px solid #EFE1C4;
 }
