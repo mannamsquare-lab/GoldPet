@@ -74,6 +74,10 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     WidgetsBinding.instance.addObserver(this);
     // Subscribe to global spot action stream (for deep link actions on existing screen)
     _spotActionSubscription = walkSpotActionController.stream.listen((type) {
+      if (type == 'STOP') {
+        if (_isWalking) _stopWalk();
+        return;
+      }
       if (_isWalking) {
         _addSpot(type);
       } else {
@@ -187,37 +191,41 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     }
   }
 
-  String _formatPace(double distanceKm, int seconds) {
-    if (distanceKm <= 0 || seconds <= 0) return "--'--\"";
-    final paceMinPerKm = (seconds / 60.0) / distanceKm;
-    if (paceMinPerKm > 60) return "--'--\"";
-    final min = paceMinPerKm.toInt();
-    final sec = ((paceMinPerKm - min) * 60).toInt();
-    return "$min'${sec.toString().padLeft(2, '0')}\"";
+  String _formatWidgetDuration(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    if (h > 0) {
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   void _updateWalkWidget(int seconds, double distanceKm) {
     final time = _formatDuration(seconds);
-    final pace = _formatPace(distanceKm, seconds);
+    final widgetDuration = _formatWidgetDuration(seconds);
+    final calories = (distanceKm * 50).toStringAsFixed(0);
 
     if (Platform.isAndroid) {
       _walkWidgetChannel.invokeMethod('show', {
         'time': time,
         'distance': distanceKm.toStringAsFixed(2),
-        'duration': time,
-        'pace': pace,
+        'duration': widgetDuration,
+        'calories': calories,
       });
     } else if (Platform.isIOS) {
       _liveActivityChannel.invokeMethod('update', {
         'distanceKm': distanceKm,
         'durationSeconds': seconds,
-        'paceMinPerKm': distanceKm > 0 ? (seconds / 60.0) / distanceKm : 0.0,
+        'caloriesBurned': distanceKm * 50.0,
       });
     }
   }
 
   void _startWalkWidget() {
-    if (Platform.isIOS) {
+    if (Platform.isAndroid) {
+      _walkWidgetChannel.invokeMethod('startForeground');
+    } else if (Platform.isIOS) {
       _liveActivityChannel.invokeMethod('start');
     }
   }
@@ -312,15 +320,12 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     late final LocationSettings locationSettings;
 
     if (Platform.isAndroid) {
+      // Foreground service is started separately via WalkForegroundService
+      // (custom notification with spot buttons). No ForegroundNotificationConfig
+      // needed here — that would create a duplicate plain-text notification.
       locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.best,
         distanceFilter: 3,
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationTitle: "GoldPet 산책 중",
-          notificationText: "산책 경로를 기록하고 있습니다",
-          enableWakeLock: true,
-          setOngoing: true,
-        ),
       );
     } else if (Platform.isIOS) {
       locationSettings = AppleSettings(

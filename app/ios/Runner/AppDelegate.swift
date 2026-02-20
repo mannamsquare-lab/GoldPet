@@ -120,7 +120,7 @@ import ActivityKit
       let initialState = WalkActivityAttributes.ContentState(
         distanceKm: 0.0,
         durationSeconds: 0,
-        paceMinPerKm: 0.0
+        caloriesBurned: 0.0
       )
       do {
         let activity = try Activity.request(
@@ -140,11 +140,11 @@ import ActivityKit
       guard let activity = typedWalkActivity() else { return }
       let distance = args["distanceKm"] as? Double ?? 0.0
       let duration = args["durationSeconds"] as? Int ?? 0
-      let pace = args["paceMinPerKm"] as? Double ?? 0.0
+      let calories = args["caloriesBurned"] as? Double ?? 0.0
       let updatedState = WalkActivityAttributes.ContentState(
         distanceKm: distance,
         durationSeconds: duration,
-        paceMinPerKm: pace
+        caloriesBurned: calories
       )
       Task {
         await activity.update(.init(state: updatedState, staleDate: nil))

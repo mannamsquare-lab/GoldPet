@@ -38,17 +38,18 @@ struct WalkLiveActivityView: View {
     }
 
     private var formattedDuration: String {
-        let minutes = state.durationSeconds / 60
-        let seconds = state.durationSeconds % 60
-        return String(format: "%02d:%02d", minutes, seconds)
+        let h = state.durationSeconds / 3600
+        let m = (state.durationSeconds % 3600) / 60
+        let s = state.durationSeconds % 60
+        if h > 0 {
+            return String(format: "%d:%02d:%02d", h, m, s)
+        }
+        return String(format: "%02d:%02d", m, s)
     }
 
-    private var formattedPace: String {
-        if state.paceMinPerKm <= 0 { return "0'00\"" }
-        let totalSeconds = Int(state.paceMinPerKm * 60)
-        let m = totalSeconds / 60
-        let s = totalSeconds % 60
-        return "\(m)'\(String(format: "%02d", s))\""
+    private var formattedCalories: String {
+        let cal = Int(state.caloriesBurned)
+        return "\(cal)"
     }
 
     var body: some View {
@@ -87,19 +88,19 @@ struct WalkLiveActivityView: View {
                     .fill(Color.gray.opacity(0.3))
                     .frame(width: 1, height: 32)
 
-                // Pace
+                // Calories
                 VStack(spacing: 2) {
-                    Text(formattedPace)
+                    Text(formattedCalories)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundColor(.black)
-                    Text("페이스")
+                    Text("kcal")
                         .font(.system(size: 11))
                         .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity)
             }
 
-            // Spot action buttons row
+            // Spot action buttons + stop button
             HStack(spacing: 6) {
                 SpotActionButton(
                     icon: "drop.fill",
@@ -118,6 +119,12 @@ struct WalkLiveActivityView: View {
                     label: "사진",
                     url: "goldpet://spot/photo",
                     color: Color(red: 0.3, green: 0.6, blue: 0.85)
+                )
+                SpotActionButton(
+                    icon: "stop.fill",
+                    label: "종료",
+                    url: "goldpet://walk/stop",
+                    color: .red
                 )
             }
             .padding(.horizontal, 4)
@@ -146,6 +153,11 @@ struct DynamicIslandSpotButtons: View {
                 Image(systemName: "camera.fill")
                     .font(.system(size: 14))
                     .foregroundColor(Color(red: 0.3, green: 0.6, blue: 0.85))
+            }
+            Link(destination: URL(string: "goldpet://walk/stop")!) {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.red)
             }
         }
     }

@@ -3,46 +3,15 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="14dp"
+    android:background="#FFF7E6">
 
-    <!-- Header: 아이콘 + 타이틀 + 시간 -->
+    <!-- Stats: 거리 | 시간 | 칼로리 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@mipmap/ic_launcher" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:text="GoldPet 산책 중"
-            android:textSize="13sp"
-            android:textColor="#614108"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/walk_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="00:00:00"
-            android:textSize="13sp"
-            android:textColor="#614108"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Stats: 거리 | 시간 | 페이스 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp">
 
         <!-- 거리 -->
         <LinearLayout
@@ -59,21 +28,23 @@
                 android:text="0.00"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#1F1F1F" />
+                android:textColor="#1F1F1F"
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="킬로미터"
+                android:text="km"
                 android:textSize="11sp"
                 android:textColor="#8B8B8B" />
         </LinearLayout>
 
-        <!-- 구분선 -->
-        <View
+        <!-- 구분선 (RemoteViews는 View를 지원하지 않으므로 ImageView 사용) -->
+        <ImageView
             android:layout_width="1dp"
-            android:layout_height="36dp"
-            android:background="#E0E0E0" />
+            android:layout_height="32dp"
+            android:background="#D4A574"
+            android:importantForAccessibility="no" />
 
         <!-- 시간 -->
         <LinearLayout
@@ -90,7 +61,8 @@
                 android:text="00:00"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#1F1F1F" />
+                android:textColor="#1F1F1F"
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -101,12 +73,13 @@
         </LinearLayout>
 
         <!-- 구분선 -->
-        <View
+        <ImageView
             android:layout_width="1dp"
-            android:layout_height="36dp"
-            android:background="#E0E0E0" />
+            android:layout_height="32dp"
+            android:background="#D4A574"
+            android:importantForAccessibility="no" />
 
-        <!-- 평균 페이스 -->
+        <!-- 칼로리 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -115,44 +88,46 @@
             android:gravity="center">
 
             <TextView
-                android:id="@+id/walk_pace"
+                android:id="@+id/walk_calories"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0'00&quot;"
+                android:text="0"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#1F1F1F" />
+                android:textColor="#1F1F1F"
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="평균 페이스"
+                android:text="kcal"
                 android:textSize="11sp"
                 android:textColor="#8B8B8B" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 스팟 버튼 행: 쉬~ | 응가 | 사진 -->
+    <!-- 스팟 버튼 행: 쉬~ | 응가 | 사진 | 종료 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="10dp">
 
         <TextView
             android:id="@+id/btn_pee"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginEnd="4dp"
+            android:layout_marginEnd="3dp"
             android:text="💧 쉬~"
             android:textSize="12sp"
             android:textColor="#614108"
             android:textStyle="bold"
             android:gravity="center"
-            android:padding="8dp"
-            android:background="@android:color/white" />
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:background="@drawable/notification_btn_bg" />
 
         <TextView
             android:id="@+id/btn_poop"
@@ -166,21 +141,46 @@
             android:textColor="#614108"
             android:textStyle="bold"
             android:gravity="center"
-            android:padding="8dp"
-            android:background="@android:color/white" />
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:background="@drawable/notification_btn_bg" />
 
         <TextView
             android:id="@+id/btn_photo"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="3dp"
             android:text="📷 사진"
             android:textSize="12sp"
             android:textColor="#614108"
             android:textStyle="bold"
             android:gravity="center"
-            android:padding="8dp"
-            android:background="@android:color/white" />
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:background="@drawable/notification_btn_bg" />
+
+        <TextView
+            android:id="@+id/btn_stop"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:text="⏹ 종료"
+            android:textSize="12sp"
+            android:textColor="#D32F2F"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:background="@drawable/notification_btn_bg" />
     </LinearLayout>
+
+    <!-- Hidden fields for data binding -->
+    <TextView
+        android:id="@+id/walk_time"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 </LinearLayout>

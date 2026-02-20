@@ -2,10 +2,12 @@ package com.mannam.goldpet
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import androidx.core.content.FileProvider
 import java.io.File
 
 class MainActivity : FlutterActivity() {
@@ -42,9 +44,17 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        // Walk notification MethodChannel (custom RemoteViews widget)
+        // Walk notification MethodChannel (custom RemoteViews widget + foreground service)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.mannam.goldpet/walk_notification").setMethodCallHandler { call, result ->
             when (call.method) {
+                "startForeground" -> {
+                    if (walkNotificationHelper == null) {
+                        walkNotificationHelper = WalkNotificationHelper(this)
+                    }
+                    val serviceIntent = Intent(this, WalkForegroundService::class.java)
+                    ContextCompat.startForegroundService(this, serviceIntent)
+                    result.success(null)
+                }
                 "show" -> {
                     if (walkNotificationHelper == null) {
                         walkNotificationHelper = WalkNotificationHelper(this)
@@ -52,12 +62,13 @@ class MainActivity : FlutterActivity() {
                     val time = call.argument<String>("time") ?: "00:00:00"
                     val distance = call.argument<String>("distance") ?: "0.00"
                     val duration = call.argument<String>("duration") ?: "00:00"
-                    val pace = call.argument<String>("pace") ?: "0'00\""
-                    walkNotificationHelper!!.show(time, distance, duration, pace)
+                    val calories = call.argument<String>("calories") ?: "0"
+                    walkNotificationHelper!!.show(time, distance, duration, calories)
                     result.success(null)
                 }
                 "cancel" -> {
                     walkNotificationHelper?.cancel()
+                    stopService(Intent(this, WalkForegroundService::class.java))
                     result.success(null)
                 }
                 else -> result.notImplemented()

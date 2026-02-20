@@ -57,6 +57,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Walk foreground service for custom notification widget -->
+        <service
+            android:name=".WalkForegroundService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
+
         <!-- FileProvider for WebView file upload -->
         <provider
             android:name="androidx.core.content.FileProvider"

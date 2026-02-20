@@ -56,6 +56,14 @@ class _HybridAppState extends State<HybridApp> {
       spotAction = uri.pathSegments.first.toUpperCase(); // pee → PEE
     }
 
+    // Handle walk/stop deep link — stop the walk if in progress
+    if (host == 'walk' && uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'stop') {
+      if (WalkScreen.isOnStack) {
+        walkSpotActionController.add('STOP');
+      }
+      return;
+    }
+
     if (host == 'walk' || host == 'spot') {
       if (_isPushingWalkScreen) return; // push in progress, ignore
       if (WalkScreen.isOnStack) {
