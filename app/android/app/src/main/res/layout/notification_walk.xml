@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header: 아이콘 + 타이틀 + 시간 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@mipmap/ic_launcher" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="GoldPet 산책 중"
+            android:textSize="13sp"
+            android:textColor="#614108"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/walk_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00:00"
+            android:textSize="13sp"
+            android:textColor="#614108"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Stats: 거리 | 시간 | 페이스 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+
+        <!-- 거리 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/walk_distance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.00"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#1F1F1F" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="킬로미터"
+                android:textSize="11sp"
+                android:textColor="#8B8B8B" />
+        </LinearLayout>
+
+        <!-- 구분선 -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="36dp"
+            android:background="#E0E0E0" />
+
+        <!-- 시간 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/walk_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#1F1F1F" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="시간"
+                android:textSize="11sp"
+                android:textColor="#8B8B8B" />
+        </LinearLayout>
+
+        <!-- 구분선 -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="36dp"
+            android:background="#E0E0E0" />
+
+        <!-- 평균 페이스 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/walk_pace"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0'00&quot;"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#1F1F1F" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="평균 페이스"
+                android:textSize="11sp"
+                android:textColor="#8B8B8B" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -7,7 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../data/walk_models.dart';
@@ -48,9 +48,9 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   static const double _maxWalkSpeedMps = 4.2; // ~15 km/h
   static const double _minDistanceMeters = 5.0;
 
-  // Lock screen notification (Android only)
-  final FlutterLocalNotificationsPlugin _walkNotification = FlutterLocalNotificationsPlugin();
-  static const int _walkNotificationId = 9999;
+  // MethodChannel for platform-specific walk widget
+  static const _walkWidgetChannel = MethodChannel('com.mannam.goldpet/walk_notification');
+  static const _liveActivityChannel = MethodChannel('com.mannam.goldpet/walk_live_activity');
 
   @override
   void initState() {
@@ -64,7 +64,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
-    _cancelWalkNotification();
+    _stopWalkWidget();
     _durationNotifier.dispose();
     _distanceNotifier.dispose();
     super.dispose();
@@ -180,38 +180,51 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     );
   }
 
-  void _updateWalkNotification(int seconds, double distanceKm) {
-    if (!Platform.isAndroid) return;
-    final time = _formatDuration(seconds);
-    final dist = distanceKm.toStringAsFixed(2);
-    final cal = (distanceKm * 50).toStringAsFixed(0);
-
-    final androidDetails = AndroidNotificationDetails(
-      'walk_tracking',
-      '산책 추적',
-      channelDescription: '산책 중 실시간 정보 표시',
-      importance: Importance.low,
-      priority: Priority.low,
-      ongoing: true,
-      autoCancel: false,
-      showWhen: false,
-      silent: true,
-      styleInformation: BigTextStyleInformation(
-        '거리: $dist km  |  칼로리: $cal kcal',
-        contentTitle: '산책 중  $time',
-      ),
-    );
-
-    _walkNotification.show(
-      id: _walkNotificationId,
-      title: '산책 중  $time',
-      body: '거리: $dist km  |  칼로리: $cal kcal',
-      notificationDetails: NotificationDetails(android: androidDetails),
-    );
+  String _formatPace(double distanceKm, int seconds) {
+    if (distanceKm <= 0 || seconds <= 0) return "--'--\"";
+    final paceMinPerKm = (seconds / 60.0) / distanceKm;
+    if (paceMinPerKm > 60) return "--'--\"";
+    final min = paceMinPerKm.toInt();
+    final sec = ((paceMinPerKm - min) * 60).toInt();
+    return "$min'${sec.toString().padLeft(2, '0')}\"";
   }
 
-  void _cancelWalkNotification() {
-    _walkNotification.cancel(id: _walkNotificationId);
+  void _updateWalkWidget(int seconds, double distanceKm) {
+    final time = _formatDuration(seconds);
+    final pace = _formatPace(distanceKm, seconds);
+
+    if (Platform.isAndroid) {
+      _walkWidgetChannel.invokeMethod('show', {
+        'time': time,
+        'distance': distanceKm.toStringAsFixed(2),
+        'duration': time,
+        'pace': pace,
+      });
+    } else if (Platform.isIOS) {
+      _liveActivityChannel.invokeMethod('update', {
+        'distanceKm': distanceKm,
+        'durationSeconds': seconds,
+        'paceMinPerKm': distanceKm > 0 ? (seconds / 60.0) / distanceKm : 0.0,
+      });
+    }
+  }
+
+  void _startWalkWidget() {
+    if (Platform.isIOS) {
+      _liveActivityChannel.invokeMethod('start');
+    }
+  }
+
+  void _stopWalkWidget() {
+    try {
+      if (Platform.isAndroid) {
+        _walkWidgetChannel.invokeMethod('cancel');
+      } else if (Platform.isIOS) {
+        _liveActivityChannel.invokeMethod('end');
+      }
+    } catch (_) {
+      // Best-effort: widget cleanup may fail during dispose if engine is detaching
+    }
   }
 
   Future<bool> _showBackgroundPermissionDialog() async {
@@ -288,10 +301,12 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       _isWalking = true;
     });
 
+    _startWalkWidget();
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_startTime != null) {
         _durationNotifier.value = DateTime.now().difference(_startTime!).inSeconds;
-        _updateWalkNotification(_durationNotifier.value, _distanceNotifier.value);
+        _updateWalkWidget(_durationNotifier.value, _distanceNotifier.value);
       }
     });
 
@@ -536,7 +551,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
-    _cancelWalkNotification();
+    _stopWalkWidget();
 
     final endTime = DateTime.now();
     final startTime =

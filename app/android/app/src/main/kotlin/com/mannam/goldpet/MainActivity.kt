@@ -8,6 +8,7 @@ import java.io.File
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.mannam.goldpet/file_provider"
+    private var walkNotificationHelper: WalkNotificationHelper? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -31,6 +32,28 @@ class MainActivity : FlutterActivity() {
                 }
             } else {
                 result.notImplemented()
+            }
+        }
+
+        // Walk notification MethodChannel (custom RemoteViews widget)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.mannam.goldpet/walk_notification").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "show" -> {
+                    if (walkNotificationHelper == null) {
+                        walkNotificationHelper = WalkNotificationHelper(this)
+                    }
+                    val time = call.argument<String>("time") ?: "00:00:00"
+                    val distance = call.argument<String>("distance") ?: "0.00"
+                    val duration = call.argument<String>("duration") ?: "00:00"
+                    val pace = call.argument<String>("pace") ?: "0'00\""
+                    walkNotificationHelper!!.show(time, distance, duration, pace)
+                    result.success(null)
+                }
+                "cancel" -> {
+                    walkNotificationHelper?.cancel()
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
         }
     }
