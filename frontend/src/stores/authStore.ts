@@ -70,16 +70,7 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
-        user: state.user ? {
-          id: state.user.id,
-          nickname: state.user.nickname,
-          profileImageUrl: state.user.profileImageUrl,
-          profileImageUrls: state.user.profileImageUrls,
-          hasPet: state.user.hasPet,
-          isNotificationEnabled: state.user.isNotificationEnabled,
-          isActive: state.user.isActive,
-          oauthProvider: state.user.oauthProvider,
-        } : null,
+        user: state.user,
       }),
     }
   )

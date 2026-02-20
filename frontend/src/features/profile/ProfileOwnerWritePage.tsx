@@ -330,10 +330,10 @@ const ProfileOwnerWritePage: React.FC = () => {
             // Invalidate cache to ensure fresh data
             await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
 
-            // Optimistic update
-            if (user) {
+            // Optimistic update — currentUser(API 데이터 우선)를 base로 사용하여 기존 필드 보존
+            if (currentUser) {
                 const updatedUser: User = {
-                    ...user,
+                    ...currentUser,
                     ...updateData,
                     hasPet: hasPet === true,
                     profileImageUrls: validImages,
