@@ -266,6 +266,7 @@ export const petService = {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('category', 'pet');
       const response = await apiClient.post('/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });

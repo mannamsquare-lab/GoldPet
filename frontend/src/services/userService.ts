@@ -66,8 +66,8 @@ export const userService = {
     uploadImage: async (file: File): Promise<string> => {
         try {
             const formData = new FormData();
-            // Checking petService, it uses 'file' key
             formData.append('file', file);
+            formData.append('category', 'profile');
             const response = await apiClient.post('/files/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
