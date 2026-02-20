@@ -67,10 +67,11 @@ class AuthController(
         val user = if (existingUser == null) {
             val newUser = com.goldpet.domain.user.entity.User(
                  oauthProvider = "dev",
-                 oauthId = "dev-user-${System.currentTimeMillis()}",
+                 oauthId = "dev-user-${testEmail.hashCode()}",
                  nickname = testNickname,
                  email = testEmail,
-                 
+                 emailHash = testEmail,
+
                  // Required fields as null/defaults
                  gender = null,
                  birthYear = null,
