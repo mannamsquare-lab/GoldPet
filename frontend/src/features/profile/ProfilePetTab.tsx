@@ -96,7 +96,7 @@ const ProfilePetTab: React.FC = () => {
                 {items.map(attr => {
                     const value = parsedAttributes[attr.code];
                     // Special case for Special Notes -> show full width
-                    if (attr.code === 'TRAIT_SPECIAL_NOTES') {
+                    if (attr.code === 'Note') {
                         return (
                             <dl key={attr.code} className="full_w">
                                 <dt>{attr.name}</dt>
