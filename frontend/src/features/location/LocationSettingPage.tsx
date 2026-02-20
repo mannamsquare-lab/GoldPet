@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { locationService } from '../../services/locationService';
 import { useAuthStore } from '../../stores/authStore';
 import { useAlert } from '../../contexts/AlertContext';
@@ -297,6 +298,7 @@ const REGION_KEYS = Object.keys(REGIONS);
 
 export const LocationSettingPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const currentUser = useAuthStore((state) => state.user);
   const { showAlert } = useAlert();
 
@@ -399,6 +401,14 @@ export const LocationSettingPage = () => {
           mainLocationLng: lng,
         });
       }
+
+      // 위치 변경 후 관련 쿼리 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['homeData'] });
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'friends'
+      });
+      queryClient.invalidateQueries({ queryKey: ['places'] });
 
       navigate(-1);
     } catch (error) {

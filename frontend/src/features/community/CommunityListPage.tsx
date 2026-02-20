@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { communityService } from '../../services/communityService';
 import { systemService } from '../../services/systemService';
+import { CACHE_TIME } from '../../config/queryConfig';
 import './CommunityPage.css';
 
 export default function CommunityListPage() {
@@ -18,11 +19,13 @@ export default function CommunityListPage() {
   const { data: postsData, isLoading } = useQuery({
     queryKey: ['community', 'posts', selectedCategory],
     queryFn: () => communityService.getPosts(selectedCategory),
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const { data: totalCountData } = useQuery({
     queryKey: ['community', 'totalCount'],
     queryFn: () => communityService.getPosts(undefined, 0, 1),
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const { data: publicSettings } = useQuery({

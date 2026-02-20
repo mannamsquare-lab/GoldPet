@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { petService } from '../../services/petService';
 import { userService } from '../../services/userService';
 import { goldService } from '../../services/goldService';
+import { CACHE_TIME } from '../../config/queryConfig';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import { ProfileSettingsSection } from './components/ProfileSettingsSection';
 
@@ -16,24 +17,27 @@ const ProfileOwnerTab: React.FC = () => {
     const { data: apiUser, isLoading: isUserLoading } = useQuery({
         queryKey: ['users', 'me'],
         queryFn: userService.getMe,
+        ...CACHE_TIME.DYNAMIC,
     });
 
     // Merge API data with auth store (API data takes precedence)
     const user = apiUser || authUser;
 
     // Fetch My Pet for Secondary Image
-    const { data: myPets } = useQuery({ queryKey: ['pets', 'my'], queryFn: petService.getMyPets });
+    const { data: myPets } = useQuery({ queryKey: ['pets', 'my'], queryFn: petService.getMyPets, ...CACHE_TIME.DYNAMIC });
     const representativePet = myPets && myPets.length > 0 ? myPets[0] : null;
 
     // Fetch gold balance
     const { data: goldBalance } = useQuery({
         queryKey: ['gold', 'balance'],
         queryFn: goldService.getBalance,
+        ...CACHE_TIME.DYNAMIC,
     });
 
     const { data: stats } = useQuery({
         queryKey: ['users', 'stats'],
         queryFn: () => userService.getMyStats(),
+        ...CACHE_TIME.DYNAMIC,
     });
 
     const formatCount = (n: number): string => {

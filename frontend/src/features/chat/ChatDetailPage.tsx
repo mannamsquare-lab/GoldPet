@@ -12,6 +12,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import { blockService } from '../../services/blockService';
+import { CACHE_TIME } from '../../config/queryConfig';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -203,7 +204,7 @@ const ChatDetailPage = () => {
     const { data: chatRooms } = useQuery({
         queryKey: ['chatRooms'],
         queryFn: chatService.getChatRooms,
-        staleTime: 1000 * 60, // 1 minute
+        ...CACHE_TIME.REAL_TIME,
     });
 
     // Fetch Messages
@@ -211,6 +212,7 @@ const ChatDetailPage = () => {
         queryKey: ['chatMessages', chatId],
         queryFn: () => chatService.getMessages(chatId!),
         enabled: !!chatId,
+        ...CACHE_TIME.REAL_TIME,
     });
 
     // Notify Flutter when entering/leaving chat room (to suppress push notifications)

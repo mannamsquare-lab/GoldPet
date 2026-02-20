@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { blockService } from '../../services/blockService';
 import type { BlockedUser } from '../../services/blockService';
 import { useAlert } from '../../contexts/AlertContext';
+import { CACHE_TIME } from '../../config/queryConfig';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import './BlockManagementPage.css';
 
@@ -13,6 +14,7 @@ const BlockManagementPage: React.FC = () => {
   const { data: blockedUsers = [], isLoading } = useQuery({
     queryKey: ['blocks'],
     queryFn: blockService.getBlockList,
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const unblockMutation = useMutation({

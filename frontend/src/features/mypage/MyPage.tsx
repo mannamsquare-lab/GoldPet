@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { userService } from '../../services/userService';
 import { petService } from '../../services/petService';
 import { goldService } from '../../services/goldService';
+import { CACHE_TIME } from '../../config/queryConfig';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import './MyPage.css';
@@ -47,21 +48,25 @@ const MyPage: React.FC = () => {
   const { data: apiUser } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: userService.getMe,
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const { data: myPets } = useQuery({
     queryKey: ['pets', 'my'],
     queryFn: petService.getMyPets,
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const { data: goldBalance } = useQuery({
     queryKey: ['gold', 'balance'],
     queryFn: goldService.getBalance,
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const { data: stats } = useQuery({
     queryKey: ['users', 'stats'],
     queryFn: () => userService.getMyStats(),
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const formatCount = (n: number): string => {

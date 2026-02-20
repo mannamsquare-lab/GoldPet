@@ -45,8 +45,12 @@ class CacheConfig {
             .withCacheConfiguration("community:posts", postFeedConfig)
             .withCacheConfiguration("community:categories", staticDataConfig)
             .withCacheConfiguration("pet:species", staticDataConfig)
-            .withCacheConfiguration("pet:breeds", staticDataConfig)
+            .withCacheConfiguration("breeds", staticDataConfig)
             .withCacheConfiguration("system:settings", staticDataConfig)
+            .withCacheConfiguration("user:interests", staticDataConfig)
+            .withCacheConfiguration("user:hobbies", staticDataConfig)
+            .withCacheConfiguration("gold:products", staticDataConfig)
+            .withCacheConfiguration("user:stats", postFeedConfig)
             .build()
     }
 }

@@ -7,6 +7,7 @@ import com.goldpet.domain.gold.entity.TransactionType
 import com.goldpet.domain.gold.repository.GoldProductRepository
 import com.goldpet.domain.gold.repository.GoldTransactionRepository
 import com.goldpet.domain.user.repository.UserRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -36,6 +37,7 @@ class GoldService(
         )
     }
 
+    @Cacheable("gold:products")
     fun getProducts(): List<GoldProductResponse> {
         return productRepository.findAllByIsActiveTrueOrderByDisplayOrderAsc()
             .map { GoldProductResponse(

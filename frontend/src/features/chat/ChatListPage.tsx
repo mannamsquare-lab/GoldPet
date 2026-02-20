@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
 import { useAuthStore } from '../../stores/authStore';
+import { CACHE_TIME } from '../../config/queryConfig';
 import { useChatListWebSocket } from '../../hooks/useChatListWebSocket';
 import '../../styles/chat.css';
 import { Loading } from '../../components/common/Loading';
@@ -46,7 +47,7 @@ const ChatListPage = () => {
     const { data: chatRooms, isLoading } = useQuery({
         queryKey: ['chatRooms'],
         queryFn: chatService.getChatRooms,
-        staleTime: 1000 * 30, // 30 seconds
+        ...CACHE_TIME.REAL_TIME,
     });
 
     if (isLoading) return <Loading description="채팅 목록을 불러오고 있어요" />;

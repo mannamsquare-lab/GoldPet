@@ -117,6 +117,7 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["user:interests"], allEntries = true)
     fun createInterest(request: Map<String, Any>): Map<String, Any> {
         val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
         val orderIndex = (request["orderIndex"] as? Number)?.toInt() ?: 0
@@ -126,6 +127,7 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["user:interests"], allEntries = true)
     fun deleteInterest(id: Long) {
         interestRepository.deleteById(id)
     }
@@ -137,6 +139,7 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["user:hobbies"], allEntries = true)
     fun createHobby(request: Map<String, Any>): Map<String, Any> {
         val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
         val orderIndex = (request["orderIndex"] as? Number)?.toInt() ?: 0
@@ -146,6 +149,7 @@ class AdminDataService(
     }
 
     @Transactional
+    @CacheEvict(value = ["user:hobbies"], allEntries = true)
     fun deleteHobby(id: Long) {
         hobbyRepository.deleteById(id)
     }

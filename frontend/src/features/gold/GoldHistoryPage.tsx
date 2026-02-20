@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { goldService } from '../../services/goldService';
+import { CACHE_TIME } from '../../config/queryConfig';
 import TransactionItem from './components/TransactionItem';
 import './GoldPage.css';
 
@@ -13,11 +14,13 @@ function GoldHistoryPage() {
   const { data: balanceData } = useQuery({
     queryKey: ['gold', 'balance'],
     queryFn: goldService.getBalance,
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const { data: transactionsData } = useQuery({
     queryKey: ['gold', 'transactions', filter, page],
     queryFn: () => goldService.getTransactions(page, 20, filter === 'ALL' ? undefined : filter),
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const balance = balanceData?.balance ?? 0;

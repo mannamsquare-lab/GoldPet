@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goldService } from '../../services/goldService';
 import { useAlert } from '../../contexts/AlertContext';
+import { CACHE_TIME } from '../../config/queryConfig';
 import GoldProductCard from './components/GoldProductCard';
 import './GoldPage.css';
 
@@ -11,11 +12,13 @@ function GoldPurchasePage() {
   const { data: balanceData } = useQuery({
     queryKey: ['gold', 'balance'],
     queryFn: goldService.getBalance,
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const { data: productsData } = useQuery({
     queryKey: ['gold', 'products'],
     queryFn: goldService.getProducts,
+    ...CACHE_TIME.SEMI_STATIC,
   });
 
   const chargeMutation = useMutation({

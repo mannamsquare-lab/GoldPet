@@ -14,6 +14,7 @@ import com.goldpet.domain.gold.entity.TransactionType
 import com.goldpet.domain.gold.repository.GoldProductRepository
 import com.goldpet.domain.gold.repository.GoldTransactionRepository
 import com.goldpet.domain.user.repository.UserRepository
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -96,6 +97,7 @@ class AdminEconomyService(
     }
 
     @Transactional
+    @CacheEvict(value = ["gold:products"], allEntries = true)
     fun createProduct(request: GoldProductCreateRequest): GoldProductAdminResponse {
         if (goldProductRepository.findByProductCode(request.productCode) != null) {
             throw IllegalArgumentException("Product code already exists: ${request.productCode}")
@@ -123,6 +125,7 @@ class AdminEconomyService(
     }
 
     @Transactional
+    @CacheEvict(value = ["gold:products"], allEntries = true)
     fun updateProduct(id: Long, request: GoldProductUpdateRequest): GoldProductAdminResponse {
         val product = goldProductRepository.findById(id)
             .orElseThrow { NoSuchElementException("Product not found: $id") }
@@ -149,6 +152,7 @@ class AdminEconomyService(
     }
 
     @Transactional
+    @CacheEvict(value = ["gold:products"], allEntries = true)
     fun deleteProduct(id: Long) {
         val product = goldProductRepository.findById(id)
             .orElseThrow { NoSuchElementException("Product not found: $id") }

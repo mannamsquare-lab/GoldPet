@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { checkinService } from '../../services/checkinService';
+import { CACHE_TIME } from '../../config/queryConfig';
 import PlaceCard from './components/PlaceCard';
 import './CheckInPage.css';
 
@@ -22,6 +23,7 @@ const PlaceListPage: React.FC = () => {
         selectedCategory === '전체' ? undefined : selectedCategory
       );
     },
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const handlePlaceClick = (placeId: number) => {

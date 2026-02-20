@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { homeService } from '../../services/homeService';
 import { friendService, formatPetTag } from '../../services/friendService';
 import { useAlert } from '../../contexts/AlertContext';
+import { CACHE_TIME } from '../../config/queryConfig';
 
 import { Loading } from '../../components/common/Loading';
 import { LocationStatus } from '../../components/common/LocationStatus';
@@ -66,6 +67,7 @@ export default function HomePage() {
     const { data: homeData, isLoading } = useQuery({
         queryKey: ['homeData'],
         queryFn: homeService.getHomeData,
+        ...CACHE_TIME.DYNAMIC,
     });
 
     useEffect(() => {

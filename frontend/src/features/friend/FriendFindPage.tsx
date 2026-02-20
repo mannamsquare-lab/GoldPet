@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { FriendCard } from './FriendCard';
 import { friendService } from '../../services/friendService';
+import { CACHE_TIME } from '../../config/queryConfig';
 
 import { Loading } from '../../components/common/Loading';
 
@@ -72,6 +73,7 @@ export const FriendFindPage = () => {
             return lastPage.last ? undefined : allPages.length;
         },
         enabled: true,
+        ...CACHE_TIME.DYNAMIC,
     });
 
     const { data: petSpecies } = useQuery({

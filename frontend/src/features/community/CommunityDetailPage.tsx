@@ -6,6 +6,7 @@ import { blockService } from '../../services/blockService';
 import { BackButton } from '../../components/common/BackButton';
 import './CommunityPage.css';
 import { useAlert } from '../../contexts/AlertContext';
+import { CACHE_TIME } from '../../config/queryConfig';
 
 export default function CommunityDetailPage() {
   const { postId } = useParams<{ postId: string }>();
@@ -116,6 +117,7 @@ export default function CommunityDetailPage() {
     queryKey: ['community', 'post', postId],
     queryFn: () => communityService.getPostDetail(Number(postId)),
     enabled: !!postId,
+    ...CACHE_TIME.DYNAMIC,
   });
 
   const likeMutation = useMutation({

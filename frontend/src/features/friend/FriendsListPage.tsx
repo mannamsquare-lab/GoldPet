@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FriendCard } from './FriendCard';
 import { friendService } from '../../services/friendService';
+import { CACHE_TIME } from '../../config/queryConfig';
 
 import { Loading } from '../../components/common/Loading';
 
@@ -17,12 +18,14 @@ export const FriendsListPage = () => {
     const { data: mutualLikes, isLoading: isMutualLoading, refetch: refetchMutual } = useQuery({
         queryKey: ['friends', 'likes', 'mutual'],
         queryFn: friendService.getMutualLikes,
+        ...CACHE_TIME.DYNAMIC,
     });
 
     // Fetch My Likes (내가 좋아해)
     const { data: myLikes, isLoading: isMyLoading, refetch: refetchMy } = useQuery({
         queryKey: ['friends', 'likes', 'my'],
         queryFn: friendService.getMyLikes,
+        ...CACHE_TIME.DYNAMIC,
     });
 
     // For now, "likes_me" can reuse mutual or show empty (backend doesn't have this endpoint yet)
@@ -30,6 +33,7 @@ export const FriendsListPage = () => {
     const { data: likesMe, isLoading: isLikesMeLoading, refetch: refetchLikesMe } = useQuery({
         queryKey: ['friends', 'likes', 'received'],
         queryFn: friendService.getReceivedLikes,
+        ...CACHE_TIME.DYNAMIC,
     });
 
     const isLoading = 

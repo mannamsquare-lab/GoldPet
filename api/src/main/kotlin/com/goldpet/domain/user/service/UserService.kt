@@ -22,6 +22,7 @@ import com.goldpet.domain.user.entity.UserProfileImage
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -148,10 +149,12 @@ class UserService(
         return userRepository.save(user)
     }
 
+    @Cacheable("user:interests")
     fun getAllInterests(): List<com.goldpet.domain.user.entity.Interest> {
         return interestRepository.findAllByOrderByOrderIndexAsc()
     }
 
+    @Cacheable("user:hobbies")
     fun getAllHobbies(): List<com.goldpet.domain.user.entity.Hobby> {
         return hobbyRepository.findAllByOrderByOrderIndexAsc()
     }
@@ -227,6 +230,8 @@ class UserService(
         return !userRepository.findByNickname(nickname).isPresent
     }
 
+    // 30초 TTL 자연 만료에 의존 (match/like 이벤트 시 명시적 CacheEvict 없음 — 의도적 설계)
+    @Cacheable(value = ["user:stats"], key = "#userId")
     fun getUserStats(userId: Long): UserStatsResponse {
         val matchingCount = matchRepository.countByUserId(userId)
         val likesCount = likeRepository.countByToUserIdAndStatus(userId, LikeStatus.ACTIVE)
