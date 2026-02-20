@@ -167,7 +167,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 #mainContainer .main_slide {
 	position: relative;
 	overflow: hidden;
-	margin: -65px 0 0;
+	margin: -12.5vw 0 0;
 }
 #mainContainer .main_slide .img_wrap {
 	width: 100%;
@@ -189,7 +189,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 
 #mainContainer .main_slide .main_slide_inside {
 	position: relative;
-	padding: 60px 0 0 16px;
+	padding: 16.67vw 0 0 4.44vw;
 }
 #mainContainer .main_slide .main_slide_inside:after {
 	width: 100%;
@@ -199,9 +199,9 @@ strong, h1, h2, h3, h4, h5, h6 {
 	position: absolute;
 	bottom: 0;
 	left: 0;
-	z-index: 5;
+	z-index: 1;
 	background-image: url(/assets/images/main/main_slide_mask.png);
-	background-position: 0 bottom;
+	background-position: 0 100%;
 	background-size: 100% auto;
 	background-repeat: no-repeat;
 }
@@ -305,7 +305,7 @@ strong, h1, h2, h3, h4, h5, h6 {
 	color: #fff;
 }
 #mainContainer .swiper-slide {
-	width: 324px;
+	width: 90vw;
 	overflow: hidden;
 	position: relative;
 }
@@ -319,12 +319,13 @@ strong, h1, h2, h3, h4, h5, h6 {
 }
 #mainContainer .swiper-inside-prev,
 #mainContainer .swiper-inside-next {
-	width: 24px;
-	height: 24px;
+	width: 6.67vw;
+	height: 6.67vw;
 	position: absolute;
 	background-image: url(/assets/images/main/slide_arrow.svg);
 	z-index: 10;
-	top: 170px;
+	top: 50%;
+	transform: translateY(-50%);
 	-ms-background-position-x: 50%;
 	background-position-x: 50%;
 	-ms-background-position-y: 50%;
@@ -333,10 +334,10 @@ strong, h1, h2, h3, h4, h5, h6 {
 	background-repeat: no-repeat;
 }
 #mainContainer .swiper-inside-prev {
-	left: 20px;
+	left: 5.56vw;
 }
 #mainContainer .swiper-inside-next {
-	right: 20px;
+	right: 5.56vw;
 	rotate: 180deg;
 }
 #mainContainer .ai_profile_banner {
