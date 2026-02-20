@@ -256,13 +256,10 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     if (permission == LocationPermission.whileInUse) {
       final shouldRequest = await _showBackgroundPermissionDialog();
       if (shouldRequest) {
-        if (Platform.isAndroid) {
-          // Android 11+: requestPermission()은 "항상 허용" 다이얼로그를 표시하지 않음
-          await Geolocator.openAppSettings();
-          permission = await Geolocator.checkPermission();
-        } else {
-          permission = await Geolocator.requestPermission();
-        }
+        // Android 11+ / iOS 모두: requestPermission()은 "항상 허용"을 표시하지 않거나
+        // 호출이 무한 대기할 수 있으므로, 설정 화면을 열어 사용자가 직접 변경하도록 함
+        await Geolocator.openAppSettings();
+        permission = await Geolocator.checkPermission();
       }
       // whileInUse로 유지되더라도 진행 (Android foreground service / iOS blue bar)
     }
