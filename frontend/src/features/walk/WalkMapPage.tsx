@@ -15,6 +15,7 @@ export const WalkMapPage = () => {
     const mapInstanceRef = useRef<naver.maps.Map | null>(null);
     const markerRef = useRef<naver.maps.Marker | null>(null);
     const [address, setAddress] = useState('위치 확인 중...');
+    const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [stats, setStats] = useState({ totalDistanceKm: 0, totalDurationMinutes: 0, totalCalories: 0, totalGoldEarned: 0 });
 
     useEffect(() => {
@@ -46,8 +47,18 @@ export const WalkMapPage = () => {
                     map: mapInstanceRef.current,
                 });
                 console.log('[WalkMap] Map created successfully');
+                // Check 3 seconds after creation that tiles actually loaded
+                setTimeout(() => {
+                    if (cancelled) return;
+                    const container = mapRef.current;
+                    if (!mapInstanceRef.current || (container && container.querySelectorAll('img').length === 0)) {
+                        console.warn('[WalkMap] No tiles loaded 3s after creation, marking as failed');
+                        setMapLoadFailed(true);
+                    }
+                }, 3000);
             } catch (e) {
                 console.error('[WalkMap] Map creation error:', e);
+                setMapLoadFailed(true);
             }
         };
 
@@ -105,6 +116,7 @@ export const WalkMapPage = () => {
                 } else if (attempts >= 50) {
                     console.log('[WalkMap] Maps NOT available after 50 attempts. naver:', !!window.naver, 'maps:', !!window.naver?.maps);
                     clearInterval(pollTimer);
+                    setMapLoadFailed(true);
                 }
             }, 200);
         }
@@ -152,7 +164,20 @@ export const WalkMapPage = () => {
             <div className="walk_wrap">
                 {/* 지도 */}
                 <div className="map_box">
-                    <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+                    {mapLoadFailed ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px' }}>
+                            <p style={{ color: '#8B8B8B', fontSize: '14px' }}>지도를 불러올 수 없습니다</p>
+                            <button
+                                type="button"
+                                onClick={() => window.location.reload()}
+                                style={{ padding: '8px 20px', borderRadius: '20px', border: '1px solid #D4A574', backgroundColor: '#F9ECD2', color: '#614108', fontSize: '13px', cursor: 'pointer' }}
+                            >
+                                새로고침
+                            </button>
+                        </div>
+                    ) : (
+                        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+                    )}
                 </div>
 
                 <div className="txt_wrap">

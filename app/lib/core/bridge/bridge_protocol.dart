@@ -23,6 +23,7 @@ class BridgeProtocol {
   static const String getAppVersion = 'getAppVersion';
   static const String getDeviceInfo = 'getDeviceInfo';
   static const String openSettings = 'openSettings';
+  static const String requestAllPermissions = 'requestAllPermissions';
   
   // 이벤트 타입
   static const String pushNotificationReceived = 'pushNotificationReceived';

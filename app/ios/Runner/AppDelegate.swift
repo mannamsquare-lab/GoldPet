@@ -6,6 +6,8 @@ import ActivityKit
 @main
 @objc class AppDelegate: FlutterAppDelegate {
   private var walkActivity: Any? = nil
+  private var deepLinkChannel: FlutterMethodChannel? = nil
+  private var pendingDeepLink: String? = nil
 
   override func application(
     _ application: UIApplication,
@@ -29,8 +31,30 @@ import ActivityKit
 
     application.registerForRemoteNotifications()
 
-    // Walk Live Activity MethodChannel
     let controller = window?.rootViewController as! FlutterViewController
+
+    // Deep link MethodChannel
+    deepLinkChannel = FlutterMethodChannel(
+      name: "com.mannam.goldpet/deep_link",
+      binaryMessenger: controller.binaryMessenger
+    )
+    deepLinkChannel?.setMethodCallHandler { [weak self] call, result in
+      switch call.method {
+      case "getInitialLink":
+        let link = self?.pendingDeepLink
+        self?.pendingDeepLink = nil
+        result(link)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
+    // Cold start: check if launched via deep link URL
+    if let url = launchOptions?[.url] as? URL {
+      handleDeepLink(url, isColdStart: true)
+    }
+
+    // Walk Live Activity MethodChannel
     let walkChannel = FlutterMethodChannel(
       name: "com.mannam.goldpet/walk_live_activity",
       binaryMessenger: controller.binaryMessenger
@@ -53,6 +77,32 @@ import ActivityKit
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // MARK: - Deep Link Handling
+
+  override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    if handleDeepLink(url, isColdStart: false) {
+      return true
+    }
+    // Let Naver SDK or other plugins handle their callbacks
+    return super.application(app, open: url, options: options)
+  }
+
+  @discardableResult
+  private func handleDeepLink(_ url: URL, isColdStart: Bool) -> Bool {
+    guard url.scheme == "goldpet" else { return false }
+    guard let host = url.host, host == "walk" || host == "spot" else { return false }
+
+    let urlString = url.absoluteString
+    if isColdStart {
+      // Flutter not ready yet — buffer for getInitialLink pull
+      pendingDeepLink = urlString
+    } else {
+      // Warm start — push directly
+      deepLinkChannel?.invokeMethod("onDeepLink", arguments: urlString)
+    }
+    return true
   }
 
   // MARK: - Live Activity Helpers

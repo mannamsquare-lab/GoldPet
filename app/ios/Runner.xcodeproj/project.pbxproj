@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -98,7 +98,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		53A48C112F4806FE00DEB5EB /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		53A48C112F4806FE00DEB5EB /* Exceptions for "WalkActivityWidget" folder in "WalkActivityWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -108,7 +108,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		53A48BFE2F4806FE00DEB5EB /* WalkActivityWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (53A48C112F4806FE00DEB5EB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = WalkActivityWidget; sourceTree = "<group>"; };
+		53A48BFE2F4806FE00DEB5EB /* WalkActivityWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				53A48C112F4806FE00DEB5EB /* Exceptions for "WalkActivityWidget" folder in "WalkActivityWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = WalkActivityWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -262,8 +273,6 @@
 				53A48BFE2F4806FE00DEB5EB /* WalkActivityWidget */,
 			);
 			name = WalkActivityWidgetExtension;
-			packageProductDependencies = (
-			);
 			productName = WalkActivityWidgetExtension;
 			productReference = 53A48BF92F4806FE00DEB5EB /* WalkActivityWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -414,13 +423,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -435,13 +440,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

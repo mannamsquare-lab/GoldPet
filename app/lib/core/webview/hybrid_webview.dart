@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../bridge/bridge_message_handler.dart';
 import '../bridge/native_bridge.dart';
 import '../services/location_service.dart';
+import '../widgets/goldpet_alert_dialog.dart';
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -124,22 +125,10 @@ class _HybridWebViewState extends State<HybridWebView> {
       ..setOnJavaScriptAlertDialog((
         JavaScriptAlertDialogRequest request,
       ) async {
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Alert'),
-              content: Text(request.message),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
+        await showGoldPetAlert(
+          context,
+          message: request.message,
+          confirmText: '확인',
         );
       })
       ..setOnConsoleMessage((JavaScriptConsoleMessage message) {

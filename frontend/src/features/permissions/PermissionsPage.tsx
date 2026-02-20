@@ -11,39 +11,9 @@ export const PermissionsPage = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const results: { [key: string]: any } = {};
-
-      // 위치 권한 요청
-      try {
-        console.log('위치 권한 요청 중...');
-        results.location = await nativeBridge.callMethod('requestLocationPermission');
-        console.log('위치 권한 결과:', results.location);
-      } catch (error) {
-        console.error('위치 권한 요청 실패:', error);
-        results.location = { granted: false, error: error };
-      }
-
-      // 카메라 권한 요청
-      try {
-        console.log('카메라 권한 요청 중...');
-        results.camera = await nativeBridge.callMethod('requestCameraPermission');
-        console.log('카메라 권한 결과:', results.camera);
-      } catch (error) {
-        console.error('카메라 권한 요청 실패:', error);
-        results.camera = { granted: false, error: error };
-      }
-
-      // 사진 권한 요청
-      try {
-        console.log('사진 권한 요청 중...');
-        results.photo = await nativeBridge.callMethod('requestPhotoPermission');
-        console.log('사진 권한 결과:', results.photo);
-      } catch (error) {
-        console.error('사진 권한 요청 실패:', error);
-        results.photo = { granted: false, error: error };
-      }
-
-      // 권한 요청 완료 후 혜택 안내 화면으로 이동
+      // 모든 권한을 한 번에 요청 (Flutter PermissionService가 내부적으로 순차 처리)
+      console.log('모든 권한 일괄 요청 중...');
+      const results = await nativeBridge.callMethod('requestAllPermissions');
       console.log('모든 권한 요청 완료:', results);
       localStorage.setItem('hasSeenPermissions', 'true');
       navigate('/benefits', { replace: true });

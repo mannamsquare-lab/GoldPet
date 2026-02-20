@@ -131,4 +131,56 @@
                 android:textColor="#8B8B8B" />
         </LinearLayout>
     </LinearLayout>
+
+    <!-- 스팟 버튼 행: 쉬~ | 응가 | 사진 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/btn_pee"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="💧 쉬~"
+            android:textSize="12sp"
+            android:textColor="#614108"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="8dp"
+            android:background="@android:color/white" />
+
+        <TextView
+            android:id="@+id/btn_poop"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="🟤 응가"
+            android:textSize="12sp"
+            android:textColor="#614108"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="8dp"
+            android:background="@android:color/white" />
+
+        <TextView
+            android:id="@+id/btn_photo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="📷 사진"
+            android:textSize="12sp"
+            android:textColor="#614108"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="8dp"
+            android:background="@android:color/white" />
+    </LinearLayout>
 </LinearLayout>

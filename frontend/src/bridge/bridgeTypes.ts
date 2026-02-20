@@ -51,7 +51,9 @@ export type NativeMethod =
   // 앱 정보
   | 'getAppVersion'
   | 'getDeviceInfo'
-  | 'openSettings';
+  | 'openSettings'
+  // 권한 일괄 요청
+  | 'requestAllPermissions';
 
 export interface Location {
   latitude: number;

@@ -12,9 +12,16 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../data/walk_models.dart';
 import '../data/walk_repository.dart';
+import '../../../core/widgets/goldpet_alert_dialog.dart';
+
+/// Global stream for delivering spot actions to an existing WalkScreen
+/// without pushing a duplicate. Used by deep link handler in hybrid_app.dart.
+final walkSpotActionController = StreamController<String>.broadcast();
 
 class WalkScreen extends ConsumerStatefulWidget {
-  const WalkScreen({super.key});
+  final String? initialSpotAction;
+
+  const WalkScreen({super.key, this.initialSpotAction});
 
   @override
   ConsumerState<WalkScreen> createState() => _WalkScreenState();
@@ -41,6 +48,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   final Set<NMarker> _markers = {};
 
   StreamSubscription<Position>? _positionStreamSubscription;
+  StreamSubscription<String>? _spotActionSubscription;
   Position? _lastAcceptedPosition;
 
   // GPS filtering thresholds
@@ -56,7 +64,19 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Subscribe to global spot action stream (for deep link actions on existing screen)
+    _spotActionSubscription = walkSpotActionController.stream.listen((type) {
+      _addSpot(type);
+    });
     _initializeLocation();
+    // Handle initial spot action from deep link (after location init)
+    if (widget.initialSpotAction != null) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _isWalking) {
+          _addSpot(widget.initialSpotAction!);
+        }
+      });
+    }
   }
 
   @override
@@ -64,6 +84,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
+    _spotActionSubscription?.cancel();
     _stopWalkWidget();
     _durationNotifier.dispose();
     _distanceNotifier.dispose();
@@ -124,60 +145,33 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     }
   }
 
-  void _showServiceDisabledDialog() {
+  void _showServiceDisabledDialog() async {
     if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('위치 서비스 꺼짐'),
-        content: const Text('원활한 산책 기록을 위해 위치 서비스를 켜주세요.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() => _isInitializing = false);
-            },
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Geolocator.openLocationSettings();
-            },
-            child: const Text('설정'),
-          ),
-        ],
-      ),
+    final confirmed = await showGoldPetConfirm(
+      context,
+      message: '원활한 산책 기록을 위해\n위치 서비스를 켜주세요.',
+      confirmText: '설정',
+      cancelText: '취소',
     );
+    if (confirmed) {
+      Geolocator.openLocationSettings();
+    } else {
+      setState(() => _isInitializing = false);
+    }
   }
 
-  void _showPermissionDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('위치 권한 필요'),
-        content: const Text(
-          '산책 경로를 기록하려면 위치 권한이 필요합니다.\n설정에서 "앱을 사용하는 동안 허용"으로 변경해주세요.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() => _isInitializing = false);
-            },
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              openAppSettings();
-            },
-            child: const Text('설정으로 이동'),
-          ),
-        ],
-      ),
+  void _showPermissionDialog() async {
+    final confirmed = await showGoldPetConfirm(
+      context,
+      message: '산책 경로를 기록하려면 위치 권한이 필요합니다.\n설정에서 "앱을 사용하는 동안 허용"으로 변경해주세요.',
+      confirmText: '설정으로 이동',
+      cancelText: '취소',
     );
+    if (confirmed) {
+      openAppSettings();
+    } else {
+      setState(() => _isInitializing = false);
+    }
   }
 
   String _formatPace(double distanceKm, int seconds) {
@@ -229,26 +223,12 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   Future<bool> _showBackgroundPermissionDialog() async {
     if (!mounted) return false;
-    return await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('백그라운드 위치 권한'),
-        content: const Text(
-          '화면이 꺼진 상태에서도 산책 경로를 정확하게 기록하려면 '
-          '"항상 허용" 권한이 필요합니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('나중에'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('허용하기'),
-          ),
-        ],
-      ),
-    ) ?? false;
+    return await showGoldPetConfirm(
+      context,
+      message: '화면이 꺼진 상태에서도 산책 경로를 정확하게 기록하려면\n"항상 허용" 권한이 필요합니다.',
+      confirmText: '허용하기',
+      cancelText: '나중에',
+    );
   }
 
   void _startWalk() async {

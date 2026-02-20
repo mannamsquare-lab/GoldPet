@@ -12,6 +12,7 @@ import 'bridge_protocol.dart';
 import '../services/location_service.dart';
 import '../services/camera_service.dart';
 import '../services/push_notification_service.dart';
+import '../services/permission_service.dart';
 import '../../services/native_auth_service.dart';
 import '../constants/keys.dart';
 import '../constants/app_constants.dart';
@@ -25,12 +26,14 @@ class NativeBridge {
   late final CameraService cameraService;
   late final PushNotificationService pushNotificationService;
   late final NativeAuthService nativeAuthService;
+  late final PermissionService permissionService;
 
   NativeBridge(this.webViewController) {
     locationService = LocationService();
     cameraService = CameraService();
     pushNotificationService = PushNotificationService();
     nativeAuthService = NativeAuthService();
+    permissionService = PermissionService();
 
     // Bridge 연결
     locationService.bridge = this;
@@ -149,6 +152,11 @@ class NativeBridge {
           );
           return {'success': true};
 
+        // 전체 권한 일괄 요청
+        case BridgeProtocol.requestAllPermissions:
+          final result = await permissionService.requestAllPermissions();
+          return result.toJson();
+
         // 위치
         case BridgeProtocol.requestLocationPermission:
           return await locationService.requestPermission();
@@ -261,7 +269,7 @@ class NativeBridge {
         case 'startWalk':
           // Don't await - return immediately so bridge doesn't timeout
           rootNavigatorKey.currentState?.push(
-            MaterialPageRoute(builder: (_) => const WalkScreen()),
+            MaterialPageRoute(builder: (_) => WalkScreen()),
           );
           return {'success': true};
 
