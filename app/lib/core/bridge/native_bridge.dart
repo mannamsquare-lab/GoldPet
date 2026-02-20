@@ -267,6 +267,10 @@ class NativeBridge {
 
         // 산책 (Walk Feature)
         case 'startWalk':
+          // Singleton guard: don't push if WalkScreen already on stack
+          if (WalkScreen.isOnStack) {
+            return {'success': true, 'alreadyActive': true};
+          }
           // Don't await - return immediately so bridge doesn't timeout
           rootNavigatorKey.currentState?.push(
             MaterialPageRoute(builder: (_) => WalkScreen()),

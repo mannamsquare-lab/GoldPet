@@ -171,12 +171,7 @@
   width: 48px;
 }
 
-/* Detail Page */
-#communityDetailPage {
-  min-height: 100vh;
-  background: #fff;
-  padding-bottom: 80px;
-}
+/* Detail Page (uses #communityContainer in JSX, not #communityDetailPage) */
 
 .detail_header {
   display: flex;
@@ -583,7 +578,7 @@
 
 /* Prevent last content from being hidden behind fixed input bar */
 #communityContainer .detail_wrap .comment_wrap {
-  padding-bottom: 70px;
+  padding-bottom: 90px;
 }
 
 /* Base textarea overflow - controlled by JS for scroll behavior */

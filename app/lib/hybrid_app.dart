@@ -15,7 +15,7 @@ class HybridApp extends StatefulWidget {
 
 class _HybridAppState extends State<HybridApp> {
   static const _deepLinkChannel = MethodChannel('com.mannam.goldpet/deep_link');
-  bool _walkScreenActive = false;
+  bool _isPushingWalkScreen = false;
 
   @override
   void initState() {
@@ -57,20 +57,21 @@ class _HybridAppState extends State<HybridApp> {
     }
 
     if (host == 'walk' || host == 'spot') {
-      if (_walkScreenActive) {
+      if (_isPushingWalkScreen) return; // push in progress, ignore
+      if (WalkScreen.isOnStack) {
         // WalkScreen already showing — deliver spot action via global stream
         if (spotAction != null) {
           walkSpotActionController.add(spotAction);
         }
       } else {
         // Push new WalkScreen
-        _walkScreenActive = true;
+        _isPushingWalkScreen = true;
         rootNavigatorKey.currentState?.push(
           MaterialPageRoute(
             builder: (_) => WalkScreen(initialSpotAction: spotAction),
           ),
         ).then((_) {
-          _walkScreenActive = false;
+          _isPushingWalkScreen = false;
         });
       }
     }

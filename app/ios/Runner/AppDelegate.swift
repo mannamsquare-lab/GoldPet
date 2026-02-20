@@ -114,6 +114,7 @@ import ActivityKit
 
   private func startWalkActivity() {
     if #available(iOS 16.2, *) {
+      guard walkActivity == nil else { return } // Prevent duplicate Live Activity
       guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
       let attributes = WalkActivityAttributes(petName: "")
       let initialState = WalkActivityAttributes.ContentState(

@@ -21,6 +21,11 @@ final walkSpotActionController = StreamController<String>.broadcast();
 class WalkScreen extends ConsumerStatefulWidget {
   final String? initialSpotAction;
 
+  /// Singleton guard: true when a WalkScreen is on the Navigator stack.
+  /// Set in initState(), cleared in dispose(). Used by hybrid_app and native_bridge
+  /// to prevent duplicate WalkScreen pushes from deep links or bridge calls.
+  static bool isOnStack = false;
+
   const WalkScreen({super.key, this.initialSpotAction});
 
   @override
@@ -60,13 +65,20 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   static const _walkWidgetChannel = MethodChannel('com.mannam.goldpet/walk_notification');
   static const _liveActivityChannel = MethodChannel('com.mannam.goldpet/walk_live_activity');
 
+  String? _pendingSpotAction;
+
   @override
   void initState() {
     super.initState();
+    WalkScreen.isOnStack = true;
     WidgetsBinding.instance.addObserver(this);
     // Subscribe to global spot action stream (for deep link actions on existing screen)
     _spotActionSubscription = walkSpotActionController.stream.listen((type) {
-      _addSpot(type);
+      if (_isWalking) {
+        _addSpot(type);
+      } else {
+        _pendingSpotAction = type;
+      }
     });
     _initializeLocation();
     // Handle initial spot action from deep link (after location init)
@@ -81,6 +93,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   @override
   void dispose() {
+    WalkScreen.isOnStack = false;
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
@@ -279,6 +292,15 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     });
 
     _startWalkWidget();
+
+    // Execute any pending spot action that arrived before walk started
+    if (_pendingSpotAction != null) {
+      final action = _pendingSpotAction!;
+      _pendingSpotAction = null;
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _isWalking) _addSpot(action);
+      });
+    }
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_startTime != null) {
