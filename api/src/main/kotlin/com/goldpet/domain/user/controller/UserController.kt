@@ -147,10 +147,10 @@ class UserController(
 
     @PutMapping("/me/password")
     fun changePassword(
-        @AuthenticationPrincipal userDetails: UserDetails,
+        @AuthenticationPrincipal principal: UserDetails,
         @RequestBody request: ChangePasswordRequest
     ): ResponseEntity<Void> {
-        val userId = userDetails.username.toLong()
+        val userId = userService.getUserIdFromPrincipal(principal)
         userService.changePassword(userId, request)
         return ResponseEntity.ok().build()
     }
@@ -217,8 +217,8 @@ class UserController(
     }
 
     @GetMapping("/me/stats")
-    fun getMyStats(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<UserStatsResponse> {
-        val userId = userDetails.username.toLong()
+    fun getMyStats(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<UserStatsResponse> {
+        val userId = userService.getUserIdFromPrincipal(principal)
         return ResponseEntity.ok(userService.getUserStats(userId))
     }
 
