@@ -69,6 +69,8 @@
 	<string>This app needs camera access to take pictures.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to location when open.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>산책 중 화면이 꺼져도 경로를 정확하게 기록하기 위해 위치 정보가 필요합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photo library access to upload pictures.</string>
 	<key>NidAppName</key>

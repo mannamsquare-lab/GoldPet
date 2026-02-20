@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../data/walk_models.dart';
@@ -19,7 +20,7 @@ class WalkScreen extends ConsumerStatefulWidget {
   ConsumerState<WalkScreen> createState() => _WalkScreenState();
 }
 
-class _WalkScreenState extends ConsumerState<WalkScreen> {
+class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObserver {
   bool _isWalking = false;
   NaverMapController? _mapController;
   bool _isInitializing = true;
@@ -47,19 +48,34 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
   static const double _maxWalkSpeedMps = 4.2; // ~15 km/h
   static const double _minDistanceMeters = 5.0;
 
+  // Lock screen notification (Android only)
+  final FlutterLocalNotificationsPlugin _walkNotification = FlutterLocalNotificationsPlugin();
+  static const int _walkNotificationId = 9999;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeLocation();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
+    _cancelWalkNotification();
     _durationNotifier.dispose();
     _distanceNotifier.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isWalking && _startTime != null) {
+      // 화면 복귀 시 실제 경과 시간으로 즉시 보정
+      _durationNotifier.value = DateTime.now().difference(_startTime!).inSeconds;
+    }
   }
 
   Future<void> _initializeLocation() async {
@@ -164,6 +180,64 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
     );
   }
 
+  void _updateWalkNotification(int seconds, double distanceKm) {
+    if (!Platform.isAndroid) return;
+    final time = _formatDuration(seconds);
+    final dist = distanceKm.toStringAsFixed(2);
+    final cal = (distanceKm * 50).toStringAsFixed(0);
+
+    final androidDetails = AndroidNotificationDetails(
+      'walk_tracking',
+      '산책 추적',
+      channelDescription: '산책 중 실시간 정보 표시',
+      importance: Importance.low,
+      priority: Priority.low,
+      ongoing: true,
+      autoCancel: false,
+      showWhen: false,
+      silent: true,
+      styleInformation: BigTextStyleInformation(
+        '거리: $dist km  |  칼로리: $cal kcal',
+        contentTitle: '산책 중  $time',
+      ),
+    );
+
+    _walkNotification.show(
+      id: _walkNotificationId,
+      title: '산책 중  $time',
+      body: '거리: $dist km  |  칼로리: $cal kcal',
+      notificationDetails: NotificationDetails(android: androidDetails),
+    );
+  }
+
+  void _cancelWalkNotification() {
+    _walkNotification.cancel(id: _walkNotificationId);
+  }
+
+  Future<bool> _showBackgroundPermissionDialog() async {
+    if (!mounted) return false;
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('백그라운드 위치 권한'),
+        content: const Text(
+          '화면이 꺼진 상태에서도 산책 경로를 정확하게 기록하려면 '
+          '"항상 허용" 권한이 필요합니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('나중에'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('허용하기'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
   void _startWalk() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -185,6 +259,21 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
       return;
     }
 
+    // 백그라운드 위치 권한 요청 (whileInUse일 때만)
+    if (permission == LocationPermission.whileInUse) {
+      final shouldRequest = await _showBackgroundPermissionDialog();
+      if (shouldRequest) {
+        if (Platform.isAndroid) {
+          // Android 11+: requestPermission()은 "항상 허용" 다이얼로그를 표시하지 않음
+          await Geolocator.openAppSettings();
+          permission = await Geolocator.checkPermission();
+        } else {
+          permission = await Geolocator.requestPermission();
+        }
+      }
+      // whileInUse로 유지되더라도 진행 (Android foreground service / iOS blue bar)
+    }
+
     // Initialize state
     _durationNotifier.value = 0;
     _distanceNotifier.value = 0.0;
@@ -200,13 +289,40 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
     });
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _durationNotifier.value++;
+      if (_startTime != null) {
+        _durationNotifier.value = DateTime.now().difference(_startTime!).inSeconds;
+        _updateWalkNotification(_durationNotifier.value, _distanceNotifier.value);
+      }
     });
 
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.best,
-      distanceFilter: 3, // OS-level pre-filter; app-level filter is stricter
-    );
+    late final LocationSettings locationSettings;
+
+    if (Platform.isAndroid) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 3,
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: "GoldPet 산책 중",
+          notificationText: "산책 경로를 기록하고 있습니다",
+          enableWakeLock: true,
+          setOngoing: true,
+        ),
+      );
+    } else if (Platform.isIOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 3,
+        activityType: ActivityType.fitness,
+        pauseLocationUpdatesAutomatically: false,
+        allowBackgroundLocationUpdates: true,
+        showBackgroundLocationIndicator: true,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 3,
+      );
+    }
 
     _positionStreamSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
@@ -420,6 +536,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> {
 
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
+    _cancelWalkNotification();
 
     final endTime = DateTime.now();
     final startTime =
