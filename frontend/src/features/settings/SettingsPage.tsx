@@ -189,8 +189,14 @@ const SettingsPage: React.FC = () => {
             <div className="settings-row">
               <span className="settings-label">연동 계정</span>
               <div className="settings-social-icons">
-                <img src="/assets/images/auth/kakao_logo.svg" alt="카카오" className="settings-social-icon" />
-                <img src="/assets/images/auth/google_logo.svg" alt="구글" className="settings-social-icon" />
+                {user?.oauthProvider && user.oauthProvider !== 'LOCAL' && (
+                  <img
+                    src={`/assets/images/auth/${user.oauthProvider}_logo.svg`}
+                    alt={user.oauthProvider}
+                    className="settings-social-icon"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                )}
               </div>
             </div>
           </div>
