@@ -48,7 +48,7 @@ struct WalkLiveActivityView: View {
     }
 
     private var formattedCalories: String {
-        let cal = Int(state.caloriesBurned)
+        let cal = Int(state.caloriesBurned.rounded())
         return "\(cal)"
     }
 
