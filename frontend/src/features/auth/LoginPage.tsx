@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import apiClient from '../../services/api/client';
 import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 import { useAlert } from '../../contexts/AlertContext';
 import './LoginPage.css';
 
@@ -10,6 +11,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const login = useAuthStore((state) => state.login);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const { showAlert } = useAlert();
 
   const [username, setUsername] = useState('');
@@ -48,6 +50,14 @@ export const LoginPage = () => {
       const { accessToken, refreshToken, user } = response.data;
       login(accessToken, refreshToken, user);
 
+      // 전체 프로필 조회하여 위치 등 누락 필드 보충
+      try {
+        const fullProfile = await userService.getMe();
+        updateUser(fullProfile);
+      } catch (e) {
+        console.warn('프로필 조회 실패:', e);
+      }
+
       // 자동 로그인 설정
       if (autoLogin) {
         localStorage.setItem('autoLogin', 'true');
@@ -70,6 +80,13 @@ export const LoginPage = () => {
             // AuthResponse type - login succeeded
             if (result.accessToken) {
               login(result.accessToken, result.refreshToken, result.user);
+              // 전체 프로필 조회하여 위치 등 누락 필드 보충
+              try {
+                const fullProfile = await userService.getMe();
+                updateUser(fullProfile);
+              } catch (e) {
+                console.warn('프로필 조회 실패:', e);
+              }
               navigate('/home', { replace: true });
             }
           } catch (error: any) {
