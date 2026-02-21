@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*
 import com.goldpet.domain.auth.dto.AvailabilityResponse
 import com.goldpet.domain.user.repository.UserRepository
 
+import com.goldpet.domain.auth.dto.ConfirmLinkRequest
 import com.goldpet.service.auth.SocialLoginService
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
@@ -107,6 +108,12 @@ class AuthController(
             else -> throw IllegalArgumentException("Unsupported provider: $provider")
         }
         return ResponseEntity.ok(authResponse)
+    }
+
+    @PostMapping("/confirm-link")
+    fun confirmLink(@Valid @RequestBody request: ConfirmLinkRequest): ResponseEntity<AuthResponse> {
+        val response = socialLoginService.confirmLink(request.tempToken)
+        return ResponseEntity.ok(response)
     }
 
     @PostMapping("/refresh")

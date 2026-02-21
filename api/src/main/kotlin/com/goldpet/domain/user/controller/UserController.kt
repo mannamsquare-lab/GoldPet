@@ -3,6 +3,8 @@ package com.goldpet.domain.user.controller
 import com.goldpet.domain.user.dto.ChangePasswordRequest
 import com.goldpet.domain.user.dto.DeleteAccountRequest
 import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
+import com.goldpet.domain.user.dto.RegisterDeviceRequest
+import com.goldpet.domain.user.dto.UserDeviceResponse
 import com.goldpet.domain.user.dto.UserProfileUpdateRequest
 import com.goldpet.domain.user.dto.UserResponse
 import com.goldpet.domain.user.dto.FriendLocationResponse
@@ -143,6 +145,43 @@ class UserController(
         val fcmToken = request["fcmToken"]
         userService.updateFcmToken(userId, fcmToken)
         return ResponseEntity.ok().build()
+    }
+
+    @PutMapping("/me/devices")
+    fun registerDevice(
+        @AuthenticationPrincipal principal: UserDetails,
+        @RequestBody request: RegisterDeviceRequest
+    ): ResponseEntity<UserDeviceResponse> {
+        val userId = userService.getUserIdFromPrincipal(principal)
+        val device = userService.registerDevice(userId, request)
+        return ResponseEntity.ok(
+            UserDeviceResponse(
+                id = device.id,
+                deviceId = device.deviceId,
+                deviceType = device.deviceType,
+                deviceName = device.deviceName,
+                appVersion = device.appVersion,
+                lastLoginAt = device.lastLoginAt.toString()
+            )
+        )
+    }
+
+    @GetMapping("/me/devices")
+    fun getActiveDevices(
+        @AuthenticationPrincipal principal: UserDetails
+    ): ResponseEntity<List<UserDeviceResponse>> {
+        val userId = userService.getUserIdFromPrincipal(principal)
+        return ResponseEntity.ok(userService.getActiveDevices(userId))
+    }
+
+    @DeleteMapping("/me/devices/{deviceId}")
+    fun deactivateDevice(
+        @AuthenticationPrincipal principal: UserDetails,
+        @PathVariable deviceId: String
+    ): ResponseEntity<Void> {
+        val userId = userService.getUserIdFromPrincipal(principal)
+        userService.deactivateDevice(userId, deviceId)
+        return ResponseEntity.noContent().build()
     }
 
     @PutMapping("/me/password")

@@ -4,11 +4,16 @@ import { Navigation, Parallax } from 'swiper/modules';
 import { useQuery } from '@tanstack/react-query';
 import { homeService } from '../../services/homeService';
 import { friendService, formatPetTag } from '../../services/friendService';
+import { noticeService } from '../../services/noticeService';
+import type { AppNoticeResponse } from '../../services/noticeService';
 import { useAlert } from '../../contexts/AlertContext';
 import { CACHE_TIME } from '../../config/queryConfig';
 
 import { Loading } from '../../components/common/Loading';
 import { LocationStatus } from '../../components/common/LocationStatus';
+import NoticePopupModal from '../../components/common/NoticePopupModal';
+import MaintenanceBanner from '../../components/common/MaintenanceBanner';
+import EventBanner from '../../components/common/EventBanner';
 
 function formatTimeAgo(endTime: string): string {
     const now = new Date();
@@ -29,6 +34,8 @@ export default function HomePage() {
     const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
     const [, setHiddenIds] = useState<Set<number>>(new Set());
     const [loadingId, setLoadingId] = useState<number | null>(null);
+    const [notices, setNotices] = useState<AppNoticeResponse[]>([]);
+    const [maintenanceNotice, setMaintenanceNotice] = useState<AppNoticeResponse | null>(null);
 
     const handleLike = async (id: number, name: string) => {
         if (loadingId) return;
@@ -63,6 +70,22 @@ export default function HomePage() {
             setLoadingId(null);
         }
     };
+
+    useEffect(() => {
+        const loadNotices = async () => {
+            try {
+                const [activeNotices, maintenance] = await Promise.all([
+                    noticeService.getActiveNotices('home'),
+                    noticeService.getMaintenanceNotice(),
+                ]);
+                setNotices(activeNotices);
+                setMaintenanceNotice(maintenance);
+            } catch (e) {
+                console.warn('Notice loading failed:', e);
+            }
+        };
+        loadNotices();
+    }, []);
 
     const { data: homeData, isLoading } = useQuery({
         queryKey: ['homeData'],
@@ -116,6 +139,8 @@ export default function HomePage() {
 
     return (
         <div id="mainContainer">
+            {maintenanceNotice && <MaintenanceBanner notice={maintenanceNotice} />}
+            <NoticePopupModal notices={notices} />
             <LocationStatus>
                 나에게 호감 있는 친구들이에요. <br />
                 '조하멍' 선택하고 대화 나눠보세요.
@@ -207,6 +232,8 @@ export default function HomePage() {
                     )}
                 </div>
             </div>
+
+            <EventBanner notices={notices} />
 
             {/* 중간 배너 */}
             <section className="ai_profile_banner">

@@ -5,6 +5,8 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:goldpet_app/core/constants/app_constants.dart';
 import 'package:goldpet_app/core/constants/keys.dart';
 import 'package:goldpet_app/features/walk/screens/walk_screen.dart';
+import 'package:goldpet_app/core/services/app_version_service.dart';
+import 'package:goldpet_app/core/widgets/force_update_dialog.dart';
 
 class HybridApp extends StatefulWidget {
   const HybridApp({super.key});
@@ -13,14 +15,60 @@ class HybridApp extends StatefulWidget {
   State<HybridApp> createState() => _HybridAppState();
 }
 
-class _HybridAppState extends State<HybridApp> {
+class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
   static const _deepLinkChannel = MethodChannel('com.mannam.goldpet/deep_link');
   bool _isPushingWalkScreen = false;
+  bool _versionCheckInProgress = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _setupDeepLinkListener();
+    // 앱 시작 시 버전 체크 (첫 프레임 이후 BuildContext 사용 가능)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAppVersion());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAppVersion();
+    }
+  }
+
+  Future<void> _checkAppVersion() async {
+    if (_versionCheckInProgress) return;
+    if (!mounted) return;
+    _versionCheckInProgress = true;
+    try {
+      final info = await AppVersionService.checkVersion();
+      if (info == null || !mounted) return;
+
+      if (info.forceUpdate) {
+        await showForceUpdateDialog(
+          context,
+          updateUrl: info.updateUrl,
+          updateMessage: info.updateMessage,
+        );
+      } else if (info.softUpdate) {
+        final shouldShow = await AppVersionService.shouldShowSoftUpdate();
+        if (shouldShow && mounted) {
+          await showSoftUpdateDialog(
+            context,
+            updateUrl: info.updateUrl,
+            updateMessage: info.updateMessage,
+          );
+        }
+      }
+    } finally {
+      _versionCheckInProgress = false;
+    }
   }
 
   Future<void> _setupDeepLinkListener() async {

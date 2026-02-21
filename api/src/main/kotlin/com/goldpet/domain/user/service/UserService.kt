@@ -1,14 +1,20 @@
 package com.goldpet.domain.user.service
 
+import com.goldpet.domain.auth.repository.UserAuthProviderRepository
 import com.goldpet.domain.friend.entity.LikeStatus
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.user.entity.DeletedUser
+import com.goldpet.domain.user.entity.DeviceType
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.entity.UserDevice
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.event.UserDeletedEvent
 import com.goldpet.domain.user.repository.DeletedUserRepository
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.user.repository.UserDeviceRepository
+import com.goldpet.domain.user.dto.RegisterDeviceRequest
+import com.goldpet.domain.user.dto.UserDeviceResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.user.dto.FriendLocationResponse
 import com.goldpet.domain.user.dto.NotificationSettingsRequest
@@ -28,12 +34,15 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.MessageDigest
+import java.time.LocalDateTime
 
 @Service
 @Transactional(readOnly = true)
 class UserService(
     private val userRepository: UserRepository,
     private val deletedUserRepository: DeletedUserRepository,
+    private val userDeviceRepository: UserDeviceRepository,
+    private val userAuthProviderRepository: UserAuthProviderRepository,
     private val interestRepository: com.goldpet.domain.user.repository.InterestRepository,
     private val hobbyRepository: com.goldpet.domain.user.repository.HobbyRepository,
     private val eventPublisher: ApplicationEventPublisher,
@@ -108,13 +117,90 @@ class UserService(
     fun updateFcmToken(userId: Long, fcmToken: String?): User {
         val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
         user.fcmToken = fcmToken
-        return userRepository.save(user)
+        userRepository.save(user)
+        // Also register/update legacy device entry for backward compatibility
+        val legacyDeviceId = "legacy-$userId"
+        registerDevice(userId, RegisterDeviceRequest(
+            deviceId = legacyDeviceId,
+            fcmToken = fcmToken,
+            deviceType = DeviceType.UNKNOWN
+        ))
+        return user
+    }
+
+    @Transactional
+    fun registerDevice(userId: Long, request: RegisterDeviceRequest): UserDevice {
+        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val existing = userDeviceRepository.findByUserIdAndDeviceId(userId, request.deviceId)
+        if (existing.isPresent) {
+            val device = existing.get()
+            device.fcmToken = request.fcmToken
+            device.deviceType = request.deviceType
+            device.deviceName = request.deviceName
+            device.appVersion = request.appVersion
+            device.lastLoginAt = LocalDateTime.now()
+            device.isActive = true
+            return userDeviceRepository.save(device)
+        }
+        // Check active device limit (max 5)
+        if (userDeviceRepository.countByUserIdAndIsActiveTrue(userId) >= 5) {
+            val oldest = userDeviceRepository.findOldestActiveByUserId(userId).firstOrNull()
+            if (oldest != null) {
+                oldest.isActive = false
+                userDeviceRepository.save(oldest)
+            }
+        }
+        val device = UserDevice(
+            user = user,
+            deviceId = request.deviceId,
+            fcmToken = request.fcmToken,
+            deviceType = request.deviceType,
+            deviceName = request.deviceName,
+            appVersion = request.appVersion,
+            isActive = true,
+            lastLoginAt = LocalDateTime.now()
+        )
+        return userDeviceRepository.save(device)
+    }
+
+    fun getActiveDevices(userId: Long): List<UserDeviceResponse> {
+        return userDeviceRepository.findAllByUserIdAndIsActiveTrue(userId).map { device ->
+            UserDeviceResponse(
+                id = device.id,
+                deviceId = device.deviceId,
+                deviceType = device.deviceType,
+                deviceName = device.deviceName,
+                appVersion = device.appVersion,
+                lastLoginAt = device.lastLoginAt.toString()
+            )
+        }
+    }
+
+    @Transactional
+    fun deactivateDevice(userId: Long, deviceId: String) {
+        val device = userDeviceRepository.findByUserIdAndDeviceId(userId, deviceId)
+            .orElseThrow { NoSuchElementException("Device not found: $deviceId for user: $userId") }
+        device.isActive = false
+        userDeviceRepository.save(device)
     }
 
     @Transactional
     fun updateUserProfile(userId: Long, request: com.goldpet.domain.user.dto.UserProfileUpdateRequest): User {
         val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
-        
+
+        // Immutability check: reject changes to locked fields after profile is verified
+        if (user.profileLockedAt != null) {
+            if (request.gender != null && request.gender != user.gender)
+                throw IllegalArgumentException("성별은 인증 후 변경할 수 없습니다")
+            if (request.birthDate != null && request.birthDate != user.birthDate?.toString())
+                throw IllegalArgumentException("생년월일은 인증 후 변경할 수 없습니다")
+            if (request.phoneNumber != null && request.phoneNumber != user.phoneNumber)
+                throw IllegalArgumentException("전화번호는 인증 후 변경할 수 없습니다")
+            if (request.name != null && request.name != user.name)
+                throw IllegalArgumentException("이름은 인증 후 변경할 수 없습니다")
+        }
+
+        val wasPhoneNull = user.phoneNumber == null
         request.name?.let { user.name = it }
         request.nickname?.let { user.nickname = it }
         request.birthDate?.let { user.birthDate = java.time.LocalDate.parse(it) }
@@ -123,6 +209,11 @@ class UserService(
         request.hasPet?.let { user.hasPet = it }
         request.intro?.let { user.intro = it }
         request.mbti?.let { user.mbti = it }
+
+        // Lock profile on first-time phone number set
+        if (request.phoneNumber != null && wasPhoneNull && user.profileLockedAt == null) {
+            user.profileLockedAt = LocalDateTime.now()
+        }
 
         // Update location
         if (request.mainLocationLat != null && request.mainLocationLng != null) {
@@ -322,6 +413,12 @@ class UserService(
         user.hobbies.clear()
 
         userRepository.save(user)
+
+        // Delete all registered devices
+        userDeviceRepository.deleteAllByUserId(userId)
+
+        // Delete all linked OAuth providers
+        userAuthProviderRepository.deleteAllByUserId(userId)
 
         // Record deletion
         deletedUserRepository.save(

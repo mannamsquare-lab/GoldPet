@@ -113,4 +113,11 @@ class AdminUserManagementController(
     ): ResponseEntity<List<UserListItemResponse>> {
         return ResponseEntity.ok(userManagementService.searchUsers(query, limit))
     }
+
+    @Operation(summary = "프로필 잠금 해제 (인증 필드 재변경 허용)")
+    @PutMapping("/{userId}/unlock-profile")
+    fun unlockUserProfile(@PathVariable userId: Long): ResponseEntity<Map<String, String>> {
+        userManagementService.unlockUserProfile(userId)
+        return ResponseEntity.ok(mapOf("message" to "Profile unlocked for user $userId"))
+    }
 }

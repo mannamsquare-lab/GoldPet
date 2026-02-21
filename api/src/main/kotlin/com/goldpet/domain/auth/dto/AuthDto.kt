@@ -1,5 +1,6 @@
 package com.goldpet.domain.auth.dto
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -44,10 +45,12 @@ data class LoginRequest(
 )
 
 // Response DTO after successful authentication
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class AuthResponse(
     val accessToken: String,
     val refreshToken: String,
-    val user: UserInfo
+    val user: UserInfo,
+    val linkSuggestion: LinkSuggestionInfo? = null
 ) {
     data class UserInfo(
         val id: Long,
@@ -56,3 +59,14 @@ data class AuthResponse(
         val email: String?
     )
 }
+
+data class LinkSuggestionInfo(
+    val maskedEmail: String,
+    val existingProvider: String,
+    val tempToken: String
+)
+
+data class ConfirmLinkRequest(
+    @field:NotBlank(message = "Temp token is required")
+    val tempToken: String
+)

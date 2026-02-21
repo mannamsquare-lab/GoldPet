@@ -2,8 +2,19 @@ package com.goldpet.service.auth
 
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.auth.dto.AuthResponse
+import com.goldpet.domain.auth.dto.LinkSuggestionInfo
+import com.goldpet.domain.auth.entity.UserAuthProvider
+import com.goldpet.domain.auth.exception.AccountStatusException
+import com.goldpet.domain.auth.repository.UserAuthProviderRepository
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.io.Decoders
+import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -11,30 +22,36 @@ import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.stereotype.Service
-import org.springframework.web.client.RestTemplate
 import org.springframework.transaction.annotation.Transactional
-
-import com.goldpet.domain.auth.dto.AuthResponse
-import com.goldpet.domain.auth.exception.AccountStatusException
-import com.goldpet.domain.user.entity.UserStatus
+import org.springframework.web.client.RestTemplate
 import java.math.BigInteger
 import java.security.KeyFactory
 import java.security.spec.RSAPublicKeySpec
+import java.time.LocalDateTime
 import java.util.Base64
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.io.Decoders
-import com.fasterxml.jackson.databind.ObjectMapper
+import java.util.Date
+import javax.crypto.SecretKey
 
 @Service
 class SocialLoginService(
     private val userRepository: UserRepository,
-    private val jwtTokenProvider: JwtTokenProvider
+    private val jwtTokenProvider: JwtTokenProvider,
+    private val userAuthProviderRepository: UserAuthProviderRepository,
+    private val systemSettingService: SystemSettingService,
+    @Value("\${app.jwt.secret}")
+    private val jwtSecret: String
 ) {
     private val restTemplate = RestTemplate()
+    private val linkSuggestionTtlMs = 5 * 60 * 1000L // 5 minutes
+
+    private val tempKey: SecretKey by lazy {
+        Keys.hmacShaKeyFor(jwtSecret.toByteArray())
+    }
+
+    // --- Kakao ---
 
     @Transactional
     fun loginWithKakao(accessToken: String): AuthResponse {
-        // 1. Verify Token & Get User Info from Kakao
         val headers = HttpHeaders()
         headers.setBearerAuth(accessToken)
         val entity = HttpEntity<String>(headers)
@@ -49,71 +66,33 @@ class SocialLoginService(
         @Suppress("UNCHECKED_CAST")
         val attributes = response.body as Map<String, Any>
         val kakaoId = attributes["id"].toString()
-        
+
         val account = attributes["kakao_account"] as? Map<*, *>
         val profile = account?.get("profile") as? Map<*, *>
         val props = attributes["properties"] as? Map<*, *>
-        
+
         val email = account?.get("email")?.toString()
-        val nickname = profile?.get("nickname")?.toString() 
+        val nickname = profile?.get("nickname")?.toString()
             ?: props?.get("nickname")?.toString()
         val profileImage = profile?.get("profile_image_url")?.toString()
             ?: props?.get("profile_image")?.toString()
             ?: account?.get("profile_image_url")?.toString()
 
-        // 2. Find or Create User
-        var user = userRepository.findByOauthProviderAndOauthId("kakao", kakaoId).orElse(null)
-        if (user == null && email != null) {
-            user = userRepository.findByEmailHash(email).orElse(null)
-        }
-        if (user == null) {
-            user = User(
-                oauthProvider = "kakao",
-                oauthId = kakaoId,
-                email = email,
-                nickname = nickname,
-                profileImageUrl = profileImage,
-                username = null,
-                password = null,
-                gender = null,
-                birthYear = null,
-                mainLocationText = null,
-                mainLocationGeom = null,
-                name = null,
-                birthDate = null,
-                phoneNumber = null
-            )
-            user = userRepository.save(user)
-        } else {
-             // Update info
-            var changed = false
-            if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
-            if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
-            if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
-            if (user.oauthProvider.isBlank()) { user.oauthProvider = "kakao"; user.oauthId = kakaoId; changed = true }
-            if (changed) userRepository.save(user)
-        }
-
-        // 3. Check account status and Generate JWT
-        checkAccountStatus(user.status)
-        val token = generateJwt(user, attributes)
-        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
-
-        return AuthResponse(
-            accessToken = token,
-            refreshToken = refreshToken,
-            user = AuthResponse.UserInfo(
-                id = user.id,
-                username = user.username ?: user.nickname ?: "User",
-                nickname = user.nickname ?: "User",
-                email = user.email
-            )
+        return handleOAuthLogin(
+            provider = "kakao",
+            oauthId = kakaoId,
+            email = email,
+            nickname = nickname,
+            profileImage = profileImage,
+            attributes = attributes,
+            skipEmailMatch = false
         )
     }
 
+    // --- Naver ---
+
     @Transactional
     fun loginWithNaver(accessToken: String): AuthResponse {
-        // 1. Verify Token & Get User Info from Naver
         val headers = HttpHeaders()
         headers.setBearerAuth(accessToken)
         val entity = HttpEntity<String>(headers)
@@ -129,130 +108,52 @@ class SocialLoginService(
         val attributes = response.body as Map<String, Any>
         @Suppress("UNCHECKED_CAST")
         val resp = attributes["response"] as Map<String, Any>
-        
+
         val naverId = resp["id"].toString()
         val email = resp["email"]?.toString()
         val nickname = resp["name"]?.toString()
         val profileImage = resp["profile_image"]?.toString()
 
-        // 2. Find or Create User
-        var user = userRepository.findByOauthProviderAndOauthId("naver", naverId).orElse(null)
-        if (user == null && email != null) {
-            user = userRepository.findByEmailHash(email).orElse(null)
-        }
-        if (user == null) {
-            user = User(
-                oauthProvider = "naver",
-                oauthId = naverId,
-                email = email,
-                nickname = nickname,
-                profileImageUrl = profileImage,
-                username = null,
-                password = null,
-                gender = null,
-                birthYear = null,
-                mainLocationText = null,
-                mainLocationGeom = null,
-                name = null,
-                birthDate = null,
-                phoneNumber = null
-            )
-            user = userRepository.save(user)
-        } else {
-            // Update info
-            var changed = false
-            if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
-            if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
-            if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
-            if (user.oauthProvider.isBlank()) { user.oauthProvider = "naver"; user.oauthId = naverId; changed = true }
-            if (changed) userRepository.save(user)
-        }
-
-        // 3. Check account status and Generate JWT
-        checkAccountStatus(user.status)
-        val token = generateJwt(user, attributes)
-        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
-
-        return AuthResponse(
-            accessToken = token,
-            refreshToken = refreshToken,
-            user = AuthResponse.UserInfo(
-                id = user.id,
-                username = user.username ?: user.nickname ?: "User",
-                nickname = user.nickname ?: "User",
-                email = user.email
-            )
+        return handleOAuthLogin(
+            provider = "naver",
+            oauthId = naverId,
+            email = email,
+            nickname = nickname,
+            profileImage = profileImage,
+            attributes = attributes,
+            skipEmailMatch = false
         )
     }
 
+    // --- Google ---
+
     @Transactional
     fun loginWithGoogle(accessToken: String): AuthResponse {
-        // 1. Verify Token & Get User Info from Google
-        // The 'accessToken' parameter here actually contains the 'idToken' from the client
         val url = "https://oauth2.googleapis.com/tokeninfo?id_token=$accessToken"
-
         val response = restTemplate.getForObject(url, Map::class.java)
         @Suppress("UNCHECKED_CAST")
         val attributes = response as Map<String, Any>
-        
+
         val googleId = attributes["sub"].toString()
         val email = attributes["email"]?.toString()
         val nickname = attributes["name"]?.toString()
         val profileImage = attributes["picture"]?.toString()
 
-        // 2. Find or Create User
-        var user = userRepository.findByOauthProviderAndOauthId("google", googleId).orElse(null)
-        if (user == null && email != null) {
-            user = userRepository.findByEmailHash(email).orElse(null)
-        }
-        if (user == null) {
-            user = User(
-                oauthProvider = "google",
-                oauthId = googleId,
-                email = email,
-                nickname = nickname,
-                profileImageUrl = profileImage,
-                username = null,
-                password = null,
-                gender = null,
-                birthYear = null,
-                mainLocationText = null,
-                mainLocationGeom = null,
-                name = null,
-                birthDate = null,
-                phoneNumber = null
-            )
-            user = userRepository.save(user)
-        } else {
-            // Update info
-            var changed = false
-            if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
-            if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
-            if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
-            if (user.oauthProvider.isBlank()) { user.oauthProvider = "google"; user.oauthId = googleId; changed = true }
-            if (changed) userRepository.save(user)
-        }
-
-        // 3. Check account status and Generate JWT
-        checkAccountStatus(user.status)
-        val token = generateJwt(user, attributes)
-        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
-
-        return AuthResponse(
-            accessToken = token,
-            refreshToken = refreshToken,
-            user = AuthResponse.UserInfo(
-                id = user.id,
-                username = user.username ?: user.nickname ?: "User",
-                nickname = user.nickname ?: "User",
-                email = user.email
-            )
+        return handleOAuthLogin(
+            provider = "google",
+            oauthId = googleId,
+            email = email,
+            nickname = nickname,
+            profileImage = profileImage,
+            attributes = attributes,
+            skipEmailMatch = false
         )
     }
 
+    // --- Apple ---
+
     @Transactional
     fun loginWithApple(identityToken: String): AuthResponse {
-        // 1. Get Apple Public Keys
         val appleKeysResponse = restTemplate.getForObject(
             "https://appleid.apple.com/auth/keys",
             Map::class.java
@@ -261,16 +162,14 @@ class SocialLoginService(
         val keys = appleKeysResponse?.get("keys") as? List<Map<String, Any>>
             ?: throw IllegalArgumentException("Failed to get Apple public keys")
 
-        // 2. Parse Header to find kid
         val parts = identityToken.split(".")
         if (parts.size < 2) throw IllegalArgumentException("Invalid Identity Token format")
-        
+
         val headerJson = String(Decoders.BASE64URL.decode(parts[0]))
         @Suppress("UNCHECKED_CAST")
         val header = ObjectMapper().readValue(headerJson, Map::class.java) as Map<String, Any>
         val kid = header["kid"] as String
 
-        // 3. Find matching key
         val keyMap = keys.find { it["kid"] == kid }
             ?: throw IllegalArgumentException("Invalid key identifier")
 
@@ -280,7 +179,6 @@ class SocialLoginService(
         val keyFactory = KeyFactory.getInstance("RSA")
         val publicKey = keyFactory.generatePublic(publicKeySpec)
 
-        // 4. Verify Token
         val claims = Jwts.parser()
             .verifyWith(publicKey)
             .build()
@@ -289,47 +187,122 @@ class SocialLoginService(
 
         val appleId = claims.subject
         val email = claims["email"] as? String
-        
-        // 5. Find or Create User
-        var user = userRepository.findByOauthProviderAndOauthId("apple", appleId).orElse(null)
-        if (user == null && email != null) {
-            user = userRepository.findByEmailHash(email).orElse(null)
-        }
-        if (user == null) {
-            user = User(
-                oauthProvider = "apple",
-                oauthId = appleId,
-                email = email,
-                nickname = "Apple User", // Default nickname
-                profileImageUrl = null,
-                username = null,
-                password = null,
-                gender = null,
-                birthYear = null,
-                mainLocationText = null,
-                mainLocationGeom = null,
-                name = null,
-                birthDate = null,
-                phoneNumber = null
-            )
-            user = userRepository.save(user)
-        } else {
-            // Update info if needed
-            var changed = false
-            if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
-            if (user.oauthProvider.isBlank()) { user.oauthProvider = "apple"; user.oauthId = appleId; changed = true }
-            if (changed) userRepository.save(user)
-        }
 
-        // 6. Generate JWT
-        // We need a map for attributes, but for Apple we just used claims. 
-        // We can create a simple map or pass empty if generateJwt doesn't strictly need it for Apple.
-        // generateJwt uses attributes for UserPrincipal.create. 
-        // Let's create a map mimicking what we have.
         val attributes = mapOf(
             "sub" to appleId,
             "email" to (email ?: "")
         )
+
+        // Apple private relay emails skip email matching
+        val skipEmailMatch = email?.contains("@privaterelay.appleid.com") == true
+
+        return handleOAuthLogin(
+            provider = "apple",
+            oauthId = appleId,
+            email = email,
+            nickname = "Apple User",
+            profileImage = null,
+            attributes = attributes,
+            skipEmailMatch = skipEmailMatch
+        )
+    }
+
+    // --- Core logic ---
+
+    private fun handleOAuthLogin(
+        provider: String,
+        oauthId: String,
+        email: String?,
+        nickname: String?,
+        profileImage: String?,
+        attributes: Map<String, Any>,
+        skipEmailMatch: Boolean
+    ): AuthResponse {
+        val linkSuggestionEnabled = systemSettingService.getString("auth.link_suggestion.enabled", "false").toBoolean()
+
+        if (!linkSuggestionEnabled) {
+            // Original auto-link behavior
+            return legacyLogin(provider, oauthId, email, nickname, profileImage, attributes)
+        }
+
+        // 1. Check by provider + oauthId in user_auth_providers table
+        val existingProvider = userAuthProviderRepository.findByProviderAndProviderId(provider, oauthId).orElse(null)
+        if (existingProvider != null) {
+            val user = existingProvider.user
+            checkAccountStatus(user.status)
+            // Also sync legacy users table fields
+            syncUserFields(user, provider, oauthId, email, nickname, profileImage)
+            val token = generateJwt(user, attributes)
+            val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
+            return AuthResponse(
+                accessToken = token,
+                refreshToken = refreshToken,
+                user = AuthResponse.UserInfo(
+                    id = user.id,
+                    username = user.username ?: user.nickname ?: "User",
+                    nickname = user.nickname ?: "User",
+                    email = user.email
+                )
+            )
+        }
+
+        // 2. Email match check
+        val emailMatchedUser = if (!skipEmailMatch && email != null) {
+            userRepository.findByEmailHash(email).orElse(null)
+        } else null
+
+        if (emailMatchedUser != null) {
+            // Email matched a different provider — suggest linking instead of auto-linking
+            val existingProviders = userAuthProviderRepository.findAllByUserId(emailMatchedUser.id)
+            val existingProviderName = existingProviders.firstOrNull()?.provider
+                ?: emailMatchedUser.oauthProvider.ifBlank { "unknown" }
+
+            val tempToken = generateLinkSuggestionToken(emailMatchedUser.id, provider, oauthId)
+            return AuthResponse(
+                accessToken = "",
+                refreshToken = "",
+                user = AuthResponse.UserInfo(
+                    id = 0,
+                    username = "",
+                    nickname = "",
+                    email = null
+                ),
+                linkSuggestion = LinkSuggestionInfo(
+                    maskedEmail = maskEmail(email!!),
+                    existingProvider = existingProviderName,
+                    tempToken = tempToken
+                )
+            )
+        }
+
+        // 3. No match — create new user + dual-write UserAuthProvider
+        var user = User(
+            oauthProvider = provider,
+            oauthId = oauthId,
+            email = email,
+            nickname = nickname ?: if (provider == "apple") "Apple User" else null,
+            profileImageUrl = profileImage,
+            username = null,
+            password = null,
+            gender = null,
+            birthYear = null,
+            mainLocationText = null,
+            mainLocationGeom = null,
+            name = null,
+            birthDate = null,
+            phoneNumber = null
+        )
+        user = userRepository.save(user)
+
+        userAuthProviderRepository.save(
+            UserAuthProvider(
+                user = user,
+                provider = provider,
+                providerId = oauthId,
+                isPrimary = true
+            )
+        )
+
         checkAccountStatus(user.status)
         val token = generateJwt(user, attributes)
         val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
@@ -345,6 +318,123 @@ class SocialLoginService(
             )
         )
     }
+
+    // Original behavior (flag OFF)
+    private fun legacyLogin(
+        provider: String,
+        oauthId: String,
+        email: String?,
+        nickname: String?,
+        profileImage: String?,
+        attributes: Map<String, Any>
+    ): AuthResponse {
+        var user = userRepository.findByOauthProviderAndOauthId(provider, oauthId).orElse(null)
+        if (user == null && email != null) {
+            user = userRepository.findByEmailHash(email).orElse(null)
+        }
+        if (user == null) {
+            user = User(
+                oauthProvider = provider,
+                oauthId = oauthId,
+                email = email,
+                nickname = nickname ?: if (provider == "apple") "Apple User" else null,
+                profileImageUrl = profileImage,
+                username = null,
+                password = null,
+                gender = null,
+                birthYear = null,
+                mainLocationText = null,
+                mainLocationGeom = null,
+                name = null,
+                birthDate = null,
+                phoneNumber = null
+            )
+            user = userRepository.save(user)
+        } else {
+            syncUserFields(user, provider, oauthId, email, nickname, profileImage)
+        }
+
+        checkAccountStatus(user.status)
+        val token = generateJwt(user, attributes)
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
+
+        return AuthResponse(
+            accessToken = token,
+            refreshToken = refreshToken,
+            user = AuthResponse.UserInfo(
+                id = user.id,
+                username = user.username ?: user.nickname ?: "User",
+                nickname = user.nickname ?: "User",
+                email = user.email
+            )
+        )
+    }
+
+    private fun syncUserFields(user: User, provider: String, oauthId: String, email: String?, nickname: String?, profileImage: String?) {
+        var changed = false
+        if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
+        if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
+        if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
+        if (user.oauthProvider.isBlank()) { user.oauthProvider = provider; user.oauthId = oauthId; changed = true }
+        if (changed) userRepository.save(user)
+    }
+
+    // --- Confirm link (called by AuthController) ---
+
+    @Transactional
+    fun confirmLink(tempToken: String): AuthResponse {
+        val claims = try {
+            Jwts.parser()
+                .verifyWith(tempKey)
+                .build()
+                .parseSignedClaims(tempToken)
+                .payload
+        } catch (ex: Exception) {
+            throw IllegalArgumentException("Invalid or expired link token")
+        }
+
+        if (claims["type"] != "LINK_SUGGESTION") {
+            throw IllegalArgumentException("Invalid token type")
+        }
+
+        val userId = claims.subject.toLong()
+        val newProvider = claims["newProvider"] as String
+        val newProviderId = claims["newProviderId"] as String
+
+        val user = userRepository.findById(userId)
+            .orElseThrow { IllegalArgumentException("User not found") }
+
+        // Link the new provider (idempotent)
+        val alreadyLinked = userAuthProviderRepository.findByProviderAndProviderId(newProvider, newProviderId).isPresent
+        if (!alreadyLinked) {
+            userAuthProviderRepository.save(
+                UserAuthProvider(
+                    user = user,
+                    provider = newProvider,
+                    providerId = newProviderId,
+                    isPrimary = false
+                )
+            )
+        }
+
+        checkAccountStatus(user.status)
+        val attributes = mapOf<String, Any>()
+        val token = generateJwt(user, attributes)
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
+
+        return AuthResponse(
+            accessToken = token,
+            refreshToken = refreshToken,
+            user = AuthResponse.UserInfo(
+                id = user.id,
+                username = user.username ?: user.nickname ?: "User",
+                nickname = user.nickname ?: "User",
+                email = user.email
+            )
+        )
+    }
+
+    // --- Helpers ---
 
     private fun checkAccountStatus(status: UserStatus) {
         when (status) {
@@ -363,5 +453,28 @@ class SocialLoginService(
             listOf(SimpleGrantedAuthority("ROLE_USER"))
         )
         return jwtTokenProvider.generateToken(authentication)
+    }
+
+    private fun generateLinkSuggestionToken(userId: Long, newProvider: String, newProviderId: String): String {
+        val now = Date()
+        val expiry = Date(now.time + linkSuggestionTtlMs)
+        return Jwts.builder()
+            .subject(userId.toString())
+            .claim("type", "LINK_SUGGESTION")
+            .claim("newProvider", newProvider)
+            .claim("newProviderId", newProviderId)
+            .issuedAt(now)
+            .expiration(expiry)
+            .signWith(tempKey)
+            .compact()
+    }
+
+    private fun maskEmail(email: String): String {
+        val atIndex = email.indexOf('@')
+        if (atIndex <= 0) return "***"
+        val local = email.substring(0, atIndex)
+        val domain = email.substring(atIndex)
+        val masked = if (local.length <= 1) "*" else local[0] + "***"
+        return "$masked$domain"
     }
 }

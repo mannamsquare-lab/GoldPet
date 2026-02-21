@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Service
 class AuthService(
@@ -44,7 +45,8 @@ class AuthService(
                         birthYear = request.birthYear,
                         mainLocationText = request.mainLocationText,
                         mainLocationGeom = null,
-                        profileImageUrl = null
+                        profileImageUrl = null,
+                        profileLockedAt = LocalDateTime.now()
                 )
         val saved = userRepository.save(user)
         val userPrincipal = UserPrincipal.create(saved)
@@ -111,6 +113,7 @@ class AuthService(
         // However, the request has pet info. I should check if there is a PetRepository.
         // For this task, I will just update the User's nickname and return the response.
         // Real implementation should save Pet info.
+        user.profileLockedAt = LocalDateTime.now()
 
         userRepository.save(user)
 

@@ -26,7 +26,8 @@ data class UserResponse(
     val goldBalance: Int,
     @get:JsonProperty("isActive")
     val isActive: Boolean,
-    val oauthProvider: String
+    val oauthProvider: String,
+    val isProfileLocked: Boolean
 ) {
     companion object {
         fun from(user: User): UserResponse {
@@ -51,7 +52,8 @@ data class UserResponse(
                 hobbies = user.hobbies.map { it.name },
                 goldBalance = user.goldBalance,
                 isActive = user.isActive,
-                oauthProvider = user.oauthProvider
+                oauthProvider = user.oauthProvider,
+                isProfileLocked = user.profileLockedAt != null
             )
         }
 
@@ -78,7 +80,8 @@ data class UserResponse(
                 hobbies = user.hobbies.map { it.name },
                 goldBalance = 0,
                 isActive = user.isActive,
-                oauthProvider = user.oauthProvider
+                oauthProvider = user.oauthProvider,
+                isProfileLocked = user.profileLockedAt != null
             )
         }
     }

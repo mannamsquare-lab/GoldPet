@@ -7,6 +7,7 @@ import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.repository.NotificationRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.user.repository.UserDeviceRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 class NotificationService(
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
+    private val userDeviceRepository: UserDeviceRepository,
     private val fcmPushSender: FcmPushSender
 ) {
     fun getNotifications(userId: Long, category: String?, pageable: Pageable): Page<NotificationResponse> {
@@ -95,19 +97,31 @@ class NotificationService(
         
         val saved = notificationRepository.save(notification)
 
-        // Send FCM push if user has a token and notifications enabled
-        if (user.isNotificationEnabled && user.fcmToken != null && isCategoryEnabled(user, request.type)) {
-            fcmPushSender.send(
-                fcmToken = user.fcmToken!!,
-                title = request.title,
-                message = request.message,
-                data = buildMap {
-                    request.targetId?.let { put("targetId", it.toString()) }
-                    request.targetType?.let { put("targetType", it) }
-                    put("type", request.type.name)
-                    put("notificationId", saved.id.toString())
-                }
-            )
+        // Send FCM push to all active devices if notifications enabled
+        if (user.isNotificationEnabled && isCategoryEnabled(user, request.type)) {
+            val pushData = buildMap<String, String> {
+                request.targetId?.let { put("targetId", it.toString()) }
+                request.targetType?.let { put("targetType", it) }
+                put("type", request.type.name)
+                put("notificationId", saved.id.toString())
+            }
+            val activeDevices = userDeviceRepository.findAllByUserIdAndIsActiveTrue(request.userId)
+            val fcmTokens = activeDevices.mapNotNull { it.fcmToken }.distinct()
+            when {
+                fcmTokens.size == 1 -> fcmPushSender.send(
+                    fcmToken = fcmTokens.first(),
+                    title = request.title,
+                    message = request.message,
+                    data = pushData
+                )
+                fcmTokens.size > 1 -> fcmPushSender.sendToMultiple(
+                    fcmTokens = fcmTokens,
+                    title = request.title,
+                    message = request.message,
+                    data = pushData
+                )
+                // No tokens: skip push, notification already saved
+            }
         }
 
         return NotificationResponse.from(saved)

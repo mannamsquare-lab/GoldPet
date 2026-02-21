@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:uuid/uuid.dart';
 import '../bridge/native_bridge.dart';
 import '../config/environment.dart';
 
@@ -202,7 +206,50 @@ class PushNotificationService {
     }
   }
 
-  /// Register FCM token with backend
+  /// 안정적인 deviceId를 SharedPreferences에서 가져오거나 생성
+  Future<String> getOrCreateDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    const key = 'device_id';
+    String? deviceId = prefs.getString(key);
+    if (deviceId == null) {
+      deviceId = const Uuid().v4();
+      await prefs.setString(key, deviceId);
+      debugPrint('[FCM] Generated new deviceId: $deviceId');
+    } else {
+      debugPrint('[FCM] Using existing deviceId: $deviceId');
+    }
+    return deviceId;
+  }
+
+  /// 디바이스 모델명 가져오기
+  Future<String> _getDeviceName() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return androidInfo.model;
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return iosInfo.utsname.machine;
+      }
+    } catch (e) {
+      debugPrint('[FCM] Failed to get device name: $e');
+    }
+    return Platform.isAndroid ? 'Android' : 'iOS';
+  }
+
+  /// 앱 버전 가져오기
+  Future<String> _getAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      return '${packageInfo.version}+${packageInfo.buildNumber}';
+    } catch (e) {
+      debugPrint('[FCM] Failed to get app version: $e');
+      return '0.1.0';
+    }
+  }
+
+  /// Register FCM token with backend (new device registration endpoint)
   Future<void> registerTokenWithBackend(String accessToken) async {
     try {
       final token = await getToken();
@@ -211,38 +258,83 @@ class PushNotificationService {
         return;
       }
 
-      await _sendTokenToBackend(token, accessToken);
+      await _registerDevice(token, accessToken);
 
       // Listen for token refresh
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
         debugPrint('[FCM] Token refreshed, re-registering...');
-        _sendTokenToBackend(newToken, accessToken);
+        _registerDevice(newToken, accessToken);
       });
     } catch (e) {
       debugPrint('[FCM] Failed to register token: $e');
     }
   }
 
-  Future<void> _sendTokenToBackend(String fcmToken, String accessToken) async {
+  Future<void> _registerDevice(String fcmToken, String accessToken) async {
     try {
+      final deviceId = await getOrCreateDeviceId();
+      final deviceName = await _getDeviceName();
+      final appVersion = await _getAppVersion();
+      final deviceType = Platform.isAndroid ? 'ANDROID' : 'IOS';
+
       final currentEnv = EnvironmentConfig.fromEnv();
-      final uri = Uri.parse('${currentEnv.apiBaseUrl}/api/v1/users/me/fcm-token');
+
+      // Try new device registration endpoint first
+      final uri = Uri.parse('${currentEnv.apiBaseUrl}/api/v1/users/me/devices');
       final response = await http.put(
         uri,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode({'fcmToken': fcmToken}),
+        body: jsonEncode({
+          'deviceId': deviceId,
+          'fcmToken': fcmToken,
+          'deviceType': deviceType,
+          'deviceName': deviceName,
+          'appVersion': appVersion,
+        }),
       );
 
-      if (response.statusCode == 200) {
-        debugPrint('[FCM] Token registered with backend');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[FCM] Device registered with backend (deviceId: $deviceId)');
+        // Pass deviceId to React side via bridge
+        _bridge?.sendEventToReact('deviceRegistered', {
+          'deviceId': deviceId,
+          'fcmToken': fcmToken,
+        });
       } else {
-        debugPrint('[FCM] Token registration failed: ${response.statusCode}');
+        debugPrint('[FCM] Device registration failed: ${response.statusCode}, falling back to legacy endpoint');
+        await _sendTokenToBackendLegacy(fcmToken, accessToken);
       }
     } catch (e) {
-      debugPrint('[FCM] Error sending token to backend: $e');
+      debugPrint('[FCM] Error registering device: $e');
+      // Fallback to legacy endpoint
+      try {
+        await _sendTokenToBackendLegacy(fcmToken, accessToken);
+      } catch (fallbackErr) {
+        debugPrint('[FCM] Legacy fallback also failed: $fallbackErr');
+      }
+    }
+  }
+
+  /// Legacy FCM token endpoint (backward compatibility)
+  Future<void> _sendTokenToBackendLegacy(String fcmToken, String accessToken) async {
+    final currentEnv = EnvironmentConfig.fromEnv();
+    final uri = Uri.parse('${currentEnv.apiBaseUrl}/api/v1/users/me/fcm-token');
+    final response = await http.put(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({'fcmToken': fcmToken}),
+    );
+
+    if (response.statusCode == 200) {
+      debugPrint('[FCM] Token registered with backend (legacy endpoint)');
+    } else {
+      debugPrint('[FCM] Legacy token registration failed: ${response.statusCode}');
     }
   }
 

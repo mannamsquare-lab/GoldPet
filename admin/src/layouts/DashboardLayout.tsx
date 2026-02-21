@@ -16,7 +16,8 @@ import {
   X,
   Bell,
   User,
-  Sparkles
+  Sparkles,
+  BellRing
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +35,7 @@ const NAVIGATION = [
   { name: '산책/지도', path: '/lbs', icon: Map },
   { name: '게이미피케이션', path: '/gamification', icon: Trophy },
   { name: '코드/데이터', path: '/data', icon: Database },
+  { name: '공지/팝업 관리', path: '/notices', icon: BellRing },
   { name: '시스템 관리', path: '/system', icon: Settings },
 ];
 

@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import apiClient from '../../services/api/client';
-import { authService } from '../../services/authService';
+import { authService, LinkSuggestionInfo } from '../../services/authService';
 import { userService } from '../../services/userService';
 import { useAlert } from '../../contexts/AlertContext';
+import { AccountLinkModal } from '../../components/auth/AccountLinkModal';
 import './LoginPage.css';
 
 export const LoginPage = () => {
@@ -19,6 +20,8 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [autoLogin, setAutoLogin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [linkSuggestion, setLinkSuggestion] = useState<LinkSuggestionInfo | null>(null);
+  const [linkProvider, setLinkProvider] = useState<string>('');
   const isAndroid = /Android/i.test(navigator.userAgent);
 
   // Check for OAuth error in URL query parameters
@@ -76,7 +79,14 @@ export const LoginPage = () => {
     const executeLogin = async (loginEmail?: string) => {
         try {
             const result = await authService.openLoginPopup(provider, loginEmail);
-            
+
+            // Check for account link suggestion
+            if (result.linkSuggestion) {
+              setLinkSuggestion(result.linkSuggestion);
+              setLinkProvider(provider);
+              return;
+            }
+
             // AuthResponse type - login succeeded
             if (result.accessToken) {
               login(result.accessToken, result.refreshToken, result.user);
@@ -115,7 +125,32 @@ export const LoginPage = () => {
     }
   };
 
+  const handleConfirmLink = async () => {
+    if (!linkSuggestion) return;
+    try {
+      const result = await authService.confirmLink(linkSuggestion.tempToken);
+      setLinkSuggestion(null);
+      login(result.accessToken, result.refreshToken, result.user);
+      try {
+        const fullProfile = await userService.getMe();
+        updateUser(fullProfile);
+      } catch (e) {
+        console.warn('프로필 조회 실패:', e);
+      }
+      navigate('/home', { replace: true });
+    } catch (error: any) {
+      console.error('Account link failed:', error);
+      showAlert(error.message || '계정 연동에 실패했습니다.');
+    }
+  };
+
+  const handleCancelLink = () => {
+    setLinkSuggestion(null);
+    setLinkProvider('');
+  };
+
   return (
+    <>
     <div className='login-page-container' data-name="로그인_텍스트홀더" data-node-id="4017:22523">
       {/* Title Section */}
       <div className="login-title-section" data-name="Title" data-node-id="4017:22554">
@@ -350,6 +385,16 @@ export const LoginPage = () => {
         </div>
       </div>
     </div>
+
+    {linkSuggestion && (
+      <AccountLinkModal
+        linkSuggestion={linkSuggestion}
+        newProvider={linkProvider}
+        onLink={handleConfirmLink}
+        onCancel={handleCancelLink}
+      />
+    )}
+    </>
   );
 };
 

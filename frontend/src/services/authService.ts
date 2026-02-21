@@ -30,6 +30,12 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface LinkSuggestionInfo {
+  maskedEmail: string;
+  existingProvider: string;
+  tempToken: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -39,6 +45,7 @@ export interface AuthResponse {
     nickname: string;
     email?: string;
   };
+  linkSuggestion?: LinkSuggestionInfo;
 }
 
 // Mock responses
@@ -236,6 +243,17 @@ export const authService = {
         }
       }, 500);
     });
+  },
+
+  confirmLink: async (tempToken: string): Promise<AuthResponse> => {
+    try {
+      const response = await apiClient.post("/auth/confirm-link", { tempToken });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "계정 연동에 실패했습니다."
+      );
+    }
   },
 
   refreshToken: async (): Promise<AuthResponse> => {

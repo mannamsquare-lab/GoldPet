@@ -6,6 +6,7 @@ import com.goldpet.config.crypto.LocalDateEncryptionConverter
 import com.goldpet.domain.common.entity.BaseTimeEntity
 import jakarta.persistence.*
 import java.time.LocalDate
+import java.time.LocalDateTime
 import org.locationtech.jts.geom.Point
 
 @Entity
@@ -52,6 +53,7 @@ class User(
         var isLocationSharingEnabled: Boolean = true,
         @Column(name = "is_profile_public", nullable = false) var isProfilePublic: Boolean = true,
         @Column(name = "fcm_token") var fcmToken: String? = null,
+        @Column(name = "profile_locked_at") var profileLockedAt: LocalDateTime? = null,
         @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
         @OrderBy("orderIndex ASC")
         var profileImages: MutableList<UserProfileImage> = mutableListOf(),

@@ -66,6 +66,8 @@ class SecurityConfig(
                             .permitAll() // Allow static file access
                             .requestMatchers("/api/v1/settings/**")
                             .permitAll() // Allow public settings
+                            .requestMatchers("/api/v1/app/**")
+                            .permitAll() // Allow app version check (no auth required)
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
                             .permitAll() // Allow Swagger
                             .requestMatchers("/error")

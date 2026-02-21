@@ -22,6 +22,7 @@ const ProfileOwnerWritePage: React.FC = () => {
     });
 
     const currentUser = fetchedUser || user;
+    const isProfileLocked = currentUser?.isProfileLocked === true;
     
     // Refs for focus management
     const nameRef = useRef<HTMLInputElement>(null);
@@ -343,9 +344,11 @@ const ProfileOwnerWritePage: React.FC = () => {
             }
 
             navigate('/profile');
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
-            showAlert('저장에 실패했습니다.');
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err?.response?.data?.message || '저장에 실패했습니다.';
+            showAlert(message);
         }
     };
 
@@ -386,31 +389,38 @@ const ProfileOwnerWritePage: React.FC = () => {
                     <div className="profile_write_wrap">
                         <strong>기본 정보</strong>
                         <div className="profile_write_box pink_color">
-                            <div className="write_box">
-                                <label htmlFor="owner_name">이름</label>
-                                <input 
-                                    type="text" 
-                                    id="owner_name" 
+                            <div className={`write_box${isProfileLocked ? ' field_locked' : ''}`}>
+                                <label htmlFor="owner_name" className={isProfileLocked ? 'field_lock_label' : ''}>
+                                    {isProfileLocked && <span className="lock_icon">&#x1F512;</span>}
+                                    이름
+                                </label>
+                                <input
+                                    type="text"
+                                    id="owner_name"
                                     ref={nameRef}
-                                    placeholder="이름을 입력해주세요." 
+                                    placeholder="이름을 입력해주세요."
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) => !isProfileLocked && setName(e.target.value)}
+                                    readOnly={isProfileLocked}
                                 />
+                                {isProfileLocked && (
+                                    <span className="field_lock_hint">인증 후 변경할 수 없습니다. 고객센터에 문의해주세요.</span>
+                                )}
                             </div>
                             <div className="btn_write_box">
                                 <div className="write_box">
                                     <label htmlFor="owner_nickname">닉네임</label>
-                                    <input 
-                                        type="text" 
-                                        id="owner_nickname" 
+                                    <input
+                                        type="text"
+                                        id="owner_nickname"
                                         ref={nicknameRef}
-                                        placeholder="닉네임을 입력해주세요." 
+                                        placeholder="닉네임을 입력해주세요."
                                         value={nickname}
                                         onChange={handleNicknameChange}
                                     />
                                 </div>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     // If checked, button is active (for 'Change'). If NOT checked, active (for 'Check').
                                     // Basically always active unless empty?
                                     className={nickname ? '' : 'disabled'}
@@ -420,84 +430,113 @@ const ProfileOwnerWritePage: React.FC = () => {
                                     {isNicknameChecked ? '닉네임 변경' : '중복 확인'}
                                 </button>
                             </div>
-                            <div className="write_box">
-                                <label htmlFor="owner_birth_day">생년월일</label>
-                                <input 
-                                    type="text" 
-                                    id="owner_birth_day" 
+                            <div className={`write_box${isProfileLocked ? ' field_locked' : ''}`}>
+                                <label htmlFor="owner_birth_day" className={isProfileLocked ? 'field_lock_label' : ''}>
+                                    {isProfileLocked && <span className="lock_icon">&#x1F512;</span>}
+                                    생년월일
+                                </label>
+                                <input
+                                    type="text"
+                                    id="owner_birth_day"
                                     ref={birthDateRef}
-                                    placeholder="생년월일 8자리" 
+                                    placeholder="생년월일 8자리"
                                     value={birthDate}
-                                    onChange={(e) => setBirthDate(e.target.value.replace(/[^0-9]/g, ''))}
+                                    onChange={(e) => !isProfileLocked && setBirthDate(e.target.value.replace(/[^0-9]/g, ''))}
                                     maxLength={8}
+                                    readOnly={isProfileLocked}
                                 />
+                                {isProfileLocked && (
+                                    <span className="field_lock_hint">인증 후 변경할 수 없습니다. 고객센터에 문의해주세요.</span>
+                                )}
                             </div>
                             <div className="btn_write_box">
-                                <div className="write_box">
-                                    <input 
-                                        type="text" 
+                                <div className={`write_box${isProfileLocked ? ' field_locked' : ''}`}>
+                                    {isProfileLocked && (
+                                        <label className="field_lock_label">
+                                            <span className="lock_icon">&#x1F512;</span>
+                                            휴대폰 번호
+                                        </label>
+                                    )}
+                                    <input
+                                        type="text"
                                         inputMode="numeric"
-                                        id="owner_phone_number" 
+                                        id="owner_phone_number"
                                         ref={phoneNumberRef}
-                                        placeholder="휴대폰 11자리" 
+                                        placeholder="휴대폰 11자리"
                                         value={phoneNumber}
-                                        onChange={handlePhoneNumberChange}
+                                        onChange={(e) => !isProfileLocked && handlePhoneNumberChange(e)}
                                         maxLength={11}
+                                        readOnly={isProfileLocked}
                                     />
+                                    {isProfileLocked && (
+                                        <span className="field_lock_hint">인증 후 변경할 수 없습니다. 고객센터에 문의해주세요.</span>
+                                    )}
                                 </div>
-                                <button 
-                                    type="button" 
-                                    className={phoneNumber.length === 11 ? '' : 'disabled'} 
-                                    disabled={phoneNumber.length !== 11}
-                                    onClick={handleRequestVerifyCode}
-                                >
-                                    {isPhoneVerified ? '재인증' : '인증번호'}
-                                </button>
-                                <div className="write_box">
-                                    <input 
-                                        type="text" 
-                                        id="owner_phone_verify_code" 
-                                        placeholder="인증번호 6자리" 
-                                        value={verifyCode}
-                                        onChange={(e) => setVerifyCode(e.target.value.replace(/[^0-9]/g, ''))}
-                                        maxLength={6}
-                                        disabled={isPhoneVerified}
-                                    />
-                                </div>
-                                <button 
-                                    type="button" 
-                                    className={verifyCode.length >= 4 && !isPhoneVerified ? '' : 'disabled'} 
-                                    disabled={isPhoneVerified}
-                                    onClick={handleConfirmVerifyCode}
-                                >
-                                    {isPhoneVerified ? '확인 완료' : '확인'}
-                                </button>
+                                {!isProfileLocked && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className={phoneNumber.length === 11 ? '' : 'disabled'}
+                                            disabled={phoneNumber.length !== 11}
+                                            onClick={handleRequestVerifyCode}
+                                        >
+                                            {isPhoneVerified ? '재인증' : '인증번호'}
+                                        </button>
+                                        <div className="write_box">
+                                            <input
+                                                type="text"
+                                                id="owner_phone_verify_code"
+                                                placeholder="인증번호 6자리"
+                                                value={verifyCode}
+                                                onChange={(e) => setVerifyCode(e.target.value.replace(/[^0-9]/g, ''))}
+                                                maxLength={6}
+                                                disabled={isPhoneVerified}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={verifyCode.length >= 4 && !isPhoneVerified ? '' : 'disabled'}
+                                            disabled={isPhoneVerified}
+                                            onClick={handleConfirmVerifyCode}
+                                        >
+                                            {isPhoneVerified ? '확인 완료' : '확인'}
+                                        </button>
+                                    </>
+                                )}
                             </div>
-                            
-                            <div className="radio_wrap">
-                                <p>성별</p>
+
+                            <div className={`radio_wrap${isProfileLocked ? ' field_locked' : ''}`}>
+                                <p className={isProfileLocked ? 'field_lock_label' : ''}>
+                                    {isProfileLocked && <span className="lock_icon">&#x1F512;</span>}
+                                    성별
+                                </p>
                                 <div className="radio_box">
-                                    <input 
-                                        type="radio" 
-                                        name="owner_gender" 
-                                        id="owner_gender_man" 
+                                    <input
+                                        type="radio"
+                                        name="owner_gender"
+                                        id="owner_gender_man"
                                         value="MALE"
                                         checked={gender === 'MALE'}
-                                        onChange={(e) => setGender(e.target.value)}
+                                        onChange={(e) => !isProfileLocked && setGender(e.target.value)}
+                                        disabled={isProfileLocked}
                                     />
                                     <label htmlFor="owner_gender_man">남성</label>
                                 </div>
                                 <div className="radio_box">
-                                    <input 
-                                        type="radio" 
-                                        name="owner_gender" 
-                                        id="owner_gender_woman" 
+                                    <input
+                                        type="radio"
+                                        name="owner_gender"
+                                        id="owner_gender_woman"
                                         value="FEMALE"
                                         checked={gender === 'FEMALE'}
-                                        onChange={(e) => setGender(e.target.value)}
+                                        onChange={(e) => !isProfileLocked && setGender(e.target.value)}
+                                        disabled={isProfileLocked}
                                     />
                                     <label htmlFor="owner_gender_woman">여성</label>
                                 </div>
+                                {isProfileLocked && (
+                                    <span className="field_lock_hint" style={{ width: '100%' }}>인증 후 변경할 수 없습니다. 고객센터에 문의해주세요.</span>
+                                )}
                             </div>
                             
                             <div className="radio_wrap">

@@ -83,6 +83,14 @@ class AdminUserManagementService(
         userService.adminDeleteAccount(userId, reason = "관리자에 의한 삭제")
     }
 
+    @Transactional
+    fun unlockUserProfile(userId: Long) {
+        val user = userRepository.findById(userId)
+            .orElseThrow { NoSuchElementException("User not found: $userId") }
+        user.profileLockedAt = null
+        userRepository.save(user)
+    }
+
     fun searchUsers(query: String, limit: Int): List<UserListItemResponse> {
         return userRepository.findByNicknameContainingIgnoreCase(query, Pageable.ofSize(limit))
             .content

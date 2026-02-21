@@ -29,6 +29,7 @@ export interface User {
   isNotificationEnabled?: boolean;
   isActive?: boolean;
   oauthProvider?: string;
+  isProfileLocked?: boolean;
 }
 
 interface AuthState {

@@ -132,7 +132,10 @@ class NativeBridge {
         case 'registerFcmToken':
           final accessToken = params?['accessToken'] as String?;
           if (accessToken != null) {
+            // Get stable deviceId before registering
+            final deviceId = await pushNotificationService.getOrCreateDeviceId();
             pushNotificationService.registerTokenWithBackend(accessToken);
+            return {'success': true, 'deviceId': deviceId};
           }
           return {'success': true};
 
