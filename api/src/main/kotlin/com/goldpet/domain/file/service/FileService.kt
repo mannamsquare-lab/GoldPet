@@ -331,21 +331,13 @@ class FileService(
                 val thumbUrl = variantUrls["thumb"] ?: fileAttachment.url
                 val medUrl = variantUrls["medium"] ?: fileAttachment.url
 
-                val updated = com.goldpet.domain.common.entity.FileAttachment(
+                fileAttachmentRepository.updateVariantUrls(
                     id = fileAttachment.id,
-                    ownerUserId = fileAttachment.ownerUserId,
-                    fileType = fileAttachment.fileType,
-                    mimeType = fileAttachment.mimeType,
-                    url = fileAttachment.url,
-                    originalFileName = fileAttachment.originalFileName,
-                    sizeBytes = fileAttachment.sizeBytes,
+                    thumbUrl = thumbUrl,
+                    medUrl = medUrl,
                     width = fileAttachment.width ?: image.width,
-                    height = fileAttachment.height ?: image.height,
-                    thumbnailUrl = thumbUrl,
-                    mediumUrl = medUrl,
-                    durationSec = fileAttachment.durationSec
+                    height = fileAttachment.height ?: image.height
                 )
-                fileAttachmentRepository.save(updated)
                 if (variantUrls.isEmpty()) skipped++ else processed++
             } catch (e: Exception) {
                 log.warn("Backfill failed for FileAttachment id={}: {}", fileAttachment.id, e.message)
