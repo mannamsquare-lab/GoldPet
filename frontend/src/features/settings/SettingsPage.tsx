@@ -5,6 +5,7 @@ import { useAlert } from '../../contexts/AlertContext';
 import { useToast } from '../../contexts/ToastContext';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { settingsService } from '../../services/settingsService';
+import { profileService } from '../../services/profileService';
 import type { NotificationSettings, PrivacySettings } from '../../services/settingsService';
 import './SettingsPage.css';
 
@@ -84,11 +85,20 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleDeleteAccount = () => {
-    showConfirm('정말로 회원탈퇴 하시겠습니까?\n모든 데이터가 삭제되며 복구할 수 없습니다.', () => {
-      showToast('회원탈퇴가 처리되었습니다.', 'success');
-      logout();
-      navigate('/login', { replace: true });
-    });
+    showConfirm(
+      '정말로 회원탈퇴 하시겠습니까?\n모든 데이터가 삭제되며 복구할 수 없습니다.',
+      async () => {
+        try {
+          await profileService.deleteAccount();
+          showToast('회원탈퇴가 처리되었습니다.', 'success');
+          navigate('/login', { replace: true });
+        } catch {
+          showToast('회원탈퇴에 실패했습니다. 다시 시도해주세요.', 'error');
+        }
+      },
+      undefined,
+      { confirmText: '탈퇴하기', cancelText: '취소' }
+    );
   };
 
   const handleDataExport = async () => {

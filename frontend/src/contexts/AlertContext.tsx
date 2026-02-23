@@ -10,9 +10,14 @@ interface AlertOptions {
   cancelText?: string;
 }
 
+interface ConfirmOptions {
+  confirmText?: string;
+  cancelText?: string;
+}
+
 interface AlertContextType {
   showAlert: (message: string, onConfirm?: () => void) => void;
-  showConfirm: (message: string, onConfirm: () => void, onCancel?: () => void) => void;
+  showConfirm: (message: string, onConfirm: () => void, onCancel?: () => void, options?: ConfirmOptions) => void;
   closeAlert: () => void;
 }
 
@@ -33,9 +38,11 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
     setIsOpen(true);
   }, []);
 
-  const showConfirm = useCallback((message: string, onConfirm: () => void, onCancel?: () => void) => {
+  const showConfirm = useCallback((message: string, onConfirm: () => void, onCancel?: () => void, options?: ConfirmOptions) => {
     setAlertState({
       message,
+      confirmText: options?.confirmText,
+      cancelText: options?.cancelText,
       onConfirm: () => {
         setIsOpen(false);
         onConfirm();
