@@ -113,9 +113,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
     const sliderImages = isPetMode ? data.images : ownerImages;
     const sliderSecondary = isPetMode ? (data.profileImageUrl || OWNER_FALLBACK) : (data.images[0] || PET_FALLBACK);
 
-    // Gallery always shows ALL images (pet + owner) for full browsing
-    const allGalleryImages = [...data.images, ...(data.profileImageUrl ? [data.profileImageUrl] : [])];
-    const galleryImages = allGalleryImages.length > 0 ? allGalleryImages : [PET_FALLBACK];
+
 
     return (
         <div className="list_wrap" style={{ position: 'relative' }}>
@@ -142,10 +140,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
                 secondaryImage={sliderSecondary}
                 secondaryImageClass="butler_img"
                 onSecondaryImageClick={() => setIsPetMode(!isPetMode)}
-                onMainImageClick={(index) => {
-                    const galleryIndex = isPetMode ? index : data.images.length;
-                    onOpenGallery?.(galleryImages, Math.min(galleryIndex, galleryImages.length - 1));
-                }}
+                onMainImageClick={(index) => onOpenGallery?.(sliderImages, index)}
                 swiperProps={{
                     modules: [Navigation],
                     navigation: {
