@@ -153,6 +153,10 @@ export default function HomePage() {
                                 ? (item.profileImageUrl || OWNER_FALLBACK)
                                 : (item.images[0] || PET_FALLBACK_FN(index));
 
+                            // Gallery always shows ALL images (pet + owner) for full browsing
+                            const allGalleryImages = [...item.images, ...(item.profileImageUrl ? [item.profileImageUrl] : [])];
+                            const galleryImages = allGalleryImages.length > 0 ? allGalleryImages : [PET_FALLBACK_FN(index)];
+
                             return (
                                 <div className="swiper-slide" key={item.id}>
                                     <div className="img_wrap">
@@ -181,7 +185,8 @@ export default function HomePage() {
                                                             loading="lazy"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setGalleryState({ open: true, images: currentImages, index: imgIdx });
+                                                                const galleryIndex = petMode ? imgIdx : item.images.length + imgIdx;
+                                                                setGalleryState({ open: true, images: galleryImages, index: Math.min(galleryIndex, galleryImages.length - 1) });
                                                             }}
                                                             onError={(e) => {
                                                                 const target = e.currentTarget;

@@ -4048,6 +4048,9 @@ legend {
 .gp-gallery-swiper .swiper-button-prev,
 .gp-gallery-swiper .swiper-button-next {
     color: #fff;
+    --swiper-navigation-color: #fff;
+    --swiper-navigation-size: 40px;
+    z-index: 10;
 }
 
 /* ===== Profile Toggle Cursor ===== */
