@@ -109,7 +109,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
         });
     };
 
-    const ownerImages = data.profileImageUrl ? [data.profileImageUrl] : [OWNER_FALLBACK];
+    const ownerImages = data.profileImages.length > 0 ? data.profileImages : (data.profileImageUrl ? [data.profileImageUrl] : [OWNER_FALLBACK]);
     const sliderImages = isPetMode ? data.images : ownerImages;
     const sliderSecondary = isPetMode ? (data.profileImageUrl || OWNER_FALLBACK) : (data.images[0] || PET_FALLBACK);
 

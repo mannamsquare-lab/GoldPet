@@ -144,11 +144,12 @@ export default function HomePage() {
                     {homeData.recommendations && homeData.recommendations.length > 0 ? (
                         homeData.recommendations.map((item, index) => {
                             const petMode = isPetMode(item.id);
+                            const ownerImgs = item.profileImages.length > 0
+                                ? item.profileImages
+                                : (item.profileImageUrl ? [item.profileImageUrl] : [OWNER_FALLBACK]);
                             const currentImages = petMode
                                 ? (item.images.length > 0 ? item.images : [PET_FALLBACK_FN(index)])
-                                : (item.profileImageUrl
-                                    ? [item.profileImageUrl]
-                                    : [OWNER_FALLBACK]);
+                                : ownerImgs;
                             const butlerSrc = petMode
                                 ? (item.profileImageUrl || OWNER_FALLBACK)
                                 : (item.images[0] || PET_FALLBACK_FN(index));

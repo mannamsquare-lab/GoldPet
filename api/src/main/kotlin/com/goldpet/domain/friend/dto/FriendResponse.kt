@@ -6,6 +6,7 @@ data class FriendResponse(
     val id: Long,
     val nickname: String,
     val profileImageUrl: String?,
+    val profileImages: List<String>,  // Owner's all profile images (multiple)
     val petName: String,
     val petBreed: String,
     val petAge: Int,

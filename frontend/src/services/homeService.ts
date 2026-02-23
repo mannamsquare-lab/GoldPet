@@ -14,6 +14,7 @@ export interface HomeRecommendation {
   gender: 'MALE' | 'FEMALE';
   nickname: string;
   profileImageUrl?: string;
+  profileImages: string[];  // Owner's all profile images
   locationText?: string;
   tags: string[];
 }
@@ -57,6 +58,7 @@ const mockHomeData: HomeDataResponse = {
       gender: 'FEMALE',
       nickname: '지오',
       profileImageUrl: '/assets/images/main/main_slide_butler01.jpg',
+      profileImages: ['/assets/images/main/main_slide_butler01.jpg'],
       locationText: undefined,
       tags: [],
     },
@@ -72,6 +74,7 @@ const mockHomeData: HomeDataResponse = {
       gender: 'FEMALE',
       nickname: '냥집사',
       profileImageUrl: '/assets/images/main/main_slide_butler02.jpg',
+      profileImages: ['/assets/images/main/main_slide_butler02.jpg'],
       locationText: undefined,
       tags: [],
     },
@@ -87,6 +90,7 @@ const mockHomeData: HomeDataResponse = {
       gender: 'MALE',
       nickname: '멍집사',
       profileImageUrl: '/assets/images/main/main_slide_butler03.jpg',
+      profileImages: ['/assets/images/main/main_slide_butler03.jpg'],
       locationText: undefined,
       tags: [],
     },
@@ -117,6 +121,7 @@ export const homeService = {
         gender: r.petGender,
         nickname: r.nickname,
         profileImageUrl: r.profileImageUrl,
+        profileImages: r.profileImages || [],
         locationText: r.locationText,
         tags: r.tags || [],
       }));

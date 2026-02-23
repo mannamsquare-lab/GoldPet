@@ -61,11 +61,14 @@ class LikeController(
             val mainPet = pets.firstOrNull()
             
             val parsed1 = parseTemperamentTags(mainPet?.temperamentTags)
+            val ownerImages1 = user.profileImages.map { it.imageUrl }.toMutableList()
+            if (ownerImages1.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages1.add(user.profileImageUrl!!)
 
             FriendResponse(
                 id = user.id,
                 nickname = user.nickname ?: "Unknown",
                 profileImageUrl = user.profileImageUrl,
+                profileImages = ownerImages1,
                 petName = mainPet?.name ?: "",
                 petBreed = mainPet?.breed?.name ?: "",
                 petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
@@ -95,11 +98,14 @@ class LikeController(
             val mainPet = pets.firstOrNull()
 
             val parsed2 = parseTemperamentTags(mainPet?.temperamentTags)
+            val ownerImages2 = user.profileImages.map { it.imageUrl }.toMutableList()
+            if (ownerImages2.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages2.add(user.profileImageUrl!!)
 
             FriendResponse(
                 id = user.id,
                 nickname = user.nickname ?: "Unknown",
                 profileImageUrl = user.profileImageUrl,
+                profileImages = ownerImages2,
                 petName = mainPet?.name ?: "",
                 petBreed = mainPet?.breed?.name ?: "",
                 petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
@@ -129,11 +135,14 @@ class LikeController(
             val mainPet = pets.firstOrNull()
 
             val parsed3 = parseTemperamentTags(mainPet?.temperamentTags)
+            val ownerImages3 = user.profileImages.map { it.imageUrl }.toMutableList()
+            if (ownerImages3.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages3.add(user.profileImageUrl!!)
 
             FriendResponse(
                 id = user.id,
                 nickname = user.nickname ?: "Unknown",
                 profileImageUrl = user.profileImageUrl,
+                profileImages = ownerImages3,
                 petName = mainPet?.name ?: "",
                 petBreed = mainPet?.breed?.name ?: "",
                 petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
@@ -143,7 +152,6 @@ class LikeController(
                 description = parsed3.note,
                 tags = parsed3.tags,
                 images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
-                // 위치 기반 거리 계산은 위치 공유 기능 구현 시 추가
                 distance = 0.0,
                 status = "offline",
                 location = null,

@@ -114,12 +114,19 @@ class FriendService(
             images
         } ?: emptyList()
 
+        // Get owner profile images: from profileImages relation, fallback to profileImageUrl
+        val ownerImages = user.profileImages.map { it.imageUrl }.toMutableList()
+        if (ownerImages.isEmpty() && !user.profileImageUrl.isNullOrBlank()) {
+            ownerImages.add(user.profileImageUrl!!)
+        }
+
         val parsed = parseTemperamentTags(mainPet?.temperamentTags)
 
         return FriendResponse(
             id = user.id,
             nickname = user.nickname ?: "Unknown",
-            profileImageUrl = user.profileImageUrl, // Owner's profile image (small, secondary)
+            profileImageUrl = user.profileImageUrl, // Owner's main profile image (small, secondary)
+            profileImages = ownerImages, // Owner's all profile images
             petName = mainPet?.name ?: "Unknown",
             petBreed = mainPet?.breed?.name ?: mainPet?.species?.name ?: "Unknown",
             petAge = petAge,

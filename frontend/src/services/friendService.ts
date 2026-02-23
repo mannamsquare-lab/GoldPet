@@ -6,6 +6,7 @@ export interface Friend {
   id: number;
   nickname: string;
   profileImageUrl?: string;
+  profileImages: string[];  // Owner's all profile images
   petName: string;
   petBreed: string;
   petAge: number;
