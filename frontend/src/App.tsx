@@ -49,6 +49,7 @@ import PasswordChangePage from './features/settings/PasswordChangePage';
 import MyPage from './features/mypage/MyPage';
 import MyPostsPage from './features/mypage/MyPostsPage';
 import BlockManagementPage from './features/mypage/BlockManagementPage';
+import MyPagePetEditPage from './features/mypage/MyPagePetEditPage';
 import DormantAccountPage from './features/auth/DormantAccountPage';
 import WithdrawnAccountPage from './features/auth/WithdrawnAccountPage';
 import PasswordExpiryPage from './features/auth/PasswordExpiryPage';
@@ -153,6 +154,7 @@ function App() {
 
               {/* Layout B pages using SubPageLayout internally */}
               <Route path="/mypage" element={<MyPage />} />
+              <Route path="/mypage/pet/edit" element={<MyPagePetEditPage />} />
               <Route path="/mypage/posts" element={<MyPostsPage />} />
               <Route path="/block-management" element={<BlockManagementPage />} />
               <Route path="/profile" element={<ProfilePage />} />
