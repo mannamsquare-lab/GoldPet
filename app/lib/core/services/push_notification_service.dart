@@ -114,7 +114,11 @@ class PushNotificationService {
         debugPrint('[FCM] Notification: ${notification.title} - ${notification.body}');
 
         // 현재 보고 있는 채팅방의 메시지면 알림 스킵
-        final messageChatRoomId = message.data['chatRoomId']?.toString();
+        final messageType = message.data['type']?.toString();
+        final msgTargetType = message.data['targetType']?.toString();
+        final messageChatRoomId = (messageType == 'MESSAGE' || msgTargetType == 'CHAT_ROOM')
+            ? message.data['targetId']?.toString()
+            : null;
         if (messageChatRoomId != null && messageChatRoomId == _currentChatRoomId) {
           debugPrint('[FCM] Skipping notification - user is viewing chat room $messageChatRoomId');
 

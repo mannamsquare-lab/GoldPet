@@ -10,13 +10,20 @@ export function PushNotificationHandler() {
             const data = eventData?.data || eventData;
             if (!data) return;
 
-            const { targetType, targetId } = data;
+            const { targetType, targetId, type } = data;
             switch (targetType) {
                 case 'CHAT_ROOM': navigate(`/chat/${targetId}`); break;
                 case 'POST': navigate(`/community/${targetId}`); break;
                 case 'MATCH': navigate('/friend-list'); break;
                 case 'WALK': navigate(`/walk/detail/${targetId}`); break;
-                default: navigate('/notifications');
+                default:
+                    if (type === 'LIKE' || type === 'MATCH') {
+                        navigate('/friend-list');
+                    } else if (type === 'MESSAGE') {
+                        navigate(`/chat/${targetId}`);
+                    } else {
+                        navigate('/notifications');
+                    }
             }
         });
         return unsubscribe;
