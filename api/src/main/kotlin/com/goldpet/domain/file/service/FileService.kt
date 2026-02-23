@@ -286,6 +286,80 @@ class FileService(
         }
     }
 
+    data class BackfillResult(
+        val total: Long,
+        val processed: Int,
+        val skipped: Int,
+        val failed: Int,
+        val durationMs: Long
+    )
+
+    /**
+     * Backfill thumbnail and medium variants for existing IMAGE records that have none.
+     * Skips GIFs. Processes up to [batchSize] records per call.
+     */
+    @org.springframework.transaction.annotation.Transactional
+    fun backfillVariants(batchSize: Int): BackfillResult {
+        val startMs = System.currentTimeMillis()
+        val pageable = org.springframework.data.domain.PageRequest.of(0, batchSize)
+        val page = fileAttachmentRepository.findImagesWithoutVariants(pageable)
+        val total = page.totalElements
+        var processed = 0
+        var skipped = 0
+        var failed = 0
+
+        for (fileAttachment in page.content) {
+            try {
+                val uri = java.net.URI(fileAttachment.url)
+                val pathParts = uri.path.removePrefix("/").split("/", limit = 2)
+                if (pathParts.size < 2) { skipped++; continue }
+                val bucket = pathParts[0]
+                val key = pathParts[1]
+
+                val s3Object = amazonS3.getObject(bucket, key)
+                val image = ImageIO.read(s3Object.objectContent)
+                if (image == null) { skipped++; continue }
+
+                val variantUrls = generateVariants(
+                    image = image,
+                    baseFilename = key.substringBeforeLast("."),
+                    mimeType = fileAttachment.mimeType,
+                    bucket = bucket
+                )
+
+                if (variantUrls.isEmpty()) { skipped++; continue }
+
+                val updated = com.goldpet.domain.common.entity.FileAttachment(
+                    id = fileAttachment.id,
+                    ownerUserId = fileAttachment.ownerUserId,
+                    fileType = fileAttachment.fileType,
+                    mimeType = fileAttachment.mimeType,
+                    url = fileAttachment.url,
+                    originalFileName = fileAttachment.originalFileName,
+                    sizeBytes = fileAttachment.sizeBytes,
+                    width = fileAttachment.width ?: image.width,
+                    height = fileAttachment.height ?: image.height,
+                    thumbnailUrl = variantUrls["thumb"],
+                    mediumUrl = variantUrls["medium"],
+                    durationSec = fileAttachment.durationSec
+                )
+                fileAttachmentRepository.save(updated)
+                processed++
+            } catch (e: Exception) {
+                log.warn("Backfill failed for FileAttachment id={}: {}", fileAttachment.id, e.message)
+                failed++
+            }
+        }
+
+        return BackfillResult(
+            total = total,
+            processed = processed,
+            skipped = skipped,
+            failed = failed,
+            durationMs = System.currentTimeMillis() - startMs
+        )
+    }
+
     /**
      * Generate a time-limited presigned URL for a file in the private bucket.
      *
