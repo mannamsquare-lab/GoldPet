@@ -168,7 +168,7 @@ const MyPage: React.FC = () => {
           {myPets && myPets.length > 0 ? (
             <div className="mypage-pet-list">
               {myPets.map((pet) => (
-                <div key={pet.id} className="mypage-pet-card" onClick={() => navigate('/profile/pet/edit')}>
+                <div key={pet.id} className="mypage-pet-card" onClick={() => navigate(`/profile/pet/edit?petId=${pet.id}`)}>
                   <img
                     className="mypage-pet-photo"
                     src={pet.profileImageUrl || '/assets/images/common/pet_none_img.svg'}

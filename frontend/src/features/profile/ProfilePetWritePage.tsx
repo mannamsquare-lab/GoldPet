@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainHeader } from '../../components/common/MainHeader';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
@@ -13,10 +13,10 @@ import CustomSelect from '../../components/common/CustomSelect';
 
 const ProfilePetWritePage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const editPetId = searchParams.get('petId') ? Number(searchParams.get('petId')) : null;
     const queryClient = useQueryClient();
     const { showAlert } = useAlert();
-
-
 
     // Fetch Species (Cache for 24 hours)
         
@@ -84,7 +84,9 @@ const ProfilePetWritePage: React.FC = () => {
 
     useEffect(() => {
         if (myPets && myPets.length > 0) {
-            const pet = myPets[0];
+            const pet = editPetId
+                ? myPets.find(p => p.id === editPetId) || myPets[0]
+                : myPets[0];
             setId(pet.id);
             setIsEditMode(true);
             setName(pet.name);
