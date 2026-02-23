@@ -4,6 +4,7 @@ import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
 import './SignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
+import CustomSelect from '../../components/common/CustomSelect';
 
 export const SignupPage = () => {
   const navigate = useNavigate();
@@ -421,26 +422,20 @@ export const SignupPage = () => {
           {/* 성별 */}
           <div className="signup-input-group">
             <label className="signup-input-label">성별</label>
-            <div className="signup-input-wrapper">
-              <select
-                name="gender"
-                className={`signup-input signup-input-rounded signup-select ${errors.gender ? 'error' : ''}`}
-                value={formData.gender}
-                onChange={handleChange}
-                disabled={isLoading}
-              >
-                <option value="">성별을 선택해주세요</option>
-                <option value="MALE">남성</option>
-                <option value="FEMALE">여성</option>
-              </select>
-              <div className="signup-input-icon-wrapper">
-                <img
-                  src="/assets/images/common/ic_arrow_down.svg"
-                  alt="선택"
-                  className="signup-input-icon"
-                />
-              </div>
-            </div>
+            <CustomSelect
+              className={errors.gender ? 'error' : ''}
+              value={formData.gender}
+              options={[
+                { label: '남성', value: 'MALE' },
+                { label: '여성', value: 'FEMALE' },
+              ]}
+              placeholder="성별을 선택해주세요"
+              onChange={(value) => {
+                setFormData(prev => ({ ...prev, gender: value }));
+                if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
+              }}
+              disabled={isLoading}
+            />
             {errors.gender && (
               <span className="signup-error-message">{errors.gender}</span>
             )}

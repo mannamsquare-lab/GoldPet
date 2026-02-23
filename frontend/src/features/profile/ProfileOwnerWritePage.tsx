@@ -8,6 +8,7 @@ import ImageUploadSlider from '../../components/common/ImageUploadSlider';
 import { BottomNav } from '../../components/common/BottomNav';
 
 import { useAlert } from '../../contexts/AlertContext';
+import CustomSelect from '../../components/common/CustomSelect';
 
 const ProfileOwnerWritePage: React.FC = () => {
     const navigate = useNavigate();
@@ -587,24 +588,21 @@ const ProfileOwnerWritePage: React.FC = () => {
                         <div className="profile_write_box purple_color">
                             <div className="write_box write_select">
                                 <label htmlFor="owner_mbti">MBTI</label>
-                                <select name="owner_mbti" id="owner_mbti" value={mbti} onChange={(e) => setMbti(e.target.value)}>
-                                    <option value="INTJ">INTJ</option>
-                                    <option value="INTP">INTP</option>
-                                    <option value="ENTJ">ENTJ</option>
-                                    <option value="ENTP">ENTP</option>
-                                    <option value="INFJ">INFJ</option>
-                                    <option value="INFP">INFP</option>
-                                    <option value="ENFJ">ENFJ</option>
-                                    <option value="ENFP">ENFP</option>
-                                    <option value="ISTJ">ISTJ</option>
-                                    <option value="ISFJ">ISFJ</option>
-                                    <option value="ESTJ">ESTJ</option>
-                                    <option value="ESFJ">ESFJ</option>
-                                    <option value="ISTP">ISTP</option>
-                                    <option value="ISFP">ISFP</option>
-                                    <option value="ESTP">ESTP</option>
-                                    <option value="ESFP">ESFP</option>
-                                </select>
+                                <CustomSelect
+                                    id="owner_mbti"
+                                    value={mbti}
+                                    options={[
+                                        { label: 'INTJ', value: 'INTJ' }, { label: 'INTP', value: 'INTP' },
+                                        { label: 'ENTJ', value: 'ENTJ' }, { label: 'ENTP', value: 'ENTP' },
+                                        { label: 'INFJ', value: 'INFJ' }, { label: 'INFP', value: 'INFP' },
+                                        { label: 'ENFJ', value: 'ENFJ' }, { label: 'ENFP', value: 'ENFP' },
+                                        { label: 'ISTJ', value: 'ISTJ' }, { label: 'ISFJ', value: 'ISFJ' },
+                                        { label: 'ESTJ', value: 'ESTJ' }, { label: 'ESFJ', value: 'ESFJ' },
+                                        { label: 'ISTP', value: 'ISTP' }, { label: 'ISFP', value: 'ISFP' },
+                                        { label: 'ESTP', value: 'ESTP' }, { label: 'ESFP', value: 'ESFP' },
+                                    ]}
+                                    onChange={(value) => setMbti(value)}
+                                />
                             </div>
                             
                             <div className="txt_check_wrap">

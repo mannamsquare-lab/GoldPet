@@ -9,6 +9,7 @@ import { petService, FALLBACK_ATTRIBUTES_SCHEMA } from '../../services/petServic
 import { Loading } from '../../components/common/Loading';
 import KoreanDatePicker from '../../components/common/KoreanDatePicker';
 import { useAlert } from '../../contexts/AlertContext';
+import CustomSelect from '../../components/common/CustomSelect';
 
 const ProfilePetWritePage: React.FC = () => {
     const navigate = useNavigate();
@@ -326,16 +327,12 @@ const ProfilePetWritePage: React.FC = () => {
                             <label htmlFor={`attr_${attr.code}`}>{attr.name}</label>
                             
                             {attr.inputType === 'SELECT' && (
-                                <select 
+                                <CustomSelect
                                     id={`attr_${attr.code}`}
                                     value={attributeValues[attr.code] || ''}
-                                    onChange={(e) => setAttributeValues(prev => ({ ...prev, [attr.code]: e.target.value }))}
-                                >
-                                    <option value="">선택해 주세요</option>
-                                    {attr.options.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
+                                    options={attr.options}
+                                    onChange={(value) => setAttributeValues(prev => ({ ...prev, [attr.code]: value }))}
+                                />
                             )}
 
                             {attr.inputType === 'TEXT' && (
@@ -351,16 +348,12 @@ const ProfilePetWritePage: React.FC = () => {
                                 Implementing as Select or basic Radio if needed. Simple fallback to Select for now unless explicitly Radio style requested.
                             */}
                             {attr.inputType === 'RADIO' && (
-                                <select 
+                                <CustomSelect
                                     id={`attr_${attr.code}`}
                                     value={attributeValues[attr.code] || ''}
-                                    onChange={(e) => setAttributeValues(prev => ({ ...prev, [attr.code]: e.target.value }))}
-                                >
-                                    <option value="">선택해 주세요</option>
-                                    {attr.options.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
+                                    options={attr.options}
+                                    onChange={(value) => setAttributeValues(prev => ({ ...prev, [attr.code]: value }))}
+                                />
                             )}
                         </div>
                     ))}
@@ -441,55 +434,44 @@ const ProfilePetWritePage: React.FC = () => {
 
                                 <div className="write_box write_select">
                                     <label htmlFor="pet_species">종류</label>
-                                    <select 
-                                        id="pet_species" 
-                                        value={speciesId || ''} 
-                                        onChange={(e) => {
-                                            const newSpeciesId = Number(e.target.value);
+                                    <CustomSelect
+                                        id="pet_species"
+                                        value={String(speciesId || '')}
+                                        options={(speciesList || []).map(s => ({ label: s.name, value: String(s.id) }))}
+                                        onChange={(value) => {
+                                            const newSpeciesId = Number(value);
                                             setSpeciesId(newSpeciesId);
                                             setSelectedCategory(''); // Reset Category
                                             setBreedId(undefined);   // Reset Breed
                                         }}
-                                    >
-                                        <option value="">선택해 주세요</option>
-                                        {speciesList?.map(s => (
-                                            <option key={s.id} value={s.id}>{s.name}</option>
-                                        ))}
-                                    </select>
+                                    />
                                 </div>
 
                                 {uniqueCategories.length > 0 && (
                                     <div className="write_box write_select">
                                         <label htmlFor="pet_category">분류</label>
-                                        <select 
-                                            id="pet_category" 
-                                            value={selectedCategory} 
-                                            onChange={(e) => {
-                                                setSelectedCategory(e.target.value);
+                                        <CustomSelect
+                                            id="pet_category"
+                                            value={selectedCategory}
+                                            options={uniqueCategories.map(cat => ({ label: cat, value: cat }))}
+                                            placeholder="전체 (선택 안함)"
+                                            onChange={(value) => {
+                                                setSelectedCategory(value);
                                                 setBreedId(undefined); // Reset Breed when category changes
                                             }}
-                                        >
-                                            <option value="">전체 (선택 안함)</option>
-                                            {uniqueCategories.map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                        </select>
+                                        />
                                     </div>
                                 )}
 
                                 <div className="write_box write_select">
                                     <label htmlFor="pet_breed">품종</label>
-                                    <select 
-                                        id="pet_breed" 
-                                        value={breedId || ''} 
-                                        onChange={(e) => setBreedId(Number(e.target.value))}
-                                        disabled={!speciesId} // Disable if no species selected
-                                    >
-                                        <option value="">선택해 주세요</option>
-                                        {filteredBreeds?.map(breed => (
-                                            <option key={breed.id} value={breed.id}>{breed.name}</option>
-                                        ))}
-                                    </select>
+                                    <CustomSelect
+                                        id="pet_breed"
+                                        value={String(breedId || '')}
+                                        options={(filteredBreeds || []).map(breed => ({ label: breed.name, value: String(breed.id) }))}
+                                        onChange={(value) => setBreedId(Number(value))}
+                                        disabled={!speciesId}
+                                    />
                                 </div>
 
                                 <div className="radio_wrap">

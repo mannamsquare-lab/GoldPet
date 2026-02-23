@@ -5,6 +5,7 @@ import { communityService } from '../../services/communityService';
 import type { CreatePostRequest } from '../../services/communityService';
 import { useAlert } from '../../contexts/AlertContext';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
+import CustomSelect from '../../components/common/CustomSelect';
 
 export default function CommunityWritePage() {
   const navigate = useNavigate();
@@ -210,16 +211,12 @@ export default function CommunityWritePage() {
         {/* Category Selection */}
          <div className="input_wrap">
              <label>카테고리</label>
-             <select
-                 style={{ width: '100%', height: '48px', padding: '0 12px', border: '0', borderRadius: '16px', fontSize: '16px', fontWeight: 500, backgroundColor: 'white' }}
-                 value={formData.categoryId}
-                 disabled={editMode} // Category change not supported on backend
-                 onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
-             >
-                {categories?.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-            </select>
+             <CustomSelect
+                 value={String(formData.categoryId)}
+                 options={(categories || []).map(cat => ({ label: cat.name, value: String(cat.id) }))}
+                 disabled={editMode}
+                 onChange={(value) => setFormData({ ...formData, categoryId: Number(value) })}
+             />
          </div>
 
         {/* Replaced Custom UI with ImageUploadSlider */}

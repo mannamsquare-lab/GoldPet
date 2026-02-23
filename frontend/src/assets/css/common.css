@@ -3518,6 +3518,94 @@ strong, h1, h2, h3, h4, h5, h6 {
 	background-size: 16px auto;
 	background-repeat: no-repeat;
 }
+/* Custom Select Dropdown */
+.custom-select {
+	position: relative;
+	width: 100%;
+	margin: 8px 0 0;
+}
+.custom-select--open {
+	z-index: 50;
+}
+.custom-select--disabled {
+	opacity: 0.4;
+	pointer-events: none;
+}
+.custom-select__trigger {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	height: 48px;
+	padding: 0 16px;
+	background: #fff;
+	border: 0;
+	border-radius: var(--radius-input, 16px);
+	color: var(--color-primary, #614108);
+	font-weight: 600;
+	font-size: 16px;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+.custom-select--open .custom-select__trigger {
+	border: 1.5px solid var(--color-primary, #614108);
+	border-bottom: 0;
+	border-radius: var(--radius-input, 16px) var(--radius-input, 16px) 0 0;
+}
+.custom-select__trigger-text {
+	flex: 1;
+	text-align: left;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.custom-select__trigger-text--placeholder {
+	color: var(--color-primary, #614108);
+}
+.custom-select__arrow {
+	width: 16px;
+	height: 16px;
+	background: url(/assets/images/common/more_btn03.svg) center / 16px no-repeat;
+	-webkit-transition: -webkit-transform 0.2s;
+	transition: transform 0.2s;
+	flex-shrink: 0;
+}
+.custom-select--open .custom-select__arrow {
+	-webkit-transform: rotate(180deg);
+	transform: rotate(180deg);
+}
+.custom-select__dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: #fff;
+	border: 1.5px solid var(--color-primary, #614108);
+	border-top: 0;
+	border-radius: 0 0 var(--radius-input, 16px) var(--radius-input, 16px);
+	overflow: hidden;
+	overflow-y: auto;
+	max-height: 240px;
+	-webkit-overflow-scrolling: touch;
+	box-sizing: border-box;
+}
+.custom-select__divider {
+	height: 1px;
+	background: var(--color-border, #efe1c4);
+}
+.custom-select__option {
+	display: flex;
+	align-items: center;
+	height: 48px;
+	padding: 0 16px;
+	color: var(--color-primary, #614108);
+	font-weight: 600;
+	font-size: 16px;
+	cursor: pointer;
+	background: #fff;
+}
+.custom-select__option:active {
+	background: #f9f4eb;
+}
 #profileContainer .profile_write .profile_write_wrap .profile_write_box .radio_wrap {
 	display: -webkit-box;
 	display: -ms-flexbox;

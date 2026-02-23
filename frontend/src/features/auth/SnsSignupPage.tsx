@@ -4,6 +4,7 @@ import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
 import './SnsSignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
+import CustomSelect from '../../components/common/CustomSelect';
 
 export const SnsSignupPage = () => {
   const navigate = useNavigate();
@@ -204,17 +205,20 @@ export const SnsSignupPage = () => {
           {/* 성별 */}
           <div className="sns-signup-input-group">
             <label className="sns-signup-input-label">성별</label>
-            <select
-              name="gender"
-              className={`sns-signup-input sns-signup-input-rounded sns-signup-select ${errors.gender ? 'error' : ''}`}
+            <CustomSelect
+              className={errors.gender ? 'error' : ''}
               value={formData.gender}
-              onChange={handleChange}
+              options={[
+                { label: '남성', value: 'MALE' },
+                { label: '여성', value: 'FEMALE' },
+              ]}
+              placeholder="성별을 선택해주세요"
+              onChange={(value) => {
+                setFormData(prev => ({ ...prev, gender: value }));
+                if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
+              }}
               disabled={isLoading}
-            >
-              <option value="">성별을 선택해주세요</option>
-              <option value="MALE">남성</option>
-              <option value="FEMALE">여성</option>
-            </select>
+            />
             {errors.gender && (
               <span className="sns-signup-error-message">{errors.gender}</span>
             )}

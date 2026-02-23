@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { petService } from '../../services/petService';
 import type { CreatePetRequest } from '../../services/petService';
 import { BackButton } from '../../components/common/BackButton';
+import CustomSelect from '../../components/common/CustomSelect';
 import './PetPage.css';
 
 export default function PetRegisterPage() {
@@ -208,15 +209,12 @@ export default function PetRegisterPage() {
         {/* Breed */}
         <div className="form_group">
           <label>품종</label>
-          <select
-            value={formData.breedId || ''}
-            onChange={(e) => setFormData({ ...formData, breedId: Number(e.target.value) || undefined })}
-          >
-            <option value="">품종 선택</option>
-            {breedList?.map((breed) => (
-              <option key={breed.id} value={breed.id}>{breed.name}</option>
-            ))}
-          </select>
+          <CustomSelect
+            value={formData.breedId ? String(formData.breedId) : ''}
+            options={(breedList || []).map(breed => ({ label: breed.name, value: String(breed.id) }))}
+            placeholder="품종 선택"
+            onChange={(value) => setFormData({ ...formData, breedId: Number(value) || undefined })}
+          />
         </div>
 
         {/* Gender */}
