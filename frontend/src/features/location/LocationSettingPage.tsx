@@ -350,36 +350,40 @@ export const LocationSettingPage = () => {
         ? `${selectedProvince} ${selectedCity} ${selectedNeighborhood}`
         : `${selectedProvince} ${selectedCity}`;
 
-      // Look up centroid from static data
+      // Look up coordinates: dong centroid → geocode API → sgg centroid (fallback)
       let lat: number | undefined;
       let lng: number | undefined;
 
-      if (centroids) {
-        if (selectedNeighborhood) {
-          // Try dong-level lookup
-          const dongKey = `${selectedProvince}|${selectedCity}|${selectedNeighborhood}`;
-          const dongCoord = centroids.dong[dongKey];
-          if (dongCoord) {
-            [lat, lng] = dongCoord;
-          }
+      // 1. Try dong-level centroid (most precise)
+      if (centroids && selectedNeighborhood) {
+        const dongKey = `${selectedProvince}|${selectedCity}|${selectedNeighborhood}`;
+        const dongCoord = centroids.dong[dongKey];
+        if (dongCoord) {
+          [lat, lng] = dongCoord;
         }
+      }
 
-        if (lat === undefined || lng === undefined) {
-          // Fall back to sgg-level lookup
+      // 2. Try geocode API (per-dong precision)
+      if (lat === undefined || lng === undefined) {
+        try {
+          const results = await locationService.geocode(fullAddress);
+          if (results.length > 0) {
+            lat = results[0].lat;
+            lng = results[0].lng;
+          }
+        } catch {
+          // geocode failed, continue to sgg fallback
+        }
+      }
+
+      // 3. Fall back to sgg-level centroid (same for all dongs in a district)
+      if (lat === undefined || lng === undefined) {
+        if (centroids) {
           const sggKey = `${selectedProvince}|${selectedCity}`;
           const sggCoord = centroids.sgg[sggKey];
           if (sggCoord) {
             [lat, lng] = sggCoord;
           }
-        }
-      }
-
-      // Final fallback: try geocode API
-      if (lat === undefined || lng === undefined) {
-        const results = await locationService.geocode(fullAddress);
-        if (results.length > 0) {
-          lat = results[0].lat;
-          lng = results[0].lng;
         }
       }
 
