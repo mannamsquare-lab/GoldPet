@@ -83,6 +83,8 @@ export const communityService = {
       const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
         ...p,
         authorId: p.userId,
+        authorNickname: p.userNickname ?? p.authorNickname ?? '',
+        authorProfileUrl: p.userProfileImage ?? p.authorProfileUrl,
         isLiked: p.isLikedByMe ?? p.isLiked ?? false,
         isCommentedByMe: p.isCommentedByMe ?? false,
         isMine: p.isMine ?? false,
@@ -116,6 +118,8 @@ export const communityService = {
       return {
         ...data,
         authorId: data.userId,
+        authorNickname: data.userNickname ?? data.authorNickname ?? '',
+        authorProfileUrl: data.userProfileImage ?? data.authorProfileUrl,
         isLiked: data.isLikedByMe ?? data.isLiked ?? false,
         isCommentedByMe: data.isCommentedByMe ?? false,
         isMine: data.isMine ?? false,
@@ -242,6 +246,8 @@ export const communityService = {
 
       const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
         ...p,
+        authorNickname: p.userNickname ?? p.authorNickname ?? '',
+        authorProfileUrl: p.userProfileImage ?? p.authorProfileUrl,
         isLiked: p.isLikedByMe ?? p.isLiked ?? false,
         isCommentedByMe: p.isCommentedByMe ?? false,
         isMine: true,

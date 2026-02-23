@@ -6,6 +6,7 @@ import com.goldpet.domain.friend.dto.LikeResponse
 import com.goldpet.domain.friend.service.FriendService
 import com.goldpet.domain.friend.service.LikeService
 import com.goldpet.domain.friend.service.parseTemperamentTags
+import com.goldpet.util.GeoUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -18,7 +19,8 @@ import org.springframework.web.bind.annotation.*
 class LikeController(
     private val likeService: LikeService,
     private val friendService: FriendService,
-    private val petRepository: com.goldpet.domain.pet.repository.PetRepository
+    private val petRepository: com.goldpet.domain.pet.repository.PetRepository,
+    private val userRepository: com.goldpet.domain.user.repository.UserRepository
 ) {
     @Operation(summary = "좋아요", description = "친구에게 좋아요를 보냅니다.")
     @PostMapping("/{targetUserId}/like")
@@ -56,10 +58,13 @@ class LikeController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<List<FriendResponse>> {
         val users = likeService.getMyLikes(principal.id)
+        val me = userRepository.findById(principal.id).orElseThrow()
+        val myLat = me.mainLocationGeom?.y ?: 0.0
+        val myLng = me.mainLocationGeom?.x ?: 0.0
         val responses = users.map { user ->
             val pets = petRepository.findByOwnerId(user.id)
             val mainPet = pets.firstOrNull()
-            
+
             val parsed1 = parseTemperamentTags(mainPet?.temperamentTags)
             val ownerImages1 = user.profileImages.map { it.imageUrl }.toMutableList()
             if (ownerImages1.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages1.add(user.profileImageUrl!!)
@@ -84,7 +89,7 @@ class LikeController(
                 description = parsed1.note,
                 tags = parsed1.tags,
                 images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
-                distance = 0.0,
+                distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
                 status = "offline",
                 location = null,
                 locationText = user.mainLocationText
@@ -99,6 +104,9 @@ class LikeController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<List<FriendResponse>> {
         val users = likeService.getMutualLikes(principal.id)
+        val me = userRepository.findById(principal.id).orElseThrow()
+        val myLat = me.mainLocationGeom?.y ?: 0.0
+        val myLng = me.mainLocationGeom?.x ?: 0.0
         val responses = users.map { user ->
             val pets = petRepository.findByOwnerId(user.id)
             val mainPet = pets.firstOrNull()
@@ -127,7 +135,7 @@ class LikeController(
                 description = parsed2.note,
                 tags = parsed2.tags,
                 images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
-                distance = 0.0,
+                distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
                 status = "offline",
                 location = null,
                 locationText = user.mainLocationText
@@ -142,6 +150,9 @@ class LikeController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<List<FriendResponse>> {
         val users = likeService.getReceivedLikes(principal.id)
+        val me = userRepository.findById(principal.id).orElseThrow()
+        val myLat = me.mainLocationGeom?.y ?: 0.0
+        val myLng = me.mainLocationGeom?.x ?: 0.0
         val responses = users.map { user ->
             val pets = petRepository.findByOwnerId(user.id)
             val mainPet = pets.firstOrNull()
@@ -170,7 +181,7 @@ class LikeController(
                 description = parsed3.note,
                 tags = parsed3.tags,
                 images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
-                distance = 0.0,
+                distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
                 status = "offline",
                 location = null,
                 locationText = user.mainLocationText
