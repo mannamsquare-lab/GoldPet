@@ -36,7 +36,7 @@ data class UserResponse(
                 email = user.email,
                 nickname = user.nickname,
                 gender = user.gender,
-                birthYear = user.birthYear,
+                birthYear = user.birthYear ?: user.birthDate?.year,
                 mainLocationText = user.mainLocationText,
                 mainLocationLat = user.mainLocationGeom?.y, // Latitude
                 mainLocationLng = user.mainLocationGeom?.x, // Longitude
