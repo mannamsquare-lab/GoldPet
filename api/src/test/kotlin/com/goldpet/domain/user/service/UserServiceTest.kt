@@ -8,7 +8,11 @@ import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.DeletedUserRepository
 import com.goldpet.domain.user.repository.HobbyRepository
 import com.goldpet.domain.user.repository.InterestRepository
+import com.goldpet.domain.user.repository.UserDeviceRepository
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.auth.repository.UserAuthProviderRepository
+import com.goldpet.domain.friend.repository.MatchRepository
+import com.goldpet.domain.friend.repository.LikeRepository
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,6 +22,7 @@ import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.LocalDateTime
 import java.util.*
 
@@ -30,6 +35,12 @@ class UserServiceTest {
     private lateinit var deletedUserRepository: DeletedUserRepository
 
     @Mock
+    private lateinit var userDeviceRepository: UserDeviceRepository
+
+    @Mock
+    private lateinit var userAuthProviderRepository: UserAuthProviderRepository
+
+    @Mock
     private lateinit var interestRepository: InterestRepository
 
     @Mock
@@ -38,6 +49,15 @@ class UserServiceTest {
     @Mock
     private lateinit var eventPublisher: ApplicationEventPublisher
 
+    @Mock
+    private lateinit var matchRepository: MatchRepository
+
+    @Mock
+    private lateinit var likeRepository: LikeRepository
+
+    @Mock
+    private lateinit var passwordEncoder: PasswordEncoder
+
     private lateinit var userService: UserService
 
     private lateinit var testUser: User
@@ -45,7 +65,7 @@ class UserServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        userService = UserService(userRepository, deletedUserRepository, interestRepository, hobbyRepository, eventPublisher)
+        userService = UserService(userRepository, deletedUserRepository, userDeviceRepository, userAuthProviderRepository, interestRepository, hobbyRepository, eventPublisher, matchRepository, likeRepository, passwordEncoder)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
     }

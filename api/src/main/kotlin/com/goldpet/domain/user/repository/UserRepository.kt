@@ -15,7 +15,8 @@ import org.springframework.data.repository.query.Param
 interface UserRepository : JpaRepository<User, Long> {
     fun findByOauthProviderAndOauthId(oauthProvider: String, oauthId: String): Optional<User>
     fun findByUsername(username: String): Optional<User>
-    fun findByEmailHash(emailHash: String): Optional<User>
+    @Query("SELECT u FROM User u WHERE u.emailHash = :emailHash")
+    fun findByEmailHash(@Param("emailHash") emailHash: String): Optional<User>
 
     @Deprecated("Use findByEmailHash instead") fun findByEmail(email: String): Optional<User>
 

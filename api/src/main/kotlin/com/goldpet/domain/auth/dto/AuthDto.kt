@@ -56,7 +56,8 @@ data class AuthResponse(
         val id: Long,
         val username: String,
         val nickname: String,
-        val email: String?
+        val email: String?,
+        val phoneNumber: String? = null
     )
 }
 

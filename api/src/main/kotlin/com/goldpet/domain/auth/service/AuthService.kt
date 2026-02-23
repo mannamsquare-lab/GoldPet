@@ -62,7 +62,8 @@ class AuthService(
                                 id = saved.id,
                                 username = saved.username!!,
                                 nickname = saved.nickname!!,
-                                email = saved.email
+                                email = saved.email,
+                                phoneNumber = saved.phoneNumber
                         )
         )
     }
@@ -88,7 +89,8 @@ class AuthService(
                                 id = user.id,
                                 username = user.username!!,
                                 nickname = user.nickname!!,
-                                email = user.email
+                                email = user.email,
+                                phoneNumber = user.phoneNumber
                         )
         )
     }
@@ -133,7 +135,8 @@ class AuthService(
                                                 ?: user.oauthId, // Fallback to oauthId if username
                                 // is null
                                 nickname = user.nickname!!,
-                                email = user.email
+                                email = user.email,
+                                phoneNumber = user.phoneNumber
                         )
         )
     }
@@ -163,7 +166,8 @@ class AuthService(
                                 id = user.id,
                                 username = user.username ?: user.oauthId,
                                 nickname = user.nickname ?: "Test User",
-                                email = user.email
+                                email = user.email,
+                                phoneNumber = user.phoneNumber
                         )
         )
     }

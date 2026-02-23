@@ -241,7 +241,8 @@ class SocialLoginService(
                     id = user.id,
                     username = user.username ?: user.nickname ?: "User",
                     nickname = user.nickname ?: "User",
-                    email = user.email
+                    email = user.email,
+                    phoneNumber = user.phoneNumber
                 )
             )
         }
@@ -280,6 +281,7 @@ class SocialLoginService(
             oauthProvider = provider,
             oauthId = oauthId,
             email = email,
+            emailHash = email,
             nickname = nickname ?: if (provider == "apple") "Apple User" else null,
             profileImageUrl = profileImage,
             username = null,
@@ -314,7 +316,8 @@ class SocialLoginService(
                 id = user.id,
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
-                email = user.email
+                email = user.email,
+                phoneNumber = user.phoneNumber
             )
         )
     }
@@ -337,6 +340,7 @@ class SocialLoginService(
                 oauthProvider = provider,
                 oauthId = oauthId,
                 email = email,
+                emailHash = email,
                 nickname = nickname ?: if (provider == "apple") "Apple User" else null,
                 profileImageUrl = profileImage,
                 username = null,
@@ -365,7 +369,8 @@ class SocialLoginService(
                 id = user.id,
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
-                email = user.email
+                email = user.email,
+                phoneNumber = user.phoneNumber
             )
         )
     }
@@ -429,7 +434,8 @@ class SocialLoginService(
                 id = user.id,
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
-                email = user.email
+                email = user.email,
+                phoneNumber = user.phoneNumber
             )
         )
     }

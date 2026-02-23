@@ -5,6 +5,7 @@ import com.goldpet.domain.notification.entity.Notification
 import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.repository.NotificationRepository
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.repository.UserDeviceRepository
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -28,6 +29,9 @@ class NotificationServiceTest {
     private lateinit var userRepository: UserRepository
 
     @Mock
+    private lateinit var userDeviceRepository: UserDeviceRepository
+
+    @Mock
     private lateinit var fcmPushSender: com.goldpet.domain.notification.service.FcmPushSender
 
     private lateinit var notificationService: NotificationService
@@ -38,7 +42,7 @@ class NotificationServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        notificationService = NotificationService(notificationRepository, userRepository, fcmPushSender)
+        notificationService = NotificationService(notificationRepository, userRepository, userDeviceRepository, fcmPushSender)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
         testFromUser = createTestUser(2L, "fromuser", "보낸유저")
