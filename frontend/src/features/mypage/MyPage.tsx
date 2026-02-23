@@ -163,12 +163,12 @@ const MyPage: React.FC = () => {
         <div className="mypage-pet-section">
           <div className="mypage-pet-header">
             <div className="mypage-section-title" style={{ padding: 0 }}>나의 반려동물</div>
-            <button className="mypage-pet-add" onClick={() => navigate('/pet/register')}>+ 추가</button>
+            <button className="mypage-pet-add" onClick={() => navigate('/profile/pet/edit')}>+ 추가</button>
           </div>
           {myPets && myPets.length > 0 ? (
             <div className="mypage-pet-list">
               {myPets.map((pet) => (
-                <div key={pet.id} className="mypage-pet-card" onClick={() => navigate(`/pet/edit/${pet.id}`)}>
+                <div key={pet.id} className="mypage-pet-card" onClick={() => navigate('/profile/pet/edit')}>
                   <img
                     className="mypage-pet-photo"
                     src={pet.profileImageUrl || '/assets/images/common/pet_none_img.svg'}
@@ -191,7 +191,7 @@ const MyPage: React.FC = () => {
               <button
                 className="mypage-gold-charge-btn"
                 style={{ width: 'auto', padding: '0 24px' }}
-                onClick={() => navigate('/pet/register')}
+                onClick={() => navigate('/profile/pet/edit')}
               >
                 등록하기
               </button>
