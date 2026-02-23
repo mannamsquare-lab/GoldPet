@@ -174,18 +174,18 @@ class FileService(
         for (variant in IMAGE_VARIANTS) {
             if (shortSide <= variant.maxDimension) continue  // Already smaller than threshold
 
-            val variantFilename = "${baseFilename}${variant.suffix}.webp"
+            val variantFilename = "${baseFilename}${variant.suffix}.jpg"
             val output = ByteArrayOutputStream()
 
             Thumbnails.of(image)
                 .size(variant.maxDimension, variant.maxDimension)
-                .outputFormat("webp")
+                .outputFormat("JPEG")
                 .outputQuality(variant.quality)
                 .toOutputStream(output)
 
             val variantBytes = output.toByteArray()
             val variantMetadata = ObjectMetadata().apply {
-                contentType = "image/webp"
+                contentType = "image/jpeg"
                 contentLength = variantBytes.size.toLong()
             }
             amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)

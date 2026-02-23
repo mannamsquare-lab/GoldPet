@@ -1,7 +1,7 @@
 /**
  * Derives variant URLs from an original image URL.
  *
- * Convention: original is `{uuid}.{ext}`, variants are `{uuid}_thumb.webp` and `{uuid}_medium.webp`.
+ * Convention: original is `{uuid}.{ext}`, variants are `{uuid}_thumb.jpg` and `{uuid}_medium.jpg`.
  * For URLs that don't match this pattern (legacy, external), returns the original unchanged.
  *
  * NOTE: 레거시 이미지(마이그레이션 이전 업로드)는 variant가 S3에 없으므로
@@ -20,5 +20,5 @@ export function getImageUrl(
   if (!match) return originalUrl;  // Legacy or external URL -- use as-is
 
   const suffix = variant === 'thumbnail' ? '_thumb' : '_medium';
-  return `${match[1]}${suffix}.webp`;
+  return `${match[1]}${suffix}.jpg`;
 }
