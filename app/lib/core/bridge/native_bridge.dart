@@ -79,8 +79,6 @@ class NativeBridge {
 
           if (backendResult != null) {
             final newResult = Map<String, dynamic>.from(backendResult);
-            // Frontend expects 'token' and 'type'
-            newResult['token'] = newResult['accessToken'];
 
             // Store tokens in Flutter secure storage for native API calls (e.g. walk save)
             final accessToken = newResult['accessToken'] as String?;

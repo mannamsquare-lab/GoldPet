@@ -10,6 +10,9 @@ export const LoginSuccessPage = () => {
 
     useEffect(() => {
         const token = searchParams.get('token');
+        const refreshToken = searchParams.get('refreshToken') || '';
+        // 토큰을 URL에서 즉시 제거 (브라우저 히스토리 보호)
+        window.history.replaceState({}, '', '/loginSuccess');
         if (token) {
             // Fetch user info using the token directly in the Authorization header
             apiClient.get('/users/me', { headers: { Authorization: `Bearer ${token}` } })
@@ -25,15 +28,15 @@ export const LoginSuccessPage = () => {
                                 message: 'SIGNUP_REQUIRED',
                                 signupRequired: true,
                                 provider: user.oauthProvider
-                            }, '*');
+                            }, window.location.origin);
                         } else {
                             // Complete -> Send LOGIN_SUCCESS message
                             window.opener.postMessage({
                                 type: 'LOGIN_SUCCESS',
                                 accessToken: token,
-                                refreshToken: '',
+                                refreshToken,
                                 user
-                            }, '*');
+                            }, window.location.origin);
                         }
                         // Close popup is handled by opener or self? 
                         // Usually self closes after sending message, but let's wait a tick
@@ -52,7 +55,7 @@ export const LoginSuccessPage = () => {
                         if (!user.nickname) {
                             navigate('/signup', { state: { isSns: true, provider: user.oauthProvider } });
                         } else {
-                            login(token, '', user);
+                            login(token, refreshToken, user);
                             navigate('/home', { replace: true });
                         }
                     }

@@ -191,7 +191,11 @@ export const authService = {
         nativeBridge
           .callMethod("login", { provider })
           .then((result: any) => {
-            if (result.accessToken) {
+            if (result.type === 'SIGNUP_REQUIRED') {
+              const err = new Error('SIGNUP_REQUIRED');
+              (err as any).signupRequired = true;
+              reject(err);
+            } else if (result.accessToken) {
               resolve(result);
             } else if (result.success === false) {
               reject(new Error(result.message || "로그인에 실패했습니다."));
@@ -221,6 +225,7 @@ export const authService = {
 
       // Listen for message from popup
       const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
         if (event.data.type === "LOGIN_SUCCESS") {
           window.removeEventListener("message", handleMessage);
           resolve(event.data);

@@ -20,7 +20,9 @@ class OAuth2AuthenticationSuccessHandler(
         authentication: Authentication
     ) {
         val token = jwtTokenProvider.generateToken(authentication)
-        // Redirect to the frontend URL with the token
-        redirectStrategy.sendRedirect(request, response, "$frontendUrl/loginSuccess?token=$token")
+        val principal = authentication.principal as com.goldpet.config.security.UserPrincipal
+        val refreshToken = jwtTokenProvider.generateRefreshToken(principal.id)
+        redirectStrategy.sendRedirect(request, response,
+            "$frontendUrl/loginSuccess?token=$token&refreshToken=$refreshToken")
     }
 }
