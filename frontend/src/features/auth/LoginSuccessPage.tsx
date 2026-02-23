@@ -21,15 +21,17 @@ export const LoginSuccessPage = () => {
                         if (!user.nickname) {
                             // Incomplete -> Send SIGNUP_REQUIRED message
                             window.opener.postMessage({
-                                type: 'SIGNUP_REQUIRED',
-                                token,
+                                type: 'LOGIN_ERROR',
+                                message: 'SIGNUP_REQUIRED',
+                                signupRequired: true,
                                 provider: user.oauthProvider
                             }, '*');
                         } else {
                             // Complete -> Send LOGIN_SUCCESS message
                             window.opener.postMessage({
                                 type: 'LOGIN_SUCCESS',
-                                token,
+                                accessToken: token,
+                                refreshToken: '',
                                 user
                             }, '*');
                         }
