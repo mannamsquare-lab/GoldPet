@@ -200,7 +200,7 @@ class SocialLoginService(
             provider = "apple",
             oauthId = appleId,
             email = email,
-            nickname = "Apple User",
+            nickname = null,
             profileImage = null,
             attributes = attributes,
             skipEmailMatch = skipEmailMatch
