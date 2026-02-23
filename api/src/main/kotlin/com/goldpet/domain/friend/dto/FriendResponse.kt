@@ -7,6 +7,12 @@ data class FriendResponse(
     val nickname: String,
     val profileImageUrl: String?,
     val profileImages: List<String>,  // Owner's all profile images (multiple)
+    val ownerGender: String?,         // "MALE" | "FEMALE"
+    val ownerAge: Int?,               // calculated from birthDate
+    val ownerIntro: String?,          // self introduction
+    val ownerMbti: String?,           // MBTI
+    val ownerInterests: List<String>, // interests names
+    val ownerHobbies: List<String>,   // hobbies names
     val petName: String,
     val petBreed: String,
     val petAge: Int,

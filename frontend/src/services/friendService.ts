@@ -7,6 +7,12 @@ export interface Friend {
   nickname: string;
   profileImageUrl?: string;
   profileImages: string[];  // Owner's all profile images
+  ownerGender?: string;
+  ownerAge?: number;
+  ownerIntro?: string;
+  ownerMbti?: string;
+  ownerInterests: string[];
+  ownerHobbies: string[];
   petName: string;
   petBreed: string;
   petAge: number;

@@ -227,7 +227,17 @@ export default function HomePage() {
                                                 />
                                             </h2>
                                         ) : (
-                                            <h2>{item.nickname}</h2>
+                                            <h2>
+                                                {item.nickname}{' '}
+                                                {item.ownerGender && (
+                                                    <img
+                                                        src={item.ownerGender === 'FEMALE'
+                                                            ? '/assets/images/main/woman_icon.svg'
+                                                            : '/assets/images/main/man_icon.svg'}
+                                                        alt="성별 icon"
+                                                    />
+                                                )}
+                                            </h2>
                                         )}
                                         {petMode && item.isNeutered && <p className="neutering_on">중성화 OK</p>}
                                     </div>
@@ -243,20 +253,37 @@ export default function HomePage() {
                                                 {item.description && <p data-swiper-parallax="-250">{item.description}</p>}
                                             </>
                                         ) : (
-                                            <p data-swiper-parallax="-300">
-                                                {item.locationText || '위치 미설정'} ∙ {item.distance}
-                                            </p>
+                                            <>
+                                                <p data-swiper-parallax="-300">
+                                                    {item.ownerAge ? `${item.ownerAge}살 ∙ ` : ''}{item.locationText || '위치 미설정'} ∙ {item.distance}
+                                                </p>
+                                                {item.ownerMbti && <p data-swiper-parallax="-280">{item.ownerMbti}</p>}
+                                                {item.ownerIntro && <><br /><p data-swiper-parallax="-250">{item.ownerIntro}</p></>}
+                                            </>
                                         )}
-                                        {item.tags.length > 0 && (
-                                            <div className="wish_dot" data-swiper-parallax="-200">
-                                                {item.tags
-                                                    .map(tag => formatPetTag(tag))
-                                                    .filter(tag => tag !== '')
-                                                    .map((tag, i) => (
-                                                        <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
-                                                    ))
-                                                }
-                                            </div>
+                                        {petMode ? (
+                                            item.tags.length > 0 && (
+                                                <div className="wish_dot" data-swiper-parallax="-200">
+                                                    {item.tags
+                                                        .map(tag => formatPetTag(tag))
+                                                        .filter(tag => tag !== '')
+                                                        .map((tag, i) => (
+                                                            <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
+                                                        ))
+                                                    }
+                                                </div>
+                                            )
+                                        ) : (
+                                            (item.ownerInterests.length > 0 || item.ownerHobbies.length > 0) && (
+                                                <div className="wish_dot" data-swiper-parallax="-200">
+                                                    {item.ownerInterests.map((interest, i) => (
+                                                        <p key={`interest-${i}`} className={`label${(i % 4) + 1}`}>{interest}</p>
+                                                    ))}
+                                                    {item.ownerHobbies.map((hobby, i) => (
+                                                        <p key={`hobby-${i}`} className={`label${((item.ownerInterests.length + i) % 4) + 1}`}>{hobby}</p>
+                                                    ))}
+                                                </div>
+                                            )
                                         )}
                                         <div className="like_wrap" data-swiper-parallax="-150">
                                             <button type="button" onClick={() => handleDislike(item.id, item.name)} disabled={loadingId === item.id}>

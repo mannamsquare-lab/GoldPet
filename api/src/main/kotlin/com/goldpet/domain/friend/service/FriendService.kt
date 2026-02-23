@@ -122,11 +122,19 @@ class FriendService(
 
         val parsed = parseTemperamentTags(mainPet?.temperamentTags)
 
+        val ownerAge = user.birthDate?.let { Period.between(it, LocalDate.now()).years }
+
         return FriendResponse(
             id = user.id,
             nickname = user.nickname ?: "Unknown",
             profileImageUrl = user.profileImageUrl, // Owner's main profile image (small, secondary)
             profileImages = ownerImages, // Owner's all profile images
+            ownerGender = user.gender,
+            ownerAge = ownerAge,
+            ownerIntro = user.intro,
+            ownerMbti = user.mbti,
+            ownerInterests = user.interests.map { it.name },
+            ownerHobbies = user.hobbies.map { it.name },
             petName = mainPet?.name ?: "Unknown",
             petBreed = mainPet?.breed?.name ?: mainPet?.species?.name ?: "Unknown",
             petAge = petAge,

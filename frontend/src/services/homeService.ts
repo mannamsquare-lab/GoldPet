@@ -15,6 +15,12 @@ export interface HomeRecommendation {
   nickname: string;
   profileImageUrl?: string;
   profileImages: string[];  // Owner's all profile images
+  ownerGender?: string;
+  ownerAge?: number;
+  ownerIntro?: string;
+  ownerMbti?: string;
+  ownerInterests: string[];
+  ownerHobbies: string[];
   locationText?: string;
   tags: string[];
 }
@@ -59,6 +65,12 @@ const mockHomeData: HomeDataResponse = {
       nickname: '지오',
       profileImageUrl: '/assets/images/main/main_slide_butler01.jpg',
       profileImages: ['/assets/images/main/main_slide_butler01.jpg'],
+      ownerGender: 'FEMALE',
+      ownerAge: 28,
+      ownerIntro: '',
+      ownerMbti: undefined,
+      ownerInterests: [],
+      ownerHobbies: [],
       locationText: undefined,
       tags: [],
     },
@@ -75,6 +87,12 @@ const mockHomeData: HomeDataResponse = {
       nickname: '냥집사',
       profileImageUrl: '/assets/images/main/main_slide_butler02.jpg',
       profileImages: ['/assets/images/main/main_slide_butler02.jpg'],
+      ownerGender: 'FEMALE',
+      ownerAge: 28,
+      ownerIntro: '',
+      ownerMbti: undefined,
+      ownerInterests: [],
+      ownerHobbies: [],
       locationText: undefined,
       tags: [],
     },
@@ -91,6 +109,12 @@ const mockHomeData: HomeDataResponse = {
       nickname: '멍집사',
       profileImageUrl: '/assets/images/main/main_slide_butler03.jpg',
       profileImages: ['/assets/images/main/main_slide_butler03.jpg'],
+      ownerGender: 'MALE',
+      ownerAge: 28,
+      ownerIntro: '',
+      ownerMbti: undefined,
+      ownerInterests: [],
+      ownerHobbies: [],
       locationText: undefined,
       tags: [],
     },
@@ -122,6 +146,12 @@ export const homeService = {
         nickname: r.nickname,
         profileImageUrl: r.profileImageUrl,
         profileImages: r.profileImages || [],
+        ownerGender: r.ownerGender,
+        ownerAge: r.ownerAge,
+        ownerIntro: r.ownerIntro,
+        ownerMbti: r.ownerMbti,
+        ownerInterests: r.ownerInterests || [],
+        ownerHobbies: r.ownerHobbies || [],
         locationText: r.locationText,
         tags: r.tags || [],
       }));

@@ -222,21 +222,35 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
             ) : (
                 <>
                     <div className="txt_wrap">
-                        <h2>{data.nickname}</h2>
+                        <h2>
+                            {data.nickname}{' '}
+                            {data.ownerGender && (
+                                <img
+                                    src={data.ownerGender === 'FEMALE'
+                                        ? '/assets/images/main/woman_icon.svg'
+                                        : '/assets/images/main/man_icon.svg'}
+                                    alt="성별 icon"
+                                />
+                            )}
+                        </h2>
                     </div>
                     <div className="pet_detail">
                         <p>
-                            {data.locationText || '위치 미설정'} ∙ {formatDistance(data.distance)} 이내
+                            {data.ownerAge ? `${data.ownerAge}살` : ''}{data.ownerAge ? ' ∙ ' : ''}{data.locationText || '위치 미설정'} ∙ {formatDistance(data.distance)} 이내
                         </p>
-                        <div className="wish_dot">
-                            {data.tags
-                                .map(tag => formatPetTag(tag))
-                                .filter(tag => tag !== '')
-                                .map((tag, i) => (
-                                    <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
-                                ))
-                            }
-                        </div>
+                        {data.ownerMbti && <p>{data.ownerMbti}</p>}
+                        <br />
+                        {data.ownerIntro && <p>{data.ownerIntro}</p>}
+                        {(data.ownerInterests.length > 0 || data.ownerHobbies.length > 0) && (
+                            <div className="wish_dot">
+                                {data.ownerInterests.map((interest, i) => (
+                                    <p key={`interest-${i}`} className={`label${(i % 4) + 1}`}>{interest}</p>
+                                ))}
+                                {data.ownerHobbies.map((hobby, i) => (
+                                    <p key={`hobby-${i}`} className={`label${((data.ownerInterests.length + i) % 4) + 1}`}>{hobby}</p>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Like/Dislike buttons */}
                         <div className="like_wrap">
