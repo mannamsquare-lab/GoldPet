@@ -15,8 +15,8 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
     @Query("SELECT f FROM FileAttachment f WHERE f.fileType = 'IMAGE' AND f.thumbnailUrl IS NULL AND f.mimeType <> 'image/gif'")
     fun findImagesWithoutVariants(pageable: Pageable): Page<FileAttachment>
 
-    @Modifying
-    @Query("UPDATE FileAttachment f SET f.thumbnailUrl = :thumbUrl, f.mediumUrl = :medUrl, f.width = :width, f.height = :height WHERE f.id = :id")
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE file_attachments SET thumbnail_url = :thumbUrl, medium_url = :medUrl, width = :width, height = :height WHERE id = :id", nativeQuery = true)
     fun updateVariantUrls(
         @Param("id") id: Long,
         @Param("thumbUrl") thumbUrl: String,
