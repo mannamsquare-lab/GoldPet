@@ -13,15 +13,20 @@ interface FriendCardProps {
     data: Friend;
     onLikeStateChange?: () => void;
     viewMode?: 'default' | 'sent_like' | 'received_like' | 'mutual';
+    onOpenGallery?: (images: string[], startIndex: number) => void;
 }
 
-export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: FriendCardProps) => {
+const OWNER_FALLBACK = "/assets/images/common/profile_none_img.svg";
+const PET_FALLBACK = "/assets/images/main/main_slide_img01.png";
+
+export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOpenGallery }: FriendCardProps) => {
     const navigate = useNavigate();
     const { showAlert, showConfirm } = useAlert();
     const [isLoading, setIsLoading] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [isMutual, setIsMutual] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [isPetMode, setIsPetMode] = useState(true);
 
     const handleStartChat = async () => {
         if (isLoading) return;
@@ -48,13 +53,13 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: Fr
             const result = await friendService.likeUser(data.id);
             setIsLiked(true);
             setIsMutual(result.isMutual);
-            
+
             if (result.isMutual) {
                 showAlert(`${data.petName}과 서로 좋아해가 되었어요! 💕`);
             } else {
                 showAlert(`${data.petName}에게 좋아요를 보냈어요! ❤️`);
             }
-            
+
             onLikeStateChange?.();
         } catch {
             showAlert('좋아요를 보내는데 실패했습니다.');
@@ -72,7 +77,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: Fr
                 showAlert(`${data.petName}님의 좋아요를 거절했어요 😢`);
             } else {
                 await friendService.unlikeUser(data.id);
-                
+
                 if (viewMode === 'sent_like') {
                     showAlert(`${data.petName}님에게 보낸 좋아요를 취소했어요 ↩️`);
                 } else if (viewMode === 'mutual' || isMutual) {
@@ -104,6 +109,10 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: Fr
         });
     };
 
+    const ownerImages = data.profileImageUrl ? [data.profileImageUrl] : [OWNER_FALLBACK];
+    const sliderImages = isPetMode ? data.images : ownerImages;
+    const sliderSecondary = isPetMode ? (data.profileImageUrl || OWNER_FALLBACK) : (data.images[0] || PET_FALLBACK);
+
     return (
         <div className="list_wrap" style={{ position: 'relative' }}>
             {/* Menu Button */}
@@ -125,9 +134,11 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: Fr
             <ProfileImageSlider
                 className="img_wrap"
                 swiperWrapperClass="pet_img_wrap"
-                images={data.images}
-                secondaryImage={data.profileImageUrl || "/assets/images/main/main_slide_butler01.jpg"}
+                images={sliderImages}
+                secondaryImage={sliderSecondary}
                 secondaryImageClass="butler_img"
+                onSecondaryImageClick={() => setIsPetMode(!isPetMode)}
+                onMainImageClick={(index) => onOpenGallery?.(sliderImages, index)}
                 swiperProps={{
                     modules: [Navigation],
                     navigation: {
@@ -146,64 +157,123 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default' }: Fr
                 <img src="/assets/images/main/main_slide_icon01.svg" className="icon_img" alt="" />
             </ProfileImageSlider>
 
-            <div className="txt_wrap">
-                <h2>{data.petName} <img src={data.petGender === 'FEMALE' ? "/assets/images/main/woman_icon.svg" : "/assets/images/main/man_icon.svg"} alt="성별 icon" /></h2>
-                {data.isNeutered && <p>중성화 OK</p>}
-            </div>
+            {isPetMode ? (
+                <>
+                    <div className="txt_wrap">
+                        <h2>{data.petName} <img src={data.petGender === 'FEMALE' ? "/assets/images/main/woman_icon.svg" : "/assets/images/main/man_icon.svg"} alt="성별 icon" /></h2>
+                        {data.isNeutered && <p>중성화 OK</p>}
+                    </div>
+                    <div className="pet_detail">
+                        <p>
+                            {data.petAge}살 ∙ {data.petBreed} <br />
+                            {data.locationText || '위치 미설정'} ∙ {formatDistance(data.distance)} 이내
+                        </p>
+                        <br />
+                        <p>{data.description}</p>
+                        <div className="wish_dot">
+                            {data.tags
+                                .map(tag => formatPetTag(tag))
+                                .filter(tag => tag !== '')
+                                .map((tag, i) => (
+                                    <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
+                                ))
+                            }
+                        </div>
 
-            <div className="pet_detail">
-                <p>
-                    {data.petAge}살 ∙ {data.petBreed} <br />
-                    {data.locationText || '위치 미설정'} ∙ {formatDistance(data.distance)} 이내
-                </p>
-                <br />
-                <p>{data.description}</p>
-                <div className="wish_dot">
-                    {data.tags
-                        .map(tag => formatPetTag(tag))
-                        .filter(tag => tag !== '')
-                        .map((tag, i) => (
-                            <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
-                        ))
-                    }
-                </div>
-                
-                {/* Like/Dislike buttons */}
-                <div className="like_wrap">
-                    {viewMode === 'sent_like' ? (
-                        <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading} style={{ width: '100%' }}>
-                            <img src="/assets/images/common/dislike_btn.svg" alt="" />취소하기
-                        </button>
-                    ) : viewMode === 'mutual' || isMutual ? (
-                        <>
-                            <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
-                                <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
-                            </button>
-                            <button type="button" className="like_btn active" onClick={handleStartChat} disabled={isLoading}>
-                                <img src="/assets/images/common/chat_icon.svg" alt="" style={{ marginRight: '6px' }} />채팅하기
-                            </button>
-                        </>
-                    ) : isLiked ? (
-                        <>
-                            <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
-                                <img src="/assets/images/common/dislike_btn.svg" alt="" />취소
-                            </button>
-                            <button type="button" className="like_btn active" disabled>
-                                <img src="/assets/images/common/like_btn.svg" alt="" />좋아요 완료
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
-                                <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
-                            </button>
-                            <button type="button" className="like_btn" onClick={handleLike} disabled={isLoading}>
-                                <img src="/assets/images/common/like_btn.svg" alt="" />좋아요
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
+                        {/* Like/Dislike buttons */}
+                        <div className="like_wrap">
+                            {viewMode === 'sent_like' ? (
+                                <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading} style={{ width: '100%' }}>
+                                    <img src="/assets/images/common/dislike_btn.svg" alt="" />취소하기
+                                </button>
+                            ) : viewMode === 'mutual' || isMutual ? (
+                                <>
+                                    <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
+                                        <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
+                                    </button>
+                                    <button type="button" className="like_btn active" onClick={handleStartChat} disabled={isLoading}>
+                                        <img src="/assets/images/common/chat_icon.svg" alt="" style={{ marginRight: '6px' }} />채팅하기
+                                    </button>
+                                </>
+                            ) : isLiked ? (
+                                <>
+                                    <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
+                                        <img src="/assets/images/common/dislike_btn.svg" alt="" />취소
+                                    </button>
+                                    <button type="button" className="like_btn active" disabled>
+                                        <img src="/assets/images/common/like_btn.svg" alt="" />좋아요 완료
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
+                                        <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
+                                    </button>
+                                    <button type="button" className="like_btn" onClick={handleLike} disabled={isLoading}>
+                                        <img src="/assets/images/common/like_btn.svg" alt="" />좋아요
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className="txt_wrap">
+                        <h2>{data.nickname}</h2>
+                    </div>
+                    <div className="pet_detail">
+                        <p>
+                            {data.locationText || '위치 미설정'} ∙ {formatDistance(data.distance)} 이내
+                        </p>
+                        <div className="wish_dot">
+                            {data.tags
+                                .map(tag => formatPetTag(tag))
+                                .filter(tag => tag !== '')
+                                .map((tag, i) => (
+                                    <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
+                                ))
+                            }
+                        </div>
+
+                        {/* Like/Dislike buttons */}
+                        <div className="like_wrap">
+                            {viewMode === 'sent_like' ? (
+                                <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading} style={{ width: '100%' }}>
+                                    <img src="/assets/images/common/dislike_btn.svg" alt="" />취소하기
+                                </button>
+                            ) : viewMode === 'mutual' || isMutual ? (
+                                <>
+                                    <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
+                                        <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
+                                    </button>
+                                    <button type="button" className="like_btn active" onClick={handleStartChat} disabled={isLoading}>
+                                        <img src="/assets/images/common/chat_icon.svg" alt="" style={{ marginRight: '6px' }} />채팅하기
+                                    </button>
+                                </>
+                            ) : isLiked ? (
+                                <>
+                                    <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
+                                        <img src="/assets/images/common/dislike_btn.svg" alt="" />취소
+                                    </button>
+                                    <button type="button" className="like_btn active" disabled>
+                                        <img src="/assets/images/common/like_btn.svg" alt="" />좋아요 완료
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button type="button" className="dislike_btn" onClick={handleDislike} disabled={isLoading}>
+                                        <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
+                                    </button>
+                                    <button type="button" className="like_btn" onClick={handleLike} disabled={isLoading}>
+                                        <img src="/assets/images/common/like_btn.svg" alt="" />좋아요
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

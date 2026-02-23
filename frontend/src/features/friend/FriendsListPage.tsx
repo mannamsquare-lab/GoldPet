@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FriendCard } from './FriendCard';
 import { friendService } from '../../services/friendService';
 import { CACHE_TIME } from '../../config/queryConfig';
+import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 
 import { Loading } from '../../components/common/Loading';
 
@@ -45,6 +46,8 @@ export const FriendsListPage = () => {
         activeSubTab === 'mutual' ? mutualLikes :
         activeSubTab === 'i_like' ? myLikes :
         likesMe;
+
+    const [galleryState, setGalleryState] = useState<{ open: boolean; images: string[]; index: number }>({ open: false, images: [], index: 0 });
 
     const handleLikeStateChange = () => {
         refetchMutual();
@@ -125,17 +128,25 @@ export const FriendsListPage = () => {
             </div>
 
             {/* Friend List */}
+            <ImageGalleryModal
+                isOpen={galleryState.open}
+                images={galleryState.images}
+                initialIndex={galleryState.index}
+                onClose={() => setGalleryState(s => ({ ...s, open: false }))}
+            />
+
             <div className="friend_list">
                 {currentList && currentList.length > 0 ? (
                     currentList.map((friend) => (
-                        <FriendCard 
-                            key={friend.id} 
-                            data={friend} 
+                        <FriendCard
+                            key={friend.id}
+                            data={friend}
                             onLikeStateChange={handleLikeStateChange}
+                            onOpenGallery={(images, index) => setGalleryState({ open: true, images, index })}
                             viewMode={
                                 activeSubTab === 'mutual' ? 'mutual' :
-                                activeSubTab === 'i_like' ? 'sent_like' : 
-                                activeSubTab === 'likes_me' ? 'received_like' : 
+                                activeSubTab === 'i_like' ? 'sent_like' :
+                                activeSubTab === 'likes_me' ? 'received_like' :
                                 'default'
                             }
                         />

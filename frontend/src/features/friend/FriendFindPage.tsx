@@ -5,6 +5,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { FriendCard } from './FriendCard';
 import { friendService } from '../../services/friendService';
 import { CACHE_TIME } from '../../config/queryConfig';
+import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 
 import { Loading } from '../../components/common/Loading';
 
@@ -127,6 +128,8 @@ export const FriendFindPage = () => {
     const toggleFilterVisibility = () => {
         setIsFilterVisible(!isFilterVisible);
     };
+
+    const [galleryState, setGalleryState] = useState<{ open: boolean; images: string[]; index: number }>({ open: false, images: [], index: 0 });
 
     const [hiddenFriendIds, setHiddenFriendIds] = useState<number[]>([]);
 
@@ -266,12 +269,20 @@ export const FriendFindPage = () => {
                 </div>
             </div>
 
+            <ImageGalleryModal
+                isOpen={galleryState.open}
+                images={galleryState.images}
+                initialIndex={galleryState.index}
+                onClose={() => setGalleryState(s => ({ ...s, open: false }))}
+            />
+
             <div className="friend_list">
                 {flattenedFriends.map((friend) => (
-                    <FriendCard 
-                        key={friend.id} 
-                        data={friend} 
+                    <FriendCard
+                        key={friend.id}
+                        data={friend}
                         onLikeStateChange={() => handleLikeStateChange(friend.id)}
+                        onOpenGallery={(images, index) => setGalleryState({ open: true, images, index })}
                     />
                 ))}
                 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import SwiperCore from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Parallax } from 'swiper/modules';
 import { useQuery } from '@tanstack/react-query';
 import { homeService } from '../../services/homeService';
@@ -8,12 +9,18 @@ import { noticeService } from '../../services/noticeService';
 import type { AppNoticeResponse } from '../../services/noticeService';
 import { useAlert } from '../../contexts/AlertContext';
 import { CACHE_TIME } from '../../config/queryConfig';
+import { getImageUrl } from '../../utils/imageUrl';
+import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 
 import { Loading } from '../../components/common/Loading';
 import { LocationStatus } from '../../components/common/LocationStatus';
 import NoticePopupModal from '../../components/common/NoticePopupModal';
 import MaintenanceBanner from '../../components/common/MaintenanceBanner';
 import EventBanner from '../../components/common/EventBanner';
+
+const OWNER_FALLBACK = '/assets/images/common/profile_none_img.svg';
+const PET_FALLBACK_FN = (index: number) =>
+    `/assets/images/main/main_slide_img0${(index % 3) + 1}.png`;
 
 function formatTimeAgo(endTime: string): string {
     const now = new Date();
@@ -29,13 +36,20 @@ function formatTimeAgo(endTime: string): string {
 export default function HomePage() {
     const mainSlideRef = useRef<HTMLDivElement>(null);
     const mainSwiperRef = useRef<SwiperCore | null>(null);
-    const insideSwiperRefs = useRef<SwiperCore[]>([]);
     const { showAlert } = useAlert();
     const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
     const [, setHiddenIds] = useState<Set<number>>(new Set());
     const [loadingId, setLoadingId] = useState<number | null>(null);
     const [notices, setNotices] = useState<AppNoticeResponse[]>([]);
     const [maintenanceNotice, setMaintenanceNotice] = useState<AppNoticeResponse | null>(null);
+    const [petModeMap, setPetModeMap] = useState<Record<number, boolean>>({});
+    const [galleryState, setGalleryState] = useState<{
+        open: boolean; images: string[]; index: number;
+    }>({ open: false, images: [], index: 0 });
+
+    const isPetMode = (id: number) => petModeMap[id] !== false;
+    const toggleMode = (id: number) =>
+        setPetModeMap(prev => ({ ...prev, [id]: !(prev[id] !== false) }));
 
     const handleLike = async (id: number, name: string) => {
         if (loadingId) return;
@@ -104,29 +118,7 @@ export default function HomePage() {
             spaceBetween: '5%',
         });
 
-        // Initialize inner Swipers (pet image slides) - identical to original
-        const insideSliders = mainSlideRef.current.querySelectorAll<HTMLElement>('.main_slide_inside');
-        insideSwiperRefs.current = [];
-
-        insideSliders.forEach((containerEl) => {
-            const prevEl = containerEl.querySelector<HTMLElement>('.swiper-inside-prev');
-            const nextEl = containerEl.querySelector<HTMLElement>('.swiper-inside-next');
-
-            const swiper = new SwiperCore(containerEl, {
-                modules: [Navigation],
-                loop: false,
-                spaceBetween: 0,
-                allowTouchMove: false,
-                navigation: {
-                    prevEl: prevEl,
-                    nextEl: nextEl,
-                },
-            });
-            insideSwiperRefs.current.push(swiper);
-        });
-
         return () => {
-            insideSwiperRefs.current.forEach(s => s.destroy(true, true));
             mainSwiperRef.current?.destroy(true, true);
         };
     }, [homeData]);
@@ -146,80 +138,145 @@ export default function HomePage() {
                 '조하멍' 선택하고 대화 나눠보세요.
             </LocationStatus>
 
-            {/* Vanilla Swiper - HTML structure identical to original index.html */}
+            {/* Vanilla Swiper outer - HTML structure identical to original index.html */}
             <div className="main_slide" ref={mainSlideRef}>
                 <div className="swiper-wrapper">
                     {homeData.recommendations && homeData.recommendations.length > 0 ? (
-                        homeData.recommendations.map((item, index) => (
-                            <div className="swiper-slide" key={item.id}>
-                                <div className="img_wrap">
-                                    <img src={`/assets/images/main/main_slide_icon0${(index % 3) + 1}.svg`} data-swiper-parallax="-500" className="icon_img" alt="" />
+                        homeData.recommendations.map((item, index) => {
+                            const petMode = isPetMode(item.id);
+                            const currentImages = petMode
+                                ? (item.images.length > 0 ? item.images : [PET_FALLBACK_FN(index)])
+                                : (item.profileImageUrl
+                                    ? [item.profileImageUrl]
+                                    : [OWNER_FALLBACK]);
+                            const butlerSrc = petMode
+                                ? (item.profileImageUrl || OWNER_FALLBACK)
+                                : (item.images[0] || PET_FALLBACK_FN(index));
 
-                                    <div className="main_slide_inside">
-                                        <div className="swiper-wrapper">
-                                            {item.images.length > 0 ? item.images.map((img, i) => (
-                                                <div className="swiper-slide" key={i}><img src={img} className="pet_img" alt="" /></div>
-                                            )) : (
-                                                <div className="swiper-slide"><img src={`/assets/images/main/main_slide_img0${(index % 3) + 1}.png`} className="pet_img" alt="" /></div>
-                                            )}
+                            return (
+                                <div className="swiper-slide" key={item.id}>
+                                    <div className="img_wrap">
+                                        <img src={`/assets/images/main/main_slide_icon0${(index % 3) + 1}.svg`} data-swiper-parallax="-500" className="icon_img" alt="" />
+
+                                        {/* Inner Swiper as React component - avoids vanilla reinit on state change */}
+                                        <div className="main_slide_inside">
+                                            <Swiper
+                                                modules={[Navigation]}
+                                                navigation={{
+                                                    prevEl: `.swiper-inside-prev-${index}`,
+                                                    nextEl: `.swiper-inside-next-${index}`,
+                                                }}
+                                                loop={false}
+                                                spaceBetween={0}
+                                                allowTouchMove={false}
+                                                key={petMode ? `pet-${item.id}` : `owner-${item.id}`}
+                                            >
+                                                {currentImages.map((img, imgIdx) => (
+                                                    <SwiperSlide key={imgIdx}>
+                                                        <img
+                                                            className="pet_img"
+                                                            src={getImageUrl(img, 'medium')}
+                                                            alt=""
+                                                            data-clickable="true"
+                                                            loading="lazy"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setGalleryState({ open: true, images: currentImages, index: imgIdx });
+                                                            }}
+                                                            onError={(e) => {
+                                                                const target = e.currentTarget;
+                                                                if (!target.dataset.fallback) {
+                                                                    target.dataset.fallback = 'true';
+                                                                    target.src = img;
+                                                                }
+                                                            }}
+                                                        />
+                                                    </SwiperSlide>
+                                                ))}
+                                            </Swiper>
+                                            <div className={`swiper-inside-prev-${index} swiper-inside-prev`}></div>
+                                            <div className={`swiper-inside-next-${index} swiper-inside-next`}></div>
                                         </div>
-                                        <div className="swiper-inside-prev"></div>
-                                        <div className="swiper-inside-next"></div>
-                                    </div>
 
-                                    <div className="butler_img" data-swiper-parallax="-400">
-                                        <img
-                                            src={item.profileImageUrl || `/assets/images/main/main_slide_butler0${(index % 3) + 1}.jpg`}
-                                            alt="집사 이미지"
-                                            onError={(e) => {e.currentTarget.src = '/assets/images/common/profile_none_img.svg'}}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="txt_wrap" data-swiper-parallax="-200">
-                                    <h2>{item.name} <img src={item.gender === 'FEMALE' ? "/assets/images/main/woman_icon.svg" : "/assets/images/main/man_icon.svg"} alt="성별 icon" /></h2>
-                                    {item.isNeutered && <p className="neutering_on">중성화 OK</p>}
-                                </div>
-
-                                <div className="pet_detail">
-                                    <p data-swiper-parallax="-300">
-                                        {item.petAge}살 ∙ {item.petBreed} <br />
-                                        {item.locationText || '위치 미설정'} ∙ {item.distance}
-                                    </p>
-                                    <br />
-                                    {item.description && <p data-swiper-parallax="-250">{item.description}</p>}
-                                    {item.tags.length > 0 && (
-                                        <div className="wish_dot" data-swiper-parallax="-200">
-                                            {item.tags
-                                                .map(tag => formatPetTag(tag))
-                                                .filter(tag => tag !== '')
-                                                .map((tag, i) => (
-                                                    <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
-                                                ))
-                                            }
+                                        <div
+                                            className="butler_img"
+                                            data-swiper-parallax="-400"
+                                            data-clickable="true"
+                                            onClick={(e) => { e.stopPropagation(); toggleMode(item.id); }}
+                                        >
+                                            <img
+                                                src={butlerSrc}
+                                                alt=""
+                                                onError={(e) => { e.currentTarget.src = OWNER_FALLBACK; }}
+                                            />
                                         </div>
-                                    )}
-                                    <div className="like_wrap" data-swiper-parallax="-150">
-                                        <button type="button" onClick={() => handleDislike(item.id, item.name)} disabled={loadingId === item.id}>
-                                            <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
-                                        </button>
-                                        <button type="button" className="active" onClick={() => handleLike(item.id, item.name)} disabled={loadingId === item.id || likedIds.has(item.id)}>
-                                            <img src="/assets/images/common/like_btn.svg" alt="" />{likedIds.has(item.id) ? '좋아요 완료' : '좋아요'}
-                                        </button>
+                                    </div>
+
+                                    <div className="txt_wrap" data-swiper-parallax="-200">
+                                        {petMode ? (
+                                            <h2>
+                                                {item.name}{' '}
+                                                <img
+                                                    src={item.gender === 'FEMALE'
+                                                        ? '/assets/images/main/woman_icon.svg'
+                                                        : '/assets/images/main/man_icon.svg'}
+                                                    alt="성별 icon"
+                                                />
+                                            </h2>
+                                        ) : (
+                                            <h2>{item.nickname}</h2>
+                                        )}
+                                        {petMode && item.isNeutered && <p className="neutering_on">중성화 OK</p>}
+                                    </div>
+
+                                    <div className="pet_detail">
+                                        {petMode ? (
+                                            <>
+                                                <p data-swiper-parallax="-300">
+                                                    {item.petAge}살 ∙ {item.petBreed} <br />
+                                                    {item.locationText || '위치 미설정'} ∙ {item.distance}
+                                                </p>
+                                                <br />
+                                                {item.description && <p data-swiper-parallax="-250">{item.description}</p>}
+                                            </>
+                                        ) : (
+                                            <p data-swiper-parallax="-300">
+                                                {item.locationText || '위치 미설정'} ∙ {item.distance}
+                                            </p>
+                                        )}
+                                        {item.tags.length > 0 && (
+                                            <div className="wish_dot" data-swiper-parallax="-200">
+                                                {item.tags
+                                                    .map(tag => formatPetTag(tag))
+                                                    .filter(tag => tag !== '')
+                                                    .map((tag, i) => (
+                                                        <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
+                                                    ))
+                                                }
+                                            </div>
+                                        )}
+                                        <div className="like_wrap" data-swiper-parallax="-150">
+                                            <button type="button" onClick={() => handleDislike(item.id, item.name)} disabled={loadingId === item.id}>
+                                                <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
+                                            </button>
+                                            <button type="button" className="active" onClick={() => handleLike(item.id, item.name)} disabled={loadingId === item.id || likedIds.has(item.id)}>
+                                                <img src="/assets/images/common/like_btn.svg" alt="" />{likedIds.has(item.id) ? '좋아요 완료' : '좋아요'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="swiper-slide">
                             <div className="img_wrap">
                                 <img src="/assets/images/main/main_slide_icon01.svg" data-swiper-parallax="-500" className="icon_img" alt="" />
                                 <div className="main_slide_inside">
-                                    <div className="swiper-wrapper">
-                                        <div className="swiper-slide"><img src="/assets/images/common/pet_none_img02.svg" className="pet_img" alt="" /></div>
-                                    </div>
-                                    <div className="swiper-inside-prev"></div>
-                                    <div className="swiper-inside-next"></div>
+                                    <Swiper modules={[Navigation]} loop={false} allowTouchMove={false}>
+                                        <SwiperSlide>
+                                            <img src="/assets/images/common/pet_none_img02.svg" className="pet_img" alt="" />
+                                        </SwiperSlide>
+                                    </Swiper>
                                 </div>
                             </div>
                             <div className="txt_wrap" data-swiper-parallax="-200">
@@ -232,6 +289,13 @@ export default function HomePage() {
                     )}
                 </div>
             </div>
+
+            <ImageGalleryModal
+                isOpen={galleryState.open}
+                images={galleryState.images}
+                initialIndex={galleryState.index}
+                onClose={() => setGalleryState(s => ({ ...s, open: false }))}
+            />
 
             <EventBanner notices={notices} />
 

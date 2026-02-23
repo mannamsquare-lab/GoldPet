@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -10,6 +11,8 @@ interface ProfileImageSliderProps {
     secondaryImage?: string;
     secondaryImageClass?: string; // 'butler_img' or 'pet_img'
     onImageClick?: () => void;
+    onSecondaryImageClick?: () => void;  // callback when small (butler) image is tapped
+    onMainImageClick?: (index: number) => void;  // callback when large image is tapped (for gallery open)
     className?: string; // Wrapper class like 'profile_img_wrap'
     swiperWrapperClass?: string;
     children?: React.ReactNode;
@@ -25,6 +28,8 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     secondaryImage,
     secondaryImageClass = 'butler_img',
     onImageClick,
+    onSecondaryImageClick,
+    onMainImageClick,
     className = 'profile_img_wrap',
     swiperWrapperClass,
     children,
@@ -32,6 +37,8 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     swiperProps,
     navigation = false
 }) => {
+    const activeIndexRef = useRef(0);
+
     const modules = [...(swiperProps?.modules || [])];
     if (navigation) modules.push(Navigation);
 
@@ -39,6 +46,12 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
         prevEl: '.swiper-pet-prev',
         nextEl: '.swiper-pet-next',
     } : {};
+
+    const handleMainImageClick = (e: React.MouseEvent, index: number) => {
+        e.stopPropagation();
+        onImageClick?.();
+        onMainImageClick?.(index);
+    };
 
     // Single image: render directly without Swiper
     const useDirect = images.length <= 1;
@@ -48,7 +61,7 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     const directContent = isSvg(singleImage) ? (
         <div
             className="pet_img"
-            onClick={onImageClick}
+            onClick={(e) => handleMainImageClick(e, 0)}
             role="img"
             aria-label="프로필 이미지"
             style={{
@@ -58,6 +71,7 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
+                cursor: onMainImageClick ? 'pointer' : undefined,
             }}
         />
     ) : (
@@ -65,8 +79,9 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             src={getImageUrl(singleImage, 'medium')}
             className="pet_img"
             alt="프로필 이미지"
-            onClick={onImageClick}
+            onClick={(e) => handleMainImageClick(e, 0)}
             loading="lazy"
+            style={{ cursor: onMainImageClick ? 'pointer' : undefined }}
             onError={(e) => {
                 if (!e.currentTarget.dataset.fallback) {
                     e.currentTarget.dataset.fallback = 'true';
@@ -82,6 +97,10 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             modules={modules}
             navigation={swiperProps?.navigation || defaultNavigationConfig}
             style={{ height: '100%' }}
+            onSlideChange={(swiper: SwiperType) => {
+                activeIndexRef.current = swiper.activeIndex;
+                swiperProps?.onSlideChange?.(swiper);
+            }}
             {...swiperProps}
         >
             {images.map((img, index) => (
@@ -90,8 +109,13 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                         src={getImageUrl(img, 'medium')}
                         className="pet_img"
                         alt={`슬라이드 이미지 ${index + 1}`}
-                        onClick={onImageClick}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onClick={(e) => handleMainImageClick(e, activeIndexRef.current)}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            cursor: onMainImageClick ? 'pointer' : undefined,
+                        }}
                         loading="lazy"
                         onError={(e) => {
                             if (!e.currentTarget.dataset.fallback) {
@@ -123,7 +147,11 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             )}
 
             {secondaryImage && (
-                <div className={secondaryImageClass}>
+                <div
+                    className={secondaryImageClass}
+                    onClick={onSecondaryImageClick ? (e) => { e.stopPropagation(); onSecondaryImageClick(); } : undefined}
+                    style={onSecondaryImageClick ? { cursor: 'pointer' } : undefined}
+                >
                     <img src={secondaryImage} alt="보조 이미지" />
                 </div>
             )}
