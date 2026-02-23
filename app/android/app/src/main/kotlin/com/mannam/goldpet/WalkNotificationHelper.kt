@@ -75,6 +75,7 @@ class WalkNotificationHelper(private val context: Context) {
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setContentIntent(contentIntent)
             .setOngoing(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(false)
             .setShowWhen(false)
             .setSilent(true)

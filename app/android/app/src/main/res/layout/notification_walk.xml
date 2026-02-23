@@ -3,8 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="14dp"
-    android:background="#FFF7E6">
+    android:padding="12dp"
+    android:background="@android:color/transparent">
 
     <!-- Stats: 거리 | 시간 | 칼로리 -->
     <LinearLayout
@@ -28,7 +28,7 @@
                 android:text="0.00"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#1F1F1F"
+                android:textColor="@color/notif_stat_value"
                 android:fontFamily="sans-serif-medium" />
 
             <TextView
@@ -36,14 +36,14 @@
                 android:layout_height="wrap_content"
                 android:text="km"
                 android:textSize="11sp"
-                android:textColor="#8B8B8B" />
+                android:textColor="@color/notif_stat_label" />
         </LinearLayout>
 
-        <!-- 구분선 (RemoteViews는 View를 지원하지 않으므로 ImageView 사용) -->
+        <!-- 구분선 -->
         <ImageView
             android:layout_width="1dp"
-            android:layout_height="32dp"
-            android:background="#D4A574"
+            android:layout_height="28dp"
+            android:background="@color/notif_divider"
             android:importantForAccessibility="no" />
 
         <!-- 시간 -->
@@ -61,7 +61,7 @@
                 android:text="00:00"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#1F1F1F"
+                android:textColor="@color/notif_stat_value"
                 android:fontFamily="sans-serif-medium" />
 
             <TextView
@@ -69,14 +69,14 @@
                 android:layout_height="wrap_content"
                 android:text="시간"
                 android:textSize="11sp"
-                android:textColor="#8B8B8B" />
+                android:textColor="@color/notif_stat_label" />
         </LinearLayout>
 
         <!-- 구분선 -->
         <ImageView
             android:layout_width="1dp"
-            android:layout_height="32dp"
-            android:background="#D4A574"
+            android:layout_height="28dp"
+            android:background="@color/notif_divider"
             android:importantForAccessibility="no" />
 
         <!-- 칼로리 -->
@@ -94,7 +94,7 @@
                 android:text="0"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#1F1F1F"
+                android:textColor="@color/notif_stat_value"
                 android:fontFamily="sans-serif-medium" />
 
             <TextView
@@ -102,7 +102,7 @@
                 android:layout_height="wrap_content"
                 android:text="kcal"
                 android:textSize="11sp"
-                android:textColor="#8B8B8B" />
+                android:textColor="@color/notif_stat_label" />
         </LinearLayout>
     </LinearLayout>
 
@@ -112,21 +112,21 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="8dp">
 
         <TextView
             android:id="@+id/btn_pee"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginEnd="3dp"
-            android:text="💧 쉬~"
+            android:layout_marginEnd="4dp"
+            android:text="쉬~"
             android:textSize="12sp"
-            android:textColor="#614108"
+            android:textColor="@color/notif_btn_text"
             android:textStyle="bold"
             android:gravity="center"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
             android:background="@drawable/notification_btn_bg" />
 
         <TextView
@@ -134,15 +134,15 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp"
-            android:text="🟤 응가"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text="응가"
             android:textSize="12sp"
-            android:textColor="#614108"
+            android:textColor="@color/notif_btn_text"
             android:textStyle="bold"
             android:gravity="center"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
             android:background="@drawable/notification_btn_bg" />
 
         <TextView
@@ -150,15 +150,15 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="3dp"
-            android:text="📷 사진"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text="사진"
             android:textSize="12sp"
-            android:textColor="#614108"
+            android:textColor="@color/notif_btn_text"
             android:textStyle="bold"
             android:gravity="center"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
             android:background="@drawable/notification_btn_bg" />
 
         <TextView
@@ -166,15 +166,15 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="2dp"
-            android:text="⏹ 종료"
+            android:layout_marginStart="4dp"
+            android:text="종료"
             android:textSize="12sp"
-            android:textColor="#D32F2F"
+            android:textColor="@color/notif_stop_text"
             android:textStyle="bold"
             android:gravity="center"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:background="@drawable/notification_btn_bg" />
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
+            android:background="@drawable/notification_stop_btn_bg" />
     </LinearLayout>
 
     <!-- Hidden fields for data binding -->
