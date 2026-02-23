@@ -378,7 +378,7 @@ class SocialLoginService(
     private fun syncUserFields(user: User, provider: String, oauthId: String, email: String?, nickname: String?, profileImage: String?) {
         var changed = false
         if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
-        if (nickname != null && user.nickname != nickname) { user.nickname = nickname; changed = true }
+        if (nickname != null && user.nickname == null) { user.nickname = nickname; changed = true }
         if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
         if (user.oauthProvider.isBlank()) { user.oauthProvider = provider; user.oauthId = oauthId; changed = true }
         if (changed) userRepository.save(user)
