@@ -134,7 +134,7 @@ const CreateGroupChatPage = () => {
                                         </div>
                                         <div className="profile_img">
                                             <img
-                                                src={friend.profileImageUrl || '/assets/images/temp/temp_dog_profile.png'}
+                                                src={friend.profileImages?.[0] || friend.profileImageUrl || '/assets/images/common/profile_none_img.svg'}
                                                 alt={friend.nickname}
                                             />
                                         </div>
@@ -160,7 +160,7 @@ const CreateGroupChatPage = () => {
                                 .map((friend: Friend) => (
                                     <div key={friend.id} className="preview_avatar">
                                         <img
-                                            src={friend.profileImageUrl || '/assets/images/temp/temp_dog_profile.png'}
+                                            src={friend.profileImages?.[0] || friend.profileImageUrl || '/assets/images/common/profile_none_img.svg'}
                                             alt={friend.nickname}
                                         />
                                     </div>
