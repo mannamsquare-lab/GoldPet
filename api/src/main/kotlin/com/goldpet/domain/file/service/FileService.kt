@@ -327,7 +327,9 @@ class FileService(
                     bucket = bucket
                 )
 
-                if (variantUrls.isEmpty()) { skipped++; continue }
+                // 원본이 이미 작아서 변형 불필요 → 원본 URL로 채워서 재조회 방지
+                val thumbUrl = variantUrls["thumb"] ?: fileAttachment.url
+                val medUrl = variantUrls["medium"] ?: fileAttachment.url
 
                 val updated = com.goldpet.domain.common.entity.FileAttachment(
                     id = fileAttachment.id,
@@ -339,12 +341,12 @@ class FileService(
                     sizeBytes = fileAttachment.sizeBytes,
                     width = fileAttachment.width ?: image.width,
                     height = fileAttachment.height ?: image.height,
-                    thumbnailUrl = variantUrls["thumb"],
-                    mediumUrl = variantUrls["medium"],
+                    thumbnailUrl = thumbUrl,
+                    mediumUrl = medUrl,
                     durationSec = fileAttachment.durationSec
                 )
                 fileAttachmentRepository.save(updated)
-                processed++
+                if (variantUrls.isEmpty()) skipped++ else processed++
             } catch (e: Exception) {
                 log.warn("Backfill failed for FileAttachment id={}: {}", fileAttachment.id, e.message)
                 failed++
