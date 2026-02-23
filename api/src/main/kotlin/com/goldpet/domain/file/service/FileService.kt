@@ -312,13 +312,27 @@ class FileService(
             try {
                 val uri = java.net.URI(fileAttachment.url)
                 val pathParts = uri.path.removePrefix("/").split("/", limit = 2)
-                if (pathParts.size < 2) { skipped++; continue }
+                if (pathParts.size < 2) {
+                    // URL 파싱 실패 → 원본 URL로 채워서 재조회 방지
+                    fileAttachmentRepository.updateVariantUrls(
+                        id = fileAttachment.id, thumbUrl = fileAttachment.url, medUrl = fileAttachment.url,
+                        width = fileAttachment.width ?: 0, height = fileAttachment.height ?: 0
+                    )
+                    skipped++; continue
+                }
                 val bucket = pathParts[0]
                 val key = pathParts[1]
 
                 val s3Object = amazonS3.getObject(bucket, key)
                 val image = ImageIO.read(s3Object.objectContent)
-                if (image == null) { skipped++; continue }
+                if (image == null) {
+                    // 디코딩 실패 → 원본 URL로 채워서 재조회 방지
+                    fileAttachmentRepository.updateVariantUrls(
+                        id = fileAttachment.id, thumbUrl = fileAttachment.url, medUrl = fileAttachment.url,
+                        width = fileAttachment.width ?: 0, height = fileAttachment.height ?: 0
+                    )
+                    skipped++; continue
+                }
 
                 val variantUrls = generateVariants(
                     image = image,
@@ -327,7 +341,6 @@ class FileService(
                     bucket = bucket
                 )
 
-                // 원본이 이미 작아서 변형 불필요 → 원본 URL로 채워서 재조회 방지
                 val thumbUrl = variantUrls["thumb"] ?: fileAttachment.url
                 val medUrl = variantUrls["medium"] ?: fileAttachment.url
 
@@ -341,6 +354,13 @@ class FileService(
                 if (variantUrls.isEmpty()) skipped++ else processed++
             } catch (e: Exception) {
                 log.warn("Backfill failed for FileAttachment id={}: {}", fileAttachment.id, e.message)
+                // 실패해도 원본 URL로 채워서 무한 반복 방지
+                try {
+                    fileAttachmentRepository.updateVariantUrls(
+                        id = fileAttachment.id, thumbUrl = fileAttachment.url, medUrl = fileAttachment.url,
+                        width = fileAttachment.width ?: 0, height = fileAttachment.height ?: 0
+                    )
+                } catch (_: Exception) { }
                 failed++
             }
         }
