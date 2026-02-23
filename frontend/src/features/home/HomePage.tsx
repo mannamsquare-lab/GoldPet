@@ -151,7 +151,7 @@ export default function HomePage() {
                                 ? (item.images.length > 0 ? item.images : [PET_FALLBACK_FN(index)])
                                 : ownerImgs;
                             const butlerSrc = petMode
-                                ? (item.profileImageUrl || OWNER_FALLBACK)
+                                ? (item.profileImages[0] || item.profileImageUrl || OWNER_FALLBACK)
                                 : (item.images[0] || PET_FALLBACK_FN(index));
 
 
@@ -215,7 +215,7 @@ export default function HomePage() {
                                         </div>
                                     </div>
 
-                                    <div className="txt_wrap" data-swiper-parallax="-200">
+                                    <div className="txt_wrap" data-swiper-parallax="-200" key={petMode ? 'pet' : 'owner'}>
                                         {petMode ? (
                                             <h2>
                                                 {item.name}{' '}
