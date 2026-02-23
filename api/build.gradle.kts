@@ -44,6 +44,8 @@ dependencies {
     implementation("com.warrenstrange:googleauth:1.5.0")
     implementation("com.google.firebase:firebase-admin:9.2.0")
     implementation("com.drewnoakes:metadata-extractor:2.19.0")
+    implementation("net.coobird:thumbnailator:0.4.20")
+    implementation("com.twelvemonkeys.imageio:imageio-webp:3.12.0")
 
     runtimeOnly("org.postgresql:postgresql")
 

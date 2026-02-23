@@ -31,6 +31,12 @@ class FileAttachment(
     val width: Int? = null,
     val height: Int? = null,
 
+    @Column(name = "thumbnail_url")
+    val thumbnailUrl: String? = null,
+
+    @Column(name = "medium_url")
+    val mediumUrl: String? = null,
+
     @Column(name = "duration_sec")
     val durationSec: Int? = null,
 

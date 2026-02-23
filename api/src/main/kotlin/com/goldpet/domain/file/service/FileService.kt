@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.drew.imaging.ImageMetadataReader
 import com.drew.metadata.exif.GpsDirectory
+import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -26,6 +27,19 @@ enum class StorageBucket {
     PRIVATE  // Chat images, community posts - requires presigned URL
 }
 
+data class ImageVariant(
+    val suffix: String,      // e.g., "_thumb", "_medium"
+    val maxDimension: Int,   // max short-side pixels
+    val quality: Double      // 0.0 - 1.0
+)
+
+data class ProcessedImage(
+    val bytes: ByteArray,
+    val bufferedImage: BufferedImage?,  // null for non-images or decode failures
+    val width: Int?,
+    val height: Int?
+)
+
 @Service
 class FileService(
     private val amazonS3: AmazonS3,
@@ -35,6 +49,11 @@ class FileService(
     private val fileAttachmentRepository: com.goldpet.domain.common.repository.FileAttachmentRepository
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    private val IMAGE_VARIANTS = listOf(
+        ImageVariant("_thumb", 200, 0.80),
+        ImageVariant("_medium", 600, 0.85)
+    )
 
     init {
         ensureBucket(publicBucketName, isPublic = true)
@@ -90,8 +109,39 @@ class FileService(
         }
     }
 
-    private fun stripExifGpsData(fileBytes: ByteArray, contentType: String): ByteArray {
-        if (contentType != "image/jpeg") return fileBytes
+    /**
+     * Decode the image once: strip EXIF GPS (JPEG only), decode BufferedImage, read dimensions.
+     * Returns ProcessedImage so callers can reuse the decoded BufferedImage without re-reading.
+     */
+    private fun processImageFile(originalBytes: ByteArray, mimeType: String): ProcessedImage {
+        if (!mimeType.startsWith("image/")) {
+            return ProcessedImage(originalBytes, null, null, null)
+        }
+
+        // Strip EXIF GPS for JPEG
+        val strippedBytes = if (mimeType == "image/jpeg") {
+            stripExifGpsData(originalBytes)
+        } else {
+            originalBytes
+        }
+
+        // Decode once — used for dimensions + variant generation
+        val image = try {
+            ImageIO.read(ByteArrayInputStream(strippedBytes))
+        } catch (e: Exception) {
+            log.warn("Failed to decode image: ${e.message}")
+            null
+        }
+
+        return ProcessedImage(
+            bytes = strippedBytes,
+            bufferedImage = image,
+            width = image?.width,
+            height = image?.height
+        )
+    }
+
+    private fun stripExifGpsData(fileBytes: ByteArray): ByteArray {
         return try {
             val metadata = ImageMetadataReader.readMetadata(ByteArrayInputStream(fileBytes))
             val gpsDirectory = metadata.getFirstDirectoryOfType(GpsDirectory::class.java)
@@ -104,6 +154,46 @@ class FileService(
             log.warn("Failed to strip EXIF data: ${e.message}")
             fileBytes
         }
+    }
+
+    /**
+     * Generate thumbnail and medium WebP variants from a pre-decoded BufferedImage.
+     * Skips GIFs (animated). Skips variants where the image is already smaller than the threshold.
+     */
+    private fun generateVariants(
+        image: BufferedImage,
+        baseFilename: String,
+        mimeType: String,
+        bucket: String
+    ): Map<String, String> {
+        if (mimeType == "image/gif") return emptyMap()
+
+        val urls = mutableMapOf<String, String>()
+        val shortSide = minOf(image.width, image.height)
+
+        for (variant in IMAGE_VARIANTS) {
+            if (shortSide <= variant.maxDimension) continue  // Already smaller than threshold
+
+            val variantFilename = "${baseFilename}${variant.suffix}.webp"
+            val output = ByteArrayOutputStream()
+
+            Thumbnails.of(image)
+                .size(variant.maxDimension, variant.maxDimension)
+                .outputFormat("webp")
+                .outputQuality(variant.quality)
+                .toOutputStream(output)
+
+            val variantBytes = output.toByteArray()
+            val variantMetadata = ObjectMetadata().apply {
+                contentType = "image/webp"
+                contentLength = variantBytes.size.toLong()
+            }
+            amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)
+
+            val url = "$publicEndpoint/$bucket/$variantFilename"
+            urls[variant.suffix.removePrefix("_")] = url  // "thumb" -> url, "medium" -> url
+        }
+        return urls
     }
 
     /**
@@ -136,17 +226,19 @@ class FileService(
             if (mimeType.startsWith("image/")) {
                 validateImageFile(file)
             }
-            val processedBytes = stripExifGpsData(file.bytes, mimeType)
+
+            // Decode image once: strip EXIF GPS + read BufferedImage + dimensions
+            val processed = processImageFile(file.bytes, mimeType)
 
             val metadata = ObjectMetadata().apply {
                 contentType = mimeType
-                contentLength = processedBytes.size.toLong()
+                contentLength = processed.bytes.size.toLong()
             }
 
             val bucket = determineBucket(category)
             val targetBucket = if (bucket == StorageBucket.PUBLIC) publicBucketName else privateBucketName
 
-            amazonS3.putObject(targetBucket, newFilename, ByteArrayInputStream(processedBytes), metadata)
+            amazonS3.putObject(targetBucket, newFilename, ByteArrayInputStream(processed.bytes), metadata)
 
             // Public files get a direct URL; private files store only the key
             val fileUrl = if (bucket == StorageBucket.PUBLIC) {
@@ -162,13 +254,27 @@ class FileService(
                 else -> "FILE"
             }
 
+            // Generate thumbnail + medium variants for public images (reuse decoded BufferedImage)
+            val variantUrls = if (bucket == StorageBucket.PUBLIC && processed.bufferedImage != null) {
+                generateVariants(
+                    image = processed.bufferedImage,
+                    baseFilename = newFilename.substringBeforeLast("."),
+                    mimeType = mimeType,
+                    bucket = targetBucket
+                )
+            } else emptyMap()
+
             val fileAttachment = com.goldpet.domain.common.entity.FileAttachment(
                 ownerUserId = userId,
                 fileType = fileType,
                 mimeType = mimeType,
                 url = fileUrl,
                 originalFileName = originalFilename,
-                sizeBytes = file.size
+                sizeBytes = file.size,
+                width = processed.width,
+                height = processed.height,
+                thumbnailUrl = variantUrls["thumb"],
+                mediumUrl = variantUrls["medium"]
             )
             return fileAttachmentRepository.save(fileAttachment)
         } catch (e: IllegalArgumentException) {

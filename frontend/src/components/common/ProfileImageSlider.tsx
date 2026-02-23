@@ -3,6 +3,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import { getImageUrl } from '../../utils/imageUrl';
 
 interface ProfileImageSliderProps {
     images: string[];
@@ -61,10 +62,17 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
         />
     ) : (
         <img
-            src={singleImage}
+            src={getImageUrl(singleImage, 'medium')}
             className="pet_img"
             alt="프로필 이미지"
             onClick={onImageClick}
+            loading="lazy"
+            onError={(e) => {
+                if (!e.currentTarget.dataset.fallback) {
+                    e.currentTarget.dataset.fallback = 'true';
+                    e.currentTarget.src = singleImage;
+                }
+            }}
         />
     );
 
@@ -79,11 +87,18 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             {images.map((img, index) => (
                 <SwiperSlide key={index} className="swiper-slide">
                     <img
-                        src={img}
+                        src={getImageUrl(img, 'medium')}
                         className="pet_img"
                         alt={`슬라이드 이미지 ${index + 1}`}
                         onClick={onImageClick}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        loading="lazy"
+                        onError={(e) => {
+                            if (!e.currentTarget.dataset.fallback) {
+                                e.currentTarget.dataset.fallback = 'true';
+                                e.currentTarget.src = img;
+                            }
+                        }}
                     />
                 </SwiperSlide>
             ))}

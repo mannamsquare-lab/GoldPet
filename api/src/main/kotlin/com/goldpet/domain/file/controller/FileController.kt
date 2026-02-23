@@ -16,9 +16,13 @@ import java.net.URI
 data class FileUploadResponse(
     val id: Long,
     val url: String,
+    val thumbnailUrl: String?,
+    val mediumUrl: String?,
     val fileType: String,
     val mimeType: String,
-    val originalFileName: String?
+    val originalFileName: String?,
+    val width: Int?,
+    val height: Int?
 )
 
 data class PresignedUrlResponse(
@@ -46,9 +50,13 @@ class FileController(
         val response = FileUploadResponse(
             id = fileAttachment.id,
             url = fileAttachment.url,
+            thumbnailUrl = fileAttachment.thumbnailUrl,
+            mediumUrl = fileAttachment.mediumUrl,
             fileType = fileAttachment.fileType,
             mimeType = fileAttachment.mimeType,
-            originalFileName = fileAttachment.originalFileName
+            originalFileName = fileAttachment.originalFileName,
+            width = fileAttachment.width,
+            height = fileAttachment.height
         )
         return ResponseEntity.created(URI.create(fileAttachment.url)).body(response)
     }

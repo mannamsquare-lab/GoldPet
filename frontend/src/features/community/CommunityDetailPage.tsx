@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
+import { getImageUrl } from '../../utils/imageUrl';
 import { blockService } from '../../services/blockService';
 import { BackButton } from '../../components/common/BackButton';
 import './CommunityPage.css';
@@ -255,7 +256,21 @@ export default function CommunityDetailPage() {
              {post.imageUrls && post.imageUrls.length > 0 ? (
                  post.imageUrls.map((url, index) => {
                      const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${url}`;
-                     return <img key={index} src={fullUrl} alt={`Post image ${index + 1}`} style={{ marginBottom: '16px' }} />;
+                     return (
+                         <img
+                             key={index}
+                             src={getImageUrl(fullUrl, 'medium')}
+                             alt={`Post image ${index + 1}`}
+                             style={{ marginBottom: '16px' }}
+                             loading="lazy"
+                             onError={(e) => {
+                                 if (!e.currentTarget.dataset.fallback) {
+                                     e.currentTarget.dataset.fallback = 'true';
+                                     e.currentTarget.src = fullUrl;
+                                 }
+                             }}
+                         />
+                     );
                  })
              ) : post.thumbnailUrl ? (
                  <img src={post.thumbnailUrl.startsWith('http') ? post.thumbnailUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${post.thumbnailUrl}`} alt="Thumbnail" />

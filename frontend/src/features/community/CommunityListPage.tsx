@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getImageUrl } from '../../utils/imageUrl';
 import { useNavigate } from 'react-router-dom';
 import { communityService } from '../../services/communityService';
 import { systemService } from '../../services/systemService';
@@ -122,11 +123,25 @@ export default function CommunityListPage() {
                     {truncateContent(post.content, publicSettings?.communityPostPreviewLength || 100)}
                 </p>
                 
-                {post.imageUrls && post.imageUrls.length > 0 && (
-                    <div className="list_img">
-                        <img src={post.imageUrls[0].startsWith('http') ? post.imageUrls[0] : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${post.imageUrls[0]}`} alt="" />
-                    </div>
-                )}
+                {post.imageUrls && post.imageUrls.length > 0 && (() => {
+                    const rawUrl = post.imageUrls[0];
+                    const fullUrl = rawUrl.startsWith('http') ? rawUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${rawUrl}`;
+                    return (
+                        <div className="list_img">
+                            <img
+                                src={getImageUrl(fullUrl, 'thumbnail')}
+                                alt=""
+                                loading="lazy"
+                                onError={(e) => {
+                                    if (!e.currentTarget.dataset.fallback) {
+                                        e.currentTarget.dataset.fallback = 'true';
+                                        e.currentTarget.src = fullUrl;
+                                    }
+                                }}
+                            />
+                        </div>
+                    );
+                })()}
 
                 {/* Like & Comment Counts */}
                 <div className="like_comment_count">

@@ -154,6 +154,10 @@ export const communityService = {
 
   uploadFile: async (file: File): Promise<string> => {
     try {
+      if (file.type.startsWith('image/')) {
+        const { compressImage } = await import('../utils/imageCompression');
+        file = await compressImage(file);
+      }
       const formData = new FormData();
       formData.append('file', file);
       formData.append('category', 'community');

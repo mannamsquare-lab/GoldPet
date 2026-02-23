@@ -65,8 +65,10 @@ export const userService = {
     
     uploadImage: async (file: File): Promise<string> => {
         try {
+            const { compressImage } = await import('../utils/imageCompression');
+            const compressed = await compressImage(file);
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', compressed);
             formData.append('category', 'profile');
             const response = await apiClient.post('/files/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
