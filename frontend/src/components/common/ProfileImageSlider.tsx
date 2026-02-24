@@ -69,7 +69,7 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                 height: '100%',
                 backgroundImage: `url(${singleImage})`,
                 backgroundSize: 'cover',
-                backgroundPosition: 'center',
+                backgroundPosition: 'center 20%',
                 backgroundRepeat: 'no-repeat',
                 cursor: onMainImageClick ? 'pointer' : undefined,
             }}
@@ -114,6 +114,7 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
+                            objectPosition: 'center 20%',
                             cursor: onMainImageClick ? 'pointer' : undefined,
                         }}
                         loading="lazy"
