@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import SubPageLayout from '../../components/layout/SubPageLayout';
+import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import PetForm from '../pet/PetForm';
 
 const ProfilePetWritePage: React.FC = () => {

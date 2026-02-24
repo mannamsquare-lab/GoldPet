@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import SubPageLayout from '../../components/layout/SubPageLayout';
+import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { useAuthStore, type User } from '../../stores/authStore';
 import { userService } from '../../services/userService';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
