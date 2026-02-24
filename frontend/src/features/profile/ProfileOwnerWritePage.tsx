@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { MainHeader } from '../../components/common/MainHeader';
+import SubPageLayout from '../../components/layout/SubPageLayout';
 import { useAuthStore, type User } from '../../stores/authStore';
 import { userService } from '../../services/userService';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
-import { BottomNav } from '../../components/common/BottomNav';
 
 import { useAlert } from '../../contexts/AlertContext';
 import CustomSelect from '../../components/common/CustomSelect';
@@ -360,8 +359,7 @@ const ProfileOwnerWritePage: React.FC = () => {
     };
 
     return (
-        <div id="wrap">
-            <MainHeader variant="logo-with-icons" />
+        <SubPageLayout title="프로필 수정">
             <div id="profileContainer">
                 <div className="profile_write">
                     <div className="profile_img_edit">
@@ -409,6 +407,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                     value={name}
                                     onChange={(e) => !isProfileLocked && setName(e.target.value)}
                                     readOnly={isProfileLocked}
+                                    maxLength={20}
                                 />
                                 {isProfileLocked && (
                                     <span className="field_lock_hint">인증 후 변경할 수 없습니다. 고객센터에 문의해주세요.</span>
@@ -424,6 +423,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                         placeholder="닉네임을 입력해주세요."
                                         value={nickname}
                                         onChange={handleNicknameChange}
+                                        maxLength={15}
                                     />
                                 </div>
                                 <button
@@ -657,8 +657,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <BottomNav />
-        </div>
+        </SubPageLayout>
     );
 };
 

@@ -2,9 +2,11 @@ package com.goldpet.domain.pet.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.pet.entity.Pet
+import jakarta.validation.constraints.Size
 import java.time.LocalDate
 
 data class CreatePetRequest(
+    @field:Size(max = 20, message = "반려동물 이름은 20자 이내여야 합니다")
     val name: String,
     val speciesId: Int,
     val breedId: Int?,
@@ -18,6 +20,7 @@ data class CreatePetRequest(
 )
 
 data class UpdatePetRequest(
+    @field:Size(max = 20, message = "반려동물 이름은 20자 이내여야 합니다")
     val name: String?,
     val speciesId: Int?,
     val breedId: Int?,

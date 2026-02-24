@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { MainHeader } from '../../components/common/MainHeader';
-import { BottomNav } from '../../components/common/BottomNav';
+import SubPageLayout from '../../components/layout/SubPageLayout';
 import PetForm from '../pet/PetForm';
 
 const ProfilePetWritePage: React.FC = () => {
@@ -10,17 +9,13 @@ const ProfilePetWritePage: React.FC = () => {
     const editPetId = searchParams.get('petId') ? Number(searchParams.get('petId')) : null;
 
     return (
-        <>
-            <div id="wrap">
-                <MainHeader variant="logo-with-icons" />
-                <PetForm
-                    petId={editPetId ?? undefined}
-                    onSuccess={() => navigate('/profile')}
-                    onCancel={() => navigate('/profile?tab=pet')}
-                />
-                <BottomNav />
-            </div>
-        </>
+        <SubPageLayout title="반려동물 수정">
+            <PetForm
+                petId={editPetId ?? undefined}
+                onSuccess={() => navigate('/profile')}
+                onCancel={() => navigate('/profile?tab=pet')}
+            />
+        </SubPageLayout>
     );
 };
 

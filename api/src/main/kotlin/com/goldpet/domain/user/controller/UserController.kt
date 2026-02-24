@@ -20,6 +20,7 @@ import com.goldpet.domain.user.service.UserDataExportService
 import com.goldpet.domain.user.service.UserService
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import org.springframework.http.ResponseEntity
+import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
@@ -58,7 +59,7 @@ class UserController(
     @RequestMapping(value = ["/me"], method = [RequestMethod.PUT, RequestMethod.PATCH])
     fun updateMyProfile(
         @AuthenticationPrincipal principal: UserDetails,
-        @RequestBody request: UserProfileUpdateRequest
+        @RequestBody @Valid request: UserProfileUpdateRequest
     ): ResponseEntity<UserResponse> {
         val userId = userService.getUserIdFromPrincipal(principal)
         val updatedUser = userService.updateUserProfile(

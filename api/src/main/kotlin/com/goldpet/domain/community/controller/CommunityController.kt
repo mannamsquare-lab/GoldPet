@@ -11,6 +11,7 @@ import com.goldpet.domain.community.dto.CommunityPostUpdateRequest
 import com.goldpet.domain.community.service.CommunityService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -82,7 +83,7 @@ class CommunityController(
     @Operation(summary = "게시글 작성")
     @PostMapping("/posts")
     fun createPost(
-        @RequestBody request: CommunityPostCreateRequest,
+        @RequestBody @Valid request: CommunityPostCreateRequest,
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<CommunityPostResponse> {
         val response = communityService.createPost(principal.id, request)
@@ -93,7 +94,7 @@ class CommunityController(
     @PutMapping("/posts/{postId}")
     fun updatePost(
         @PathVariable postId: Long,
-        @RequestBody request: CommunityPostUpdateRequest,
+        @RequestBody @Valid request: CommunityPostUpdateRequest,
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<CommunityPostResponse> {
         return ResponseEntity.ok(communityService.updatePost(postId, principal.id, request))

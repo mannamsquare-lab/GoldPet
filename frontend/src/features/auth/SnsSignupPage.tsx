@@ -151,6 +151,7 @@ export const SnsSignupPage = () => {
                 value={formData.nickname}
                 onChange={handleChange}
                 disabled={isLoading}
+                maxLength={15}
               />
               <button
                 type="button"
@@ -180,6 +181,7 @@ export const SnsSignupPage = () => {
               value={formData.name}
               onChange={handleChange}
               disabled={isLoading}
+              maxLength={20}
             />
             {errors.name && (
               <span className="sns-signup-error-message">{errors.name}</span>

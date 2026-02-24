@@ -188,12 +188,13 @@ export default function CommunityWritePage() {
         {/* Title */}
         <div className="input_wrap">
             <label htmlFor="write_title">제목</label>
-            <input 
-              type="text" 
-              id="write_title" 
-              placeholder="제목을 입력해주세요." 
+            <input
+              type="text"
+              id="write_title"
+              placeholder="제목을 입력해주세요."
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              maxLength={100}
             />
         </div>
         

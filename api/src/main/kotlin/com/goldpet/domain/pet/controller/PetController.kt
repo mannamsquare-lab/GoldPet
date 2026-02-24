@@ -4,6 +4,7 @@ import com.goldpet.domain.pet.dto.CreatePetRequest
 import com.goldpet.domain.pet.dto.PetResponse
 import com.goldpet.domain.pet.dto.UpdatePetRequest
 import com.goldpet.domain.pet.service.PetService
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.net.URI
@@ -20,7 +21,7 @@ class PetController(
     @PostMapping
     fun createPet(
         @AuthenticationPrincipal principal: UserDetails?,
-        @RequestBody request: CreatePetRequest
+        @RequestBody @Valid request: CreatePetRequest
     ): ResponseEntity<PetResponse> {
         if (principal == null) return ResponseEntity.status(401).build()
         val userId = userService.getUserIdFromPrincipal(principal)
@@ -46,7 +47,7 @@ class PetController(
     fun updatePet(
         @AuthenticationPrincipal principal: UserDetails?,
         @PathVariable petId: Long,
-        @RequestBody request: UpdatePetRequest
+        @RequestBody @Valid request: UpdatePetRequest
     ): ResponseEntity<PetResponse> {
         if (principal == null) return ResponseEntity.status(401).build()
         val userId = userService.getUserIdFromPrincipal(principal)

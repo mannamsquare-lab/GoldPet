@@ -393,6 +393,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
                                 placeholder="입력해 주세요"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
+                                maxLength={20}
                             />
                         </div>
 

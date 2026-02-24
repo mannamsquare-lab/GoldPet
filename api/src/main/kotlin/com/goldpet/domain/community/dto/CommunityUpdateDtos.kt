@@ -1,8 +1,10 @@
 package com.goldpet.domain.community.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import jakarta.validation.constraints.Size
 
 data class CommunityPostUpdateRequest(
+    @field:Size(max = 100, message = "제목은 100자 이내여야 합니다")
     val title: String? = null,
     val content: String? = null,
     val categoryId: Long? = null,

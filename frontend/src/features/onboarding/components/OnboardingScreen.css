@@ -13,13 +13,12 @@
 .onboarding-content {
   position: relative;
   width: 100%;
-  padding: 0 16px 32px;
+  padding: 0 16px 104px;
   display: flex;
   flex-direction: column;
   gap: 24px;
   align-items: center;
   z-index: 5;
-  padding-bottom: 0;
   margin: 24px auto 0;
   overflow: visible;
 }
