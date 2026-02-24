@@ -165,13 +165,23 @@ import ActivityKit
 
   // MARK: - Foreground Notification Suppression
 
-  // Foreground에서 시스템 알림 표시 방지 — Flutter onMessage 핸들러가 대신 처리
+  // Foreground 알림 처리: 원격(FCM)은 억제(Flutter onMessage가 처리), 로컬은 표시
   override func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
-    completionHandler([])  // 시스템 알림 표시 안 함
+    if notification.request.trigger is UNPushNotificationTrigger {
+      // 원격 FCM 푸시 → 시스템 배너 억제, Flutter onMessage 핸들러가 로컬 알림으로 대체
+      completionHandler([])
+    } else {
+      // 로컬 알림 (flutter_local_notifications) → 배너/소리/배지 표시
+      if #available(iOS 14.0, *) {
+        completionHandler([.banner, .sound, .badge])
+      } else {
+        completionHandler([.alert, .sound, .badge])
+      }
+    }
   }
 
   // MARK: - APNs
