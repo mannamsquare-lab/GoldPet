@@ -27,8 +27,12 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM] Background message: ${message.messageId}');
 }
 
-/// 푸시 알림 서비스
+/// 푸시 알림 서비스 (싱글턴)
 class PushNotificationService {
+  static final PushNotificationService _instance = PushNotificationService._internal();
+  factory PushNotificationService() => _instance;
+  PushNotificationService._internal();
+
   NativeBridge? _bridge;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -51,8 +55,6 @@ class PushNotificationService {
       });
     }
   }
-
-  PushNotificationService();
 
   /// 초기화 (앱 시작 시 호출)
   Future<void> initialize() async {
@@ -159,8 +161,10 @@ class PushNotificationService {
     });
 
     // 앱이 백그라운드에서 열릴 때 (알림 클릭 등)
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
       debugPrint('[FCM] Notification opened app: ${message.messageId}');
+      // WebView resume 대기 (background → foreground 전환 시)
+      await Future.delayed(const Duration(milliseconds: 500));
       _bridge?.sendEventToReact('pushNotificationClicked', {
         'title': message.notification?.title,
         'body': message.notification?.body,

@@ -163,6 +163,17 @@ import ActivityKit
     }
   }
 
+  // MARK: - Foreground Notification Suppression
+
+  // Foreground에서 시스템 알림 표시 방지 — Flutter onMessage 핸들러가 대신 처리
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    completionHandler([])  // 시스템 알림 표시 안 함
+  }
+
   // MARK: - APNs
 
   override func application(_ application: UIApplication,
