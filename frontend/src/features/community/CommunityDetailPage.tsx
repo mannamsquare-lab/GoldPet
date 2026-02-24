@@ -26,35 +26,54 @@ export default function CommunityDetailPage() {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentInput, setEditCommentInput] = useState('');
 
+  const isInputFocusedRef = useRef(false);
+
   const scrollToCommentPosition = useCallback(() => {
     const scroller = document.scrollingElement || document.documentElement;
     if (replyTargetId) {
-      // Reply: scroll so the parent comment is visible
       const parentComment = document.querySelector(`[data-comment-id="${replyTargetId}"]`);
       if (parentComment instanceof HTMLElement) {
         const targetTop = parentComment.getBoundingClientRect().top + scroller.scrollTop - 80;
         scroller.scrollTop = Math.max(0, targetTop);
       }
     } else {
-      // Regular comment: scroll to the very bottom
       scroller.scrollTop = scroller.scrollHeight;
     }
   }, [replyTargetId]);
 
+  // Resize listener: detect keyboard open/close and re-scroll
+  useEffect(() => {
+    const handleResize = () => {
+      if (!isInputFocusedRef.current) return;
+      scrollToCommentPosition();
+      setTimeout(scrollToCommentPosition, 300);
+    };
+    const vp = window.visualViewport;
+    if (vp) vp.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      if (vp) vp.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [scrollToCommentPosition]);
+
   const handleInputFocus = () => {
+    isInputFocusedRef.current = true;
     const nav = document.getElementById('bottomNav');
     if (nav) nav.style.display = 'none';
-    // Immediate scroll
     scrollToCommentPosition();
-    // Re-scroll after iOS keyboard animation settles
     setTimeout(scrollToCommentPosition, 300);
     setTimeout(scrollToCommentPosition, 600);
   };
 
   const handleInputBlur = () => {
+    isInputFocusedRef.current = false;
     setTimeout(() => {
       const active = document.activeElement;
-      if (active && active.tagName === 'TEXTAREA') return;
+      if (active && active.tagName === 'TEXTAREA') {
+        isInputFocusedRef.current = true;
+        return;
+      }
       const nav = document.getElementById('bottomNav');
       if (nav) nav.style.display = '';
     }, 150);
