@@ -242,7 +242,7 @@ export default function HomePage() {
                                         {petMode && item.isNeutered && <p className="neutering_on">중성화 OK</p>}
                                     </div>
 
-                                    <div className="pet_detail">
+                                    <div className="pet_detail" key={petMode ? 'pet-detail' : 'owner-detail'}>
                                         {petMode ? (
                                             <>
                                                 <p data-swiper-parallax="-300">
