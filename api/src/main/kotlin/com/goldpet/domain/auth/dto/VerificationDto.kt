@@ -11,5 +11,6 @@ data class VerificationConfirmRequest(
 
 data class VerificationResponse(
     val success: Boolean,
-    val message: String
+    val message: String,
+    val code: String? = null
 )

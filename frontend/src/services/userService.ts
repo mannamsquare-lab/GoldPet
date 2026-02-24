@@ -109,10 +109,10 @@ export const userService = {
         }
     },
 
-    requestVerificationCode: async (phoneNumber: string): Promise<boolean> => {
+    requestVerificationCode: async (phoneNumber: string): Promise<string | null> => {
         try {
-            await apiClient.post('/auth/verification/request', { phoneNumber });
-            return true;
+            const response = await apiClient.post('/auth/verification/request', { phoneNumber });
+            return response.data.code || null;
         } catch (error) {
             console.error('Failed to request verification code:', error);
             throw error;

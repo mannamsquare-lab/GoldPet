@@ -14,10 +14,10 @@ class VerificationService(
     private val logger = LoggerFactory.getLogger(VerificationService::class.java)
     private val CODE_TTL_MINUTES = 3L
 
-    fun sendVerificationCode(phoneNumber: String) {
+    fun sendVerificationCode(phoneNumber: String): String {
         // Generate 6-digit random code
         val code = Random.nextInt(100000, 999999).toString()
-        
+
         // Save to Redis
         redisTemplate.opsForValue().set(
             "verify:$phoneNumber",
@@ -27,6 +27,7 @@ class VerificationService(
         )
 
         smsSender.send(phoneNumber, "인증번호: $code")
+        return code
     }
 
     fun verifyCode(phoneNumber: String, code: String): Boolean {

@@ -230,8 +230,13 @@ const ProfileOwnerWritePage: React.FC = () => {
         setIsPhoneVerified(false); 
 
         try {
-            await userService.requestVerificationCode(phoneNumber);
-            showAlert('인증번호가 발송되었습니다.\\n(개발 모드: 백엔드 콘솔을 확인하세요)');
+            const devCode = await userService.requestVerificationCode(phoneNumber);
+            if (devCode) {
+                setVerifyCode(devCode);
+                showAlert('인증번호가 자동 입력되었습니다.');
+            } else {
+                showAlert('인증번호가 발송되었습니다.');
+            }
         } catch (error) {
              showAlert('인증번호 발송에 실패했습니다.');
         }

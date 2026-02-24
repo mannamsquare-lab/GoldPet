@@ -6,6 +6,7 @@ import com.goldpet.domain.auth.dto.VerificationResponse
 import com.goldpet.domain.auth.service.VerificationService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.core.env.Environment
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -16,14 +17,17 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/v1/auth/verification")
 class VerificationController(
-    private val verificationService: VerificationService
+    private val verificationService: VerificationService,
+    private val environment: Environment
 ) {
 
     @Operation(summary = "Request Verification Code", description = "인증번호를 발송합니다")
     @PostMapping("/request")
     fun requestVerificationCode(@RequestBody request: VerificationRequest): ResponseEntity<VerificationResponse> {
-        verificationService.sendVerificationCode(request.phoneNumber)
-        return ResponseEntity.ok(VerificationResponse(true, "인증번호가 발송되었습니다."))
+        val code = verificationService.sendVerificationCode(request.phoneNumber)
+        val activeProfiles = environment.activeProfiles.toSet()
+        val devCode = if ("local" in activeProfiles || "dev" in activeProfiles) code else null
+        return ResponseEntity.ok(VerificationResponse(true, "인증번호가 발송되었습니다.", devCode))
     }
 
     @Operation(summary = "Confirm Verification Code", description = "Verifies the code sent to the phone number")
