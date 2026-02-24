@@ -348,8 +348,8 @@ const ProfileOwnerWritePage: React.FC = () => {
             navigate('/profile');
         } catch (error: unknown) {
             console.error(error);
-            const err = error as { response?: { data?: { message?: string } } };
-            const message = err?.response?.data?.message || '저장에 실패했습니다.';
+            const err = error as any;
+            const message = err?.response?.data?.message || err?.message || '저장에 실패했습니다.';
             showAlert(message);
         }
     };

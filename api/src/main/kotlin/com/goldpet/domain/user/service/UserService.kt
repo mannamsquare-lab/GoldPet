@@ -207,9 +207,10 @@ class UserService(
                 throw IllegalArgumentException("성별은 인증 후 변경할 수 없습니다")
             if (request.birthDate != null && request.birthDate != user.birthDate?.toString())
                 throw IllegalArgumentException("생년월일은 인증 후 변경할 수 없습니다")
-            if (request.phoneNumber != null && request.phoneNumber != user.phoneNumber)
+            // Normalize phone numbers (strip non-digits) before comparing to handle format differences
+            if (request.phoneNumber != null && request.phoneNumber.replace(Regex("[^0-9]"), "") != user.phoneNumber?.replace(Regex("[^0-9]"), ""))
                 throw IllegalArgumentException("전화번호는 인증 후 변경할 수 없습니다")
-            if (request.name != null && request.name != user.name)
+            if (request.name != null && request.name.trim() != user.name?.trim())
                 throw IllegalArgumentException("이름은 인증 후 변경할 수 없습니다")
         }
 
