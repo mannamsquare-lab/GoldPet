@@ -182,14 +182,18 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
                     )
             user = userRepository.save(user)
         } else {
-            // Update user details if necessary
-            user.email = email ?: user.email
-            if (email != null) {
-                user.emailHash = email
+            // Update user details if necessary (protect user-customized data)
+            var changed = false
+            if (email != null && user.email != email) {
+                user.email = email; user.emailHash = email; changed = true
             }
-            user.nickname = nickname ?: user.nickname
-            user.profileImageUrl = profileImage ?: user.profileImageUrl
-            user = userRepository.save(user)
+            if (nickname != null && user.nickname == null) {
+                user.nickname = nickname; changed = true
+            }
+            if (profileImage != null && user.profileImages.isEmpty() && user.profileImageUrl != profileImage) {
+                user.profileImageUrl = profileImage; changed = true
+            }
+            if (changed) user = userRepository.save(user)
         }
 
         return UserPrincipal.create(user, oAuth2User.attributes)
