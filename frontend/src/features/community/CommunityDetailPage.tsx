@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
@@ -26,29 +26,29 @@ export default function CommunityDetailPage() {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentInput, setEditCommentInput] = useState('');
 
+  const scrollToCommentPosition = useCallback(() => {
+    const scroller = document.scrollingElement || document.documentElement;
+    if (replyTargetId) {
+      // Reply: scroll so the parent comment is visible
+      const parentComment = document.querySelector(`[data-comment-id="${replyTargetId}"]`);
+      if (parentComment instanceof HTMLElement) {
+        const targetTop = parentComment.getBoundingClientRect().top + scroller.scrollTop - 80;
+        scroller.scrollTop = Math.max(0, targetTop);
+      }
+    } else {
+      // Regular comment: scroll to the very bottom
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+  }, [replyTargetId]);
+
   const handleInputFocus = () => {
     const nav = document.getElementById('bottomNav');
     if (nav) nav.style.display = 'none';
-    setTimeout(() => {
-      if (replyTargetId) {
-        // Reply: scroll so the parent comment is visible
-        const parentComment = document.querySelector(`[data-comment-id="${replyTargetId}"]`);
-        if (parentComment instanceof HTMLElement) {
-          parentComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      } else {
-        // Regular comment: scroll to the very bottom (last comment visible)
-        const allComments = document.querySelectorAll('.comment_item');
-        const lastComment = allComments[allComments.length - 1];
-        if (lastComment instanceof HTMLElement) {
-          lastComment.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        } else {
-          // Fallback: scroll both documentElement and body
-          document.documentElement.scrollTop = document.documentElement.scrollHeight;
-          document.body.scrollTop = document.body.scrollHeight;
-        }
-      }
-    }, 300);
+    // Immediate scroll
+    scrollToCommentPosition();
+    // Re-scroll after iOS keyboard animation settles
+    setTimeout(scrollToCommentPosition, 300);
+    setTimeout(scrollToCommentPosition, 600);
   };
 
   const handleInputBlur = () => {
