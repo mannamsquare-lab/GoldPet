@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
@@ -275,11 +275,11 @@ const ChatDetailPage = () => {
 
     const isInitialLoadRef = useRef(true);
 
-    const scrollToBottom = (instant = false) => {
+    const scrollToBottom = useCallback((instant = false) => {
         messagesEndRef.current?.scrollIntoView({
             behavior: instant ? 'instant' : 'smooth'
         });
-    };
+    }, []);
 
     useEffect(() => {
         if (messages.length > 0) {
@@ -304,6 +304,41 @@ const ChatDetailPage = () => {
             });
         }
     }, [chatId, queryClient]);
+
+    // Auto-scroll when keyboard opens (viewport shrinks)
+    useEffect(() => {
+        const viewport = window.visualViewport;
+        if (!viewport) return;
+
+        let prevHeight = viewport.height;
+        let prevWidth = viewport.width;
+
+        const handleResize = () => {
+            const currentHeight = viewport.height;
+            const currentWidth = viewport.width;
+            if (currentHeight < prevHeight && currentWidth === prevWidth) {
+                scrollToBottom(true);
+            }
+            prevHeight = currentHeight;
+            prevWidth = currentWidth;
+        };
+
+        viewport.addEventListener('resize', handleResize);
+        return () => viewport.removeEventListener('resize', handleResize);
+    }, [scrollToBottom]);
+
+    // Fallback: scroll on textarea focus (for browsers without visualViewport)
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const handleFocus = () => {
+            setTimeout(() => scrollToBottom(true), 300);
+        };
+
+        textarea.addEventListener('focus', handleFocus);
+        return () => textarea.removeEventListener('focus', handleFocus);
+    }, [scrollToBottom]);
 
     const handleSendMessage = async () => {
         // Stop typing indicator when sending
