@@ -30,9 +30,15 @@ export default function CommunityDetailPage() {
     const nav = document.getElementById('bottomNav');
     if (nav) nav.style.display = 'none';
     setTimeout(() => {
-      const active = document.activeElement;
-      if (active instanceof HTMLElement) {
-        active.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (replyTargetId) {
+        // Reply: scroll so the parent comment is visible
+        const parentComment = document.querySelector(`[data-comment-id="${replyTargetId}"]`);
+        if (parentComment instanceof HTMLElement) {
+          parentComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } else {
+        // Regular comment: scroll to the very bottom
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       }
     }, 300);
   };
@@ -314,8 +320,9 @@ export default function CommunityDetailPage() {
 
           <ul className="comment_list">
             {post.comments?.map((comment) => (
-              <li 
-                key={comment.id} 
+              <li
+                key={comment.id}
+                data-comment-id={comment.id}
                 className={`comment_item depth_${comment.depth}`}
                 style={{ paddingLeft: comment.depth > 1 ? `${(comment.depth - 1) * 40}px` : '0' }}
               >
