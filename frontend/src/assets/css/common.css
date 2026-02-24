@@ -4607,60 +4607,6 @@ legend {
 	cursor: pointer;
 }
 
-/* 카드 전환 애니메이션 (반려동물 ↔ 반려인) */
-@keyframes cardFadeIn {
-	from {
-		opacity: 0;
-		transform: scale(0.97);
-	}
-
-	to {
-		opacity: 1;
-		transform: scale(1);
-	}
-}
-
-@keyframes cardSlideUp {
-	from {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-/* 초기 로드 시 카드 등장 애니메이션 */
-#mainContainer .main_slide .main_slide_inside {
-	animation: cardFadeIn 0.3s ease-out;
-}
-
-#mainContainer .main_slide .txt_wrap {
-	animation: cardSlideUp 0.25s ease-out;
-}
-
-#mainContainer .main_slide .pet_detail {
-	animation: cardSlideUp 0.3s ease-out 0.05s both;
-}
-
-/* 반려동물 ↔ 반려인 전환 트랜지션 */
-#mainContainer .main_slide .swiper-slide .main_slide_inside,
-#mainContainer .main_slide .swiper-slide .txt_wrap,
-#mainContainer .main_slide .swiper-slide .pet_detail,
-#mainContainer .main_slide .swiper-slide .butler_img {
-	transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-}
-
-#mainContainer .main_slide .swiper-slide.card-switching .main_slide_inside,
-#mainContainer .main_slide .swiper-slide.card-switching .txt_wrap,
-#mainContainer .main_slide .swiper-slide.card-switching .pet_detail,
-#mainContainer .main_slide .swiper-slide.card-switching .butler_img {
-	opacity: 0;
-	transform: scale(0.97);
-}
-
 #mainContainer .main_slide .butler_img:active {
 	transform: scale(0.85);
 }

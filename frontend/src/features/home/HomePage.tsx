@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { m, AnimatePresence } from 'motion/react';
 import SwiperCore from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Parallax } from 'swiper/modules';
@@ -43,23 +44,16 @@ export default function HomePage() {
     const [notices, setNotices] = useState<AppNoticeResponse[]>([]);
     const [maintenanceNotice, setMaintenanceNotice] = useState<AppNoticeResponse | null>(null);
     const [petModeMap, setPetModeMap] = useState<Record<number, boolean>>({});
-    const [switchingIds, setSwitchingIds] = useState<Set<number>>(new Set());
+    const isAnimatingRef = useRef<Set<number>>(new Set());
     const [galleryState, setGalleryState] = useState<{
         open: boolean; images: string[]; index: number;
     }>({ open: false, images: [], index: 0 });
 
     const isPetMode = (id: number) => petModeMap[id] !== false;
     const toggleMode = (id: number) => {
-        if (switchingIds.has(id)) return;
-        setSwitchingIds(prev => new Set(prev).add(id));
-        setTimeout(() => {
-            setPetModeMap(prev => ({ ...prev, [id]: !(prev[id] !== false) }));
-            setSwitchingIds(prev => {
-                const next = new Set(prev);
-                next.delete(id);
-                return next;
-            });
-        }, 200);
+        if (isAnimatingRef.current.has(id)) return;
+        isAnimatingRef.current.add(id);
+        setPetModeMap(prev => ({ ...prev, [id]: !(prev[id] !== false) }));
     };
 
     const handleLike = async (id: number, name: string) => {
@@ -150,186 +144,205 @@ export default function HomePage() {
             </LocationStatus>
 
             {/* Vanilla Swiper outer - HTML structure identical to original index.html */}
-            <div className="main_slide" ref={mainSlideRef}>
-                <div className="swiper-wrapper">
-                    {homeData.recommendations && homeData.recommendations.length > 0 ? (
-                        homeData.recommendations.map((item, index) => {
-                            const petMode = isPetMode(item.id);
-                            const ownerImgs = item.profileImages.length > 0
-                                ? item.profileImages
-                                : (item.profileImageUrl ? [item.profileImageUrl] : [OWNER_FALLBACK]);
-                            const currentImages = petMode
-                                ? (item.images.length > 0 ? item.images : [PET_FALLBACK_FN(index)])
-                                : ownerImgs;
-                            const butlerSrc = petMode
-                                ? (item.profileImages[0] || item.profileImageUrl || OWNER_FALLBACK)
-                                : (item.images[0] || PET_FALLBACK_FN(index));
+                <div className="main_slide" ref={mainSlideRef}>
+                    <div className="swiper-wrapper">
+                        {homeData.recommendations && homeData.recommendations.length > 0 ? (
+                            homeData.recommendations.map((item, index) => {
+                                const petMode = isPetMode(item.id);
+                                const ownerImgs = item.profileImages.length > 0
+                                    ? item.profileImages
+                                    : (item.profileImageUrl ? [item.profileImageUrl] : [OWNER_FALLBACK]);
+                                const currentImages = petMode
+                                    ? (item.images.length > 0 ? item.images : [PET_FALLBACK_FN(index)])
+                                    : ownerImgs;
+                                const butlerSrc = petMode
+                                    ? (item.profileImages[0] || item.profileImageUrl || OWNER_FALLBACK)
+                                    : (item.images[0] || PET_FALLBACK_FN(index));
 
 
 
-                            return (
-                                <div className={`swiper-slide${switchingIds.has(item.id) ? ' card-switching' : ''}`} key={item.id}>
-                                    <div className="img_wrap">
-                                        <img src={`/assets/images/main/main_slide_icon0${(index % 3) + 1}.svg`} data-swiper-parallax="-500" className="icon_img" alt="" />
+                                return (
+                                    <div className="swiper-slide" key={item.id}>
+                                        <div className="img_wrap">
+                                            <img src={`/assets/images/main/main_slide_icon0${(index % 3) + 1}.svg`} data-swiper-parallax="-500" className="icon_img" alt="" />
 
-                                        {/* Inner Swiper as React component - avoids vanilla reinit on state change */}
-                                        <div className="main_slide_inside">
-                                            <Swiper
-                                                modules={[Navigation]}
-                                                navigation={{
-                                                    prevEl: `.swiper-inside-prev-${index}`,
-                                                    nextEl: `.swiper-inside-next-${index}`,
-                                                }}
-                                                loop={false}
-                                                spaceBetween={0}
-                                                allowTouchMove={false}
-                                                key={petMode ? `pet-${item.id}` : `owner-${item.id}`}
+                                            {/* Inner Swiper as React component - avoids vanilla reinit on state change */}
+                                            <AnimatePresence mode="wait" onExitComplete={() => isAnimatingRef.current.delete(item.id)}>
+                                                <m.div
+                                                    key={petMode ? `pet-img-${item.id}` : `owner-img-${item.id}`}
+                                                    className="main_slide_inside"
+                                                    initial={{ opacity: 0, scale: 0.96 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.96 }}
+                                                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                                                >
+                                                    <Swiper
+                                                        modules={[Navigation]}
+                                                        navigation={{
+                                                            prevEl: `.swiper-inside-prev-${index}`,
+                                                            nextEl: `.swiper-inside-next-${index}`,
+                                                        }}
+                                                        loop={false}
+                                                        spaceBetween={0}
+                                                        allowTouchMove={false}
+                                                        key={petMode ? `pet-${item.id}` : `owner-${item.id}`}
+                                                    >
+                                                        {currentImages.map((img, imgIdx) => (
+                                                            <SwiperSlide key={imgIdx}>
+                                                                <img
+                                                                    className="pet_img"
+                                                                    src={getImageUrl(img, 'medium')}
+                                                                    alt=""
+                                                                    data-clickable="true"
+                                                                    loading="lazy"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setGalleryState({ open: true, images: currentImages, index: imgIdx });
+                                                                    }}
+                                                                    onError={(e) => {
+                                                                        const target = e.currentTarget;
+                                                                        if (!target.dataset.fallback) {
+                                                                            target.dataset.fallback = 'true';
+                                                                            target.src = img;
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </SwiperSlide>
+                                                        ))}
+                                                    </Swiper>
+                                                    <div className={`swiper-inside-prev-${index} swiper-inside-prev`}></div>
+                                                    <div className={`swiper-inside-next-${index} swiper-inside-next`}></div>
+                                                </m.div>
+                                            </AnimatePresence>
+
+                                            <div
+                                                className="butler_img"
+                                                data-swiper-parallax="-400"
+                                                data-clickable="true"
+                                                onClick={(e) => { e.stopPropagation(); toggleMode(item.id); }}
                                             >
-                                                {currentImages.map((img, imgIdx) => (
-                                                    <SwiperSlide key={imgIdx}>
-                                                        <img
-                                                            className="pet_img"
-                                                            src={getImageUrl(img, 'medium')}
-                                                            alt=""
-                                                            data-clickable="true"
-                                                            loading="lazy"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setGalleryState({ open: true, images: currentImages, index: imgIdx });
-                                                            }}
-                                                            onError={(e) => {
-                                                                const target = e.currentTarget;
-                                                                if (!target.dataset.fallback) {
-                                                                    target.dataset.fallback = 'true';
-                                                                    target.src = img;
-                                                                }
-                                                            }}
-                                                        />
-                                                    </SwiperSlide>
-                                                ))}
-                                            </Swiper>
-                                            <div className={`swiper-inside-prev-${index} swiper-inside-prev`}></div>
-                                            <div className={`swiper-inside-next-${index} swiper-inside-next`}></div>
-                                        </div>
-
-                                        <div
-                                            className="butler_img"
-                                            data-swiper-parallax="-400"
-                                            data-clickable="true"
-                                            onClick={(e) => { e.stopPropagation(); toggleMode(item.id); }}
-                                        >
-                                            <img
-                                                src={butlerSrc}
-                                                alt=""
-                                                onError={(e) => { e.currentTarget.src = OWNER_FALLBACK; }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="txt_wrap" data-swiper-parallax="-200">
-                                        {petMode ? (
-                                            <h2>
-                                                {item.name}{' '}
                                                 <img
-                                                    src={item.gender === 'FEMALE'
-                                                        ? '/assets/images/main/woman_icon.svg'
-                                                        : '/assets/images/main/man_icon.svg'}
-                                                    alt="성별 icon"
+                                                    src={butlerSrc}
+                                                    alt=""
+                                                    onError={(e) => { e.currentTarget.src = OWNER_FALLBACK; }}
                                                 />
-                                            </h2>
-                                        ) : (
-                                            <h2>
-                                                {item.nickname}{' '}
-                                                {item.ownerGender && (
-                                                    <img
-                                                        src={item.ownerGender === 'FEMALE'
-                                                            ? '/assets/images/main/woman_icon.svg'
-                                                            : '/assets/images/main/man_icon.svg'}
-                                                        alt="성별 icon"
-                                                    />
-                                                )}
-                                            </h2>
-                                        )}
-                                        {petMode && item.isNeutered && <p className="neutering_on">중성화 OK</p>}
-                                    </div>
-
-                                    <div className="pet_detail">
-                                        {petMode ? (
-                                            <>
-                                                <p data-swiper-parallax="-300">
-                                                    {item.petAge}살 ∙ {item.petBreed} <br />
-                                                    {item.locationText || '위치 미설정'} ∙ {item.distance}
-                                                </p>
-                                                <br />
-                                                {item.description && <p data-swiper-parallax="-250">{item.description}</p>}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <p data-swiper-parallax="-300">
-                                                    {item.ownerAge ? `${item.ownerAge}살 ∙ ` : ''}{item.locationText || '위치 미설정'} ∙ {item.distance}
-                                                </p>
-                                                {item.ownerMbti && <p data-swiper-parallax="-280">{item.ownerMbti}</p>}
-                                                {item.ownerIntro && <><br /><p data-swiper-parallax="-250">{item.ownerIntro}</p></>}
-                                            </>
-                                        )}
-                                        {petMode ? (
-                                            item.tags.length > 0 && (
-                                                <div className="wish_dot" data-swiper-parallax="-200">
-                                                    {item.tags
-                                                        .map(tag => formatPetTag(tag))
-                                                        .filter(tag => tag !== '')
-                                                        .map((tag, i) => (
-                                                            <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
-                                                        ))
-                                                    }
-                                                </div>
-                                            )
-                                        ) : (
-                                            (item.ownerInterests.length > 0 || item.ownerHobbies.length > 0) && (
-                                                <div className="wish_dot" data-swiper-parallax="-200">
-                                                    {item.ownerInterests.map((interest, i) => (
-                                                        <p key={`interest-${i}`} className={`label${(i % 4) + 1}`}>{interest}</p>
-                                                    ))}
-                                                    {item.ownerHobbies.map((hobby, i) => (
-                                                        <p key={`hobby-${i}`} className={`label${((item.ownerInterests.length + i) % 4) + 1}`}>{hobby}</p>
-                                                    ))}
-                                                </div>
-                                            )
-                                        )}
-                                        <div className="like_wrap" data-swiper-parallax="-150">
-                                            <button type="button" onClick={() => handleDislike(item.id, item.name)} disabled={loadingId === item.id}>
-                                                <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
-                                            </button>
-                                            <button type="button" className="active" onClick={() => handleLike(item.id, item.name)} disabled={loadingId === item.id || likedIds.has(item.id)}>
-                                                <img src="/assets/images/common/like_btn.svg" alt="" />{likedIds.has(item.id) ? '좋아요 완료' : '좋아요'}
-                                            </button>
+                                            </div>
                                         </div>
+
+                                        <AnimatePresence mode="wait">
+                                            <m.div
+                                                key={petMode ? `pet-info-${item.id}` : `owner-info-${item.id}`}
+                                                initial={{ opacity: 0, y: 12 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -8 }}
+                                                transition={{ duration: 0.25, ease: 'easeOut' }}
+                                            >
+                                                <div className="txt_wrap" data-swiper-parallax="-200">
+                                                    {petMode ? (
+                                                        <h2>
+                                                            {item.name}{' '}
+                                                            <img
+                                                                src={item.gender === 'FEMALE'
+                                                                    ? '/assets/images/main/woman_icon.svg'
+                                                                    : '/assets/images/main/man_icon.svg'}
+                                                                alt="성별 icon"
+                                                            />
+                                                        </h2>
+                                                    ) : (
+                                                        <h2>
+                                                            {item.nickname}{' '}
+                                                            {item.ownerGender && (
+                                                                <img
+                                                                    src={item.ownerGender === 'FEMALE'
+                                                                        ? '/assets/images/main/woman_icon.svg'
+                                                                        : '/assets/images/main/man_icon.svg'}
+                                                                    alt="성별 icon"
+                                                                />
+                                                            )}
+                                                        </h2>
+                                                    )}
+                                                    {petMode && item.isNeutered && <p className="neutering_on">중성화 OK</p>}
+                                                </div>
+
+                                                <div className="pet_detail">
+                                                    {petMode ? (
+                                                        <>
+                                                            <p data-swiper-parallax="-300">
+                                                                {item.petAge}살 ∙ {item.petBreed} <br />
+                                                                {item.locationText || '위치 미설정'} ∙ {item.distance}
+                                                            </p>
+                                                            <br />
+                                                            {item.description && <p data-swiper-parallax="-250">{item.description}</p>}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <p data-swiper-parallax="-300">
+                                                                {item.ownerAge ? `${item.ownerAge}살 ∙ ` : ''}{item.locationText || '위치 미설정'} ∙ {item.distance}
+                                                            </p>
+                                                            {item.ownerMbti && <p data-swiper-parallax="-280">{item.ownerMbti}</p>}
+                                                            {item.ownerIntro && <><br /><p data-swiper-parallax="-250">{item.ownerIntro}</p></>}
+                                                        </>
+                                                    )}
+                                                    {petMode ? (
+                                                        item.tags.length > 0 && (
+                                                            <div className="wish_dot" data-swiper-parallax="-200">
+                                                                {item.tags
+                                                                    .map(tag => formatPetTag(tag))
+                                                                    .filter(tag => tag !== '')
+                                                                    .map((tag, i) => (
+                                                                        <p key={i} className={`label${(i % 4) + 1}`}>{tag}</p>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        )
+                                                    ) : (
+                                                        (item.ownerInterests.length > 0 || item.ownerHobbies.length > 0) && (
+                                                            <div className="wish_dot" data-swiper-parallax="-200">
+                                                                {item.ownerInterests.map((interest, i) => (
+                                                                    <p key={`interest-${i}`} className={`label${(i % 4) + 1}`}>{interest}</p>
+                                                                ))}
+                                                                {item.ownerHobbies.map((hobby, i) => (
+                                                                    <p key={`hobby-${i}`} className={`label${((item.ownerInterests.length + i) % 4) + 1}`}>{hobby}</p>
+                                                                ))}
+                                                            </div>
+                                                        )
+                                                    )}
+                                                    <div className="like_wrap" data-swiper-parallax="-150">
+                                                        <button type="button" onClick={() => handleDislike(item.id, item.name)} disabled={loadingId === item.id}>
+                                                            <img src="/assets/images/common/dislike_btn.svg" alt="" />싫어요
+                                                        </button>
+                                                        <button type="button" className="active" onClick={() => handleLike(item.id, item.name)} disabled={loadingId === item.id || likedIds.has(item.id)}>
+                                                            <img src="/assets/images/common/like_btn.svg" alt="" />{likedIds.has(item.id) ? '좋아요 완료' : '좋아요'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </m.div>
+                                        </AnimatePresence>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="swiper-slide">
+                                <div className="img_wrap">
+                                    <img src="/assets/images/main/main_slide_icon01.svg" data-swiper-parallax="-500" className="icon_img" alt="" />
+                                    <div className="main_slide_inside">
+                                        <Swiper modules={[Navigation]} loop={false} allowTouchMove={false}>
+                                            <SwiperSlide>
+                                                <img src="/assets/images/common/pet_none_img02.svg" className="pet_img" alt="" />
+                                            </SwiperSlide>
+                                        </Swiper>
                                     </div>
                                 </div>
-                            );
-                        })
-                    ) : (
-                        <div className="swiper-slide">
-                            <div className="img_wrap">
-                                <img src="/assets/images/main/main_slide_icon01.svg" data-swiper-parallax="-500" className="icon_img" alt="" />
-                                <div className="main_slide_inside">
-                                    <Swiper modules={[Navigation]} loop={false} allowTouchMove={false}>
-                                        <SwiperSlide>
-                                            <img src="/assets/images/common/pet_none_img02.svg" className="pet_img" alt="" />
-                                        </SwiperSlide>
-                                    </Swiper>
+                                <div className="txt_wrap" data-swiper-parallax="-200">
+                                    <h2>아직 추천 친구가 없어요</h2>
+                                </div>
+                                <div className="pet_detail">
+                                    <p data-swiper-parallax="-300">주변 반려동물 친구를 찾아보세요!</p>
                                 </div>
                             </div>
-                            <div className="txt_wrap" data-swiper-parallax="-200">
-                                <h2>아직 추천 친구가 없어요</h2>
-                            </div>
-                            <div className="pet_detail">
-                                <p data-swiper-parallax="-300">주변 반려동물 친구를 찾아보세요!</p>
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
-            </div>
 
             <ImageGalleryModal
                 isOpen={galleryState.open}
