@@ -311,18 +311,31 @@ const ChatDetailPage = () => {
         }
     }, [chatId, queryClient]);
 
-    // Auto-scroll when keyboard opens (viewport shrinks)
+    // Dynamic viewport height for iOS WKWebView
+    // CSS 100vh/100dvh doesn't update when Flutter resizes the WebView for keyboard
+    // window.innerHeight DOES update, so we bridge via CSS custom property
     useEffect(() => {
-        const viewport = window.visualViewport;
+        const updateAppHeight = () => {
+            const h = window.innerHeight;
+            document.documentElement.style.setProperty('--app-height', `${h}px`);
+        };
 
+        // Set initial value
+        updateAppHeight();
+
+        const viewport = window.visualViewport;
         let prevHeight = viewport ? viewport.height : window.innerHeight;
         let prevWidth = viewport ? viewport.width : window.innerWidth;
 
         const handleResize = () => {
+            // Update CSS custom property on every resize
+            updateAppHeight();
+
             const currentHeight = viewport ? viewport.height : window.innerHeight;
             const currentWidth = viewport ? viewport.width : window.innerWidth;
+            // Keyboard opened: height decreased, width unchanged (not rotation)
             if (currentHeight < prevHeight && currentWidth === prevWidth) {
-                scrollToBottom(true);
+                setTimeout(() => scrollToBottom(true), 50);
             }
             prevHeight = currentHeight;
             prevWidth = currentWidth;
