@@ -46,7 +46,11 @@ const ProfilePetTab: React.FC = () => {
     };
 
     const handleEdit = () => {
-        navigate('/profile/pet/edit');
+        if (pet?.id) {
+            navigate(`/profile/pet/edit?petId=${pet.id}`);
+        } else {
+            navigate('/profile/pet/edit');
+        }
     };
 
     // Helper to get label for attribute value
