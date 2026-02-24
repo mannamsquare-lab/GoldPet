@@ -2,15 +2,6 @@ import { useState, useEffect } from 'react';
 import { marketingService } from '../../services/marketingService';
 import type { NotificationTemplate, NotificationTemplateRequest, DeliveryLog } from '../../services/marketingService';
 
-interface Campaign {
-  id: number;
-  name: string;
-  startDate: string;
-  endDate: string;
-  status: 'DRAFT' | 'SCHEDULED' | 'SENT';
-  participants: number;
-}
-
 interface Banner {
   id: number;
   title: string;
@@ -21,12 +12,11 @@ interface Banner {
 }
 
 export default function MarketingPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
   const [deliveryLogs, setDeliveryLogs] = useState<DeliveryLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'push' | 'banner' | 'templates' | 'delivery-logs'>('push');
+  const [activeTab, setActiveTab] = useState<'banner' | 'templates' | 'delivery-logs'>('templates');
   const [showTemplateForm, setShowTemplateForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | null>(null);
   const [templateForm, setTemplateForm] = useState<NotificationTemplateRequest>({
@@ -41,29 +31,22 @@ export default function MarketingPage() {
   });
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
     if (activeTab === 'templates') {
       loadTemplates();
     } else if (activeTab === 'delivery-logs') {
       loadDeliveryLogs();
+    } else if (activeTab === 'banner') {
+      loadBanners();
     }
   }, [activeTab]);
 
-  const loadData = async () => {
+  const loadBanners = async () => {
     setLoading(true);
     try {
-      const [campaignsData, bannersData] = await Promise.all([
-        marketingService.getCampaigns(),
-        marketingService.getBanners(),
-      ]);
-      setCampaigns(campaignsData);
+      const bannersData = await marketingService.getBanners();
       setBanners(bannersData);
     } catch (error) {
-      console.error('Failed to load marketing data:', error);
-      setCampaigns([]);
+      console.error('Failed to load banners:', error);
       setBanners([]);
     } finally {
       setLoading(false);
@@ -168,16 +151,6 @@ export default function MarketingPage() {
     setTemplateForm({ title: '', body: '', category: 'NOTICE' });
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      DRAFT: 'bg-gray-100 text-gray-800',
-      SCHEDULED: 'bg-yellow-100 text-yellow-800',
-      SENT: 'bg-green-100 text-green-800',
-    };
-    const labels: Record<string, string> = { DRAFT: '초안', SCHEDULED: '예약됨', SENT: '발송됨' };
-    return <span className={`px-2 py-1 text-xs rounded-full ${styles[status]}`}>{labels[status]}</span>;
-  };
-
   const getCategoryBadge = (category: string) => {
     const styles: Record<string, string> = {
       NOTICE: 'bg-blue-100 text-blue-800',
@@ -203,28 +176,22 @@ export default function MarketingPage() {
       {/* Tabs */}
       <div className="flex gap-2 border-b">
         <button
-          onClick={() => setActiveTab('push')}
-          className={`px-4 py-2 font-medium ${activeTab === 'push' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-        >
-          푸시 알림
-        </button>
-        <button
-          onClick={() => setActiveTab('banner')}
-          className={`px-4 py-2 font-medium ${activeTab === 'banner' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-        >
-          배너 관리
-        </button>
-        <button
           onClick={() => setActiveTab('templates')}
           className={`px-4 py-2 font-medium ${activeTab === 'templates' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
         >
-          알림 템플릿
+          푸시 알림
         </button>
         <button
           onClick={() => setActiveTab('delivery-logs')}
           className={`px-4 py-2 font-medium ${activeTab === 'delivery-logs' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
         >
           발송 로그
+        </button>
+        <button
+          onClick={() => setActiveTab('banner')}
+          className={`px-4 py-2 font-medium ${activeTab === 'banner' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
+        >
+          배너 관리
         </button>
       </div>
 
@@ -411,35 +378,6 @@ export default function MarketingPage() {
                   <td className="px-6 py-4 whitespace-nowrap">{getTargetTypeBadge(log.targetType)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">{log.sentCount.toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">{new Date(log.sentAt).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : activeTab === 'push' ? (
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-          <div className="p-4 border-b flex justify-between items-center">
-            <h2 className="font-semibold">푸시 캠페인</h2>
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
-              + 새 캠페인
-            </button>
-          </div>
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">기간</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">참여자</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {campaigns.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium">{campaign.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{campaign.startDate} ~ {campaign.endDate}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(campaign.status)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">{campaign.participants.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
