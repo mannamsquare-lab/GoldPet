@@ -37,8 +37,16 @@ export default function CommunityDetailPage() {
           parentComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       } else {
-        // Regular comment: scroll to the very bottom
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        // Regular comment: scroll to the very bottom (last comment visible)
+        const allComments = document.querySelectorAll('.comment_item');
+        const lastComment = allComments[allComments.length - 1];
+        if (lastComment instanceof HTMLElement) {
+          lastComment.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        } else {
+          // Fallback: scroll both documentElement and body
+          document.documentElement.scrollTop = document.documentElement.scrollHeight;
+          document.body.scrollTop = document.body.scrollHeight;
+        }
       }
     }, 300);
   };
