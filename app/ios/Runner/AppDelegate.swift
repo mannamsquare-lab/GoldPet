@@ -165,15 +165,18 @@ import ActivityKit
 
   // MARK: - Foreground Notification Suppression
 
-  // Foreground 알림 처리: 원격(FCM)은 억제(Flutter onMessage가 처리), 로컬은 표시
+  // Foreground 알림 처리: 원격(FCM)은 Firebase 처리 후 배너 억제, 로컬은 표시
   override func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
     if notification.request.trigger is UNPushNotificationTrigger {
-      // 원격 FCM 푸시 → 시스템 배너 억제, Flutter onMessage 핸들러가 로컬 알림으로 대체
-      completionHandler([])
+      // 원격 FCM 푸시 → super 호출로 Firebase SDK가 onMessage 트리거하도록 처리
+      // completionHandler를 래핑하여 시스템 배너는 억제 (Flutter onMessage가 로컬 알림으로 대체)
+      super.userNotificationCenter(center, willPresent: notification) { _ in
+        completionHandler([])
+      }
     } else {
       // 로컬 알림 (flutter_local_notifications) → 배너/소리/배지 표시
       if #available(iOS 14.0, *) {
