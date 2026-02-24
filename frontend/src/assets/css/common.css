@@ -235,7 +235,7 @@ h6 {
 
 #mainContainer .main_slide .main_slide_inside {
 	position: relative;
-	padding: 16.67vw 0 1px 4.44vw;
+	padding: 10vw 0 0.7vw 4.44vw;
 }
 
 #mainContainer .main_slide .main_slide_inside:after {
@@ -4609,21 +4609,38 @@ legend {
 
 /* 카드 전환 애니메이션 (반려동물 ↔ 반려인) */
 @keyframes cardFadeIn {
-	from { opacity: 0; transform: scale(0.97); }
-	to { opacity: 1; transform: scale(1); }
+	from {
+		opacity: 0;
+		transform: scale(0.97);
+	}
+
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
 }
+
 @keyframes cardSlideUp {
-	from { opacity: 0; transform: translateY(10px); }
-	to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 /* 초기 로드 시 카드 등장 애니메이션 */
 #mainContainer .main_slide .main_slide_inside {
 	animation: cardFadeIn 0.3s ease-out;
 }
+
 #mainContainer .main_slide .txt_wrap {
 	animation: cardSlideUp 0.25s ease-out;
 }
+
 #mainContainer .main_slide .pet_detail {
 	animation: cardSlideUp 0.3s ease-out 0.05s both;
 }
