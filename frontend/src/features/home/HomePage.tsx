@@ -43,13 +43,24 @@ export default function HomePage() {
     const [notices, setNotices] = useState<AppNoticeResponse[]>([]);
     const [maintenanceNotice, setMaintenanceNotice] = useState<AppNoticeResponse | null>(null);
     const [petModeMap, setPetModeMap] = useState<Record<number, boolean>>({});
+    const [switchingIds, setSwitchingIds] = useState<Set<number>>(new Set());
     const [galleryState, setGalleryState] = useState<{
         open: boolean; images: string[]; index: number;
     }>({ open: false, images: [], index: 0 });
 
     const isPetMode = (id: number) => petModeMap[id] !== false;
-    const toggleMode = (id: number) =>
-        setPetModeMap(prev => ({ ...prev, [id]: !(prev[id] !== false) }));
+    const toggleMode = (id: number) => {
+        if (switchingIds.has(id)) return;
+        setSwitchingIds(prev => new Set(prev).add(id));
+        setTimeout(() => {
+            setPetModeMap(prev => ({ ...prev, [id]: !(prev[id] !== false) }));
+            setSwitchingIds(prev => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
+        }, 200);
+    };
 
     const handleLike = async (id: number, name: string) => {
         if (loadingId) return;
@@ -157,7 +168,7 @@ export default function HomePage() {
 
 
                             return (
-                                <div className="swiper-slide" key={item.id}>
+                                <div className={`swiper-slide${switchingIds.has(item.id) ? ' card-switching' : ''}`} key={item.id}>
                                     <div className="img_wrap">
                                         <img src={`/assets/images/main/main_slide_icon0${(index % 3) + 1}.svg`} data-swiper-parallax="-500" className="icon_img" alt="" />
 
@@ -215,7 +226,7 @@ export default function HomePage() {
                                         </div>
                                     </div>
 
-                                    <div className="txt_wrap" data-swiper-parallax="-200" key={petMode ? 'pet' : 'owner'}>
+                                    <div className="txt_wrap" data-swiper-parallax="-200">
                                         {petMode ? (
                                             <h2>
                                                 {item.name}{' '}
@@ -242,7 +253,7 @@ export default function HomePage() {
                                         {petMode && item.isNeutered && <p className="neutering_on">중성화 OK</p>}
                                     </div>
 
-                                    <div className="pet_detail" key={petMode ? 'pet-detail' : 'owner-detail'}>
+                                    <div className="pet_detail">
                                         {petMode ? (
                                             <>
                                                 <p data-swiper-parallax="-300">
