@@ -230,6 +230,7 @@ const ChatDetailPage = () => {
         mutationFn: async ({ content, messageType, fileId }: { content: string; messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE'; fileId?: number }) => {
             return chatService.sendMessage(chatId!, content, { messageType, fileId });
         },
+        onError: () => showToast('메시지 전송에 실패했습니다.', 'error'),
         onSuccess: (newMessage) => {
             queryClient.setQueryData(['chatMessages', chatId], (old: any[]) => {
                 const oldMessages = old || [];

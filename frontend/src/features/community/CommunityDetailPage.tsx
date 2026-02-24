@@ -7,6 +7,7 @@ import { blockService } from '../../services/blockService';
 import { BackButton } from '../../components/common/BackButton';
 import './CommunityPage.css';
 import { useAlert } from '../../contexts/AlertContext';
+import { useToast } from '../../contexts/ToastContext';
 import { CACHE_TIME } from '../../config/queryConfig';
 
 export default function CommunityDetailPage() {
@@ -14,6 +15,7 @@ export default function CommunityDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showAlert, showConfirm } = useAlert();
+  const { showToast } = useToast();
   const [commentInput, setCommentInput] = useState('');
   const [replyTargetId, setReplyTargetId] = useState<number | null>(null);
 
@@ -70,6 +72,7 @@ export default function CommunityDetailPage() {
       onSuccess: () => {
           setEditingCommentId(null);
           queryClient.invalidateQueries({ queryKey: ['community', 'post', postId] });
+          showToast('댓글이 수정되었습니다.', 'success');
       },
       onError: () => showAlert('댓글 수정에 실패했습니다.')
   });
@@ -116,6 +119,7 @@ export default function CommunityDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community', 'post', postId] });
     },
+    onError: () => showToast('오류가 발생했습니다.', 'error'),
   });
 
   const commentLikeMutation = useMutation({
@@ -126,13 +130,15 @@ export default function CommunityDetailPage() {
   });
 
   const commentMutation = useMutation({
-    mutationFn: (variables: { content: string, parentId?: number }) => 
+    mutationFn: (variables: { content: string, parentId?: number }) =>
       communityService.createComment(Number(postId), variables.content, variables.parentId),
     onSuccess: () => {
       setCommentInput('');
       setReplyTargetId(null);
+      showToast('댓글이 등록되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['community', 'post', postId] });
     },
+    onError: () => showAlert('댓글 등록에 실패했습니다.'),
   });
 
   const deletePostMutation = useMutation({
@@ -149,6 +155,7 @@ export default function CommunityDetailPage() {
     mutationFn: (id: number) => communityService.deleteComment(id),
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['community', 'post', postId] });
+        showToast('댓글이 삭제되었습니다.', 'success');
     },
     onError: () => showAlert('댓글 삭제에 실패했습니다.')
   });

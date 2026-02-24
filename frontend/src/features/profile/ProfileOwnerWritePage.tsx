@@ -350,7 +350,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                 updateUser(updatedUser);
             }
 
-            navigate('/profile');
+            showAlert('프로필이 수정되었습니다.', () => navigate('/profile'));
         } catch (error: unknown) {
             console.error(error);
             const err = error as any;

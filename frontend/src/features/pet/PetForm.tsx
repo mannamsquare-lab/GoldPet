@@ -256,7 +256,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
         mutationFn: petService.createPet,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['pets', 'my'] });
-            onSuccess();
+            showAlert('반려동물이 등록되었습니다.', () => onSuccess());
         },
         onError: () => showAlert('반려동물 등록에 실패했습니다.')
     });
@@ -265,7 +265,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
         mutationFn: (data: any) => petService.updatePet(id!, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['pets', 'my'] });
-            onSuccess();
+            showAlert('반려동물 정보가 수정되었습니다.', () => onSuccess());
         },
         onError: () => showAlert('반려동물 수정에 실패했습니다.')
     });
