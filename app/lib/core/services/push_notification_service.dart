@@ -40,14 +40,14 @@ class PushNotificationService {
   set bridge(NativeBridge? value) {
     _bridge = value;
     // Deliver pending initial message when bridge is connected
+    // React side has event buffer — no delay needed
     if (value != null && _pendingInitialMessage != null) {
-      Future.delayed(const Duration(seconds: 1), () {
-        value.sendEventToReact('pushNotificationClicked', {
-          'title': _pendingInitialMessage!.notification?.title,
-          'body': _pendingInitialMessage!.notification?.body,
-          'data': _pendingInitialMessage!.data,
-        });
-        _pendingInitialMessage = null;
+      final msg = _pendingInitialMessage!;
+      _pendingInitialMessage = null;
+      value.sendEventToReact('pushNotificationClicked', {
+        'title': msg.notification?.title,
+        'body': msg.notification?.body,
+        'data': msg.data,
       });
     }
   }
@@ -345,6 +345,29 @@ class PushNotificationService {
   /// 토픽 구독
   Future<void> subscribeToTopic(String topic) async {
     await FirebaseMessaging.instance.subscribeToTopic(topic);
+  }
+
+  /// 로그아웃 시 현재 디바이스 비활성화
+  Future<void> deactivateDevice(String accessToken) async {
+    try {
+      final deviceId = await getOrCreateDeviceId();
+      final currentEnv = EnvironmentConfig.fromEnv();
+      final uri = Uri.parse(
+          '${currentEnv.apiBaseUrl}/api/v1/users/me/devices/$deviceId');
+      final response = await http.delete(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint('[FCM] Device deactivated on logout (deviceId: $deviceId)');
+      } else {
+        debugPrint('[FCM] Device deactivation failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('[FCM] Error deactivating device: $e');
+    }
   }
 
   /// 현재 채팅방 설정 (푸시 알림 필터링용)

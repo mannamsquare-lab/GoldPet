@@ -15,6 +15,12 @@ class NativeBridge {
   private pendingRequests = new Map<string, PendingRequest>();
   private eventListeners = new Map<string, Set<(data: any) => void>>();
   private isInitialized = false;
+  // Buffer for one-shot events fired before listeners are registered
+  private eventBuffer = new Map<string, { data: any; timestamp: number }[]>();
+  private static readonly BUFFERABLE_EVENTS: Set<string> = new Set([
+    'pushNotificationClicked',
+  ]);
+  private static readonly BUFFER_TTL_MS = 10_000; // 10 seconds
 
   constructor() {
     this.setupBridge();
@@ -111,6 +117,17 @@ class NativeBridge {
     }
     this.eventListeners.get(eventType)!.add(callback);
 
+    // Replay buffered events (e.g. pushNotificationClicked fired before React mounted)
+    const buffered = this.eventBuffer.get(eventType);
+    if (buffered && buffered.length > 0) {
+      const now = Date.now();
+      const valid = buffered.filter((e) => now - e.timestamp < NativeBridge.BUFFER_TTL_MS);
+      this.eventBuffer.delete(eventType);
+      valid.forEach((e) => {
+        queueMicrotask(() => callback(e.data));
+      });
+    }
+
     return () => {
       this.eventListeners.get(eventType)?.delete(callback);
     };
@@ -118,8 +135,14 @@ class NativeBridge {
 
   private emitEvent(eventType: string, data: any) {
     const listeners = this.eventListeners.get(eventType);
-    if (listeners) {
+    if (listeners && listeners.size > 0) {
       listeners.forEach((callback) => callback(data));
+    } else if (NativeBridge.BUFFERABLE_EVENTS.has(eventType)) {
+      // No listeners yet — buffer for later replay
+      if (!this.eventBuffer.has(eventType)) {
+        this.eventBuffer.set(eventType, []);
+      }
+      this.eventBuffer.get(eventType)!.push({ data, timestamp: Date.now() });
     }
   }
 

@@ -140,7 +140,12 @@ class UserService(
             device.appVersion = request.appVersion
             device.lastLoginAt = LocalDateTime.now()
             device.isActive = true
-            return userDeviceRepository.save(device)
+            val saved = userDeviceRepository.save(device)
+            // Belt-and-suspenders: deactivate other users' devices with same FCM token
+            if (request.fcmToken != null) {
+                userDeviceRepository.deactivateByFcmTokenExcludingUser(request.fcmToken, userId)
+            }
+            return saved
         }
         // Check active device limit (max 5)
         if (userDeviceRepository.countByUserIdAndIsActiveTrue(userId) >= 5) {
@@ -160,7 +165,15 @@ class UserService(
             isActive = true,
             lastLoginAt = LocalDateTime.now()
         )
-        return userDeviceRepository.save(device)
+        val saved = userDeviceRepository.save(device)
+
+        // Belt-and-suspenders: deactivate any other user's devices with the same FCM token
+        // This prevents stale tokens from sending push notifications to the wrong user
+        if (request.fcmToken != null) {
+            userDeviceRepository.deactivateByFcmTokenExcludingUser(request.fcmToken, userId)
+        }
+
+        return saved
     }
 
     fun getActiveDevices(userId: Long): List<UserDeviceResponse> {
@@ -178,10 +191,10 @@ class UserService(
 
     @Transactional
     fun deactivateDevice(userId: Long, deviceId: String) {
-        val device = userDeviceRepository.findByUserIdAndDeviceId(userId, deviceId)
-            .orElseThrow { NoSuchElementException("Device not found: $deviceId for user: $userId") }
-        device.isActive = false
-        userDeviceRepository.save(device)
+        userDeviceRepository.findByUserIdAndDeviceId(userId, deviceId).ifPresent { device ->
+            device.isActive = false
+            userDeviceRepository.save(device)
+        }
     }
 
     @Transactional

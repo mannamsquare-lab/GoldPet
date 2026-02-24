@@ -14,6 +14,7 @@ import '../services/camera_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/permission_service.dart';
 import '../../services/native_auth_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/keys.dart';
 import '../constants/app_constants.dart';
 import '../api/api_client.dart';
@@ -276,6 +277,18 @@ class NativeBridge {
           rootNavigatorKey.currentState?.push(
             MaterialPageRoute(builder: (_) => WalkScreen()),
           );
+          return {'success': true};
+
+        // 로그아웃 시 Flutter 토큰 삭제
+        case 'clearAuthToken':
+          // Deactivate device BEFORE clearing token (needs auth header)
+          final currentToken = await const FlutterSecureStorage().read(key: StorageKeys.accessToken);
+          if (currentToken != null) {
+            await pushNotificationService.deactivateDevice(currentToken);
+          }
+          await ApiClient().clearToken();
+          pushNotificationService.setCurrentChatRoom(null);
+          debugPrint('[NativeBridge] Auth tokens cleared + device deactivated');
           return {'success': true};
 
         // 현재 채팅방 설정 (푸시 알림 필터링용)

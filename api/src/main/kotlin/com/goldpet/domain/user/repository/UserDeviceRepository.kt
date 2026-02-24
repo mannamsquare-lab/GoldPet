@@ -22,6 +22,10 @@ interface UserDeviceRepository : JpaRepository<UserDevice, Long> {
     fun deactivateAllByUserId(@Param("userId") userId: Long): Int
 
     @Modifying
+    @Query("UPDATE UserDevice d SET d.isActive = false WHERE d.fcmToken = :fcmToken AND d.user.id != :userId AND d.isActive = true")
+    fun deactivateByFcmTokenExcludingUser(@Param("fcmToken") fcmToken: String?, @Param("userId") userId: Long): Int
+
+    @Modifying
     @Query("DELETE FROM UserDevice d WHERE d.isActive = false AND d.updatedAt < :cutoffDate")
     fun deleteStaleDevices(@Param("cutoffDate") cutoffDate: LocalDateTime): Int
 
