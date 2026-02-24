@@ -331,6 +331,7 @@ const ProfileOwnerWritePage: React.FC = () => {
 
             // Invalidate cache to ensure fresh data
             await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+            await queryClient.invalidateQueries({ queryKey: ['community'] });
 
             // Optimistic update — currentUser(API 데이터 우선)를 base로 사용하여 기존 필드 보존
             if (currentUser) {

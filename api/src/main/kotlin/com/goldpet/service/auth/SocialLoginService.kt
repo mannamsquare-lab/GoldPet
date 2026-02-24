@@ -379,7 +379,7 @@ class SocialLoginService(
         var changed = false
         if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
         if (nickname != null && user.nickname == null) { user.nickname = nickname; changed = true }
-        if (profileImage != null && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
+        if (profileImage != null && user.profileImages.isEmpty() && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
         if (user.oauthProvider.isBlank()) { user.oauthProvider = provider; user.oauthId = oauthId; changed = true }
         if (changed) userRepository.save(user)
     }
