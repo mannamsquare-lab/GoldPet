@@ -55,7 +55,7 @@ class UserController(
         }
     }
 
-    @PutMapping("/me")
+    @RequestMapping(value = ["/me"], method = [RequestMethod.PUT, RequestMethod.PATCH])
     fun updateMyProfile(
         @AuthenticationPrincipal principal: UserDetails,
         @RequestBody request: UserProfileUpdateRequest
