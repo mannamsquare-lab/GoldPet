@@ -154,6 +154,7 @@ const ChatDetailPage = () => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const queryClient = useQueryClient();
@@ -276,9 +277,14 @@ const ChatDetailPage = () => {
     const isInitialLoadRef = useRef(true);
 
     const scrollToBottom = useCallback((instant = false) => {
-        messagesEndRef.current?.scrollIntoView({
-            behavior: instant ? 'instant' : 'smooth'
-        });
+        const container = messagesContainerRef.current;
+        if (container) {
+            if (instant) {
+                container.scrollTop = container.scrollHeight;
+            } else {
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+            }
+        }
     }, []);
 
     useEffect(() => {
@@ -308,14 +314,13 @@ const ChatDetailPage = () => {
     // Auto-scroll when keyboard opens (viewport shrinks)
     useEffect(() => {
         const viewport = window.visualViewport;
-        if (!viewport) return;
 
-        let prevHeight = viewport.height;
-        let prevWidth = viewport.width;
+        let prevHeight = viewport ? viewport.height : window.innerHeight;
+        let prevWidth = viewport ? viewport.width : window.innerWidth;
 
         const handleResize = () => {
-            const currentHeight = viewport.height;
-            const currentWidth = viewport.width;
+            const currentHeight = viewport ? viewport.height : window.innerHeight;
+            const currentWidth = viewport ? viewport.width : window.innerWidth;
             if (currentHeight < prevHeight && currentWidth === prevWidth) {
                 scrollToBottom(true);
             }
@@ -323,8 +328,19 @@ const ChatDetailPage = () => {
             prevWidth = currentWidth;
         };
 
-        viewport.addEventListener('resize', handleResize);
-        return () => viewport.removeEventListener('resize', handleResize);
+        // visualViewport.resize: Android WebView
+        // window.resize: iOS WKWebView (Flutter resizes the WebView when keyboard opens)
+        if (viewport) {
+            viewport.addEventListener('resize', handleResize);
+        }
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            if (viewport) {
+                viewport.removeEventListener('resize', handleResize);
+            }
+            window.removeEventListener('resize', handleResize);
+        };
     }, [scrollToBottom]);
 
     // Fallback: scroll on textarea focus (for browsers without visualViewport)
@@ -645,7 +661,7 @@ const ChatDetailPage = () => {
             )}
 
             {/* Messages */}
-            <div className="chat_detail_messages">
+            <div className="chat_detail_messages" ref={messagesContainerRef}>
                 {messages.map((msg: any) => {
                     const timestamp = msg.timestamp || msg.createdAt;
                     // Compare as numbers (both should be numbers, but ensure type consistency)
