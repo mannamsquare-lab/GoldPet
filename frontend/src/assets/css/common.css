@@ -211,6 +211,7 @@ h6 {
 	width: 100%;
 	aspect-ratio: 984 / 696;
 	object-fit: cover;
+	object-position: center 20%;
 }
 
 #mainContainer .main_slide .img_wrap .butler_img {
@@ -1143,6 +1144,8 @@ h6 {
 
 #friendFind .friend_list .list_wrap .img_wrap .pet_img {
 	width: 100%;
+	object-fit: cover;
+	object-position: center 20%;
 }
 
 #friendFind .friend_list .list_wrap .img_wrap .swiper-pet-prev,
@@ -3294,6 +3297,7 @@ h6 {
 	height: 100%;
 	-o-object-fit: cover;
 	object-fit: cover;
+	object-position: center 20%;
 }
 
 #profileContainer .profile_info_wrap .profile_name_info .couple_img .butler_img {
