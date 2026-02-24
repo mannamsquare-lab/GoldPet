@@ -576,13 +576,18 @@ const ProfileOwnerWritePage: React.FC = () => {
                             
                             <div className="write_box">
                                 <label htmlFor="pet_special_notes">간단한 자기소개</label>
-                                <textarea 
-                                    id="pet_special_notes" 
+                                <textarea
+                                    id="pet_special_notes"
                                     ref={introRef}
                                     placeholder="간단한 자기소개을 적어주세요."
                                     value={intro}
                                     onChange={(e) => setIntro(e.target.value)}
                                     maxLength={100}
+                                    onFocus={() => {
+                                        setTimeout(() => {
+                                            introRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                        }, 300);
+                                    }}
                                 ></textarea>
                                 <span style={{ float: 'right', fontSize: '12px', color: '#999', marginTop: '4px' }}>
                                     {intro.length}/100

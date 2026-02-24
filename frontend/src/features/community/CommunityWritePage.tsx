@@ -200,11 +200,16 @@ export default function CommunityWritePage() {
         {/* Content */}
         <div className="input_wrap">
             <label htmlFor="write_txt">내용</label>
-            <textarea 
-              id="write_txt" 
-              placeholder="게시글 내용을 입력해주세요." 
+            <textarea
+              id="write_txt"
+              placeholder="게시글 내용을 입력해주세요."
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              onFocus={(e) => {
+                setTimeout(() => {
+                  e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+              }}
             ></textarea>
         </div>
 

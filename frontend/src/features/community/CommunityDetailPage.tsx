@@ -32,7 +32,7 @@ export default function CommunityDetailPage() {
     setTimeout(() => {
       const active = document.activeElement;
       if (active instanceof HTMLElement) {
-        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        active.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }, 300);
   };

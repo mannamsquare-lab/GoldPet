@@ -311,60 +311,32 @@ const ChatDetailPage = () => {
         }
     }, [chatId, queryClient]);
 
-    // Dynamic viewport height for iOS WKWebView
-    // CSS 100vh/100dvh doesn't update when Flutter resizes the WebView for keyboard
-    // Use smallest available measurement and re-measure after keyboard animation
+    // Auto-scroll when keyboard opens (viewport shrinks)
+    // --app-height is set globally by useAppHeight in App.tsx
     useEffect(() => {
+        const viewport = window.visualViewport;
+        let prevHeight = viewport ? viewport.height : window.innerHeight;
+        let prevWidth = viewport ? viewport.width : window.innerWidth;
         let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
-        const getVisibleHeight = () => {
-            const viewport = window.visualViewport;
-            // Use the smallest measurement — most likely to be the actual visible area
-            if (viewport) {
-                return Math.min(viewport.height, window.innerHeight);
-            }
-            return window.innerHeight;
-        };
-
-        const updateAppHeight = () => {
-            const h = getVisibleHeight();
-            document.documentElement.style.setProperty('--app-height', `${h}px`);
-        };
-
-        // Set initial value
-        updateAppHeight();
-
-        const viewport = window.visualViewport;
-        let prevHeight = getVisibleHeight();
-        let prevWidth = viewport ? viewport.width : window.innerWidth;
-
         const handleResize = () => {
-            // Update immediately
-            updateAppHeight();
-
-            const currentHeight = getVisibleHeight();
+            const currentHeight = viewport ? viewport.height : window.innerHeight;
             const currentWidth = viewport ? viewport.width : window.innerWidth;
             const keyboardOpened = currentHeight < prevHeight && currentWidth === prevWidth;
 
             prevHeight = currentHeight;
             prevWidth = currentWidth;
 
-            // Re-measure after iOS keyboard animation settles (~300ms)
-            if (resizeTimer) clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                updateAppHeight();
-                if (keyboardOpened) {
-                    requestAnimationFrame(() => scrollToBottom(true));
-                }
-            }, 300);
-
             if (keyboardOpened) {
                 scrollToBottom(true);
+                // Re-scroll after iOS keyboard animation settles
+                if (resizeTimer) clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    requestAnimationFrame(() => scrollToBottom(true));
+                }, 300);
             }
         };
 
-        // visualViewport.resize: Android WebView
-        // window.resize: iOS WKWebView (Flutter resizes the WebView when keyboard opens)
         if (viewport) {
             viewport.addEventListener('resize', handleResize);
         }

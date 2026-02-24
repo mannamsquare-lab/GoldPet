@@ -72,10 +72,12 @@ import { TypeBLayout } from './components/layout/TypeBLayout';
 
 import { LoadingProvider } from './contexts/LoadingContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { useAppHeight } from './hooks/useAppHeight';
 
 /* ... imports ... */
 
 function App() {
+  useAppHeight();
   // const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
