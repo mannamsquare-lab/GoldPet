@@ -5,6 +5,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nativeBridge } from '../bridge/nativeBridge';
+import { queryClient } from '../lib/queryClient';
+import { chatWebSocket } from '../services/websocket/chatWebSocket';
 
 export interface User {
   id: number;
@@ -50,6 +52,9 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       login: (token, refreshToken, user) => {
+        // 방어적: 이전 유저 캐시 제거
+        queryClient.cancelQueries();
+        queryClient.clear();
         set({ token, refreshToken, user, isAuthenticated: true });
         if (nativeBridge.isAvailable()) {
           // Sync auth tokens to Flutter secure storage for native API calls
@@ -59,6 +64,19 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       logout: () => {
+        // 1. WebSocket 해제 (토큰 참조하므로 먼저)
+        chatWebSocket.disconnect();
+        // 2-3. React Query 캐시 정리
+        queryClient.cancelQueries();
+        queryClient.clear();
+        // 4. user-specific localStorage 삭제
+        localStorage.removeItem('friendFindFilter');
+        localStorage.removeItem('autoLogin');
+        // 5. Flutter 토큰 삭제
+        if (nativeBridge.isAvailable()) {
+          nativeBridge.callMethod('clearAuthToken').catch(() => {});
+        }
+        // 6. Zustand 상태 초기화
         set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
       },
       updateUser: (user) => {

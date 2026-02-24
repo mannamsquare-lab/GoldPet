@@ -18,7 +18,6 @@ const ChevronRight = () => (
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const logout = useAuthStore((state) => state.logout);
   const { showConfirm } = useAlert();
   const { showToast } = useToast();
 
@@ -77,8 +76,8 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleLogout = () => {
-    showConfirm('로그아웃 하시겠습니까?', () => {
-      logout();
+    showConfirm('로그아웃 하시겠습니까?', async () => {
+      await profileService.logout();
       navigate('/login', { replace: true });
       showToast('로그아웃 되었습니다.', 'success');
     });
