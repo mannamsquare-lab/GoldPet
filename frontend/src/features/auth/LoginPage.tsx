@@ -104,7 +104,11 @@ export const LoginPage = () => {
             console.error('SNS Login failed:', error);
             // Check if signup is required (new user)
             if (error.message?.includes('SIGNUP_REQUIRED') || error.signupRequired) {
-              navigate('/signup/sns', { state: { provider } });
+              // SNS 회원가입 API 호출을 위해 토큰 저장 (snsSignup에 인증 필요)
+              if (error.accessToken) {
+                login(error.accessToken, error.refreshToken || '', error.user || { id: 0, username: '', nickname: '', email: '' });
+              }
+              navigate('/signup/sns', { state: { provider: error.provider || provider } });
             } else {
                 showAlert(error.message || 'SNS 로그인에 실패했습니다.');
             }

@@ -127,9 +127,9 @@ export const authService = {
     }
 
     try {
-      const response = await apiClient.get(
-        `/auth/check-username?username=${username}`
-      );
+      const response = await apiClient.post("/auth/check-username", {
+        username,
+      });
       return response.data;
     } catch {
       return { available: false };
@@ -143,9 +143,9 @@ export const authService = {
     }
 
     try {
-      const response = await apiClient.get(
-        `/auth/check-nickname?nickname=${nickname}`
-      );
+      const response = await apiClient.post("/auth/check-nickname", {
+        nickname,
+      });
       return response.data;
     } catch {
       return { available: false };
@@ -194,6 +194,10 @@ export const authService = {
             if (result.type === 'SIGNUP_REQUIRED') {
               const err = new Error('SIGNUP_REQUIRED');
               (err as any).signupRequired = true;
+              (err as any).accessToken = result.accessToken;
+              (err as any).refreshToken = result.refreshToken;
+              (err as any).user = result.user;
+              (err as any).provider = result.provider;
               reject(err);
             } else if (result.accessToken) {
               resolve(result);

@@ -54,10 +54,22 @@ class AuthController(
     }
 
     @PostMapping("/check-nickname")
-    fun checkNickname(@RequestBody body: Map<String, String>): ResponseEntity<AvailabilityResponse> {
+    fun checkNickname(
+        @org.springframework.security.core.annotation.AuthenticationPrincipal principal: org.springframework.security.core.userdetails.UserDetails?,
+        @RequestBody body: Map<String, String>
+    ): ResponseEntity<AvailabilityResponse> {
         val nickname = body["nickname"] ?: return ResponseEntity.badRequest().build()
-        val exists = userRepository.findByNickname(nickname).isPresent
-        return ResponseEntity.ok(AvailabilityResponse(!exists))
+        val existingUser = userRepository.findByNickname(nickname).orElse(null)
+        val available = if (existingUser == null) {
+            true
+        } else if (principal != null) {
+            // 인증된 사용자면 본인 닉네임은 중복이 아닌 것으로 처리
+            val currentUserId = (principal as com.goldpet.config.security.UserPrincipal).id
+            existingUser.id == currentUserId
+        } else {
+            false
+        }
+        return ResponseEntity.ok(AvailabilityResponse(available))
     }
     @PostMapping("/dev-login")
     fun devLogin(@RequestBody(required = false) body: Map<String, String>?): ResponseEntity<AuthResponse> {
