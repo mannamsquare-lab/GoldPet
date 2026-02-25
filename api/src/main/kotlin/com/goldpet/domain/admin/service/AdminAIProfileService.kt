@@ -2,6 +2,7 @@ package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.dto.*
 import com.goldpet.domain.aiprofile.entity.AIRequestStatus
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.aiprofile.entity.AIStyle
 import com.goldpet.domain.aiprofile.repository.AIProfileRequestRepository
 import com.goldpet.domain.aiprofile.repository.AIStyleRepository
@@ -34,16 +35,16 @@ class AdminAIProfileService(
 
     fun getRequestDetail(requestId: Long): AIRequestAdminResponse {
         val request = aiRequestRepository.findById(requestId)
-            .orElseThrow { IllegalArgumentException("AI request not found: $requestId") }
+            .orElseThrow { NotFoundException("AI request not found: $requestId") }
         return AIRequestAdminResponse.from(request)
     }
 
     @Transactional
     fun retryRequest(requestId: Long): AIRequestAdminResponse {
         val request = aiRequestRepository.findById(requestId)
-            .orElseThrow { IllegalArgumentException("AI request not found: $requestId") }
+            .orElseThrow { NotFoundException("AI request not found: $requestId") }
         if (request.status != AIRequestStatus.FAILED) {
-            throw IllegalArgumentException("Only failed requests can be retried")
+            throw BadRequestException("Only failed requests can be retried")
         }
         request.status = AIRequestStatus.PENDING
         request.errorMessage = null
@@ -54,9 +55,9 @@ class AdminAIProfileService(
     @Transactional
     fun refundRequest(requestId: Long) {
         val request = aiRequestRepository.findById(requestId)
-            .orElseThrow { IllegalArgumentException("AI request not found: $requestId") }
+            .orElseThrow { NotFoundException("AI request not found: $requestId") }
         if (request.status != AIRequestStatus.FAILED) {
-            throw IllegalArgumentException("Only failed requests can be refunded")
+            throw BadRequestException("Only failed requests can be refunded")
         }
         request.status = AIRequestStatus.REFUNDED
         aiRequestRepository.save(request)
@@ -86,7 +87,7 @@ class AdminAIProfileService(
     @Transactional
     fun updateStyle(styleId: String, request: AIStyleAdminRequest): AIStyleAdminResponse {
         val style = aiStyleRepository.findById(styleId)
-            .orElseThrow { IllegalArgumentException("Style not found: $styleId") }
+            .orElseThrow { NotFoundException("Style not found: $styleId") }
         style.name = request.name
         style.description = request.description
         style.previewUrl = request.previewUrl
@@ -105,7 +106,7 @@ class AdminAIProfileService(
     @Transactional
     fun toggleStyle(styleId: String): AIStyleAdminResponse {
         val style = aiStyleRepository.findById(styleId)
-            .orElseThrow { IllegalArgumentException("Style not found: $styleId") }
+            .orElseThrow { NotFoundException("Style not found: $styleId") }
         style.isActive = !style.isActive
         style.updatedAt = LocalDateTime.now()
         return AIStyleAdminResponse.from(aiStyleRepository.save(style))

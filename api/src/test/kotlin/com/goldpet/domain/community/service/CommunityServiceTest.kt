@@ -1,5 +1,6 @@
 package com.goldpet.domain.community.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.community.dto.CommunityCommentCreateRequest
 import com.goldpet.domain.community.dto.CommunityPostCreateRequest
 import com.goldpet.domain.community.dto.CommunityPostUpdateRequest
@@ -191,7 +192,7 @@ class CommunityServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             communityService.createPost(999L, request)
         }
     }
@@ -208,7 +209,7 @@ class CommunityServiceTest {
         whenever(categoryRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             communityService.createPost(1L, request)
         }
     }
@@ -239,7 +240,7 @@ class CommunityServiceTest {
         whenever(postRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             communityService.getPostDetail(999L, 1L)
         }
     }
@@ -336,7 +337,7 @@ class CommunityServiceTest {
         whenever(postRepository.findById(1L)).thenReturn(Optional.of(testPost))
 
         // When & Then - user 999 is not the author
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ForbiddenException> {
             communityService.updatePost(1L, 999L, request)
         }
     }
@@ -358,7 +359,7 @@ class CommunityServiceTest {
         whenever(postRepository.findById(1L)).thenReturn(Optional.of(testPost))
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ForbiddenException> {
             communityService.deletePost(1L, 999L)
         }
     }

@@ -13,6 +13,7 @@ import com.goldpet.domain.gold.entity.TransactionStatus
 import com.goldpet.domain.gold.entity.TransactionType
 import com.goldpet.domain.gold.repository.GoldProductRepository
 import com.goldpet.domain.gold.repository.GoldTransactionRepository
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.data.domain.Page
@@ -64,10 +65,10 @@ class AdminEconomyService(
     @Transactional
     fun adjustGold(request: GoldAdjustRequest) {
         val user = userRepository.findByIdForUpdate(request.userId)
-            .orElseThrow { NoSuchElementException("User not found: ${request.userId}") }
+            .orElseThrow { NotFoundException("User not found: ${request.userId}") }
 
         if (user.goldBalance + request.amount < 0) {
-            throw IllegalArgumentException("Balance cannot go below zero (current: ${user.goldBalance}, adjust: ${request.amount})")
+            throw BadRequestException("Balance cannot go below zero (current: ${user.goldBalance}, adjust: ${request.amount})")
         }
         user.goldBalance += request.amount
         userRepository.save(user)
@@ -100,7 +101,7 @@ class AdminEconomyService(
     @CacheEvict(value = ["gold:products"], allEntries = true)
     fun createProduct(request: GoldProductCreateRequest): GoldProductAdminResponse {
         if (goldProductRepository.findByProductCode(request.productCode) != null) {
-            throw IllegalArgumentException("Product code already exists: ${request.productCode}")
+            throw ConflictException("Product code already exists: ${request.productCode}")
         }
 
         val product = goldProductRepository.save(GoldProduct(
@@ -128,7 +129,7 @@ class AdminEconomyService(
     @CacheEvict(value = ["gold:products"], allEntries = true)
     fun updateProduct(id: Long, request: GoldProductUpdateRequest): GoldProductAdminResponse {
         val product = goldProductRepository.findById(id)
-            .orElseThrow { NoSuchElementException("Product not found: $id") }
+            .orElseThrow { NotFoundException("Product not found: $id") }
 
         request.name?.let { product.name = it }
         request.goldAmount?.let { product.goldAmount = it }
@@ -155,7 +156,7 @@ class AdminEconomyService(
     @CacheEvict(value = ["gold:products"], allEntries = true)
     fun deleteProduct(id: Long) {
         val product = goldProductRepository.findById(id)
-            .orElseThrow { NoSuchElementException("Product not found: $id") }
+            .orElseThrow { NotFoundException("Product not found: $id") }
         product.isActive = false
         goldProductRepository.save(product)
     }
@@ -163,18 +164,18 @@ class AdminEconomyService(
     @Transactional
     fun refundTransaction(request: AdminRefundRequest) {
         val originalTransaction = goldTransactionRepository.findById(request.transactionId)
-            .orElseThrow { NoSuchElementException("Transaction not found") }
+            .orElseThrow { NotFoundException("Transaction not found") }
 
         if (originalTransaction.type != TransactionType.SPEND) {
-            throw IllegalArgumentException("Only SPEND transactions can be refunded")
+            throw BadRequestException("Only SPEND transactions can be refunded")
         }
 
         if (goldTransactionRepository.existsByOriginalTransactionId(request.transactionId)) {
-            throw IllegalArgumentException("Transaction already refunded")
+            throw ConflictException("Transaction already refunded")
         }
 
         val user = userRepository.findByIdForUpdate(originalTransaction.user.id)
-            .orElseThrow { NoSuchElementException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         val refundAmount = kotlin.math.abs(originalTransaction.amount)
         user.goldBalance += refundAmount

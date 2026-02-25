@@ -1,5 +1,6 @@
 package com.goldpet.domain.user.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
 import com.goldpet.domain.pet.repository.PetRepository
@@ -16,7 +17,7 @@ class UserDataExportService(
 ) {
     fun exportUserData(userId: Long): Map<String, Any?> {
         val user = userRepository.findById(userId)
-            .orElseThrow { NoSuchElementException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         val pets = petRepository.findAllByOwnerId(userId)
         val posts = postRepository.findAllByUserId(userId)

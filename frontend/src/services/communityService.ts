@@ -64,9 +64,9 @@ export const communityService = {
     try {
       const response = await apiClient.get('/community/categories');
       return response.data;
-    } catch (e) {
-      console.error('Failed to fetch categories:', e);
-      return [];
+    } catch (error: unknown) {
+      console.error('Failed to fetch categories:', error);
+      throw error;
     }
   },
 
@@ -76,10 +76,10 @@ export const communityService = {
       if (categoryId) params.append('categoryId', categoryId.toString());
       params.append('page', page.toString());
       params.append('size', size.toString());
-      
+
       const response = await apiClient.get(`/community/posts?${params}`);
       const rawPosts = response.data.content || response.data;
-      
+
       const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
         ...p,
         authorId: p.userId,
@@ -95,8 +95,9 @@ export const communityService = {
         hasMore: !response.data.last,
         totalCount: response.data.totalElements,
       };
-    } catch {
-      return { posts: [], hasMore: false };
+    } catch (error: unknown) {
+      console.error('Failed to fetch posts:', error);
+      throw error;
     }
   },
 
@@ -104,7 +105,7 @@ export const communityService = {
     try {
       const response = await apiClient.get(`/community/posts/${postId}`);
       const data = response.data;
-      
+
       const comments = data.comments?.map((c: any) => ({
           ...c,
           authorNickname: c.userNickname ?? c.authorNickname ?? '',
@@ -150,8 +151,8 @@ export const communityService = {
         imageUrls: imageUrls,
       });
       return { success: true, postId: response.data.id };
-    } catch (e) {
-      console.error('Create post error:', e);
+    } catch (error: unknown) {
+      console.error('Create post error:', error);
       throw new Error('게시글 등록에 실패했습니다.');
     }
   },
@@ -172,8 +173,8 @@ export const communityService = {
         },
       });
       return response.data.url;
-    } catch (e) {
-      console.error('File upload error:', e);
+    } catch (error: unknown) {
+      console.error('File upload error:', error);
       throw new Error('이미지 업로드에 실패했습니다.');
     }
   },
@@ -258,8 +259,9 @@ export const communityService = {
         hasMore: !response.data.last,
         totalCount: response.data.totalElements || 0,
       };
-    } catch {
-      return { posts: [], hasMore: false, totalCount: 0 };
+    } catch (error: unknown) {
+      console.error('Failed to fetch my posts:', error);
+      throw error;
     }
   },
 
@@ -281,8 +283,9 @@ export const communityService = {
         hasMore: !response.data.last,
         totalCount: response.data.totalElements || 0,
       };
-    } catch {
-      return { comments: [], hasMore: false, totalCount: 0 };
+    } catch (error: unknown) {
+      console.error('Failed to fetch my comments:', error);
+      throw error;
     }
   },
 };

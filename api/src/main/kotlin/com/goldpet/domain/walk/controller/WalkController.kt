@@ -6,6 +6,7 @@ import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.dto.WalkStatsResponse
 import com.goldpet.domain.walk.service.WalkService
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -20,7 +21,7 @@ class WalkController(
     @PostMapping
     fun createWalk(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
-        @RequestBody request: CreateWalkRequest
+        @RequestBody @Valid request: CreateWalkRequest
     ): ResponseEntity<WalkResponse> {
         if (userDetails == null) return ResponseEntity.status(401).build()
         val walkResponse = walkService.createWalk(userDetails.id, request)
@@ -54,12 +55,8 @@ class WalkController(
     @GetMapping("/search")
     fun searchWalksInArea(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
-        @RequestParam minLat: Double,
-        @RequestParam minLon: Double,
-        @RequestParam maxLat: Double,
-        @RequestParam maxLon: Double
+        @ModelAttribute @Valid request: BoundingBoxRequest
     ): ResponseEntity<List<WalkResponse>> {
-        val request = BoundingBoxRequest(minLat, minLon, maxLat, maxLon)
         val walkResponses = walkService.findWalksInArea(request)
         // Return public (route-stripped) view; owner detail available via GET /walks/{id}
         val currentUserId = userDetails?.id

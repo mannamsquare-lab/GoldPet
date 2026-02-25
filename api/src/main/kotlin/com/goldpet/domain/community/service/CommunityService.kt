@@ -19,7 +19,7 @@ import com.goldpet.domain.gamification.entity.BadgeConditionType
 import com.goldpet.domain.gamification.service.BadgeAwardService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
+import com.goldpet.domain.common.exception.*
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
@@ -48,7 +48,7 @@ class CommunityService(
         val blockedUserIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) } ?: emptyList()
 
         val posts = if (categoryId != null) {
-            val category = categoryRepository.findById(categoryId).orElseThrow { IllegalArgumentException("Category not found") }
+            val category = categoryRepository.findById(categoryId).orElseThrow { NotFoundException("Category not found") }
             if (blockedUserIds.isNotEmpty()) {
                 postRepository.findAllByCategoryExcludingUsers(category, blockedUserIds, pageable)
             } else {
@@ -123,8 +123,8 @@ class CommunityService(
     @org.springframework.cache.annotation.CacheEvict(value = ["community:categories"], allEntries = true)
     fun createPost(userId: Long, request: CommunityPostCreateRequest): CommunityPostResponse {
         log.debug("createPost called for user {}, category {}", userId, request.categoryId)
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        val category = categoryRepository.findById(request.categoryId).orElseThrow { IllegalArgumentException("Category not found") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
+        val category = categoryRepository.findById(request.categoryId).orElseThrow { NotFoundException("Category not found") }
         
         val post = CommunityPost(
             user = user,
@@ -176,8 +176,8 @@ class CommunityService(
 
     @Transactional
     fun toggleLike(userId: Long, postId: Long): Boolean {
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        val post = postRepository.findById(postId).orElseThrow { IllegalArgumentException("Post not found") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
+        val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
 
         val existingLike = likeRepository.findByPostAndUser(post, user)
         return if (existingLike != null) {
@@ -193,11 +193,11 @@ class CommunityService(
 
     @Transactional
     fun createComment(userId: Long, postId: Long, request: CommunityCommentCreateRequest): CommunityCommentResponse {
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        val post = postRepository.findById(postId).orElseThrow { IllegalArgumentException("Post not found") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
+        val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
 
         val parentComment = request.parentCommentId?.let {
-            commentRepository.findById(it).orElseThrow { IllegalArgumentException("Parent comment not found") }
+            commentRepository.findById(it).orElseThrow { NotFoundException("Parent comment not found") }
         }
 
         val comment = CommunityComment(
@@ -230,8 +230,8 @@ class CommunityService(
 
     @Transactional
     fun toggleCommentLike(userId: Long, commentId: Long): Boolean {
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
-        val comment = commentRepository.findById(commentId).orElseThrow { IllegalArgumentException("Comment not found") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
+        val comment = commentRepository.findById(commentId).orElseThrow { NotFoundException("Comment not found") }
 
         val existingLike = commentLikeRepository.findByCommentAndUser(comment, user)
         return if (existingLike != null) {
@@ -246,7 +246,7 @@ class CommunityService(
     }
 
     fun getPostDetail(postId: Long, currentUserId: Long?): CommunityPostResponse {
-        val post = postRepository.findById(postId).orElseThrow { IllegalArgumentException("Post not found") }
+        val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
 
         // Increment view count
         post.viewCount += 1
@@ -340,7 +340,7 @@ class CommunityService(
     }
 
     fun getComments(postId: Long, pageable: Pageable): Page<CommunityCommentResponse> {
-        val post = postRepository.findById(postId).orElseThrow { IllegalArgumentException("Post not found") }
+        val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
         return commentRepository.findAllByPost(post, pageable).map { comment ->
             CommunityCommentResponse(
                 id = comment.id,
@@ -357,10 +357,10 @@ class CommunityService(
 
     @Transactional
     fun updatePost(postId: Long, userId: Long, request: CommunityPostUpdateRequest): CommunityPostResponse {
-        val post = postRepository.findById(postId).orElseThrow { IllegalArgumentException("Post not found") }
-        
+        val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
+
         if (post.user.id != userId) {
-            throw IllegalArgumentException("Not authorized to update this post")
+            throw ForbiddenException("Not authorized to update this post")
         }
 
         request.title?.let { post.title = it }
@@ -404,10 +404,10 @@ class CommunityService(
     @Transactional
     @org.springframework.cache.annotation.CacheEvict(value = ["community:categories"], allEntries = true)
     fun deletePost(postId: Long, userId: Long) {
-        val post = postRepository.findById(postId).orElseThrow { IllegalArgumentException("Post not found") }
-        
+        val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
+
         if (post.user.id != userId) {
-            throw IllegalArgumentException("Not authorized to delete this post")
+            throw ForbiddenException("Not authorized to delete this post")
         }
 
         postRepository.delete(post)
@@ -501,7 +501,7 @@ class CommunityService(
     @Transactional
     fun updateComment(commentId: Long, userId: Long, content: String): CommunityCommentResponse {
         val comment = commentRepository.findById(commentId)
-            .orElseThrow { EntityNotFoundException("Comment not found") }
+            .orElseThrow { NotFoundException("Comment not found") }
 
         if (comment.user.id != userId) {
             throw AccessDeniedException("Not authorized to update this comment")
@@ -527,7 +527,7 @@ class CommunityService(
     @Transactional
     fun deleteComment(commentId: Long, userId: Long) {
         val comment = commentRepository.findById(commentId)
-            .orElseThrow { EntityNotFoundException("Comment not found") }
+            .orElseThrow { NotFoundException("Comment not found") }
 
         if (comment.user.id != userId) {
             throw AccessDeniedException("Not authorized to delete this comment")

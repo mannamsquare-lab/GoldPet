@@ -25,6 +25,7 @@ import com.goldpet.domain.user.dto.PrivacySettingsResponse
 import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
 import com.goldpet.domain.user.dto.UserStatsResponse
 import com.goldpet.domain.user.entity.UserProfileImage
+import com.goldpet.domain.common.exception.*
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
@@ -64,7 +65,7 @@ class UserService(
         }
         // Fallback or AdminUserPrincipal handling if needed
         val user = userRepository.findByUsername(principal.username)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
         return user.id
     }
 
@@ -92,19 +93,19 @@ class UserService(
 
     @Transactional
     fun updateNotification(userId: Long, enabled: Boolean): User {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         user.isNotificationEnabled = enabled
         return userRepository.save(user)
     }
 
     fun getNotificationSettings(userId: Long): NotificationSettingsResponse {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         return NotificationSettingsResponse.from(user)
     }
 
     @Transactional
     fun updateNotificationSettings(userId: Long, request: NotificationSettingsRequest): NotificationSettingsResponse {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         user.isNotificationEnabled = request.pushAlert
         user.isChatAlertEnabled = request.chatAlert
         user.isCommunityAlertEnabled = request.communityAlert
@@ -115,7 +116,7 @@ class UserService(
 
     @Transactional
     fun updateFcmToken(userId: Long, fcmToken: String?): User {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         user.fcmToken = fcmToken
         userRepository.save(user)
         // Also register/update legacy device entry for backward compatibility
@@ -130,7 +131,7 @@ class UserService(
 
     @Transactional
     fun registerDevice(userId: Long, request: RegisterDeviceRequest): UserDevice {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         val existing = userDeviceRepository.findByUserIdAndDeviceId(userId, request.deviceId)
         if (existing.isPresent) {
             val device = existing.get()
@@ -199,19 +200,19 @@ class UserService(
 
     @Transactional
     fun updateUserProfile(userId: Long, request: com.goldpet.domain.user.dto.UserProfileUpdateRequest): User {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
 
         // Immutability check: reject changes to locked fields after profile is verified
         if (user.profileLockedAt != null) {
             if (request.gender != null && request.gender != user.gender)
-                throw IllegalArgumentException("성별은 인증 후 변경할 수 없습니다")
+                throw ForbiddenException("성별은 인증 후 변경할 수 없습니다")
             if (request.birthDate != null && request.birthDate != user.birthDate?.toString())
-                throw IllegalArgumentException("생년월일은 인증 후 변경할 수 없습니다")
+                throw ForbiddenException("생년월일은 인증 후 변경할 수 없습니다")
             // Normalize phone numbers (strip non-digits) before comparing to handle format differences
             if (request.phoneNumber != null && request.phoneNumber.replace(Regex("[^0-9]"), "") != user.phoneNumber?.replace(Regex("[^0-9]"), ""))
-                throw IllegalArgumentException("전화번호는 인증 후 변경할 수 없습니다")
+                throw ForbiddenException("전화번호는 인증 후 변경할 수 없습니다")
             if (request.name != null && request.name.trim() != user.name?.trim())
-                throw IllegalArgumentException("이름은 인증 후 변경할 수 없습니다")
+                throw ForbiddenException("이름은 인증 후 변경할 수 없습니다")
         }
 
         val wasPhoneNull = user.phoneNumber == null
@@ -266,7 +267,7 @@ class UserService(
 
     @Transactional
     fun updateUserProfileImages(userId: Long, request: ProfileImageUpdateRequest): User {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         
         request.profileImageUrl?.let { user.profileImageUrl = it }
         request.profileImageUrls?.let { urls ->
@@ -312,7 +313,7 @@ class UserService(
     }
 
     fun getPrivacySettings(userId: Long): PrivacySettingsResponse {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         return PrivacySettingsResponse(
             isLocationSharingEnabled = user.isLocationSharingEnabled,
             isProfilePublic = user.isProfilePublic
@@ -321,7 +322,7 @@ class UserService(
 
     @Transactional
     fun updatePrivacySettings(userId: Long, request: PrivacySettingsRequest): PrivacySettingsResponse {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         request.isLocationSharingEnabled?.let { user.isLocationSharingEnabled = it }
         request.isProfilePublic?.let { user.isProfilePublic = it }
         userRepository.save(user)
@@ -350,27 +351,27 @@ class UserService(
     @Transactional
     fun changePassword(userId: Long, request: ChangePasswordRequest) {
         val user = userRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("사용자를 찾을 수 없습니다.") }
+            .orElseThrow { NotFoundException("사용자를 찾을 수 없습니다.") }
 
         if (user.oauthProvider != "LOCAL") {
-            throw IllegalArgumentException("소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다.")
+            throw BadRequestException("소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다.")
         }
 
         if (user.password == null) {
-            throw IllegalArgumentException("비밀번호가 설정되지 않은 계정입니다.")
+            throw BadRequestException("비밀번호가 설정되지 않은 계정입니다.")
         }
 
         if (!passwordEncoder.matches(request.currentPassword, user.password)) {
-            throw IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.")
+            throw BadRequestException("현재 비밀번호가 일치하지 않습니다.")
         }
 
         val passwordRegex = Regex("^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#\$%^&*()_+\\-=\\[\\]{}|;:',.<>?/~`]).{8,}$")
         if (!passwordRegex.matches(request.newPassword)) {
-            throw IllegalArgumentException("비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 포함해야 합니다.")
+            throw BadRequestException("비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 포함해야 합니다.")
         }
 
         if (passwordEncoder.matches(request.newPassword, user.password)) {
-            throw IllegalArgumentException("새 비밀번호는 현재 비밀번호와 달라야 합니다.")
+            throw BadRequestException("새 비밀번호는 현재 비밀번호와 달라야 합니다.")
         }
 
         user.password = passwordEncoder.encode(request.newPassword)
@@ -395,7 +396,7 @@ class UserService(
 
     private fun anonymizeAndDelete(userId: Long, reason: String?, deletedBy: String) {
         val user = userRepository.findById(userId)
-            .orElseThrow { NoSuchElementException("User not found with id: $userId") }
+            .orElseThrow { NotFoundException("User not found with id: $userId") }
 
         // Anonymize PII fields
         user.email = "deleted_${userId}@withdrawn.goldpet.com"

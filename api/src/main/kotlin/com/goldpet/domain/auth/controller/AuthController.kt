@@ -1,5 +1,6 @@
 package com.goldpet.domain.auth.controller
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.auth.dto.AuthResponse
 import com.goldpet.domain.auth.dto.LoginRequest
 import com.goldpet.domain.auth.dto.SignupRequest
@@ -11,6 +12,10 @@ import com.goldpet.domain.auth.dto.AvailabilityResponse
 import com.goldpet.domain.user.repository.UserRepository
 
 import com.goldpet.domain.auth.dto.ConfirmLinkRequest
+import com.goldpet.domain.auth.dto.CheckUsernameRequest
+import com.goldpet.domain.auth.dto.CheckNicknameRequest
+import com.goldpet.domain.auth.dto.NativeLoginRequest
+import com.goldpet.domain.auth.dto.RefreshTokenRequest
 import com.goldpet.service.auth.SocialLoginService
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
@@ -47,8 +52,8 @@ class AuthController(
     }
 
     @PostMapping("/check-username")
-    fun checkUsername(@RequestBody body: Map<String, String>): ResponseEntity<AvailabilityResponse> {
-        val username = body["username"] ?: return ResponseEntity.badRequest().build()
+    fun checkUsername(@Valid @RequestBody request: CheckUsernameRequest): ResponseEntity<AvailabilityResponse> {
+        val username = request.username
         val exists = userRepository.findByUsername(username).isPresent
         return ResponseEntity.ok(AvailabilityResponse(!exists))
     }
@@ -56,9 +61,9 @@ class AuthController(
     @PostMapping("/check-nickname")
     fun checkNickname(
         @org.springframework.security.core.annotation.AuthenticationPrincipal principal: org.springframework.security.core.userdetails.UserDetails?,
-        @RequestBody body: Map<String, String>
+        @Valid @RequestBody request: CheckNicknameRequest
     ): ResponseEntity<AvailabilityResponse> {
-        val nickname = body["nickname"] ?: return ResponseEntity.badRequest().build()
+        val nickname = request.nickname
         val existingUser = userRepository.findByNickname(nickname).orElse(null)
         val available = if (existingUser == null) {
             true
@@ -71,55 +76,19 @@ class AuthController(
         }
         return ResponseEntity.ok(AvailabilityResponse(available))
     }
-    @PostMapping("/dev-login")
-    fun devLogin(@RequestBody(required = false) body: Map<String, String>?): ResponseEntity<AuthResponse> {
-        val testEmail = body?.get("email") ?: "test@goldpet.com"
-        val testNickname = body?.get("nickname") ?: "테스트유저"
-        val oauthId = "dev-user-${testEmail.hashCode()}"
-        val existingUser = userRepository.findByOauthProviderAndOauthId("dev", oauthId).orElse(null)
-            ?: userRepository.findByEmailHash(testEmail).orElse(null)
-        
-        val user = if (existingUser == null) {
-            val newUser = com.goldpet.domain.user.entity.User(
-                 oauthProvider = "dev",
-                 oauthId = "dev-user-${testEmail.hashCode()}",
-                 nickname = testNickname,
-                 email = testEmail,
-                 emailHash = testEmail,
-
-                 // Required fields as null/defaults
-                 gender = null,
-                 birthYear = null,
-                 mainLocationText = null,
-                 mainLocationGeom = null,
-                 profileImageUrl = null,
-                 username = null,
-                 password = null,
-                 name = null,
-                 birthDate = null,
-                 phoneNumber = null
-            )
-            userRepository.save(newUser)
-        } else {
-            existingUser
-        }
-        
-        val response = authService.devLogin(user)
-        return ResponseEntity.ok(response)
-    }
 
     @PostMapping("/login/{provider}")
     fun nativeLogin(
         @PathVariable provider: String,
-        @RequestBody request: Map<String, String>
+        @Valid @RequestBody request: NativeLoginRequest
     ): ResponseEntity<AuthResponse> {
-        val accessToken = request["accessToken"] ?: throw IllegalArgumentException("Access token is required")
+        val accessToken = request.accessToken
         val authResponse = when (provider.lowercase()) {
             "kakao" -> socialLoginService.loginWithKakao(accessToken)
             "naver" -> socialLoginService.loginWithNaver(accessToken)
             "google" -> socialLoginService.loginWithGoogle(accessToken)
             "apple" -> socialLoginService.loginWithApple(accessToken)
-            else -> throw IllegalArgumentException("Unsupported provider: $provider")
+            else -> throw BadRequestException("Unsupported provider: $provider")
         }
         return ResponseEntity.ok(authResponse)
     }
@@ -131,16 +100,15 @@ class AuthController(
     }
 
     @PostMapping("/refresh")
-    fun refreshToken(@RequestBody body: Map<String, String>): ResponseEntity<AuthResponse> {
-        val refreshToken = body["refreshToken"] ?: return ResponseEntity.badRequest().build()
+    fun refreshToken(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<AuthResponse> {
+        val refreshToken = request.refreshToken
 
         if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
-            return ResponseEntity.status(401).build()
+            throw UnauthorizedException("Invalid refresh token")
         }
 
         val userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken)
-        val user = userRepository.findById(userId).orElse(null)
-            ?: return ResponseEntity.status(401).build()
+        val user = userRepository.findById(userId).orElseThrow { UnauthorizedException("Invalid refresh token") }
 
         val userPrincipal = UserPrincipal.create(user)
         val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)

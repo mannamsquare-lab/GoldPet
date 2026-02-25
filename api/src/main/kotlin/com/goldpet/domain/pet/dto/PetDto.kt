@@ -2,6 +2,8 @@ package com.goldpet.domain.pet.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.pet.entity.Pet
+import jakarta.validation.constraints.DecimalMax
+import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
 
@@ -12,6 +14,8 @@ data class CreatePetRequest(
     val breedId: Int?,
     val gender: String?,
     val birthDate: LocalDate?,
+    @field:DecimalMin(value = "0.1", message = "Weight must be at least 0.1kg")
+    @field:DecimalMax(value = "200.0", message = "Weight must be at most 200kg")
     val weightKg: Double?,
     val isNeutered: Boolean?,
     val profileImageUrl: String?,
@@ -26,6 +30,8 @@ data class UpdatePetRequest(
     val breedId: Int?,
     val gender: String?,
     val birthDate: LocalDate?,
+    @field:DecimalMin(value = "0.1", message = "Weight must be at least 0.1kg")
+    @field:DecimalMax(value = "200.0", message = "Weight must be at most 200kg")
     val weightKg: Double?,
     val isNeutered: Boolean?,
     val profileImageUrl: String?,

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import java.util.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertThrows
+import com.goldpet.domain.common.exception.*
 import java.time.LocalDateTime
 
 @ExtendWith(MockitoExtension::class)
@@ -168,7 +169,7 @@ class MatchServiceTest {
         `when`(userRepository.findById(user1.id)).thenReturn(Optional.empty())
 
         // When / Then
-        assertThrows<NoSuchElementException> {
+        assertThrows<NotFoundException> {
             matchService.likeUser(user1.id, user2.id)
         }
         verify(likeRepository, never()).save(any(Like::class.java))
@@ -183,7 +184,7 @@ class MatchServiceTest {
         `when`(userBlockRepository.existsByBlockerAndBlocked(user2, user1)).thenReturn(true)
 
         // When / Then
-        assertThrows<org.springframework.web.server.ResponseStatusException> {
+        assertThrows<ForbiddenException> {
             matchService.likeUser(user1.id, user2.id)
         }
         verify(likeRepository, never()).save(any(Like::class.java))

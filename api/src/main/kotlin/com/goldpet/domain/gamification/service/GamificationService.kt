@@ -3,9 +3,9 @@ package com.goldpet.domain.gamification.service
 import com.goldpet.domain.gamification.dto.BadgeResponse
 import com.goldpet.domain.gamification.repository.BadgeRepository
 import com.goldpet.domain.gamification.repository.UserBadgeRepository
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -50,6 +50,6 @@ class GamificationService(
     }
 
     private fun getUser(userId: Long): User {
-        return userRepository.findById(userId).orElseThrow { EntityNotFoundException("User not found") }
+        return userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
     }
 }

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { LazyMotion, domAnimation } from 'motion/react';
 import { queryClient } from './lib/queryClient';
+import ErrorBoundary from './components/common/ErrorBoundary';
 // import { useAuthStore } from './stores/authStore';
 import './App.css';
 
@@ -81,6 +82,7 @@ function App() {
   // const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
+    <ErrorBoundary>
     <LazyMotion features={domAnimation}>
     <QueryClientProvider client={queryClient}>
       <AlertProvider>
@@ -189,6 +191,7 @@ function App() {
       </AlertProvider>
     </QueryClientProvider>
     </LazyMotion>
+    </ErrorBoundary>
   );
 }
 

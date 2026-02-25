@@ -2,6 +2,7 @@ package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.dto.PetAttributeRequest
 import com.goldpet.domain.admin.dto.PetAttributeResponse
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.pet.entity.PetAttribute
 import com.goldpet.domain.pet.repository.PetAttributeRepository
 import org.springframework.cache.annotation.CacheEvict
@@ -39,7 +40,7 @@ class AttributeAdminService(
     @CacheEvict(value = ["pet_attributes"], allEntries = true)
     fun updateAttribute(id: Long, request: PetAttributeRequest): PetAttributeResponse {
         val attribute = attributeRepository.findById(id)
-            .orElseThrow { IllegalArgumentException("Attribute not found") }
+            .orElseThrow { NotFoundException("Attribute not found") }
         
         attribute.update(
             name = request.name,
@@ -58,7 +59,7 @@ class AttributeAdminService(
     @CacheEvict(value = ["pet_attributes"], allEntries = true)
     fun deleteAttribute(id: Long) {
         if (!attributeRepository.existsById(id)) {
-            throw IllegalArgumentException("Attribute not found")
+            throw NotFoundException("Attribute not found")
         }
         attributeRepository.deleteById(id)
     }

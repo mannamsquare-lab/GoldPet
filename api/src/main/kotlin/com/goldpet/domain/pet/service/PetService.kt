@@ -9,11 +9,11 @@ import com.goldpet.domain.pet.entity.Pet
 import com.goldpet.domain.pet.entity.PetProfileImage
 import com.goldpet.domain.pet.repository.PetBreedRepository
 import com.goldpet.domain.gamification.entity.BadgeConditionType
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.gamification.service.BadgeAwardService
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.pet.repository.PetSpeciesRepository
 import com.goldpet.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
@@ -33,9 +33,9 @@ class PetService(
 
     @Transactional
     fun createPet(userId: Long, request: CreatePetRequest): PetResponse {
-        val owner = userRepository.findById(userId).orElseThrow { EntityNotFoundException("User not found") }
-        val species = petSpeciesRepository.findById(request.speciesId).orElseThrow { EntityNotFoundException("PetSpecies not found") }
-        val breed = request.breedId?.let { petBreedRepository.findById(it).orElseThrow { EntityNotFoundException("PetBreed not found") } }
+        val owner = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
+        val species = petSpeciesRepository.findById(request.speciesId).orElseThrow { NotFoundException("PetSpecies not found") }
+        val breed = request.breedId?.let { petBreedRepository.findById(it).orElseThrow { NotFoundException("PetBreed not found") } }
 
         val pet = Pet(
             owner = owner,
@@ -66,7 +66,7 @@ class PetService(
     }
 
     fun getPet(petId: Long): PetResponse {
-        val pet = petRepository.findById(petId).orElseThrow { EntityNotFoundException("Pet not found") }
+        val pet = petRepository.findById(petId).orElseThrow { NotFoundException("Pet not found") }
         return PetResponse.from(pet)
     }
 
@@ -95,15 +95,15 @@ class PetService(
 
     @Transactional
     fun updatePet(userId: Long, petId: Long, request: UpdatePetRequest): PetResponse {
-        val pet = petRepository.findById(petId).orElseThrow { EntityNotFoundException("Pet not found") }
-        if (pet.owner.id != userId) throw IllegalArgumentException("Not authorized to update this pet")
+        val pet = petRepository.findById(petId).orElseThrow { NotFoundException("Pet not found") }
+        if (pet.owner.id != userId) throw ForbiddenException("Not authorized to update this pet")
 
         request.name?.let { pet.name = it }
         request.speciesId?.let {
-            pet.species = petSpeciesRepository.findById(it).orElseThrow { EntityNotFoundException("PetSpecies not found") }
+            pet.species = petSpeciesRepository.findById(it).orElseThrow { NotFoundException("PetSpecies not found") }
         }
         request.breedId?.let {
-            pet.breed = petBreedRepository.findById(it).orElseThrow { EntityNotFoundException("PetBreed not found") }
+            pet.breed = petBreedRepository.findById(it).orElseThrow { NotFoundException("PetBreed not found") }
         }
         request.gender?.let { pet.gender = it }
         request.birthDate?.let { pet.birthDate = it }
@@ -125,8 +125,8 @@ class PetService(
 
     @Transactional
     fun deletePet(userId: Long, petId: Long) {
-        val pet = petRepository.findById(petId).orElseThrow { EntityNotFoundException("Pet not found") }
-        if (pet.owner.id != userId) throw IllegalArgumentException("Not authorized to delete this pet")
+        val pet = petRepository.findById(petId).orElseThrow { NotFoundException("Pet not found") }
+        if (pet.owner.id != userId) throw ForbiddenException("Not authorized to delete this pet")
         petRepository.delete(pet)
     }
 }

@@ -78,7 +78,8 @@ class ApiClient {
   }
 
   void _setupCertificatePinning(Dio dio) {
-    if (kDebugMode) return; // Skip in debug mode for local development
+    // Skip certificate pinning in debug and profile mode for local development.
+    if (kDebugMode || kProfileMode) return;
 
     (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       final client = HttpClient();
@@ -93,7 +94,9 @@ class ApiClient {
           return false;
         }
 
-        // TODO: Replace placeholders with actual SHA-256 public key fingerprints.
+        // TODO: Add actual certificate fingerprints for production domains.
+        // Once fingerprints are added, change release mode to return false (fail-closed).
+        // Requires: extract SHA-256 fingerprints from api.goldpet.com and api.mannamsquare.com.
         // Generate with:
         // openssl s_client -connect api.goldpet.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
         const allowedFingerprints = <String>[
@@ -103,8 +106,8 @@ class ApiClient {
           // 'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
         ];
 
-        // If no fingerprints are configured yet, allow the connection.
-        // TODO: Set to false and populate allowedFingerprints before production release.
+        // If no fingerprints are configured yet, allow the connection in release mode.
+        // TODO: Once fingerprints are populated, change this to return false (fail-closed).
         if (allowedFingerprints.isEmpty) {
           return true;
         }

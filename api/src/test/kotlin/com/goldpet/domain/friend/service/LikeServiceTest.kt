@@ -16,6 +16,7 @@ import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import com.goldpet.domain.common.exception.*
 import java.time.LocalDateTime
 import java.util.*
 
@@ -206,7 +207,7 @@ class LikeServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows(IllegalArgumentException::class.java) {
+        assertThrows(NotFoundException::class.java) {
             likeService.likeUser(1L, 999L)
         }
     }

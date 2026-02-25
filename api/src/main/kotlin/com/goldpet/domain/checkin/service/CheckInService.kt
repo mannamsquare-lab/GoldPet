@@ -2,6 +2,7 @@ package com.goldpet.domain.checkin.service
 
 import com.goldpet.domain.checkin.dto.*
 import com.goldpet.domain.checkin.entity.CheckIn
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.checkin.entity.Place
 import com.goldpet.domain.checkin.entity.PlaceCategory
 import com.goldpet.domain.checkin.repository.CheckInRepository
@@ -47,7 +48,7 @@ class CheckInService(
 
     fun getPlace(placeId: Long): PlaceResponse {
         val place = placeRepository.findById(placeId)
-            .orElseThrow { IllegalArgumentException("Place not found") }
+            .orElseThrow { NotFoundException("Place not found") }
         return PlaceResponse.from(place)
     }
 
@@ -86,14 +87,14 @@ class CheckInService(
     @Transactional
     fun checkIn(userId: Long, request: CreateCheckInRequest): CheckInResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
         val place = placeRepository.findById(request.placeId)
-            .orElseThrow { IllegalArgumentException("Place not found") }
-        
+            .orElseThrow { NotFoundException("Place not found") }
+
         // 같은 장소에 1시간 내 중복 체크인 방지
         val oneHourAgo = LocalDateTime.now().minusHours(1)
         if (checkInRepository.existsByUserIdAndPlaceIdAndCreatedAtAfter(userId, request.placeId, oneHourAgo)) {
-            throw IllegalArgumentException("Already checked in recently")
+            throw ConflictException("Already checked in recently")
         }
         
         val checkIn = CheckIn(

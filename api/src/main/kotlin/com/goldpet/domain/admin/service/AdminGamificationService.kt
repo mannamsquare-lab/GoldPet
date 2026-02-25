@@ -4,8 +4,8 @@ import com.goldpet.domain.admin.controller.*
 import com.goldpet.domain.gamification.entity.Badge
 import com.goldpet.domain.gamification.entity.BadgeConditionType
 import com.goldpet.domain.gamification.repository.BadgeRepository
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.gamification.repository.UserBadgeRepository
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -46,7 +46,7 @@ class AdminGamificationService(
     @Transactional
     fun updateBadge(badgeId: Long, request: UpdateBadgeRequest): BadgeAdminResponse {
         val badge = badgeRepository.findById(badgeId)
-            .orElseThrow { EntityNotFoundException("Badge not found") }
+            .orElseThrow { NotFoundException("Badge not found") }
 
         request.name?.let { badge.name = it }
         request.description?.let { badge.description = it }

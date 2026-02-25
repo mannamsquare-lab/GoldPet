@@ -1,5 +1,6 @@
 package com.goldpet.domain.gold.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.gold.dto.ChargeRequest
 import com.goldpet.domain.gold.dto.RefundRequest
 import com.goldpet.domain.gold.dto.SpendRequest
@@ -87,7 +88,7 @@ class GoldServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             goldService.getBalance(999L)
         }
     }
@@ -161,7 +162,7 @@ class GoldServiceTest {
         whenever(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser))
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<BadRequestException> {
             goldService.chargeGold(1L, request)
         }
     }
@@ -173,7 +174,7 @@ class GoldServiceTest {
         whenever(userRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             goldService.chargeGold(999L, request)
         }
     }
@@ -224,7 +225,7 @@ class GoldServiceTest {
         whenever(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser))
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<BadRequestException> {
             goldService.spendGold(1L, request)
         }
     }
@@ -236,7 +237,7 @@ class GoldServiceTest {
         whenever(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser))
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<BadRequestException> {
             goldService.spendGold(1L, request)
         }
     }
@@ -278,7 +279,7 @@ class GoldServiceTest {
         whenever(userRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             goldService.grantReward(999L, 50, "보상")
         }
     }
@@ -387,7 +388,7 @@ class GoldServiceTest {
         whenever(transactionRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        val ex = assertThrows<IllegalArgumentException> {
+        val ex = assertThrows<NotFoundException> {
             goldService.refundTransaction(1L, request)
         }
         assertEquals("Transaction not found", ex.message)
@@ -411,7 +412,7 @@ class GoldServiceTest {
         whenever(transactionRepository.findById(10L)).thenReturn(Optional.of(chargeTx))
 
         // When & Then
-        val ex = assertThrows<IllegalArgumentException> {
+        val ex = assertThrows<BadRequestException> {
             goldService.refundTransaction(1L, request)
         }
         assertEquals("Only SPEND transactions can be refunded", ex.message)
@@ -428,7 +429,7 @@ class GoldServiceTest {
         whenever(transactionRepository.existsByOriginalTransactionId(10L)).thenReturn(true)
 
         // When & Then
-        val ex = assertThrows<IllegalArgumentException> {
+        val ex = assertThrows<ConflictException> {
             goldService.refundTransaction(1L, request)
         }
         assertEquals("Transaction already refunded", ex.message)
@@ -446,7 +447,7 @@ class GoldServiceTest {
         whenever(transactionRepository.existsByOriginalTransactionId(10L)).thenReturn(false)
 
         // When & Then
-        val ex = assertThrows<IllegalArgumentException> {
+        val ex = assertThrows<ForbiddenException> {
             goldService.refundTransaction(1L, request)
         }
         assertEquals("Cannot refund another user's transaction", ex.message)
@@ -493,7 +494,7 @@ class GoldServiceTest {
         whenever(userRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             goldService.systemRefund(999L, 50, "환불")
         }
     }

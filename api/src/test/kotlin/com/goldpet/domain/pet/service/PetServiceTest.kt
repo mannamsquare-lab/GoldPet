@@ -11,7 +11,7 @@ import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.pet.repository.PetSpeciesRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
+import com.goldpet.domain.common.exception.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -171,7 +171,7 @@ class PetServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<EntityNotFoundException> {
+        assertThrows<NotFoundException> {
             petService.createPet(999L, request)
         }
     }
@@ -194,7 +194,7 @@ class PetServiceTest {
         whenever(petSpeciesRepository.findById(999)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<EntityNotFoundException> {
+        assertThrows<NotFoundException> {
             petService.createPet(1L, request)
         }
     }
@@ -236,7 +236,7 @@ class PetServiceTest {
         whenever(petRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<EntityNotFoundException> {
+        assertThrows<NotFoundException> {
             petService.getPet(999L)
         }
     }

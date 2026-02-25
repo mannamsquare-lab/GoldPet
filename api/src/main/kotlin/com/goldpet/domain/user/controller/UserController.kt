@@ -1,5 +1,6 @@
 package com.goldpet.domain.user.controller
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.user.dto.ChangePasswordRequest
 import com.goldpet.domain.user.dto.DeleteAccountRequest
 import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
@@ -12,6 +13,8 @@ import com.goldpet.domain.user.dto.NotificationSettingsRequest
 import com.goldpet.domain.user.dto.NotificationSettingsResponse
 import com.goldpet.domain.user.dto.PrivacySettingsRequest
 import com.goldpet.domain.user.dto.PrivacySettingsResponse
+import com.goldpet.domain.user.dto.UpdateNotificationRequest
+import com.goldpet.domain.user.dto.UpdateFcmTokenRequest
 import com.goldpet.domain.user.dto.UserStatsResponse
 import com.goldpet.domain.user.entity.ConsentType
 import com.goldpet.domain.user.service.ConsentHistoryResponse
@@ -19,8 +22,8 @@ import com.goldpet.domain.user.service.ConsentService
 import com.goldpet.domain.user.service.UserDataExportService
 import com.goldpet.domain.user.service.UserService
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
-import org.springframework.http.ResponseEntity
 import jakarta.validation.Valid
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
@@ -95,11 +98,10 @@ class UserController(
     @PatchMapping("/me/notification")
     fun updateNotification(
         @AuthenticationPrincipal principal: UserDetails,
-        @RequestBody request: Map<String, Boolean>
+        @RequestBody request: UpdateNotificationRequest
     ): ResponseEntity<UserResponse> {
         val userId = userService.getUserIdFromPrincipal(principal)
-        val enabled = request["enabled"] ?: throw IllegalArgumentException("enabled field is required")
-        val updatedUser = userService.updateNotification(userId, enabled)
+        val updatedUser = userService.updateNotification(userId, request.enabled)
         return ResponseEntity.ok(UserResponse.from(updatedUser))
     }
 
@@ -140,11 +142,10 @@ class UserController(
     @PutMapping("/me/fcm-token")
     fun updateFcmToken(
         @AuthenticationPrincipal principal: UserDetails,
-        @RequestBody request: Map<String, String?>
+        @RequestBody request: UpdateFcmTokenRequest
     ): ResponseEntity<Void> {
         val userId = userService.getUserIdFromPrincipal(principal)
-        val fcmToken = request["fcmToken"]
-        userService.updateFcmToken(userId, fcmToken)
+        userService.updateFcmToken(userId, request.fcmToken)
         return ResponseEntity.ok().build()
     }
 
@@ -197,12 +198,8 @@ class UserController(
 
     @GetMapping("/search")
     fun searchFriendsInArea(
-        @RequestParam minLat: Double,
-        @RequestParam minLon: Double,
-        @RequestParam maxLat: Double,
-        @RequestParam maxLon: Double
+        @ModelAttribute @Valid request: BoundingBoxRequest
     ): ResponseEntity<List<FriendLocationResponse>> {
-        val request = BoundingBoxRequest(minLat, minLon, maxLat, maxLon)
         val friendLocations = userService.findFriendsInArea(request)
         return ResponseEntity.ok(friendLocations)
     }

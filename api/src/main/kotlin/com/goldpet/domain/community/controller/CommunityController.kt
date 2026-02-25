@@ -133,7 +133,7 @@ class CommunityController(
     @PostMapping("/posts/{postId}/comments")
     fun createComment(
         @PathVariable postId: Long,
-        @RequestBody request: CommunityCommentCreateRequest,
+        @RequestBody @Valid request: CommunityCommentCreateRequest,
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<CommunityCommentResponse> {
         val response = communityService.createComment(principal.id, postId, request)

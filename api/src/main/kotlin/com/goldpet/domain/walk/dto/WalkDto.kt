@@ -1,6 +1,9 @@
 package com.goldpet.domain.walk.dto
 
 import com.goldpet.domain.walk.entity.Walk
+import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.PositiveOrZero
+import jakarta.validation.constraints.Size
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.LineString
@@ -9,8 +12,11 @@ import java.time.LocalDateTime
 data class CreateWalkRequest(
     val startTime: LocalDateTime,
     val endTime: LocalDateTime,
+    @field:PositiveOrZero(message = "Distance must be >= 0")
     val distanceKm: Double,
+    @field:Positive(message = "Duration must be > 0")
     val durationSeconds: Long,
+    @field:Size(min = 2, message = "Path must have at least 2 points")
     val path: List<List<Double>>, // List of [latitude, longitude] pairs
     val spots: List<WalkSpotDto> = emptyList(),
     val caloriesBurned: Double?,
@@ -18,14 +24,8 @@ data class CreateWalkRequest(
 ) {
     fun toLineString(): LineString {
         val geometryFactory = GeometryFactory()
-        val coords = path.map { Coordinate(it[1], it[0]) } // JTS expects (longitude, latitude)
-        // LineString requires at least 2 points
-        val coordinates = when {
-            coords.size >= 2 -> coords.toTypedArray()
-            coords.size == 1 -> arrayOf(coords[0], Coordinate(coords[0]))
-            else -> arrayOf(Coordinate(0.0, 0.0), Coordinate(0.0, 0.0))
-        }
-        return geometryFactory.createLineString(coordinates)
+        val coords = path.map { Coordinate(it[1], it[0]) }.toTypedArray() // JTS expects (longitude, latitude)
+        return geometryFactory.createLineString(coords)
     }
 }
 

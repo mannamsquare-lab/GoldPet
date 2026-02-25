@@ -8,6 +8,7 @@ import com.goldpet.domain.aiprofile.entity.AIRequestStatus
 import com.goldpet.domain.aiprofile.entity.AIRequestType
 import com.goldpet.domain.aiprofile.repository.AIProfileRequestRepository
 import com.goldpet.domain.aiprofile.repository.AIStyleRepository
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.gold.dto.SpendRequest
 import com.goldpet.domain.pet.repository.PetRepository
@@ -45,7 +46,7 @@ class AIProfileService(
 
     fun getRequest(requestId: Long): AIProfileRequestResponse {
         val request = aiRequestRepository.findById(requestId)
-            .orElseThrow { IllegalArgumentException("Request not found") }
+            .orElseThrow { NotFoundException("Request not found") }
         return AIProfileRequestResponse.from(request)
     }
 
@@ -57,13 +58,13 @@ class AIProfileService(
     @Transactional
     fun createRequest(userId: Long, request: CreateAIProfileRequest): AIProfileRequestResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
         val pet = petRepository.findById(request.petId)
-            .orElseThrow { IllegalArgumentException("Pet not found") }
-        
+            .orElseThrow { NotFoundException("Pet not found") }
+
         // 펫 소유자 확인
         if (pet.owner.id != userId) {
-            throw IllegalArgumentException("Not your pet")
+            throw ForbiddenException("Not your pet")
         }
         
         // 골드 비용 계산
@@ -101,14 +102,14 @@ class AIProfileService(
     @Transactional
     fun cancelRequest(requestId: Long, userId: Long) {
         val request = aiRequestRepository.findById(requestId)
-            .orElseThrow { IllegalArgumentException("Request not found") }
-        
+            .orElseThrow { NotFoundException("Request not found") }
+
         if (request.user.id != userId) {
-            throw IllegalArgumentException("Not authorized")
+            throw ForbiddenException("Not authorized")
         }
-        
+
         if (request.status != AIRequestStatus.PENDING) {
-            throw IllegalArgumentException("Cannot cancel non-pending request")
+            throw BadRequestException("Cannot cancel non-pending request")
         }
         
         // 골드 환불

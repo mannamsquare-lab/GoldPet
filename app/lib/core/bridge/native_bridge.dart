@@ -304,7 +304,35 @@ class NativeBridge {
           );
       }
     } catch (e) {
-      throw PlatformException(code: 'METHOD_ERROR', message: e.toString());
+      if (e is PlatformException) rethrow;
+      throw PlatformException(
+        code: _getErrorCode(method, e),
+        message: e.toString(),
+        details: '${e.runtimeType}: ${e.toString()}',
+      );
     }
+  }
+
+  String _getErrorCode(String method, dynamic error) {
+    if (method.contains('location') ||
+        method.contains('Location') ||
+        method.contains('gps')) {
+      return 'LOCATION_ERROR';
+    }
+    if (method.contains('camera') ||
+        method.contains('Camera') ||
+        method.contains('photo')) {
+      return 'CAMERA_ERROR';
+    }
+    final errorStr = error.toString();
+    if (errorStr.contains('permission') || errorStr.contains('Permission')) {
+      return 'PERMISSION_ERROR';
+    }
+    if (errorStr.contains('network') ||
+        errorStr.contains('timeout') ||
+        errorStr.contains('SocketException')) {
+      return 'NETWORK_ERROR';
+    }
+    return 'METHOD_ERROR';
   }
 }

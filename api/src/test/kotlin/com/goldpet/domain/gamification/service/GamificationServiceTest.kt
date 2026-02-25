@@ -7,7 +7,7 @@ import com.goldpet.domain.gamification.repository.BadgeRepository
 import com.goldpet.domain.gamification.repository.UserBadgeRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
-import jakarta.persistence.EntityNotFoundException
+import com.goldpet.domain.common.exception.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -139,7 +139,7 @@ class GamificationServiceTest {
     fun `getMyBadges should throw exception when user not found`() {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
-        assertThrows<EntityNotFoundException> {
+        assertThrows<NotFoundException> {
             gamificationService.getMyBadges(999L)
         }
     }

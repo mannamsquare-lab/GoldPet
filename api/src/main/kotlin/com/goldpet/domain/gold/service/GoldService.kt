@@ -1,5 +1,6 @@
 package com.goldpet.domain.gold.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.gold.dto.*
 import com.goldpet.domain.gold.entity.GoldTransaction
 import com.goldpet.domain.gold.entity.TransactionStatus
@@ -24,7 +25,7 @@ class GoldService(
 
     fun getBalance(userId: Long): GoldBalanceResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         val oneMonthAgo = LocalDateTime.now().minusMonths(1)
         val totalCharged = transactionRepository.sumAmountByUserAndTypeSince(userId, TransactionType.CHARGE, oneMonthAgo) ?: 0
@@ -67,10 +68,10 @@ class GoldService(
     @Transactional
     fun chargeGold(userId: Long, request: ChargeRequest): TransactionResponse {
         val user = userRepository.findByIdForUpdate(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         if (request.amount <= 0) {
-            throw IllegalArgumentException("Amount must be positive")
+            throw BadRequestException("Amount must be positive")
         }
 
         // 총 지급량 = 결제 골드 + 보너스. 보너스는 description에 기록 (추후 별도 컬럼 추가 가능)
@@ -96,14 +97,14 @@ class GoldService(
     @Transactional
     fun spendGold(userId: Long, request: SpendRequest): TransactionResponse {
         val user = userRepository.findByIdForUpdate(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         if (request.amount <= 0) {
-            throw IllegalArgumentException("Amount must be positive")
+            throw BadRequestException("Amount must be positive")
         }
 
         if (user.goldBalance < request.amount) {
-            throw IllegalArgumentException("Insufficient gold balance")
+            throw BadRequestException("Insufficient gold balance")
         }
 
         user.goldBalance -= request.amount
@@ -127,7 +128,7 @@ class GoldService(
     @Transactional
     fun grantReward(userId: Long, amount: Int, description: String): TransactionResponse {
         val user = userRepository.findByIdForUpdate(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         user.goldBalance += amount
         userRepository.save(user)
@@ -155,7 +156,7 @@ class GoldService(
     @Transactional
     fun systemRefund(userId: Long, amount: Int, description: String, referenceType: String? = null, referenceId: Long? = null): TransactionResponse {
         val user = userRepository.findByIdForUpdate(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         user.goldBalance += amount
         userRepository.save(user)
@@ -178,25 +179,25 @@ class GoldService(
     @Transactional
     fun refundTransaction(userId: Long, request: RefundRequest): RefundResponse {
         val user = userRepository.findByIdForUpdate(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         val originalTransaction = transactionRepository.findById(request.transactionId)
-            .orElseThrow { IllegalArgumentException("Transaction not found") }
+            .orElseThrow { NotFoundException("Transaction not found") }
 
         if (originalTransaction.user.id != userId) {
-            throw IllegalArgumentException("Cannot refund another user's transaction")
+            throw ForbiddenException("Cannot refund another user's transaction")
         }
 
         if (originalTransaction.type != TransactionType.SPEND) {
-            throw IllegalArgumentException("Only SPEND transactions can be refunded")
+            throw BadRequestException("Only SPEND transactions can be refunded")
         }
 
         if (transactionRepository.existsByOriginalTransactionId(request.transactionId)) {
-            throw IllegalArgumentException("Transaction already refunded")
+            throw ConflictException("Transaction already refunded")
         }
 
         if (originalTransaction.status != TransactionStatus.COMPLETED) {
-            throw IllegalArgumentException("Only completed transactions can be refunded")
+            throw BadRequestException("Only completed transactions can be refunded")
         }
 
         val refundAmount = kotlin.math.abs(originalTransaction.amount)

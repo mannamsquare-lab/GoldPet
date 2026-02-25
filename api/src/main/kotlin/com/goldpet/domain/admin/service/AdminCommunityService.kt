@@ -1,6 +1,7 @@
 package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.controller.*
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.community.entity.CommunityPost
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostLikeRepository
@@ -30,7 +31,7 @@ class AdminCommunityService(
 
     fun getPostDetail(postId: Long): PostDetailAdminResponse {
         val post = postRepository.findById(postId)
-            .orElseThrow { NoSuchElementException("Post not found: $postId") }
+            .orElseThrow { NotFoundException("Post not found: $postId") }
 
         val comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId)
         val likeCount = likeRepository.countByPostId(postId)
@@ -69,13 +70,13 @@ class AdminCommunityService(
         // Post hiding logic - would need isHidden field added to entity
         // For now, just verify post exists
         postRepository.findById(postId)
-            .orElseThrow { NoSuchElementException("Post not found: $postId") }
+            .orElseThrow { NotFoundException("Post not found: $postId") }
     }
 
     @Transactional
     fun unhidePost(postId: Long) {
         postRepository.findById(postId)
-            .orElseThrow { NoSuchElementException("Post not found: $postId") }
+            .orElseThrow { NotFoundException("Post not found: $postId") }
     }
 
     @Transactional
@@ -86,7 +87,7 @@ class AdminCommunityService(
     @Transactional
     fun hideComment(commentId: Long, reason: String?) {
         commentRepository.findById(commentId)
-            .orElseThrow { NoSuchElementException("Comment not found: $commentId") }
+            .orElseThrow { NotFoundException("Comment not found: $commentId") }
     }
 
     @Transactional

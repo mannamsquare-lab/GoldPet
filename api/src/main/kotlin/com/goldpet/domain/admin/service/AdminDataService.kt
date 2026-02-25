@@ -1,5 +1,7 @@
 package com.goldpet.domain.admin.service
 
+import com.goldpet.domain.admin.dto.*
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.community.repository.CommunityCategoryRepository
 import com.goldpet.domain.pet.entity.PetBreed
 import com.goldpet.domain.pet.entity.PetSpecies
@@ -31,10 +33,10 @@ class AdminDataService(
 
     @Transactional
     @CacheEvict(value = ["pet:species"], allEntries = true)
-    fun createSpecies(request: Map<String, Any>): Map<String, Any> {
-        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
-        val code = request["code"] as? String ?: name.uppercase().replace(" ", "_")
-        val description = request["description"] as? String
+    fun createSpecies(request: CreateSpeciesRequest): Map<String, Any> {
+        val name = request.name
+        val code = request.code ?: name.uppercase().replace(" ", "_")
+        val description = request.description
         val species = PetSpecies(code = code, name = name, description = description)
         val saved = speciesRepository.save(species)
         return mapOf("id" to saved.id, "code" to saved.code, "name" to saved.name, "breedCount" to 0)
@@ -65,11 +67,11 @@ class AdminDataService(
 
     @Transactional
     @CacheEvict(value = ["breeds"], allEntries = true)
-    fun createBreed(request: Map<String, Any>): Map<String, Any> {
-        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
-        val speciesId = (request["speciesId"] as? Number)?.toInt() ?: throw IllegalArgumentException("speciesId is required")
-        val description = request["description"] as? String
-        val species = speciesRepository.findById(speciesId).orElseThrow { IllegalArgumentException("Species not found") }
+    fun createBreed(request: CreateBreedRequest): Map<String, Any> {
+        val name = request.name
+        val speciesId = request.speciesId
+        val description = request.description
+        val species = speciesRepository.findById(speciesId).orElseThrow { NotFoundException("Species not found") }
         val breed = PetBreed(name = name, petSpecies = species, description = description)
         val saved = breedRepository.save(breed)
         return mapOf("id" to saved.id, "name" to saved.name, "speciesId" to species.id, "speciesName" to species.name)
@@ -93,9 +95,9 @@ class AdminDataService(
 
     @Transactional
     @CacheEvict(value = ["community:categories", "community:categories:entities"], allEntries = true)
-    fun createCategory(request: Map<String, Any>): Map<String, Any> {
-        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
-        val code = request["code"] as? String ?: name.uppercase().replace(" ", "_")
+    fun createCategory(request: CreateCategoryRequest): Map<String, Any> {
+        val name = request.name
+        val code = request.code ?: name.uppercase().replace(" ", "_")
         val category = com.goldpet.domain.community.entity.CommunityCategory(
             name = name,
             code = code
@@ -118,9 +120,9 @@ class AdminDataService(
 
     @Transactional
     @CacheEvict(value = ["user:interests"], allEntries = true)
-    fun createInterest(request: Map<String, Any>): Map<String, Any> {
-        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
-        val orderIndex = (request["orderIndex"] as? Number)?.toInt() ?: 0
+    fun createInterest(request: CreateInterestRequest): Map<String, Any> {
+        val name = request.name
+        val orderIndex = request.orderIndex
         val interest = com.goldpet.domain.user.entity.Interest(name = name, orderIndex = orderIndex)
         val saved = interestRepository.save(interest)
         return mapOf("id" to saved.id, "name" to saved.name, "orderIndex" to saved.orderIndex)
@@ -140,9 +142,9 @@ class AdminDataService(
 
     @Transactional
     @CacheEvict(value = ["user:hobbies"], allEntries = true)
-    fun createHobby(request: Map<String, Any>): Map<String, Any> {
-        val name = request["name"] as? String ?: throw IllegalArgumentException("Name is required")
-        val orderIndex = (request["orderIndex"] as? Number)?.toInt() ?: 0
+    fun createHobby(request: CreateHobbyRequest): Map<String, Any> {
+        val name = request.name
+        val orderIndex = request.orderIndex
         val hobby = com.goldpet.domain.user.entity.Hobby(name = name, orderIndex = orderIndex)
         val saved = hobbyRepository.save(hobby)
         return mapOf("id" to saved.id, "name" to saved.name, "orderIndex" to saved.orderIndex)

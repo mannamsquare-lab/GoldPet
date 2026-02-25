@@ -1,5 +1,6 @@
 package com.goldpet.domain.friend.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.friend.dto.LikeResponse
 import com.goldpet.domain.friend.entity.Like
 import com.goldpet.domain.friend.entity.LikeStatus
@@ -12,10 +13,8 @@ import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 
 @Service
 @Transactional
@@ -33,16 +32,16 @@ class LikeService(
      */
     fun likeUser(fromUserId: Long, toUserId: Long): LikeResponse {
         val fromUser = userRepository.findById(fromUserId).orElseThrow {
-            IllegalArgumentException("User not found: $fromUserId")
+            NotFoundException("User not found: $fromUserId")
         }
         val toUser = userRepository.findById(toUserId).orElseThrow {
-            IllegalArgumentException("User not found: $toUserId")
+            NotFoundException("User not found: $toUserId")
         }
 
         // Bidirectional block check
         if (userBlockRepository.existsByBlockerAndBlocked(fromUser, toUser)
             || userBlockRepository.existsByBlockerAndBlocked(toUser, fromUser)) {
-            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Blocked user")
+            throw ForbiddenException("Blocked user")
         }
 
         // Find existing like or create new

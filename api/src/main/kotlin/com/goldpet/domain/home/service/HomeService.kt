@@ -1,5 +1,6 @@
 package com.goldpet.domain.home.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.home.dto.HomeResponse
 import com.goldpet.domain.home.dto.NotificationSummary
 import com.goldpet.domain.friend.service.FriendService
@@ -19,7 +20,7 @@ class HomeService(
 ) {
     @Transactional(readOnly = true)
     fun getHomeData(userId: Long): HomeResponse {
-        val user = userRepository.findById(userId).orElseThrow { IllegalArgumentException("User not found") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
 
         // Get user location (default to Seoul if not set)
         val lat = user.mainLocationGeom?.y ?: 37.5665

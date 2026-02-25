@@ -7,6 +7,7 @@ import com.goldpet.domain.notification.repository.NotificationRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserDeviceRepository
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.common.exception.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -222,7 +223,7 @@ class NotificationServiceTest {
         whenever(notificationRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             notificationService.markAsRead(999L, 1L)
         }
     }
@@ -245,7 +246,7 @@ class NotificationServiceTest {
         whenever(notificationRepository.findById(1L)).thenReturn(Optional.of(notification))
 
         // When & Then - user 999 is not the owner (testUser has id 1)
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ForbiddenException> {
             notificationService.markAsRead(1L, 999L)
         }
     }
@@ -290,7 +291,7 @@ class NotificationServiceTest {
         whenever(notificationRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             notificationService.deleteNotification(999L, 1L)
         }
     }
@@ -312,7 +313,7 @@ class NotificationServiceTest {
         whenever(notificationRepository.findById(1L)).thenReturn(Optional.of(notification))
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ForbiddenException> {
             notificationService.deleteNotification(1L, 999L)
         }
     }
@@ -372,7 +373,7 @@ class NotificationServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             notificationService.createNotification(request)
         }
     }

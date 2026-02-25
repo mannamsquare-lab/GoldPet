@@ -5,6 +5,7 @@ import com.goldpet.domain.common.dto.CreateAppNoticeRequest
 import com.goldpet.domain.common.dto.UpdateAppNoticeRequest
 import com.goldpet.domain.common.entity.AppNotice
 import com.goldpet.domain.common.entity.AppNoticeType
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.repository.AppNoticeRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -56,7 +57,7 @@ class AppNoticeService(
     @Transactional
     fun updateNotice(id: Long, request: UpdateAppNoticeRequest): AppNoticeResponse {
         val notice = appNoticeRepository.findById(id)
-            .orElseThrow { NoSuchElementException("공지사항을 찾을 수 없습니다: $id") }
+            .orElseThrow { NotFoundException("공지사항을 찾을 수 없습니다: $id") }
 
         request.type?.let { notice.type = it }
         request.title?.let { notice.title = it }
@@ -76,7 +77,7 @@ class AppNoticeService(
     @Transactional
     fun deleteNotice(id: Long) {
         val notice = appNoticeRepository.findById(id)
-            .orElseThrow { NoSuchElementException("공지사항을 찾을 수 없습니다: $id") }
+            .orElseThrow { NotFoundException("공지사항을 찾을 수 없습니다: $id") }
         notice.isActive = false
         appNoticeRepository.save(notice)
     }

@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.drew.imaging.ImageMetadataReader
 import com.drew.metadata.exif.GpsDirectory
+import com.goldpet.domain.common.exception.*
 import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -101,11 +102,11 @@ class FileService(
 
     private fun validateImageFile(file: MultipartFile) {
         if (file.size > MAX_IMAGE_SIZE) {
-            throw IllegalArgumentException("File size exceeds maximum allowed size of 10MB")
+            throw BadRequestException("File size exceeds maximum allowed size of 10MB")
         }
         val contentType = file.contentType?.lowercase()
         if (contentType == null || contentType !in ALLOWED_IMAGE_TYPES) {
-            throw IllegalArgumentException("Unsupported file type: $contentType. Allowed types: ${ALLOWED_IMAGE_TYPES.joinToString()}")
+            throw BadRequestException("Unsupported file type: $contentType. Allowed types: ${ALLOWED_IMAGE_TYPES.joinToString()}")
         }
     }
 

@@ -42,6 +42,7 @@ interface AuthState {
   login: (token: string, refreshToken: string, user: User) => void;
   logout: () => void;
   updateUser: (user: User) => void;
+  setTokens: (token: string, refreshToken: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -81,6 +82,12 @@ export const useAuthStore = create<AuthState>()(
       },
       updateUser: (user) => {
         set({ user });
+      },
+      setTokens: (token, refreshToken) => {
+        set({ token, refreshToken });
+        if (nativeBridge.isAvailable()) {
+          nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch(() => {});
+        }
       },
     }),
     {

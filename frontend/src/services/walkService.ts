@@ -68,8 +68,9 @@ export const walkService = {
         todayCalories: data.totalCalories?.toLocaleString() || '0',
         totalWalks: data.totalWalks || 0,
       };
-    } catch {
-      return { todayDistance: '0.0', todayCalories: '0' };
+    } catch (error: unknown) {
+      console.error('Failed to fetch walk stats:', error);
+      throw error;
     }
   },
 
@@ -78,8 +79,9 @@ export const walkService = {
       const response = await apiClient.get('/walks/my');
       const walks = Array.isArray(response.data) ? response.data : [];
       return walks.map(toWalkRecord);
-    } catch {
-      return [];
+    } catch (error: unknown) {
+      console.error('Failed to fetch walk records:', error);
+      throw error;
     }
   },
 
@@ -96,8 +98,9 @@ export const walkService = {
     try {
       const response = await apiClient.get(`/walks/ranking?period=${period}`);
       return response.data;
-    } catch {
-      return [];
+    } catch (error: unknown) {
+      console.error('Failed to fetch walk ranking:', error);
+      throw error;
     }
   },
 };

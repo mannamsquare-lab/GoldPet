@@ -6,15 +6,14 @@ import com.goldpet.domain.chat.entity.*
 import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.repository.ChatRoomRepository
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 
 @Service
 class ChatService(
@@ -29,17 +28,17 @@ class ChatService(
 
     @Transactional
     fun createChatRoom(request: ChatRoomCreateRequest, creatorId: Long): ChatRoom {
-        val creator = userRepository.findById(creatorId).orElseThrow { NoSuchElementException("User not found with id: $creatorId") }
+        val creator = userRepository.findById(creatorId).orElseThrow { NotFoundException("User not found with id: $creatorId") }
 
         // Handle DIRECT chat room creation
         if (request.roomType == ChatRoomType.DIRECT) {
             val targetUserId = request.participantUserIds.firstOrNull()
-                ?: throw IllegalArgumentException("Direct chat room requires a target user ID.")
-            val targetUser = userRepository.findById(targetUserId).orElseThrow { NoSuchElementException("Target user not found with id: $targetUserId") }
+                ?: throw BadRequestException("Direct chat room requires a target user ID.")
+            val targetUser = userRepository.findById(targetUserId).orElseThrow { NotFoundException("Target user not found with id: $targetUserId") }
 
             // Find existing match
             val match = request.matchId?.let { matchRepository.findById(it).orElse(null) }
-                ?: throw IllegalArgumentException("Direct chat room requires a valid match ID.")
+                ?: throw BadRequestException("Direct chat room requires a valid match ID.")
 
             // Check if a direct chat room for this match already exists
             chatRoomRepository.findByMatchId(match.id).ifPresent {
@@ -73,7 +72,7 @@ class ChatService(
             // Add other participants for GROUP chat
             if (request.roomType == ChatRoomType.GROUP) {
                 request.participantUserIds.forEach { userId ->
-                    val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("Participant user not found with id: $userId") }
+                    val user = userRepository.findById(userId).orElseThrow { NotFoundException("Participant user not found with id: $userId") }
                     chatRoomParticipantRepository.save(ChatRoomParticipant(chatRoom = chatRoom, user = user, role = ChatRoomRole.MEMBER))
                 }
             }
@@ -83,8 +82,8 @@ class ChatService(
 
     @Transactional
     fun addParticipant(roomId: Long, userId: Long, role: ChatRoomRole = ChatRoomRole.MEMBER): ChatRoomParticipant {
-        val chatRoom = chatRoomRepository.findById(roomId).orElseThrow { NoSuchElementException("Chat room not found with id: $roomId") }
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        val chatRoom = chatRoomRepository.findById(roomId).orElseThrow { NotFoundException("Chat room not found with id: $roomId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
 
         if (chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId).isPresent) {
             throw IllegalStateException("User ${user.nickname} is already a participant in chat room ${chatRoom.title}.")
@@ -97,14 +96,14 @@ class ChatService(
     @Transactional
     fun removeParticipant(roomId: Long, userId: Long) {
         val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId)
-            .orElseThrow { NoSuchElementException("Participant not found in chat room $roomId for user $userId") }
+            .orElseThrow { NotFoundException("Participant not found in chat room $roomId for user $userId") }
         chatRoomParticipantRepository.delete(participant)
     }
 
     @Transactional
     fun saveChatMessage(request: ChatMessageRequest): ChatMessage {
-        val chatRoom = chatRoomRepository.findById(request.roomId).orElseThrow { NoSuchElementException("Chat room not found with id: ${request.roomId}") }
-        val sender = userRepository.findById(request.senderId).orElseThrow { NoSuchElementException("Sender user not found with id: ${request.senderId}") }
+        val chatRoom = chatRoomRepository.findById(request.roomId).orElseThrow { NotFoundException("Chat room not found with id: ${request.roomId}") }
+        val sender = userRepository.findById(request.senderId).orElseThrow { NotFoundException("Sender user not found with id: ${request.senderId}") }
 
         // Validate sender is a participant if not a system message
         if (request.messageType != MessageType.SYSTEM) {
@@ -118,7 +117,7 @@ class ChatService(
             val otherId = otherParticipant.user.id
             if (userBlockRepository.existsByBlockerIdAndBlockedId(request.senderId, otherId)
                 || userBlockRepository.existsByBlockerIdAndBlockedId(otherId, request.senderId)) {
-                throw ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot send message to blocked user")
+                throw ForbiddenException("Cannot send message to blocked user")
             }
         }
 
@@ -160,14 +159,14 @@ class ChatService(
 
     @Transactional(readOnly = true)
     fun getChatHistory(roomId: Long, page: Int, size: Int): List<ChatMessage> {
-        chatRoomRepository.findById(roomId).orElseThrow { NoSuchElementException("Chat room not found with id: $roomId") }
+        chatRoomRepository.findById(roomId).orElseThrow { NotFoundException("Chat room not found with id: $roomId") }
         val pageable = PageRequest.of(page, size)
         return chatMessageRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId, pageable)
     }
 
     @Transactional(readOnly = true)
     fun getUserChatRooms(userId: Long): List<ChatRoom> {
-        userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found with id: $userId") }
+        userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         val myRooms = chatRoomParticipantRepository.findAllByUserId(userId).map { it.chatRoom }
         return myRooms.filter { room ->
             val otherParticipant = room.participants.firstOrNull { it.user.id != userId }
@@ -183,7 +182,7 @@ class ChatService(
     @Transactional
     fun markAsRead(roomId: Long, userId: Long) {
         val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId)
-            .orElseThrow { NoSuchElementException("Participant not found in chat room $roomId for user $userId") }
+            .orElseThrow { NotFoundException("Participant not found in chat room $roomId for user $userId") }
 
         participant.lastReadAt = java.time.LocalDateTime.now()
         chatRoomParticipantRepository.save(participant)
@@ -192,7 +191,7 @@ class ChatService(
     @Transactional
     fun leaveRoom(roomId: Long, userId: Long) {
         val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId)
-            .orElseThrow { NoSuchElementException("Participant not found in chat room $roomId for user $userId") }
+            .orElseThrow { NotFoundException("Participant not found in chat room $roomId for user $userId") }
 
         // Mark as left instead of deleting (soft delete)
         participant.leftAt = java.time.LocalDateTime.now()
@@ -209,13 +208,13 @@ class ChatService(
         // Block check
         if (userBlockRepository.existsByBlockerIdAndBlockedId(userId, targetUserId)
             || userBlockRepository.existsByBlockerIdAndBlockedId(targetUserId, userId)) {
-            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Blocked user")
+            throw ForbiddenException("Blocked user")
         }
 
         val user = userRepository.findById(userId)
-            .orElseThrow { NoSuchElementException("User not found: $userId") }
+            .orElseThrow { NotFoundException("User not found: $userId") }
         val targetUser = userRepository.findById(targetUserId)
-            .orElseThrow { NoSuchElementException("Target user not found: $targetUserId") }
+            .orElseThrow { NotFoundException("Target user not found: $targetUserId") }
 
         // Find match between the two users
         val match = matchRepository.findByUserIds(userId, targetUserId)

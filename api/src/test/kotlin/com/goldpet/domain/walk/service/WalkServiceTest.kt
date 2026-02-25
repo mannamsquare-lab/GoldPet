@@ -23,7 +23,7 @@ import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.*
 import java.time.LocalDateTime
 import java.util.*
-import jakarta.persistence.EntityNotFoundException
+import com.goldpet.domain.common.exception.*
 
 class WalkServiceTest {
 
@@ -169,7 +169,7 @@ class WalkServiceTest {
         val request = createWalkRequest(2.5)
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
-        assertThrows<EntityNotFoundException> {
+        assertThrows<NotFoundException> {
             walkService.createWalk(999L, request)
         }
     }
@@ -211,7 +211,7 @@ class WalkServiceTest {
     fun `getWalk should throw exception when walk not found`() {
         whenever(walkRepository.findById(999L)).thenReturn(Optional.empty())
 
-        assertThrows<EntityNotFoundException> {
+        assertThrows<NotFoundException> {
             walkService.getWalk(999L)
         }
     }

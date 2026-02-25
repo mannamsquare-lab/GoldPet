@@ -7,6 +7,7 @@ import com.goldpet.domain.auth.dto.LinkSuggestionInfo
 import com.goldpet.domain.auth.entity.UserAuthProvider
 import com.goldpet.domain.auth.exception.AccountStatusException
 import com.goldpet.domain.auth.repository.UserAuthProviderRepository
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
@@ -160,10 +161,10 @@ class SocialLoginService(
         )
         @Suppress("UNCHECKED_CAST")
         val keys = appleKeysResponse?.get("keys") as? List<Map<String, Any>>
-            ?: throw IllegalArgumentException("Failed to get Apple public keys")
+            ?: throw BadRequestException("Failed to get Apple public keys")
 
         val parts = identityToken.split(".")
-        if (parts.size < 2) throw IllegalArgumentException("Invalid Identity Token format")
+        if (parts.size < 2) throw BadRequestException("Invalid Identity Token format")
 
         val headerJson = String(Decoders.BASE64URL.decode(parts[0]))
         @Suppress("UNCHECKED_CAST")
@@ -171,7 +172,7 @@ class SocialLoginService(
         val kid = header["kid"] as String
 
         val keyMap = keys.find { it["kid"] == kid }
-            ?: throw IllegalArgumentException("Invalid key identifier")
+            ?: throw BadRequestException("Invalid key identifier")
 
         val n = BigInteger(1, Decoders.BASE64URL.decode(keyMap["n"] as String))
         val e = BigInteger(1, Decoders.BASE64URL.decode(keyMap["e"] as String))
@@ -395,11 +396,11 @@ class SocialLoginService(
                 .parseSignedClaims(tempToken)
                 .payload
         } catch (ex: Exception) {
-            throw IllegalArgumentException("Invalid or expired link token")
+            throw BadRequestException("Invalid or expired link token")
         }
 
         if (claims["type"] != "LINK_SUGGESTION") {
-            throw IllegalArgumentException("Invalid token type")
+            throw BadRequestException("Invalid token type")
         }
 
         val userId = claims.subject.toLong()
@@ -407,7 +408,7 @@ class SocialLoginService(
         val newProviderId = claims["newProviderId"] as String
 
         val user = userRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
 
         // Link the new provider (idempotent)
         val alreadyLinked = userAuthProviderRepository.findByProviderAndProviderId(newProvider, newProviderId).isPresent

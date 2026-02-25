@@ -1,6 +1,7 @@
 package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.controller.*
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
 import com.goldpet.domain.pet.repository.PetRepository
@@ -34,7 +35,7 @@ class AdminUserManagementService(
 
     fun getUserDetail(userId: Long): UserDetailResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { NoSuchElementException("User not found: $userId") }
+            .orElseThrow { NotFoundException("User not found: $userId") }
 
         val pets = petRepository.findAllByOwnerId(userId)
         val postCount = postRepository.countByUserId(userId)
@@ -72,8 +73,8 @@ class AdminUserManagementService(
     @Transactional
     fun updateUserStatus(userId: Long, status: String, reason: String?) {
         val user = userRepository.findById(userId)
-            .orElseThrow { NoSuchElementException("User not found: $userId") }
-        
+            .orElseThrow { NotFoundException("User not found: $userId") }
+
         user.isActive = (status == "ACTIVE")
         userRepository.save(user)
     }
@@ -86,7 +87,7 @@ class AdminUserManagementService(
     @Transactional
     fun unlockUserProfile(userId: Long) {
         val user = userRepository.findById(userId)
-            .orElseThrow { NoSuchElementException("User not found: $userId") }
+            .orElseThrow { NotFoundException("User not found: $userId") }
         user.profileLockedAt = null
         userRepository.save(user)
     }

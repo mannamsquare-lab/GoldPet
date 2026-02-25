@@ -7,6 +7,7 @@ import com.goldpet.domain.report.dto.ReportResponse
 import com.goldpet.domain.report.entity.Report
 import com.goldpet.domain.report.entity.ReportType
 import com.goldpet.domain.report.repository.ReportRepository
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,20 +24,20 @@ class ReportService(
 
     @Transactional
     fun createReport(reporterId: Long, request: CreateReportRequest): ReportResponse {
-        val reporter = userRepository.findById(reporterId).orElseThrow { IllegalArgumentException("User not found") }
+        val reporter = userRepository.findById(reporterId).orElseThrow { NotFoundException("User not found") }
         
         // Validate target exists
         val targetPreview = when (request.type) {
             ReportType.POST -> {
-                val post = postRepository.findById(request.targetId).orElseThrow { IllegalArgumentException("Post not found") }
+                val post = postRepository.findById(request.targetId).orElseThrow { NotFoundException("Post not found") }
                 post.title.take(50)
             }
             ReportType.COMMENT -> {
-                val comment = commentRepository.findById(request.targetId).orElseThrow { IllegalArgumentException("Comment not found") }
+                val comment = commentRepository.findById(request.targetId).orElseThrow { NotFoundException("Comment not found") }
                 comment.content.take(50)
             }
             ReportType.USER -> {
-                val user = userRepository.findById(request.targetId).orElseThrow { IllegalArgumentException("User not found") }
+                val user = userRepository.findById(request.targetId).orElseThrow { NotFoundException("User not found") }
                 user.nickname ?: "Unknown User"
             }
             ReportType.CHAT -> "Chat Message #${request.targetId}"

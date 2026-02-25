@@ -2,6 +2,7 @@ package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.dto.*
 import com.goldpet.domain.admin.entity.Banner
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.admin.entity.Campaign
 import com.goldpet.domain.admin.entity.NotificationTemplate
 import com.goldpet.domain.admin.entity.PushDeliveryLog
@@ -131,7 +132,7 @@ class AdminMarketingService(
     @Transactional
     fun updateTemplate(id: Long, request: NotificationTemplateRequest): NotificationTemplateResponse {
         val template = notificationTemplateRepository.findById(id)
-            .orElseThrow { IllegalArgumentException("Template not found: $id") }
+            .orElseThrow { NotFoundException("Template not found: $id") }
 
         template.name = request.title
         template.titleTemplate = request.title

@@ -47,25 +47,25 @@ export const friendService = {
     try {
       const filters = JSON.parse(filterJson);
       const params = new URLSearchParams();
-      
+
       if (filters.distance) params.append('distance', filters.distance);
       if (filters.sortOrder) params.append('sort', filters.sortOrder);
       if (filters.petTypes?.length) params.append('petTypes', filters.petTypes.join(','));
       if (filters.genders?.length) params.append('genders', filters.genders.join(','));
-      
+
       // Add location params for distance-based search
       if (filters.lat) params.append('lat', filters.lat.toString());
       if (filters.lng) params.append('lng', filters.lng.toString());
-      
+
       // Pagination
       params.append('page', page.toString());
       params.append('size', size.toString());
 
       const response = await apiClient.get(`/friends?${params}`);
       return response.data;
-    } catch (e) {
-      console.error('Failed to fetch friends:', e);
-      throw e;
+    } catch (error: unknown) {
+      console.error('Failed to fetch friends:', error);
+      throw error;
     }
   },
 
@@ -73,9 +73,9 @@ export const friendService = {
     try {
       const response = await apiClient.get(`/friends/nearby?lat=${lat}&lng=${lng}&radius=${radiusMeters}`);
       return response.data;
-    } catch (e) {
-      console.error('Failed to fetch nearby friends:', e);
-      return [];
+    } catch (error: unknown) {
+      console.error('Failed to fetch nearby friends:', error);
+      throw error;
     }
   },
 
@@ -83,8 +83,9 @@ export const friendService = {
     try {
       const response = await apiClient.get(`/friends/search?q=${encodeURIComponent(query)}`);
       return response.data;
-    } catch {
-      return [];
+    } catch (error: unknown) {
+      console.error('Failed to search friends:', error);
+      throw error;
     }
   },
 
@@ -128,8 +129,9 @@ export const friendService = {
     try {
         const response = await apiClient.get('/pets/species');
         return response.data;
-    } catch {
-        return [];
+    } catch (error: unknown) {
+        console.error('Failed to fetch species:', error);
+        throw error;
     }
   },
 
@@ -138,9 +140,9 @@ export const friendService = {
     try {
       const response = await apiClient.post(`/friends/${targetUserId}/like`);
       return response.data;
-    } catch (e) {
-      console.error('Failed to like user:', e);
-      throw e;
+    } catch (error: unknown) {
+      console.error('Failed to like user:', error);
+      throw error;
     }
   },
 
@@ -149,9 +151,9 @@ export const friendService = {
     try {
       const response = await apiClient.delete(`/friends/${targetUserId}/like`);
       return response.data;
-    } catch (e) {
-      console.error('Failed to unlike user:', e);
-      throw e;
+    } catch (error: unknown) {
+      console.error('Failed to unlike user:', error);
+      throw error;
     }
   },
 
@@ -160,9 +162,9 @@ export const friendService = {
     try {
       await apiClient.delete(`/friends/likes/received/${senderUserId}`);
       return { success: true };
-    } catch (e) {
-      console.error('Failed to reject like:', e);
-      throw e;
+    } catch (error: unknown) {
+      console.error('Failed to reject like:', error);
+      throw error;
     }
   },
 
@@ -171,9 +173,9 @@ export const friendService = {
     try {
       const response = await apiClient.get('/friends/likes/my');
       return response.data;
-    } catch (e) {
-      console.error('Failed to get my likes:', e);
-      return [];
+    } catch (error: unknown) {
+      console.error('Failed to get my likes:', error);
+      throw error;
     }
   },
 
@@ -182,9 +184,9 @@ export const friendService = {
     try {
       const response = await apiClient.get('/friends/likes/mutual');
       return response.data;
-    } catch (e) {
-      console.error('Failed to get mutual likes:', e);
-      return [];
+    } catch (error: unknown) {
+      console.error('Failed to get mutual likes:', error);
+      throw error;
     }
   },
 
@@ -193,9 +195,9 @@ export const friendService = {
     try {
       const response = await apiClient.get('/friends/likes/received');
       return response.data;
-    } catch (e) {
-      console.error('Failed to get received likes:', e);
-      return [];
+    } catch (error: unknown) {
+      console.error('Failed to get received likes:', error);
+      throw error;
     }
   },
 
@@ -218,7 +220,7 @@ export const PET_TAG_MAPPINGS: Record<string, string> = {
     'Activity:NORMAL': '보통 활동량',
     'Activity:CALM': '얌전함',
     'Activity:STATIC': '매우 정적',
-    
+
     // Friendliness
     'Friendliness:SOCIAL': '모두의 친구',
     'Friendliness:PEOPLE_ONLY': '사람 좋아함',
@@ -260,7 +262,7 @@ export const PET_TAG_MAPPINGS: Record<string, string> = {
     'Friendship:MANNER': '매너 좋은',
     'Friendship:CAREFUL': '조심성 많음',
     'Friendship:LONER': '혼자가 편함',
-    
+
     // Allergy (Only showing YES for consistency)
     'AllergyMeat:YES': '육류 알러지',
     'AllergyDairyEgg:YES': '유제품/알 알러지',
@@ -271,14 +273,13 @@ export const PET_TAG_MAPPINGS: Record<string, string> = {
 export const formatPetTag = (tag: string): string => {
     // Check direct match
     if (PET_TAG_MAPPINGS[tag]) return PET_TAG_MAPPINGS[tag];
-    
+
     // Handle Note
     if (tag.startsWith('Note:')) return tag.substring(5);
-    
+
     // Hide NO/UNKNOWN system tags
     if (tag.includes(':NO') || tag.includes(':UNKNOWN')) return '';
-            
+
     // Fallback for legacy simple tags or custom tags
     return tag;
 };
-

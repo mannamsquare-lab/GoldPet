@@ -28,29 +28,19 @@ export const userService = {
         try {
             const response = await apiClient.get('/users/me');
             return response.data;
-        } catch (error: any) {
-            throw new Error(error.response?.data?.message || '사용자 정보를 가져오는데 실패했습니다.');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            throw new Error(err.response?.data?.message || '사용자 정보를 가져오는데 실패했습니다.');
         }
     },
 
     updateProfile: async (data: UpdateProfileRequest): Promise<User> => {
-        // Backend endpoint might differ. 
-        // Based on previous summary: `updateUserProfileImages` exists.
-        // And standard `updateProfile` likely exists or I should assume one.
-        // Assuming `PUT /users/me` or similar.
-        // If not checking backend controller, I might error. 
-        // I'll assume `/users/me` or `/users/profile`.
-        // Let's check backend controller later if needed, but for now standardizing.
-        // Wait, the summary said: `updateMyProfileImage` endpoint calls `userService.updateUserProfileImages`.
-        // But what about nickname?
-        // I'll assume a general update endpoint exists or I might need to use specific ones.
-        // Actually, looking at `UserResponse`, it has nickname, etc.
-        // I'll try `PUT /users/me`.
         try {
             const response = await apiClient.put('/users/me', data);
             return response.data;
-        } catch (error: any) {
-             throw new Error(error.response?.data?.message || '프로필 수정에 실패했습니다.');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+             throw new Error(err.response?.data?.message || '프로필 수정에 실패했습니다.');
         }
     },
 
@@ -58,11 +48,12 @@ export const userService = {
         try {
             const response = await apiClient.put('/users/me/profile-image', { profileImageUrls: imageUrls });
             return response.data;
-        } catch (error: any) {
-             throw new Error(error.response?.data?.message || '프로필 이미지 수정에 실패했습니다.');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+             throw new Error(err.response?.data?.message || '프로필 이미지 수정에 실패했습니다.');
         }
     },
-    
+
     uploadImage: async (file: File): Promise<string> => {
         try {
             const { compressImage } = await import('../utils/imageCompression');
@@ -74,7 +65,7 @@ export const userService = {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             return response.data.url;
-        } catch (error: any) {
+        } catch (error: unknown) {
              throw new Error('이미지 업로드에 실패했습니다.');
         }
     },
@@ -83,9 +74,9 @@ export const userService = {
         try {
             const response = await apiClient.get('/users/interests');
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to fetch interests', error);
-            return [];
+            throw error;
         }
     },
 
@@ -93,9 +84,9 @@ export const userService = {
         try {
             const response = await apiClient.get('/users/hobbies');
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to fetch hobbies', error);
-            return [];
+            throw error;
         }
     },
 
@@ -103,7 +94,7 @@ export const userService = {
         try {
             const response = await apiClient.get(`/users/check-nickname?nickname=${encodeURIComponent(nickname)}`);
             return response.data.available;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to check nickname:', error);
             throw error;
         }
@@ -113,7 +104,7 @@ export const userService = {
         try {
             const response = await apiClient.post('/auth/verification/request', { phoneNumber });
             return response.data.code || null;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to request verification code:', error);
             throw error;
         }
@@ -123,7 +114,7 @@ export const userService = {
         try {
             const response = await apiClient.post('/auth/verification/confirm', { phoneNumber, code });
             return response.data.success;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to confirm verification code:', error);
             return false;
         }
@@ -131,13 +122,11 @@ export const userService = {
 
     updateNotification: async (enabled: boolean): Promise<User> => {
         try {
-            // Assuming we use PATCH /users/me or a specific endpoint.
-            // For now, reuse updateProfile if backend supports it, or create specific endpoint.
-            // I will create a specific endpoint in Controller: PATCH /users/me/notification
             const response = await apiClient.patch('/users/me/notification', { enabled });
             return response.data;
-        } catch (error: any) {
-             throw new Error(error.response?.data?.message || '알림 설정 변경에 실패했습니다.');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+             throw new Error(err.response?.data?.message || '알림 설정 변경에 실패했습니다.');
         }
     },
 

@@ -12,6 +12,7 @@ import com.goldpet.domain.gold.repository.GoldProductRepository
 import com.goldpet.domain.gold.repository.GoldTransactionRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.common.exception.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -97,7 +98,7 @@ class AdminEconomyServiceTest {
 
         whenever(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser))
 
-        assertThrows<IllegalArgumentException> {
+        assertThrows<BadRequestException> {
             service.adjustGold(request)
         }
     }
@@ -108,7 +109,7 @@ class AdminEconomyServiceTest {
 
         whenever(userRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty())
 
-        assertThrows<NoSuchElementException> {
+        assertThrows<NotFoundException> {
             service.adjustGold(request)
         }
     }
@@ -159,7 +160,7 @@ class AdminEconomyServiceTest {
 
         whenever(goldTransactionRepository.findById(10L)).thenReturn(Optional.of(chargeTx))
 
-        val ex = assertThrows<IllegalArgumentException> {
+        val ex = assertThrows<BadRequestException> {
             service.refundTransaction(request)
         }
         assertEquals("Only SPEND transactions can be refunded", ex.message)
@@ -182,7 +183,7 @@ class AdminEconomyServiceTest {
         whenever(goldTransactionRepository.findById(10L)).thenReturn(Optional.of(spendTx))
         whenever(goldTransactionRepository.existsByOriginalTransactionId(10L)).thenReturn(true)
 
-        val ex = assertThrows<IllegalArgumentException> {
+        val ex = assertThrows<ConflictException> {
             service.refundTransaction(request)
         }
         assertEquals("Transaction already refunded", ex.message)
@@ -236,7 +237,7 @@ class AdminEconomyServiceTest {
             GoldProduct(id = 1L, productCode = "gold_100", name = "기존", goldAmount = 100, price = 10000)
         )
 
-        val ex = assertThrows<IllegalArgumentException> {
+        val ex = assertThrows<ConflictException> {
             service.createProduct(request)
         }
         assertTrue(ex.message!!.contains("already exists"))

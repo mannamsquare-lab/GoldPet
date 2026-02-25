@@ -1,5 +1,6 @@
 package com.goldpet.domain.auth.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.auth.dto.AuthResponse
@@ -26,7 +27,7 @@ class AuthService(
     fun signup(request: SignupRequest): AuthResponse {
         // Check duplicate username or email
         if (userRepository.findByUsername(request.username).isPresent) {
-            throw IllegalArgumentException("Username already exists")
+            throw ConflictException("Username already exists")
         }
         // Create user entity
         val user =
@@ -71,9 +72,9 @@ class AuthService(
     @Transactional(readOnly = true)
     fun login(request: LoginRequest): AuthResponse {
         val userOpt = userRepository.findByUsername(request.username)
-        val user = userOpt.orElseThrow { IllegalArgumentException("Invalid credentials") }
+        val user = userOpt.orElseThrow { UnauthorizedException("Invalid credentials") }
         if (!passwordEncoder.matches(request.password, user.password)) {
-            throw IllegalArgumentException("Invalid credentials")
+            throw UnauthorizedException("Invalid credentials")
         }
         checkAccountStatus(user.status)
         val userPrincipal = UserPrincipal.create(user)
@@ -99,7 +100,7 @@ class AuthService(
     fun snsSignup(userId: Long, request: SnsSignupRequest): AuthResponse {
         val user =
                 userRepository.findById(userId).orElseThrow {
-                    IllegalArgumentException("User not found")
+                    NotFoundException("User not found")
                 }
 
         // Update user info

@@ -1,6 +1,7 @@
 package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.controller.ReportAdminResponse
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.report.entity.ReportStatus
 import com.goldpet.domain.report.repository.ReportRepository
 import org.springframework.data.domain.Page
@@ -43,7 +44,7 @@ class AdminReportService(
     @Transactional
     fun resolveReport(reportId: Long) {
         val report = reportRepository.findById(reportId)
-            .orElseThrow { NoSuchElementException("Report not found: $reportId") }
+            .orElseThrow { NotFoundException("Report not found: $reportId") }
         report.status = ReportStatus.RESOLVED
         report.resolvedAt = LocalDateTime.now()
         reportRepository.save(report)
@@ -52,7 +53,7 @@ class AdminReportService(
     @Transactional
     fun dismissReport(reportId: Long) {
         val report = reportRepository.findById(reportId)
-            .orElseThrow { NoSuchElementException("Report not found: $reportId") }
+            .orElseThrow { NotFoundException("Report not found: $reportId") }
         report.status = ReportStatus.DISMISSED
         report.resolvedAt = LocalDateTime.now()
         reportRepository.save(report)

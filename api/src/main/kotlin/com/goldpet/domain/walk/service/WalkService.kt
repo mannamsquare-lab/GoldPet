@@ -2,6 +2,7 @@ package com.goldpet.domain.walk.service
 
 import com.goldpet.domain.gamification.entity.BadgeConditionType
 import com.goldpet.domain.gamification.service.BadgeAwardService
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
@@ -10,7 +11,6 @@ import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.entity.Walk
 import com.goldpet.domain.walk.repository.WalkRepository
-import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -27,7 +27,7 @@ class WalkService(
 
     @Transactional
     fun createWalk(userId: Long, request: CreateWalkRequest): WalkResponse {
-        val user = userRepository.findById(userId).orElseThrow { EntityNotFoundException("User not found") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
 
         val walk = Walk(
             user = user,
@@ -74,7 +74,7 @@ class WalkService(
     }
 
     fun getWalk(walkId: Long): WalkResponse {
-        val walk = walkRepository.findById(walkId).orElseThrow { EntityNotFoundException("Walk not found") }
+        val walk = walkRepository.findById(walkId).orElseThrow { NotFoundException("Walk not found") }
         return WalkResponse.from(walk)
     }
 

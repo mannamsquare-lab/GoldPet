@@ -7,6 +7,7 @@ import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.repository.NotificationRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.user.repository.UserDeviceRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -49,12 +50,12 @@ class NotificationService(
     @Transactional
     fun markAsRead(notificationId: Long, userId: Long) {
         val notification = notificationRepository.findById(notificationId)
-            .orElseThrow { IllegalArgumentException("Notification not found") }
-        
+            .orElseThrow { NotFoundException("Notification not found") }
+
         if (notification.user.id != userId) {
-            throw IllegalArgumentException("Not authorized")
+            throw ForbiddenException("Not authorized")
         }
-        
+
         notification.isRead = true
         notificationRepository.save(notification)
     }
@@ -67,10 +68,10 @@ class NotificationService(
     @Transactional
     fun deleteNotification(notificationId: Long, userId: Long) {
         val notification = notificationRepository.findById(notificationId)
-            .orElseThrow { IllegalArgumentException("Notification not found") }
-        
+            .orElseThrow { NotFoundException("Notification not found") }
+
         if (notification.user.id != userId) {
-            throw IllegalArgumentException("Not authorized")
+            throw ForbiddenException("Not authorized")
         }
         
         notificationRepository.delete(notification)
@@ -79,7 +80,7 @@ class NotificationService(
     @Transactional
     fun createNotification(request: CreateNotificationRequest): NotificationResponse {
         val user = userRepository.findById(request.userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+            .orElseThrow { NotFoundException("User not found") }
         
         val sender = request.senderId?.let { userRepository.findById(it).orElse(null) }
         

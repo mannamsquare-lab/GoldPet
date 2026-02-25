@@ -1,5 +1,6 @@
 package com.goldpet.domain.auth.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.domain.auth.dto.LoginRequest
 import com.goldpet.domain.auth.dto.SignupRequest
@@ -126,7 +127,7 @@ class AuthServiceTest {
         whenever(userRepository.findByUsername("existinguser")).thenReturn(Optional.of(existingUser))
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ConflictException> {
             authService.signup(request)
         }
     }
@@ -175,7 +176,7 @@ class AuthServiceTest {
         whenever(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<UnauthorizedException> {
             authService.login(request)
         }
     }
@@ -206,7 +207,7 @@ class AuthServiceTest {
         whenever(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user))
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<UnauthorizedException> {
             authService.login(request)
         }
     }
@@ -236,7 +237,7 @@ class AuthServiceTest {
         whenever(userRepository.findByUsername("kakaouser")).thenReturn(Optional.of(user))
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<UnauthorizedException> {
             authService.login(request)
         }
     }

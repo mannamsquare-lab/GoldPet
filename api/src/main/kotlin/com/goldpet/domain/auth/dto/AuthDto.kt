@@ -71,3 +71,23 @@ data class ConfirmLinkRequest(
     @field:NotBlank(message = "Temp token is required")
     val tempToken: String
 )
+
+data class CheckUsernameRequest(
+    @field:NotBlank(message = "Username is required")
+    val username: String
+)
+
+data class CheckNicknameRequest(
+    @field:NotBlank(message = "Nickname is required")
+    val nickname: String
+)
+
+data class NativeLoginRequest(
+    @field:NotBlank(message = "Access token is required")
+    val accessToken: String
+)
+
+data class RefreshTokenRequest(
+    @field:NotBlank(message = "Refresh token is required")
+    val refreshToken: String
+)

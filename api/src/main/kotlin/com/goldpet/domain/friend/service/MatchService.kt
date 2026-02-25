@@ -1,5 +1,6 @@
 package com.goldpet.domain.friend.service
 
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.friend.dto.BlockedUserResponse
 import com.goldpet.domain.friend.dto.MatchResponse
 import com.goldpet.domain.friend.entity.Like
@@ -13,10 +14,8 @@ import com.goldpet.domain.gamification.service.BadgeAwardService
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.repository.UserRepository
 import org.slf4j.LoggerFactory
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 import java.time.format.DateTimeFormatter
 
 @Service
@@ -33,13 +32,13 @@ class MatchService(
 
     @Transactional
     fun likeUser(fromUserId: Long, toUserId: Long): Boolean {
-        val fromUser = userRepository.findById(fromUserId).orElseThrow { NoSuchElementException("User not found: $fromUserId") }
-        val toUser = userRepository.findById(toUserId).orElseThrow { NoSuchElementException("User not found: $toUserId") }
+        val fromUser = userRepository.findById(fromUserId).orElseThrow { NotFoundException("User not found: $fromUserId") }
+        val toUser = userRepository.findById(toUserId).orElseThrow { NotFoundException("User not found: $toUserId") }
 
         // Bidirectional block check
         if (userBlockRepository.existsByBlockerAndBlocked(toUser, fromUser)
             || userBlockRepository.existsByBlockerAndBlocked(fromUser, toUser)) {
-            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Blocked user")
+            throw ForbiddenException("Blocked user")
         }
 
         // Check if 'like' already exists
@@ -88,10 +87,10 @@ class MatchService(
     }
 
     fun getMatchDetail(matchId: Long, userId: Long): MatchResponse {
-        val match = matchRepository.findById(matchId).orElseThrow { NoSuchElementException("Match not found: $matchId") }
-        
+        val match = matchRepository.findById(matchId).orElseThrow { NotFoundException("Match not found: $matchId") }
+
         if (match.user1.id != userId && match.user2.id != userId) {
-            throw IllegalArgumentException("Not authorized to view this match")
+            throw ForbiddenException("Not authorized to view this match")
         }
 
         val partner = if (match.user1.id == userId) match.user2 else match.user1
@@ -106,10 +105,10 @@ class MatchService(
 
     @Transactional
     fun cancelMatch(matchId: Long, userId: Long) {
-        val match = matchRepository.findById(matchId).orElseThrow { NoSuchElementException("Match not found: $matchId") }
-        
+        val match = matchRepository.findById(matchId).orElseThrow { NotFoundException("Match not found: $matchId") }
+
         if (match.user1.id != userId && match.user2.id != userId) {
-            throw IllegalArgumentException("Not authorized to cancel this match")
+            throw ForbiddenException("Not authorized to cancel this match")
         }
 
         matchRepository.delete(match)
@@ -118,14 +117,14 @@ class MatchService(
     @Transactional
     fun blockUser(blockerId: Long, blockedId: Long) {
         if (blockerId == blockedId) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot block yourself")
+            throw BadRequestException("Cannot block yourself")
         }
 
-        val blocker = userRepository.findById(blockerId).orElseThrow { NoSuchElementException("User not found: $blockerId") }
-        val blocked = userRepository.findById(blockedId).orElseThrow { NoSuchElementException("User not found: $blockedId") }
+        val blocker = userRepository.findById(blockerId).orElseThrow { NotFoundException("User not found: $blockerId") }
+        val blocked = userRepository.findById(blockedId).orElseThrow { NotFoundException("User not found: $blockedId") }
 
         if (userBlockRepository.existsByBlockerAndBlocked(blocker, blocked)) {
-            throw ResponseStatusException(HttpStatus.CONFLICT, "User already blocked")
+            throw ConflictException("User already blocked")
         }
 
         val block = UserBlock(blocker = blocker, blocked = blocked)
@@ -143,16 +142,16 @@ class MatchService(
 
     @Transactional
     fun unblockUser(blockerId: Long, blockedId: Long) {
-        val blocker = userRepository.findById(blockerId).orElseThrow { NoSuchElementException("User not found: $blockerId") }
-        val blocked = userRepository.findById(blockedId).orElseThrow { NoSuchElementException("User not found: $blockedId") }
+        val blocker = userRepository.findById(blockerId).orElseThrow { NotFoundException("User not found: $blockerId") }
+        val blocked = userRepository.findById(blockedId).orElseThrow { NotFoundException("User not found: $blockedId") }
 
         val block = userBlockRepository.findByBlockerAndBlocked(blocker, blocked)
-            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Block not found") }
+            .orElseThrow { NotFoundException("Block not found") }
         userBlockRepository.delete(block)
     }
 
     fun getBlockList(userId: Long): List<BlockedUserResponse> {
-        val user = userRepository.findById(userId).orElseThrow { NoSuchElementException("User not found: $userId") }
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found: $userId") }
         return userBlockRepository.findAllByBlocker(user).map { block ->
             val blockedUser = block.blocked
             val petName = petRepository.findFirstByOwnerIdOrderByCreatedAtAsc(blockedUser.id)?.name

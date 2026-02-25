@@ -10,6 +10,7 @@ import com.goldpet.domain.checkin.repository.CheckInRepository
 import com.goldpet.domain.checkin.repository.PlaceRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.common.exception.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -157,7 +158,7 @@ class CheckInServiceTest {
         whenever(placeRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             checkInService.getPlace(999L)
         }
     }
@@ -258,7 +259,7 @@ class CheckInServiceTest {
         whenever(checkInRepository.existsByUserIdAndPlaceIdAndCreatedAtAfter(any(), any(), any())).thenReturn(true)
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<ConflictException> {
             checkInService.checkIn(1L, request)
         }
     }

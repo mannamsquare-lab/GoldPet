@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +48,20 @@ void main() async {
   );
 
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-  runApp(const ProviderScope(child: MainApp()));
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    // TODO: Send to Crashlytics when integrated
+    debugPrint('FlutterError: ${details.exception}');
+  };
+
+  runZonedGuarded(() {
+    runApp(const ProviderScope(child: MainApp()));
+  }, (error, stackTrace) {
+    // TODO: Send to Crashlytics when integrated
+    debugPrint('Uncaught error: $error');
+    debugPrint('Stack trace: $stackTrace');
+  });
 }
 
 class MainApp extends StatelessWidget {

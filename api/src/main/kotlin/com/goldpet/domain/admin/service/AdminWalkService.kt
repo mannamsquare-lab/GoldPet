@@ -1,6 +1,7 @@
 package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.dto.*
+import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.walk.repository.WalkRepository
 import org.springframework.data.domain.Page
@@ -40,7 +41,7 @@ class AdminWalkService(
 
     fun getWalkDetail(walkId: Long): WalkDetailResponse {
         val walk = walkRepository.findById(walkId)
-            .orElseThrow { IllegalArgumentException("Walk not found: $walkId") }
+            .orElseThrow { NotFoundException("Walk not found: $walkId") }
 
         // Fetch pet info separately (Walk has no Pet relationship)
         val pets = petRepository.findByOwnerId(walk.user.id).map { pet ->
@@ -77,7 +78,7 @@ class AdminWalkService(
     @Transactional
     fun deleteWalk(walkId: Long, reason: String) {
         val walk = walkRepository.findById(walkId)
-            .orElseThrow { IllegalArgumentException("Walk not found: $walkId") }
+            .orElseThrow { NotFoundException("Walk not found: $walkId") }
         walkRepository.delete(walk)
     }
 

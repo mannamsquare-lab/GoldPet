@@ -13,6 +13,7 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.auth.repository.UserAuthProviderRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.LikeRepository
+import com.goldpet.domain.common.exception.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -189,7 +190,7 @@ class UserServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<NoSuchElementException> {
+        assertThrows<NotFoundException> {
             userService.updateNotification(999L, true)
         }
     }
@@ -248,7 +249,7 @@ class UserServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<NoSuchElementException> {
+        assertThrows<NotFoundException> {
             userService.updateUserProfile(999L, request)
         }
     }

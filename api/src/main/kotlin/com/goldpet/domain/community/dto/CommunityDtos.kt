@@ -3,6 +3,7 @@ package com.goldpet.domain.community.dto
 import com.goldpet.domain.community.entity.CommunityPost
 import java.time.LocalDateTime
 import com.fasterxml.jackson.annotation.JsonProperty
+import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
 data class CommunityPostResponse(
@@ -32,8 +33,10 @@ data class CommunityPostResponse(
 
 data class CommunityPostCreateRequest(
     val categoryId: Long,
+    @field:NotBlank(message = "제목을 입력해주세요")
     @field:Size(max = 100, message = "제목은 100자 이내여야 합니다")
     val title: String,
+    @field:NotBlank(message = "내용을 입력해주세요")
     val content: String,
     val visibility: CommunityPost.Visibility = CommunityPost.Visibility.PUBLIC,
     val postType: CommunityPost.PostType = CommunityPost.PostType.GENERAL,
@@ -62,6 +65,8 @@ data class CommunityCommentResponse(
 )
 
 data class CommunityCommentCreateRequest(
+    @field:NotBlank(message = "댓글 내용을 입력해주세요")
+    @field:Size(max = 1000, message = "댓글은 1000자 이내여야 합니다")
     val content: String,
     val parentCommentId: Long? = null
 )

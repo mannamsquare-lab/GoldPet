@@ -9,6 +9,7 @@ import com.goldpet.domain.report.entity.ReportType
 import com.goldpet.domain.report.repository.ReportRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.common.exception.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -120,7 +121,7 @@ class ReportServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             reportService.createReport(999L, request)
         }
     }
@@ -137,7 +138,7 @@ class ReportServiceTest {
         whenever(userRepository.findById(999L)).thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalArgumentException> {
+        assertThrows<NotFoundException> {
             reportService.createReport(1L, request)
         }
     }

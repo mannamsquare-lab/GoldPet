@@ -48,84 +48,44 @@ export interface AuthResponse {
   linkSuggestion?: LinkSuggestionInfo;
 }
 
-// Mock responses
-const mockAuthResponse = (data: {
-  username?: string;
-  nickname?: string;
-}): AuthResponse => ({
-  accessToken: "mock-access-token-" + Date.now(),
-  refreshToken: "mock-refresh-token-" + Date.now(),
-  user: {
-    id: 1,
-    username: data.username || "user",
-    nickname: data.nickname || "지오",
-    email: "user@goldpet.com",
-  },
-});
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
-
 export const authService = {
   signup: async (data: SignupRequest): Promise<AuthResponse> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 800));
-      return mockAuthResponse({
-        username: data.username,
-        nickname: data.nickname,
-      });
-    }
-
     try {
       const response = await apiClient.post("/auth/signup", data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       throw new Error(
-        error.response?.data?.message || "회원가입에 실패했습니다."
+        err.response?.data?.message || "회원가입에 실패했습니다."
       );
     }
   },
 
   snsSignup: async (data: SnsSignupRequest): Promise<AuthResponse> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 800));
-      return mockAuthResponse({ nickname: data.nickname });
-    }
-
     try {
       const response = await apiClient.post("/auth/sns-signup", data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       throw new Error(
-        error.response?.data?.message || "SNS 회원가입에 실패했습니다."
+        err.response?.data?.message || "SNS 회원가입에 실패했습니다."
       );
     }
   },
 
   login: async (data: LoginRequest): Promise<AuthResponse> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 600));
-      if (data.username === "fail") {
-        throw new Error("아이디 또는 비밀번호가 잘못되었습니다.");
-      }
-      return mockAuthResponse({ username: data.username });
-    }
-
     try {
       const response = await apiClient.post("/auth/login", data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       throw new Error(
-        error.response?.data?.message || "로그인에 실패했습니다."
+        err.response?.data?.message || "로그인에 실패했습니다."
       );
     }
   },
 
   checkUsername: async (username: string): Promise<{ available: boolean }> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 300));
-      return { available: username !== "duplicate" && username !== "admin" };
-    }
-
     try {
       const response = await apiClient.post("/auth/check-username", {
         username,
@@ -137,11 +97,6 @@ export const authService = {
   },
 
   checkNickname: async (nickname: string): Promise<{ available: boolean }> => {
-    if (USE_MOCK) {
-      await new Promise((r) => setTimeout(r, 300));
-      return { available: nickname !== "duplicate" && nickname !== "관리자" };
-    }
-
     try {
       const response = await apiClient.post("/auth/check-nickname", {
         nickname,
@@ -166,24 +121,6 @@ export const authService = {
               reject(err);
             });
           return;
-      }
-
-      if (USE_MOCK) {
-        // Add a small delay to simulate network
-        setTimeout(() => {
-          // Call Backend Dev Login to get REAL valid token
-          apiClient
-            .post("/auth/dev-login", { email }) // email might be undefined here, but handled above if intended
-            .then((response) => {
-              resolve(response.data);
-            })
-            .catch((err) => {
-              console.error("Dev login failed", err);
-              // alert remove - caller should handle error
-              reject(err);
-            });
-        }, 500);
-        return;
       }
 
       // Native app: use Flutter bridge for social login
@@ -258,9 +195,10 @@ export const authService = {
     try {
       const response = await apiClient.post("/auth/confirm-link", { tempToken });
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       throw new Error(
-        error.response?.data?.message || "계정 연동에 실패했습니다."
+        err.response?.data?.message || "계정 연동에 실패했습니다."
       );
     }
   },
