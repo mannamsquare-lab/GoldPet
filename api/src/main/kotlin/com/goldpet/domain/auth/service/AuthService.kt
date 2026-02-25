@@ -173,7 +173,7 @@ class AuthService(
     }
 
     @Transactional(readOnly = true)
-    fun verifyAccount(request: VerifyAccountRequest) {
+    fun verifyAccount(request: VerifyAccountRequest): String {
         val user = userRepository.findByUsername(request.username)
             .orElseThrow { NotFoundException("아이디 또는 이메일이 일치하지 않습니다.") }
         if (user.email?.lowercase() != request.email.lowercase()) {
@@ -182,10 +182,15 @@ class AuthService(
         if (user.oauthProvider != "LOCAL") {
             throw BadRequestException("소셜 계정은 비밀번호를 변경할 수 없습니다.")
         }
+        return jwtTokenProvider.generatePasswordResetToken(request.username, request.email)
     }
 
     @Transactional
     fun resetPassword(request: ResetPasswordRequest) {
+        if (request.resetToken == null ||
+            !jwtTokenProvider.validatePasswordResetToken(request.resetToken, request.username, request.email)) {
+            throw BadRequestException("인증이 만료되었습니다. 다시 본인인증을 진행해주세요.")
+        }
         val user = userRepository.findByUsername(request.username)
             .orElseThrow { NotFoundException("아이디 또는 이메일이 일치하지 않습니다.") }
         if (user.email?.lowercase() != request.email.lowercase()) {

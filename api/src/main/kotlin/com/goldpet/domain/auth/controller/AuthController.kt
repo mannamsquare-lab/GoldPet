@@ -111,8 +111,8 @@ class AuthController(
 
     @PostMapping("/verify-account")
     fun verifyAccount(@Valid @RequestBody request: VerifyAccountRequest): ResponseEntity<Map<String, Any>> {
-        authService.verifyAccount(request)
-        return ResponseEntity.ok(mapOf("verified" to true))
+        val resetToken = authService.verifyAccount(request)
+        return ResponseEntity.ok(mapOf("verified" to true, "resetToken" to resetToken))
     }
 
     @PostMapping("/reset-password")

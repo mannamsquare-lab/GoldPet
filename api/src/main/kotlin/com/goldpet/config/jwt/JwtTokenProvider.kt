@@ -114,4 +114,33 @@ class JwtTokenProvider(
         }
         return claims.subject.toLong()
     }
+
+    fun generatePasswordResetToken(username: String, email: String): String {
+        val now = Date()
+        val expiryDate = Date(now.time + 300_000) // 5 minutes
+
+        return Jwts.builder()
+            .subject(username)
+            .claim("type", "PASSWORD_RESET")
+            .claim("email", email)
+            .issuedAt(now)
+            .expiration(expiryDate)
+            .signWith(key)
+            .compact()
+    }
+
+    fun validatePasswordResetToken(token: String, username: String, email: String): Boolean {
+        return try {
+            val claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+            claims["type"] == "PASSWORD_RESET" &&
+                claims.subject == username &&
+                claims["email"] == email
+        } catch (ex: Exception) {
+            false
+        }
+    }
 }

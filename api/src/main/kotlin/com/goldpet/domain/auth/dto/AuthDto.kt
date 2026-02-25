@@ -124,5 +124,7 @@ data class ResetPasswordRequest(
 
     @field:NotBlank(message = "Password is required")
     @field:Size(min = 8, max = 100)
-    val password: String
+    val password: String,
+
+    val resetToken: String? = null
 )

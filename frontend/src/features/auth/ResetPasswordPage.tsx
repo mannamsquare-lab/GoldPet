@@ -19,6 +19,7 @@ export const ResetPasswordPage = () => {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [resetToken, setResetToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -51,10 +52,11 @@ export const ResetPasswordPage = () => {
 
     setIsLoading(true);
     try {
-      await apiClient.post('/auth/verify-account', {
+      const response = await apiClient.post('/auth/verify-account', {
         username,
         email,
       });
+      setResetToken(response.data.resetToken);
       setState('input-password');
     } catch (error: any) {
       console.error('Verify account error:', error);
@@ -114,6 +116,7 @@ export const ResetPasswordPage = () => {
         username,
         email,
         password,
+        resetToken,
       });
       setState('complete');
     } catch (error: any) {

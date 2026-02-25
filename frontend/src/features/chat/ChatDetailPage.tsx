@@ -235,7 +235,7 @@ const ChatDetailPage = () => {
         onSuccess: (newMessage) => {
             queryClient.setQueryData(['chatMessages', chatId], (old: any[]) => {
                 const oldMessages = old || [];
-                if (oldMessages.some((m: any) => m.id === newMessage.id)) {
+                if (oldMessages.some((m: any) => String(m.id) === String(newMessage.id))) {
                     return oldMessages;
                 }
                 return [...oldMessages, newMessage];
