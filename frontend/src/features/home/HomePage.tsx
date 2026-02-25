@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { m, AnimatePresence } from 'motion/react';
+import { FLIP_HALF_DURATION, FLIP_EASING, INFO_DURATION, INFO_EASING, INFO_DELAY } from '../../config/cardFlipAnimation';
 import SwiperCore from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Parallax } from 'swiper/modules';
@@ -171,10 +172,11 @@ export default function HomePage() {
                                                 <m.div
                                                     key={petMode ? `pet-img-${item.id}` : `owner-img-${item.id}`}
                                                     className="main_slide_inside"
-                                                    initial={{ opacity: 0, scale: 0.96 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    exit={{ opacity: 0, scale: 0.96 }}
-                                                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                                                    initial={{ scaleX: 0, opacity: 0 }}
+                                                    animate={{ scaleX: 1, opacity: 1 }}
+                                                    exit={{ scaleX: 0, opacity: 0 }}
+                                                    transition={{ duration: FLIP_HALF_DURATION, ease: FLIP_EASING }}
+                                                    style={{ transformOrigin: 'center center' }}
                                                 >
                                                     <Swiper
                                                         modules={[Navigation]}
@@ -219,7 +221,14 @@ export default function HomePage() {
                                                 className="butler_img"
                                                 data-swiper-parallax="-400"
                                                 data-clickable="true"
-                                                onClick={(e) => { e.stopPropagation(); toggleMode(item.id); }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const el = e.currentTarget;
+                                                    el.classList.remove('butler-bounce');
+                                                    void el.offsetWidth;
+                                                    el.classList.add('butler-bounce');
+                                                    toggleMode(item.id);
+                                                }}
                                             >
                                                 <img
                                                     src={butlerSrc}
@@ -229,13 +238,13 @@ export default function HomePage() {
                                             </div>
                                         </div>
 
-                                        <AnimatePresence mode="wait">
+                                        <AnimatePresence>
                                             <m.div
                                                 key={petMode ? `pet-info-${item.id}` : `owner-info-${item.id}`}
-                                                initial={{ opacity: 0, y: 12 }}
+                                                initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -8 }}
-                                                transition={{ duration: 0.25, ease: 'easeOut' }}
+                                                exit={{ opacity: 0, y: -12 }}
+                                                transition={{ duration: INFO_DURATION, ease: INFO_EASING, delay: INFO_DELAY }}
                                             >
                                                 <div className="txt_wrap" data-swiper-parallax="-200">
                                                     {petMode ? (

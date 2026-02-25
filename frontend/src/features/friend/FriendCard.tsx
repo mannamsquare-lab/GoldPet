@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { m, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import { FLIP_HALF_DURATION, FLIP_EASING } from '../../config/cardFlipAnimation';
 import { Navigation } from 'swiper/modules';
 import type { Friend } from '../../services/friendService';
 import { friendService, formatPetTag } from '../../services/friendService';
@@ -145,10 +146,11 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
                     onExitComplete={() => { isAnimatingRef.current = false; }}>
                     <m.div
                         key={isPetMode ? 'pet' : 'owner'}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
+                        initial={{ scaleX: 0, opacity: 0 }}
+                        animate={{ scaleX: 1, opacity: 1 }}
+                        exit={{ scaleX: 0, opacity: 0 }}
+                        transition={{ duration: FLIP_HALF_DURATION, ease: FLIP_EASING }}
+                        style={{ transformOrigin: 'center center' }}
                     >
                         <ProfileImageSlider
                             className="img_wrap"
