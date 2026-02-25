@@ -17,11 +17,13 @@ class SystemSettingService(
         return systemSettingRepository.findByKey(key)?.value ?: defaultValue
     }
 
+    @Cacheable("system:settings", key = "'bool:' + #key")
     fun getBoolean(key: String, defaultValue: Boolean): Boolean {
         val value = systemSettingRepository.findByKey(key)?.value
         return value?.toBoolean() ?: defaultValue
     }
 
+    @Cacheable("system:settings", key = "'int:' + #key")
     fun getInt(key: String, defaultValue: Int): Int {
         val value = systemSettingRepository.findByKey(key)?.value
         return value?.toIntOrNull() ?: defaultValue
@@ -32,7 +34,7 @@ class SystemSettingService(
     }
 
     @Transactional
-    @CacheEvict("system:settings", key = "#key")
+    @CacheEvict("system:settings", allEntries = true)
     fun setValue(key: String, value: String, description: String? = null) {
         val setting = systemSettingRepository.findByKey(key) ?: SystemSetting(key = key, value = value, description = description)
         setting.value = value
