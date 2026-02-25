@@ -4,6 +4,7 @@ import { useAuthStore } from '../../stores/authStore';
 import apiClient from '../../services/api/client';
 import { authService } from '../../services/authService';
 import type { LinkSuggestionInfo } from '../../services/authService';
+import { nativeBridge } from '../../bridge/nativeBridge';
 import { userService } from '../../services/userService';
 import { useAlert } from '../../contexts/AlertContext';
 import { AccountLinkModal } from '../../components/auth/AccountLinkModal';
@@ -24,6 +25,12 @@ export const LoginPage = () => {
   const [linkSuggestion, setLinkSuggestion] = useState<LinkSuggestionInfo | null>(null);
   const [linkProvider, setLinkProvider] = useState<string>('');
   const isAndroid = /Android/i.test(navigator.userAgent);
+  const [lastSnsProvider, setLastSnsProvider] = useState<string | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('lastSnsProvider');
+    if (saved) setLastSnsProvider(saved);
+  }, []);
 
   // Check for OAuth error in URL query parameters
   useEffect(() => {
@@ -77,6 +84,8 @@ export const LoginPage = () => {
   };
 
   const handleSnsLogin = async (provider: 'naver' | 'kakao' | 'apple' | 'google', email?: string) => {
+    localStorage.setItem('lastSnsProvider', provider);
+    setLastSnsProvider(provider);
     const executeLogin = async (loginEmail?: string) => {
         try {
             const result = await authService.openLoginPopup(provider, loginEmail);
@@ -266,104 +275,137 @@ export const LoginPage = () => {
         <div className="login-sns" data-name="sns" data-node-id="4017:22547">
           <p className="login-sns-title">SNS 계정으로 로그인/회원가입</p>
           <div className="login-sns-buttons" data-name="Logo" data-node-id="4017:22549">
-            <button
-              type="button"
-              className="login-sns-button btn-effect"
-              onClick={() => handleSnsLogin('naver')}
-              aria-label="네이버 로그인"
-            >
-              <img
-                src="/assets/images/auth/naver_logo.svg"
-                alt="네이버"
-                className="login-sns-logo"
-                onError={(e) => {
-                  console.error('Naver logo failed to load');
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  if (target.parentElement) {
-                    target.parentElement.textContent = 'N';
-                    target.parentElement.style.backgroundColor = '#03C75A';
-                    target.parentElement.style.color = '#FFFFFF';
-                    target.parentElement.style.fontWeight = 'bold';
-                  }
-                }}
-              />
-            </button>
-            <button
-              type="button"
-              className="login-sns-button btn-effect"
-              onClick={() => handleSnsLogin('kakao')}
-              aria-label="카카오 로그인"
-            >
-              <img
-                src="/assets/images/auth/kakao_logo.svg"
-                alt="카카오"
-                className="login-sns-logo"
-                onError={(e) => {
-                  console.error('Kakao logo failed to load');
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  if (target.parentElement) {
-                    target.parentElement.textContent = 'K';
-                    target.parentElement.style.backgroundColor = '#FEE500';
-                    target.parentElement.style.color = '#000000';
-                    target.parentElement.style.fontWeight = 'bold';
-                  }
-                }}
-              />
-            </button>
-            {!isAndroid && (
+            <div className="login-sns-button-wrapper">
               <button
                 type="button"
-                className="login-sns-button login-sns-button-apple btn-effect"
-                onClick={() => handleSnsLogin('apple')}
-                aria-label="애플 로그인"
+                className="login-sns-button btn-effect"
+                onClick={() => handleSnsLogin('naver')}
+                aria-label="네이버 로그인"
               >
                 <img
-                  src="/assets/images/auth/apple_logo.svg"
-                  alt="애플"
+                  src="/assets/images/auth/naver_logo.svg"
+                  alt="네이버"
                   className="login-sns-logo"
                   onError={(e) => {
-                    console.error('Apple logo failed to load');
+                    console.error('Naver logo failed to load');
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                     if (target.parentElement) {
-                      target.parentElement.textContent = '🍎';
-                      target.parentElement.style.fontSize = '24px';
+                      target.parentElement.textContent = 'N';
+                      target.parentElement.style.backgroundColor = '#03C75A';
+                      target.parentElement.style.color = '#FFFFFF';
+                      target.parentElement.style.fontWeight = 'bold';
                     }
                   }}
                 />
               </button>
+              {lastSnsProvider === 'naver' && (
+                <div className="login-recent-tag">
+                  <span className="login-recent-tag-arrow" />
+                  <span>최근 로그인</span>
+                </div>
+              )}
+            </div>
+            <div className="login-sns-button-wrapper">
+              <button
+                type="button"
+                className="login-sns-button btn-effect"
+                onClick={() => handleSnsLogin('kakao')}
+                aria-label="카카오 로그인"
+              >
+                <img
+                  src="/assets/images/auth/kakao_logo.svg"
+                  alt="카카오"
+                  className="login-sns-logo"
+                  onError={(e) => {
+                    console.error('Kakao logo failed to load');
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    if (target.parentElement) {
+                      target.parentElement.textContent = 'K';
+                      target.parentElement.style.backgroundColor = '#FEE500';
+                      target.parentElement.style.color = '#000000';
+                      target.parentElement.style.fontWeight = 'bold';
+                    }
+                  }}
+                />
+              </button>
+              {lastSnsProvider === 'kakao' && (
+                <div className="login-recent-tag">
+                  <span className="login-recent-tag-arrow" />
+                  <span>최근 로그인</span>
+                </div>
+              )}
+            </div>
+            {!isAndroid && (
+              <div className="login-sns-button-wrapper">
+                <button
+                  type="button"
+                  className="login-sns-button login-sns-button-apple btn-effect"
+                  onClick={() => handleSnsLogin('apple')}
+                  aria-label="애플 로그인"
+                >
+                  <img
+                    src="/assets/images/auth/apple_logo.svg"
+                    alt="애플"
+                    className="login-sns-logo"
+                    onError={(e) => {
+                      console.error('Apple logo failed to load');
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      if (target.parentElement) {
+                        target.parentElement.textContent = '🍎';
+                        target.parentElement.style.fontSize = '24px';
+                      }
+                    }}
+                  />
+                </button>
+                {lastSnsProvider === 'apple' && (
+                  <div className="login-recent-tag">
+                    <span className="login-recent-tag-arrow" />
+                    <span>최근 로그인</span>
+                  </div>
+                )}
+              </div>
             )}
-            <button
-              type="button"
-              className="login-sns-button login-sns-button-google btn-effect"
-              onClick={() => handleSnsLogin('google')}
-              aria-label="구글 로그인"
-            >
-              <img
-                src="/assets/images/auth/google_logo.svg"
-                alt="구글"
-                className="login-sns-logo"
-                onError={(e) => {
-                  console.error('Google logo failed to load');
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  if (target.parentElement) {
-                    target.parentElement.textContent = 'G';
-                    target.parentElement.style.backgroundColor = '#FFFFFF';
-                    target.parentElement.style.color = '#4285F4';
-                    target.parentElement.style.fontWeight = 'bold';
-                  }
-                }}
-              />
-            </button>
+            <div className="login-sns-button-wrapper">
+              <button
+                type="button"
+                className="login-sns-button login-sns-button-google btn-effect"
+                onClick={() => handleSnsLogin('google')}
+                aria-label="구글 로그인"
+              >
+                <img
+                  src="/assets/images/auth/google_logo.svg"
+                  alt="구글"
+                  className="login-sns-logo"
+                  onError={(e) => {
+                    console.error('Google logo failed to load');
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    if (target.parentElement) {
+                      target.parentElement.textContent = 'G';
+                      target.parentElement.style.backgroundColor = '#FFFFFF';
+                      target.parentElement.style.color = '#4285F4';
+                      target.parentElement.style.fontWeight = 'bold';
+                    }
+                  }}
+                />
+              </button>
+              {lastSnsProvider === 'google' && (
+                <div className="login-recent-tag">
+                  <span className="login-recent-tag-arrow" />
+                  <span>최근 로그인</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        {/* Test Login Section */}
+        {/* Test Login Section - local/dev 웹 브라우저에서만 표시 */}
+        {!nativeBridge.isAvailable() && (import.meta.env.DEV || import.meta.env.MODE === 'dev') && (
         <div className="mt-8 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-400 text-center mb-2 font-mono">---------- DEVELOPER ONLY ----------</p>
-            <form 
+            <form
                 className="flex gap-2 justify-center items-center px-4"
                 onSubmit={(e) => {
                     e.preventDefault();
@@ -373,14 +415,14 @@ export const LoginPage = () => {
                     }
                 }}
             >
-                <input 
+                <input
                     name="testEmail"
-                    type="email" 
+                    type="email"
                     defaultValue="sungchuli@test.com"
                     className="flex-1 max-w-[200px] h-8 text-sm px-2 border border-gray-300 rounded focus:border-amber-500 outline-none"
                     placeholder="테스트 계정 이메일"
                 />
-                <button 
+                <button
                     type="submit"
                     className="h-8 px-3 text-sm bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
                 >
@@ -388,6 +430,7 @@ export const LoginPage = () => {
                 </button>
             </form>
         </div>
+        )}
       </div>
     </div>
 

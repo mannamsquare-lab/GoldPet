@@ -1060,67 +1060,80 @@ h6 {
 	overflow: visible;
 }
 
-/* FriendCard Menu */
+/* FriendCard Menu - 케밥 버튼 */
 .friend_card_menu_btn {
 	position: absolute;
-	top: 12px;
-	right: 12px;
-	width: 36px;
-	height: 36px;
-	background: rgba(255, 255, 255, 0.85);
-	border: none;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	z-index: 10;
-	padding: 6px;
-}
-
-.friend_card_menu_btn img {
-	width: 20px;
-	height: 20px;
-}
-
-.friend_card_menu_overlay {
-	position: fixed;
 	top: 0;
-	left: 0;
 	right: 0;
-	bottom: 0;
-	z-index: 11;
-}
-
-.friend_card_menu_dropdown {
-	position: absolute;
-	top: 50px;
-	right: 12px;
-	background: white;
-	border-radius: 12px;
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-	min-width: 120px;
-	z-index: 12;
-}
-
-.friend_card_menu_dropdown button {
-	width: 100%;
-	padding: 14px 16px;
+	width: 24px;
+	height: 24px;
 	background: none;
 	border: none;
-	font-size: 14px;
-	font-family: Pretendard, sans-serif;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+	cursor: pointer;
+	z-index: 10;
+	padding: 0;
+}
+
+.friend_card_kebab_dot {
+	width: 3px;
+	height: 3px;
+	border-radius: 50%;
+	background-color: var(--color-primary);
+}
+
+/* FriendCard Bottom Sheet */
+.friend_card_bottomsheet_overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.7);
+	z-index: 9999;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+}
+
+.friend_card_bottomsheet {
+	width: 100%;
+	background-color: var(--color-bg);
+	border-radius: 16px 16px 0 0;
+	padding: 24px 24px 40px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	align-items: center;
+}
+
+.friend_card_bottomsheet_menu {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.friend_card_bottomsheet_item {
+	width: 100%;
+	padding: 8px 0;
+	background: none;
+	border: none;
+	font-family: 'Pretendard', sans-serif;
 	font-weight: 500;
+	font-size: 16px;
+	line-height: 1.4;
+	letter-spacing: -0.32px;
 	color: var(--color-primary);
 	cursor: pointer;
 	text-align: left;
 }
 
-.friend_card_menu_dropdown button:hover {
-	background: var(--color-bg);
+.friend_card_bottomsheet_divider {
+	width: 100%;
+	height: 1px;
+	background-color: var(--color-border);
 }
 
 #friendFind .friend_list .list_wrap .img_wrap {

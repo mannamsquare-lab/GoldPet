@@ -1,5 +1,6 @@
 
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { m, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { FLIP_HALF_DURATION, FLIP_EASING } from '../../config/cardFlipAnimation';
@@ -118,6 +119,11 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
         });
     };
 
+    const handleReportUser = () => {
+        setShowMenu(false);
+        showAlert('신고 기능 준비 중입니다.');
+    };
+
     const ownerImages = data.profileImages.length > 0 ? data.profileImages : (data.profileImageUrl ? [data.profileImageUrl] : [OWNER_FALLBACK]);
     const sliderImages = isPetMode ? data.images : ownerImages;
     const sliderSecondary = isPetMode ? (data.profileImages[0] || data.profileImageUrl || OWNER_FALLBACK) : (data.images[0] || PET_FALLBACK);
@@ -126,20 +132,31 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
 
     return (
         <div className="list_wrap" style={{ position: 'relative' }}>
-            {/* Menu Button */}
+            {/* Menu Button - 세로 3점 (케밥 메뉴) */}
             <button
                 className="friend_card_menu_btn"
                 onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                aria-label="메뉴"
             >
-                <img src="/assets/images/common/option_icon.svg" alt="메뉴" />
+                <span className="friend_card_kebab_dot" />
+                <span className="friend_card_kebab_dot" />
+                <span className="friend_card_kebab_dot" />
             </button>
-            {showMenu && (
-                <>
-                    <div className="friend_card_menu_overlay" onClick={() => setShowMenu(false)} />
-                    <div className="friend_card_menu_dropdown">
-                        <button type="button" onClick={handleBlockUser}>차단하기</button>
+            {showMenu && createPortal(
+                <div className="friend_card_bottomsheet_overlay" onClick={() => setShowMenu(false)}>
+                    <div className="friend_card_bottomsheet" onClick={(e) => e.stopPropagation()}>
+                        <div className="friend_card_bottomsheet_menu">
+                            <button type="button" className="friend_card_bottomsheet_item" onClick={handleBlockUser}>
+                                차단하기
+                            </button>
+                            <div className="friend_card_bottomsheet_divider" />
+                            <button type="button" className="friend_card_bottomsheet_item" onClick={handleReportUser}>
+                                신고하기
+                            </button>
+                        </div>
                     </div>
-                </>
+                </div>,
+                document.body
             )}
 
                 <AnimatePresence mode="wait"
