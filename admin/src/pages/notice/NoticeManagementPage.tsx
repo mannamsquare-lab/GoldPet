@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { noticeService } from '../../services/noticeService';
 import type { AppNoticeResponse, CreateAppNoticeRequest } from '../../services/noticeService';
+import { Button } from '../../components/common/Button';
+import { DataTable } from '../../components/common/DataTable';
+import { Tabs } from '../../components/common/Tabs';
+import type { ColumnDef } from '../../components/common/DataTable';
 
 const TYPE_LABELS: Record<string, string> = {
   POPUP_MODAL: '팝업 모달',
@@ -28,36 +33,29 @@ const EMPTY_FORM: CreateAppNoticeRequest = {
   endAt: '',
 };
 
+const FILTER_TABS = [
+  { key: 'all', label: '전체' },
+  { key: 'active', label: '활성' },
+  { key: 'inactive', label: '비활성' },
+];
+
 function formatDateTime(dt: string) {
   if (!dt) return '-';
   return new Date(dt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 export default function NoticeManagementPage() {
-  const [notices, setNotices] = useState<AppNoticeResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const queryClient = useQueryClient();
+  const [activeFilter, setActiveFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingNotice, setEditingNotice] = useState<AppNoticeResponse | null>(null);
   const [form, setForm] = useState<CreateAppNoticeRequest>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadNotices();
-  }, []);
-
-  const loadNotices = async () => {
-    setLoading(true);
-    try {
-      const data = await noticeService.getAllNotices();
-      setNotices(data);
-    } catch (error) {
-      console.error('Failed to load notices:', error);
-      setNotices([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: notices = [], isLoading } = useQuery({
+    queryKey: ['notices'],
+    queryFn: noticeService.getAllNotices,
+  });
 
   const filteredNotices = notices.filter((n) => {
     if (activeFilter === 'active') return n.isActive;
@@ -118,7 +116,7 @@ export default function NoticeManagementPage() {
         await noticeService.createNotice(payload);
       }
       closeForm();
-      loadNotices();
+      queryClient.invalidateQueries({ queryKey: ['notices'] });
     } catch (error) {
       console.error('Failed to save notice:', error);
       alert('저장에 실패했습니다.');
@@ -131,7 +129,7 @@ export default function NoticeManagementPage() {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
       await noticeService.deleteNotice(id);
-      loadNotices();
+      queryClient.invalidateQueries({ queryKey: ['notices'] });
     } catch (error) {
       console.error('Failed to delete notice:', error);
       alert('삭제에 실패했습니다.');
@@ -151,34 +149,67 @@ export default function NoticeManagementPage() {
     );
   };
 
+  const columns: ColumnDef<AppNoticeResponse>[] = [
+    {
+      key: 'type',
+      header: '유형',
+      render: (value) => getTypeBadge(value),
+    },
+    {
+      key: 'title',
+      header: '제목',
+      className: 'font-medium max-w-xs truncate',
+    },
+    {
+      key: 'targetScreen',
+      header: '대상',
+      render: (value) => SCREEN_OPTIONS.find((o) => o.value === value)?.label || value || '-',
+    },
+    {
+      key: 'priority',
+      header: '우선순위',
+      align: 'center',
+    },
+    {
+      key: 'isActive',
+      header: '상태',
+      render: (value) => (
+        <span className={`px-2 py-1 text-xs rounded-full ${value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          {value ? '활성' : '비활성'}
+        </span>
+      ),
+    },
+    {
+      key: 'startAt',
+      header: '시작일시',
+      render: (value) => formatDateTime(value),
+    },
+    {
+      key: 'endAt',
+      header: '종료일시',
+      render: (value) => (value ? formatDateTime(value) : '-'),
+    },
+    {
+      key: 'id',
+      header: '액션',
+      align: 'right',
+      render: (_value, row) => (
+        <div className="flex gap-3 justify-end">
+          <Button variant="link" size="sm" onClick={() => openEditForm(row)}>수정</Button>
+          <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDelete(row.id)}>삭제</Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">공지/팝업 관리</h1>
-        <button
-          onClick={openCreateForm}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
-        >
-          + 공지 추가
-        </button>
+        <Button variant="primary" onClick={openCreateForm}>+ 공지 추가</Button>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 border-b">
-        {(['all', 'active', 'inactive'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveFilter(tab)}
-            className={`px-4 py-2 font-medium text-sm ${
-              activeFilter === tab
-                ? 'text-indigo-600 border-b-2 border-indigo-600'
-                : 'text-gray-500'
-            }`}
-          >
-            {tab === 'all' ? '전체' : tab === 'active' ? '활성' : '비활성'}
-          </button>
-        ))}
-      </div>
+      <Tabs tabs={FILTER_TABS} activeTab={activeFilter} onTabChange={setActiveFilter} />
 
       {/* Create/Edit form */}
       {showForm && (
@@ -293,78 +324,27 @@ export default function NoticeManagementPage() {
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <button
+            <Button
+              variant="primary"
               onClick={handleSubmit}
+              loading={submitting}
               disabled={submitting}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50"
             >
-              {submitting ? '저장 중...' : editingNotice ? '수정' : '생성'}
-            </button>
-            <button
-              onClick={closeForm}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300"
-            >
-              취소
-            </button>
+              {editingNotice ? '수정' : '생성'}
+            </Button>
+            <Button variant="secondary" onClick={closeForm}>취소</Button>
           </div>
         </div>
       )}
 
       {/* Notice table */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-        {loading ? (
-          <div className="text-center py-12 text-gray-500">로딩 중...</div>
-        ) : filteredNotices.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">공지가 없습니다.</div>
-        ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">유형</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">제목</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">대상</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">우선순위</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">시작일시</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">종료일시</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">액션</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredNotices.map((notice) => (
-                <tr key={notice.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 whitespace-nowrap">{getTypeBadge(notice.type)}</td>
-                  <td className="px-4 py-4 font-medium text-sm max-w-xs truncate">{notice.title}</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {SCREEN_OPTIONS.find((o) => o.value === notice.targetScreen)?.label || notice.targetScreen || '-'}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-center">{notice.priority}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${notice.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {notice.isActive ? '활성' : '비활성'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(notice.startAt)}</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{notice.endAt ? formatDateTime(notice.endAt) : '-'}</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => openEditForm(notice)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDelete(notice.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      삭제
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <DataTable<AppNoticeResponse>
+          columns={columns}
+          data={filteredNotices}
+          loading={isLoading}
+          emptyMessage="공지가 없습니다."
+        />
       </div>
     </div>
   );

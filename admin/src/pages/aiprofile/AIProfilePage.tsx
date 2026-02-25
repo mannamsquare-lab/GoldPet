@@ -1,24 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { Camera, Clock, CheckCircle, BarChart2, XCircle, RefreshCw } from 'lucide-react';
 import { aiProfileAdminService } from '../../services/aiProfileAdminService';
 import type {
-  AIRequestAdminResponse,
   AIStyleAdminResponse,
   AIStyleAdminRequest,
-  AIProfileStatsResponse,
 } from '../../services/aiProfileAdminService';
-import type { PageResponse } from '../../types/api';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
+import { useListParams } from '../../hooks/useListParams';
+import { DataTable } from '../../components/common/DataTable';
+import type { ColumnDef } from '../../components/common/DataTable';
+import { Pagination } from '../../components/common/Pagination';
+import { Tabs } from '../../components/common/Tabs';
+import { StatCard } from '../../components/common/StatCard';
+import { Button } from '../../components/common/Button';
+import type { AIRequestAdminResponse } from '../../services/aiProfileAdminService';
 
-const StatCard = ({ title, value, icon }: { title: string; value: string | number; icon: string }) => (
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="mt-2 text-2xl font-semibold text-gray-900">{typeof value === 'number' ? value.toLocaleString() : value}</p>
-      </div>
-      <span className="text-3xl">{icon}</span>
-    </div>
-  </div>
-);
+const AI_PROFILE_TABS = [
+  { key: 'requests', label: '요청 관리' },
+  { key: 'styles', label: '스타일 관리' },
+];
 
 const getStatusBadge = (status: string) => {
   const styles: Record<string, string> = {
@@ -43,13 +44,10 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function AIProfilePage() {
-  const [activeTab, setActiveTab] = useState<'requests' | 'styles'>('requests');
-  const [stats, setStats] = useState<AIProfileStatsResponse | null>(null);
-  const [requests, setRequests] = useState<PageResponse<AIRequestAdminResponse> | null>(null);
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<string>('requests');
   const [styles, setStyles] = useState<AIStyleAdminResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [stylesLoading, setStylesLoading] = useState(false);
   const [showStyleModal, setShowStyleModal] = useState(false);
   const [editingStyle, setEditingStyle] = useState<AIStyleAdminResponse | null>(null);
   const [styleForm, setStyleForm] = useState<AIStyleAdminRequest>({
@@ -62,45 +60,39 @@ export default function AIProfilePage() {
     displayOrder: 0,
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { page, size, filters, setPage, setSize, setFilter } = useListParams({ defaultSize: 20 });
+  const statusFilter = filters.status || '';
 
-  useEffect(() => {
-    if (activeTab === 'requests') {
-      loadRequests();
-    } else {
-      loadStyles();
-    }
-  }, [activeTab, currentPage, statusFilter]);
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['ai-profile-stats'],
+    queryFn: () => aiProfileAdminService.getStats(),
+  });
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const statsData = await aiProfileAdminService.getStats();
-      setStats(statsData);
-    } catch (error) {
-      console.error('Failed to load AI profile stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadRequests = async () => {
-    try {
-      const data = await aiProfileAdminService.getRequests(currentPage, 20, statusFilter || undefined);
-      setRequests(data);
-    } catch (error) {
-      console.error('Failed to load requests:', error);
-    }
-  };
+  const { data: requests, isLoading: requestsLoading } = usePagedQuery<AIRequestAdminResponse>({
+    queryKey: 'ai-profile-requests',
+    fetchFn: (params) => aiProfileAdminService.getRequests(params.page, params.size, params.status || undefined),
+    page,
+    size,
+    filters: { status: statusFilter || undefined },
+    enabled: activeTab === 'requests',
+  });
 
   const loadStyles = async () => {
+    setStylesLoading(true);
     try {
       const data = await aiProfileAdminService.getStyles();
       setStyles(data);
     } catch (error) {
       console.error('Failed to load styles:', error);
+    } finally {
+      setStylesLoading(false);
+    }
+  };
+
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    if (key === 'styles') {
+      loadStyles();
     }
   };
 
@@ -108,8 +100,8 @@ export default function AIProfilePage() {
     if (!confirm('이 요청을 다시 시도하시겠습니까?')) return;
     try {
       await aiProfileAdminService.retryRequest(id);
-      loadRequests();
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['ai-profile-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-profile-stats'] });
     } catch (error) {
       console.error('Failed to retry request:', error);
       alert('재시도에 실패했습니다.');
@@ -120,8 +112,8 @@ export default function AIProfilePage() {
     if (!confirm('이 요청을 환불 처리하시겠습니까?')) return;
     try {
       await aiProfileAdminService.refundRequest(id);
-      loadRequests();
-      loadData();
+      queryClient.invalidateQueries({ queryKey: ['ai-profile-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-profile-stats'] });
     } catch (error) {
       console.error('Failed to refund request:', error);
       alert('환불 처리에 실패했습니다.');
@@ -184,7 +176,50 @@ export default function AIProfilePage() {
     }
   };
 
-  if (loading) {
+  const requestColumns: ColumnDef<AIRequestAdminResponse>[] = [
+    { key: 'id', header: 'ID', width: '60px' },
+    {
+      key: 'userNickname',
+      header: '사용자',
+      render: (value, row) => value || `User ${row.userId}`,
+    },
+    { key: 'petName', header: '반려동물' },
+    {
+      key: 'stylePrompt',
+      header: '스타일',
+      render: (value, row) => value || row.type,
+    },
+    {
+      key: 'status',
+      header: '상태',
+      render: (value) => getStatusBadge(value),
+    },
+    {
+      key: 'goldCost',
+      header: '비용(Gold)',
+      align: 'right',
+      render: (value) => value.toLocaleString(),
+    },
+    {
+      key: 'createdAt',
+      header: '요청일시',
+      render: (value) => new Date(value).toLocaleString('ko-KR'),
+    },
+    {
+      key: 'id',
+      header: '액션',
+      align: 'center',
+      render: (_value, row) =>
+        row.status === 'FAILED' ? (
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="link" size="sm" onClick={() => handleRetry(row.id)}>재시도</Button>
+            <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleRefund(row.id)}>환불</Button>
+          </div>
+        ) : null,
+    },
+  ];
+
+  if (statsLoading) {
     return <div className="flex items-center justify-center h-64">로딩 중...</div>;
   }
 
@@ -194,42 +229,17 @@ export default function AIProfilePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="총 요청" value={stats?.totalRequests || 0} icon="📸" />
-        <StatCard title="대기중" value={stats?.pendingRequests || 0} icon="⏳" />
-        <StatCard title="완료" value={stats?.completedRequests || 0} icon="✅" />
-        <StatCard title="성공률" value={`${stats?.successRate?.toFixed(1) || 0}%`} icon="📊" />
+        <StatCard title="총 요청" value={stats?.totalRequests || 0} icon={Camera} />
+        <StatCard title="대기중" value={stats?.pendingRequests || 0} icon={Clock} />
+        <StatCard title="완료" value={stats?.completedRequests || 0} icon={CheckCircle} />
+        <StatCard title="성공률" value={`${stats?.successRate?.toFixed(1) || 0}%`} icon={BarChart2} />
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <StatCard title="실패" value={stats?.failedRequests || 0} icon="❌" />
-        <StatCard title="환불" value={stats?.refundedRequests || 0} icon="💰" />
+        <StatCard title="실패" value={stats?.failedRequests || 0} icon={XCircle} />
+        <StatCard title="환불" value={stats?.refundedRequests || 0} icon={RefreshCw} />
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('requests')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'requests'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            요청 관리
-          </button>
-          <button
-            onClick={() => setActiveTab('styles')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'styles'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            스타일 관리
-          </button>
-        </nav>
-      </div>
+      <Tabs tabs={AI_PROFILE_TABS} activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Requests Tab */}
       {activeTab === 'requests' && (
@@ -239,8 +249,8 @@ export default function AIProfilePage() {
             <select
               value={statusFilter}
               onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(0);
+                setFilter('status', e.target.value || null);
+                setPage(0);
               }}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
@@ -252,88 +262,22 @@ export default function AIProfilePage() {
               <option value="REFUNDED">환불</option>
             </select>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">사용자</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">반려동물</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">스타일</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">비용(Gold)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">요청일시</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">액션</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {requests?.content.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
-                      요청이 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  requests?.content.map((request) => (
-                    <tr key={request.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{request.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {request.userNickname || `User ${request.userId}`}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{request.petName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {request.stylePrompt || request.type}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(request.status)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{request.goldCost.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(request.createdAt).toLocaleString('ko-KR')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                        {request.status === 'FAILED' && (
-                          <>
-                            <button
-                              onClick={() => handleRetry(request.id)}
-                              className="text-indigo-600 hover:text-indigo-900"
-                            >
-                              재시도
-                            </button>
-                            <button
-                              onClick={() => handleRefund(request.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              환불
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          {requests && requests.totalPages > 1 && (
-            <div className="px-6 py-4 border-t flex items-center justify-between">
-              <div className="text-sm text-gray-500">
-                총 {requests.totalElements.toLocaleString()}건 ({requests.number + 1} / {requests.totalPages} 페이지)
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                  disabled={currentPage === 0}
-                  className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  이전
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(requests.totalPages - 1, currentPage + 1))}
-                  disabled={currentPage >= requests.totalPages - 1}
-                  className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  다음
-                </button>
-              </div>
+          <DataTable<AIRequestAdminResponse>
+            columns={requestColumns}
+            data={requests?.content || []}
+            loading={requestsLoading}
+            emptyMessage="요청이 없습니다."
+          />
+          {requests && requests.totalPages > 0 && (
+            <div className="border-t">
+              <Pagination
+                page={page}
+                totalPages={requests.totalPages}
+                totalElements={requests.totalElements}
+                size={size}
+                onPageChange={setPage}
+                onSizeChange={setSize}
+              />
             </div>
           )}
         </div>
@@ -344,64 +288,68 @@ export default function AIProfilePage() {
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
           <div className="p-4 border-b flex justify-between items-center">
             <h2 className="font-semibold">AI 스타일 목록</h2>
-            <button
-              onClick={handleOpenAddStyle}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
-            >
-              + 스타일 추가
-            </button>
+            <Button variant="primary" onClick={handleOpenAddStyle}>+ 스타일 추가</Button>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {styles.length === 0 ? (
-                <div className="col-span-full text-center text-gray-500 py-8">등록된 스타일이 없습니다.</div>
-              ) : (
-                styles.map((style) => (
-                  <div key={style.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                    {style.previewUrl && (
-                      <img src={style.previewUrl} alt={style.name} className="w-full h-48 object-cover" />
-                    )}
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-lg">{style.name}</h3>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          style.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {style.isActive ? '활성' : '비활성'}
-                        </span>
-                      </div>
-                      {style.description && (
-                        <p className="text-sm text-gray-600 mb-3">{style.description}</p>
+            {stylesLoading ? (
+              <div className="text-center text-gray-500 py-8">로딩 중...</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {styles.length === 0 ? (
+                  <div className="col-span-full text-center text-gray-500 py-8">등록된 스타일이 없습니다.</div>
+                ) : (
+                  styles.map((style) => (
+                    <div key={style.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                      {style.previewUrl && (
+                        <img src={style.previewUrl} alt={style.name} className="w-full h-48 object-cover" />
                       )}
-                      <div className="flex items-center justify-between text-sm mb-4">
-                        <span className="text-gray-500">비용: {style.goldCost.toLocaleString()} Gold</span>
-                        <span className="text-gray-500">순서: {style.displayOrder}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleToggleStyle(style.id)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                        >
-                          {style.isActive ? '비활성화' : '활성화'}
-                        </button>
-                        <button
-                          onClick={() => handleOpenEditStyle(style)}
-                          className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
-                        >
-                          수정
-                        </button>
-                        <button
-                          onClick={() => handleDeleteStyle(style.id)}
-                          className="px-3 py-2 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50"
-                        >
-                          삭제
-                        </button>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="font-semibold text-lg">{style.name}</h3>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            style.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {style.isActive ? '활성' : '비활성'}
+                          </span>
+                        </div>
+                        {style.description && (
+                          <p className="text-sm text-gray-600 mb-3">{style.description}</p>
+                        )}
+                        <div className="flex items-center justify-between text-sm mb-4">
+                          <span className="text-gray-500">비용: {style.goldCost.toLocaleString()} Gold</span>
+                          <span className="text-gray-500">순서: {style.displayOrder}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleToggleStyle(style.id)}
+                          >
+                            {style.isActive ? '비활성화' : '활성화'}
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleOpenEditStyle(style)}
+                          >
+                            수정
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleDeleteStyle(style.id)}
+                          >
+                            삭제
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -489,18 +437,10 @@ export default function AIProfilePage() {
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setShowStyleModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleSaveStyle}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
-              >
+              <Button variant="secondary" onClick={() => setShowStyleModal(false)}>취소</Button>
+              <Button variant="primary" onClick={handleSaveStyle}>
                 {editingStyle ? '수정' : '추가'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

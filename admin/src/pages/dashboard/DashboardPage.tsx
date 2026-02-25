@@ -1,46 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '../../services/dashboardService';
-import type { DashboardStats, RecentActivity } from '../../services/dashboardService';
-
-// Stat card component
-const StatCard = ({ title, value, icon, trend }: { title: string; value: string | number; icon: string; trend?: string }) => (
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="mt-2 text-3xl font-semibold text-gray-900">{typeof value === 'number' ? value.toLocaleString() : value}</p>
-        {trend && <p className="mt-1 text-sm text-green-600">{trend}</p>}
-      </div>
-      <span className="text-3xl">{icon}</span>
-    </div>
-  </div>
-);
+import { StatCard } from '../../components/common/StatCard';
+import {
+  Users,
+  PawPrint,
+  Footprints,
+  MapPin,
+  FileText,
+  MessageCircle,
+  AlertTriangle,
+  Coins,
+} from 'lucide-react';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [activities, setActivities] = useState<RecentActivity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: dashboardService.getStats,
+  });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { data: activities = [], isLoading: isActivitiesLoading } = useQuery({
+    queryKey: ['dashboard', 'activity'],
+    queryFn: () => dashboardService.getRecentActivity(10),
+  });
 
-  const loadData = async () => {
-    try {
-      const [statsData, activitiesData] = await Promise.all([
-        dashboardService.getStats(),
-        dashboardService.getRecentActivity(10),
-      ]);
-      setStats(statsData);
-      setActivities(activitiesData);
-    } catch (error) {
-      console.error('Failed to load dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const isLoading = isStatsLoading || isActivitiesLoading;
 
-  if (loading) {
+  if (isLoading) {
     return <div className="flex items-center justify-center h-64">로딩 중...</div>;
   }
 
@@ -50,17 +35,50 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="총 회원수" value={stats?.totalUsers || 0} icon="👥" trend={`오늘 +${stats?.newUsersToday || 0}`} />
-        <StatCard title="총 반려동물" value={stats?.totalPets || 0} icon="🐾" />
-        <StatCard title="총 산책 횟수" value={stats?.totalWalks || 0} icon="🚶" />
-        <StatCard title="총 산책 거리" value={`${(stats?.totalDistance || 0).toFixed(1)}km`} icon="📍" />
+        <StatCard
+          title="총 회원수"
+          value={stats?.totalUsers ?? 0}
+          icon={Users}
+          trend={{ value: stats?.newUsersToday ?? 0, label: '오늘 신규' }}
+        />
+        <StatCard
+          title="총 반려동물"
+          value={stats?.totalPets ?? 0}
+          icon={PawPrint}
+        />
+        <StatCard
+          title="총 산책 횟수"
+          value={stats?.totalWalks ?? 0}
+          icon={Footprints}
+        />
+        <StatCard
+          title="총 산책 거리"
+          value={`${(stats?.totalDistance ?? 0).toFixed(1)}km`}
+          icon={MapPin}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="게시글" value={stats?.totalPosts || 0} icon="📝" />
-        <StatCard title="댓글" value={stats?.totalComments || 0} icon="💬" />
-        <StatCard title="미처리 신고" value={stats?.pendingReports || 0} icon="⚠️" />
-        <StatCard title="매출 (원)" value={stats?.revenue || 0} icon="💰" />
+        <StatCard
+          title="게시글"
+          value={stats?.totalPosts ?? 0}
+          icon={FileText}
+        />
+        <StatCard
+          title="댓글"
+          value={stats?.totalComments ?? 0}
+          icon={MessageCircle}
+        />
+        <StatCard
+          title="미처리 신고"
+          value={stats?.pendingReports ?? 0}
+          icon={AlertTriangle}
+        />
+        <StatCard
+          title="매출 (원)"
+          value={stats?.revenue ?? 0}
+          icon={Coins}
+        />
       </div>
 
       {/* Recent Activity */}

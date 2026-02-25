@@ -1,100 +1,150 @@
-import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Activity, Calendar, MapPin, Clock } from 'lucide-react';
 import { lbsService } from '../../services/lbsService';
-import type { LBSStats, Place } from '../../services/lbsService';
+import type { Place } from '../../services/lbsService';
 import { walkAdminService } from '../../services/walkAdminService';
 import type { WalkAdminResponse } from '../../services/walkAdminService';
-import type { PageResponse } from '../../types/api';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
+import { useListParams } from '../../hooks/useListParams';
+import { DataTable } from '../../components/common/DataTable';
+import type { ColumnDef } from '../../components/common/DataTable';
+import { Pagination } from '../../components/common/Pagination';
+import { Tabs } from '../../components/common/Tabs';
+import { StatCard } from '../../components/common/StatCard';
+import { SearchFilters } from '../../components/common/SearchFilters';
+import { Button } from '../../components/common/Button';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
-const StatCard = ({ title, value, icon }: { title: string; value: string | number; icon: string }) => (
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="mt-2 text-2xl font-semibold text-gray-900">{typeof value === 'number' ? value.toLocaleString() : value}</p>
-      </div>
-      <span className="text-3xl">{icon}</span>
-    </div>
-  </div>
-);
+const LBS_TABS = [
+  { key: 'stats', label: '통계' },
+  { key: 'walks', label: '산책 기록' },
+  { key: 'places', label: '장소 관리' },
+];
+
+const WALK_FILTER_FIELDS = [
+  { type: 'text' as const, key: 'userNickname', placeholder: '닉네임 검색' },
+  { type: 'date' as const, key: 'startDate', label: '시작일' },
+  { type: 'date' as const, key: 'endDate', label: '종료일' },
+  { type: 'number' as const, key: 'minDistance', label: '최소 거리 (km)', min: 0 },
+  { type: 'number' as const, key: 'maxDistance', label: '최대 거리 (km)', min: 0 },
+];
 
 export default function LBSPage() {
-  const [activeTab, setActiveTab] = useState<'stats' | 'walks' | 'places'>('stats');
-  const [stats, setStats] = useState<LBSStats | null>(null);
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<string>('stats');
   const [places, setPlaces] = useState<Place[]>([]);
-  const [walks, setWalks] = useState<PageResponse<WalkAdminResponse> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [placesLoading, setPlacesLoading] = useState(false);
 
-  // Walk filters
-  const [userNickname, setUserNickname] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [minDistance, setMinDistance] = useState('');
-  const [maxDistance, setMaxDistance] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
+  const { page, size, filters, setPage, setSize, setFilter } = useListParams({ defaultSize: 20 });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['lbs-stats'],
+    queryFn: () => lbsService.getStats(),
+  });
 
-  useEffect(() => {
-    if (activeTab === 'walks') {
-      loadWalks();
-    }
-  }, [activeTab, currentPage]);
+  const { data: walks, isLoading: walksLoading } = usePagedQuery<WalkAdminResponse>({
+    queryKey: 'walks',
+    fetchFn: (params) => walkAdminService.getWalks({
+      page: params.page,
+      size: params.size,
+      userNickname: params.userNickname || undefined,
+      startDate: params.startDate || undefined,
+      endDate: params.endDate || undefined,
+      minDistance: params.minDistance ? Number(params.minDistance) : undefined,
+      maxDistance: params.maxDistance ? Number(params.maxDistance) : undefined,
+    }),
+    page,
+    size,
+    filters: {
+      userNickname: filters.userNickname || undefined,
+      startDate: filters.startDate || undefined,
+      endDate: filters.endDate || undefined,
+      minDistance: filters.minDistance || undefined,
+      maxDistance: filters.maxDistance || undefined,
+    },
+    enabled: activeTab === 'walks',
+  });
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadPlaces = async () => {
+    setPlacesLoading(true);
     try {
-      const [statsData, placesData] = await Promise.all([
-        lbsService.getStats(),
-        lbsService.getPlaces(),
-      ]);
-      setStats(statsData);
-      setPlaces(placesData);
+      const data = await lbsService.getPlaces();
+      setPlaces(data);
     } catch (error) {
-      console.error('Failed to load LBS data:', error);
+      console.error('Failed to load places:', error);
     } finally {
-      setLoading(false);
+      setPlacesLoading(false);
     }
   };
 
-  const loadWalks = async () => {
-    try {
-      const walksData = await walkAdminService.getWalks({
-        page: currentPage,
-        size: 20,
-        userNickname: userNickname || undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-        minDistance: minDistance ? Number(minDistance) : undefined,
-        maxDistance: maxDistance ? Number(maxDistance) : undefined,
-      });
-      setWalks(walksData);
-    } catch (error) {
-      console.error('Failed to load walks:', error);
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    if (key === 'places') {
+      loadPlaces();
     }
-  };
-
-  const handleSearchWalks = () => {
-    setCurrentPage(0);
-    loadWalks();
   };
 
   const handleDeleteWalk = async (id: number) => {
     if (!confirm('이 산책 기록을 삭제하시겠습니까?')) return;
     const reason = prompt('삭제 사유를 입력하세요:');
     if (!reason) return;
-
     try {
       await walkAdminService.deleteWalk(id, reason);
-      loadWalks();
+      queryClient.invalidateQueries({ queryKey: ['walks'] });
     } catch (error) {
       console.error('Failed to delete walk:', error);
       alert('삭제에 실패했습니다.');
     }
   };
 
-  if (loading) {
+  const walkColumns: ColumnDef<WalkAdminResponse>[] = [
+    { key: 'id', header: 'ID', width: '60px' },
+    {
+      key: 'userNickname',
+      header: '사용자',
+      render: (value, row) => value || `User ${row.userId}`,
+    },
+    {
+      key: 'startTime',
+      header: '시작시간',
+      render: (value) => new Date(value).toLocaleString('ko-KR'),
+    },
+    {
+      key: 'distanceKm',
+      header: '거리(km)',
+      align: 'right',
+      render: (value) => value.toFixed(2),
+    },
+    {
+      key: 'durationSeconds',
+      header: '시간(분)',
+      align: 'right',
+      render: (value) => Math.round(value / 60),
+    },
+    { key: 'caloriesBurned', header: '칼로리', align: 'right' },
+    { key: 'spotsCount', header: '스팟수', align: 'right' },
+    {
+      key: 'id',
+      header: '액션',
+      align: 'right',
+      render: (_value, row) => (
+        <div className="flex items-center justify-end gap-3">
+          <Button variant="link" size="sm">상세</Button>
+          <Button
+            variant="link"
+            size="sm"
+            className="text-red-600 hover:text-red-900"
+            onClick={() => handleDeleteWalk(row.id)}
+          >
+            삭제
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  if (statsLoading) {
     return <div className="flex items-center justify-center h-64">로딩 중...</div>;
   }
 
@@ -102,36 +152,16 @@ export default function LBSPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">산책/지도 관리</h1>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b">
-        <button
-          onClick={() => setActiveTab('stats')}
-          className={`px-4 py-2 font-medium ${activeTab === 'stats' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-        >
-          통계
-        </button>
-        <button
-          onClick={() => setActiveTab('walks')}
-          className={`px-4 py-2 font-medium ${activeTab === 'walks' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-        >
-          산책 기록
-        </button>
-        <button
-          onClick={() => setActiveTab('places')}
-          className={`px-4 py-2 font-medium ${activeTab === 'places' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'}`}
-        >
-          장소 관리
-        </button>
-      </div>
+      <Tabs tabs={LBS_TABS} activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Stats Tab */}
       {activeTab === 'stats' && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="총 산책 횟수" value={stats?.totalWalks || 0} icon="🚶" />
-            <StatCard title="오늘 산책" value={stats?.todayWalks || 0} icon="📅" />
-            <StatCard title="총 산책 거리" value={`${stats?.totalDistance?.toFixed(1) || 0}km`} icon="📍" />
-            <StatCard title="평균 산책 시간" value={`${stats?.avgDuration || 0}분`} icon="⏱️" />
+            <StatCard title="총 산책 횟수" value={stats?.totalWalks || 0} icon={Activity} />
+            <StatCard title="오늘 산책" value={stats?.todayWalks || 0} icon={Calendar} />
+            <StatCard title="총 산책 거리" value={`${stats?.totalDistance?.toFixed(1) || 0}km`} icon={MapPin} />
+            <StatCard title="평균 산책 시간" value={`${stats?.avgDuration || 0}분`} icon={Clock} />
           </div>
 
           <div className="bg-white shadow-sm rounded-lg border border-gray-200">
@@ -156,141 +186,32 @@ export default function LBSPage() {
       {/* Walk History Tab */}
       {activeTab === 'walks' && (
         <div className="space-y-4">
-          {/* Filters */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">사용자</label>
-                <input
-                  type="text"
-                  value={userNickname}
-                  onChange={(e) => setUserNickname(e.target.value)}
-                  placeholder="닉네임 검색"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">시작일</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">종료일</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">최소 거리 (km)</label>
-                <input
-                  type="number"
-                  value={minDistance}
-                  onChange={(e) => setMinDistance(e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  step="0.1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">최대 거리 (km)</label>
-                <input
-                  type="number"
-                  value={maxDistance}
-                  onChange={(e) => setMaxDistance(e.target.value)}
-                  placeholder="100"
-                  min="0"
-                  step="0.1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={handleSearchWalks}
-                  className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  검색
-                </button>
-              </div>
-            </div>
+            <SearchFilters
+              fields={WALK_FILTER_FIELDS}
+              values={filters}
+              onChange={(key, value) => setFilter(key, value || null)}
+              onSearch={() => { setPage(0); }}
+            />
           </div>
 
-          {/* Walks Table */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">사용자</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">시작시간</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">거리(km)</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">시간(분)</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">칼로리</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">스팟수</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">액션</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {walks?.content.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                      산책 기록이 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  walks?.content.map((walk) => (
-                    <tr key={walk.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{walk.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{walk.userNickname || `User ${walk.userId}`}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{new Date(walk.startTime).toLocaleString('ko-KR')}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">{walk.distanceKm.toFixed(2)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">{Math.round(walk.durationSeconds / 60)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">{walk.caloriesBurned}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">{walk.spotsCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                        <button className="text-indigo-600 hover:text-indigo-900 mr-3">상세</button>
-                        <button
-                          onClick={() => handleDeleteWalk(walk.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          삭제
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-
-            {/* Pagination */}
-            {walks && walks.totalPages > 1 && (
-              <div className="px-6 py-4 border-t flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  총 {walks.totalElements.toLocaleString()}개 · {walks.number + 1} / {walks.totalPages} 페이지
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                    disabled={currentPage === 0}
-                    className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    이전
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.min(walks.totalPages - 1, currentPage + 1))}
-                    disabled={currentPage >= walks.totalPages - 1}
-                    className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    다음
-                  </button>
-                </div>
+            <DataTable<WalkAdminResponse>
+              columns={walkColumns}
+              data={walks?.content || []}
+              loading={walksLoading}
+              emptyMessage="산책 기록이 없습니다."
+            />
+            {walks && walks.totalPages > 0 && (
+              <div className="border-t">
+                <Pagination
+                  page={page}
+                  totalPages={walks.totalPages}
+                  totalElements={walks.totalElements}
+                  size={size}
+                  onPageChange={setPage}
+                  onSizeChange={setSize}
+                />
               </div>
             )}
           </div>
@@ -302,32 +223,34 @@ export default function LBSPage() {
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
           <div className="p-4 border-b flex justify-between items-center">
             <h2 className="font-semibold">등록된 장소</h2>
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
-              + 장소 추가
-            </button>
+            <Button variant="primary">+ 장소 추가</Button>
           </div>
-          <div className="divide-y max-h-[400px] overflow-y-auto">
-            {places.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">등록된 장소가 없습니다.</div>
-            ) : (
-              places.map((place) => (
-                <div key={place.id} className="p-4 hover:bg-gray-50">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{place.name}</span>
-                        <span className="px-2 py-0.5 text-xs bg-gray-100 rounded">{place.category}</span>
+          {placesLoading ? (
+            <div className="p-8 text-center text-gray-500">로딩 중...</div>
+          ) : (
+            <div className="divide-y max-h-[400px] overflow-y-auto">
+              {places.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">등록된 장소가 없습니다.</div>
+              ) : (
+                places.map((place) => (
+                  <div key={place.id} className="p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{place.name}</span>
+                          <span className="px-2 py-0.5 text-xs bg-gray-100 rounded">{place.category}</span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          ⭐ {place.rating} · {place.visits.toLocaleString()} 방문
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        ⭐ {place.rating} · {place.visits.toLocaleString()} 방문
-                      </p>
+                      <Button variant="link" size="sm">수정</Button>
                     </div>
-                    <button className="text-sm text-indigo-600 hover:text-indigo-900">수정</button>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
