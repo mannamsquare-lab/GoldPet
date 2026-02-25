@@ -123,11 +123,23 @@
   left: 0;
   width: 100%;
   z-index: 100;
-  background-color: var(--color-bg);
+  background-color: transparent;
   padding: 0 16px 40px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.benefits-footer::before {
+  content: '';
+  position: absolute;
+  top: -24px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 0%, var(--color-bg) 24px);
+  z-index: -1;
+  pointer-events: none;
 }
 
 .benefits-button {

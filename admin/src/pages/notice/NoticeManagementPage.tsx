@@ -414,7 +414,7 @@ export default function NoticeManagementPage() {
                 className="w-4 h-4"
               />
               <label htmlFor="isDismissible" className="text-sm font-medium text-gray-700">
-                오늘 하루 보지 않기 허용
+                오늘 하루 그만 보기 허용
               </label>
             </div>
             <div>

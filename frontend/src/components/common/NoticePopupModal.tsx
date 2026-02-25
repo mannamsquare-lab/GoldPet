@@ -114,7 +114,7 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
                 onChange={(e) => setDismissChecked(e.target.checked)}
               />
               <label htmlFor="notice-dismiss-check" className="notice-popup-dismiss-label">
-                오늘 하루 보지 않기
+                오늘 하루 그만 보기
               </label>
             </div>
           )}
