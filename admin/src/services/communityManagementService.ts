@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import type { PageResponse } from '../types/api';
 
 export interface PostListItem {
   id: number;
@@ -40,14 +41,6 @@ export interface CommentItem {
   authorNickname: string;
   isHidden: boolean;
   createdAt: string | null;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
-  size: number;
-  number: number;
 }
 
 export const communityManagementService = {

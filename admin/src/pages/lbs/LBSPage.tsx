@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { lbsService } from '../../services/lbsService';
 import type { LBSStats, Place } from '../../services/lbsService';
 import { walkAdminService } from '../../services/walkAdminService';
-import type { WalkAdminResponse, PageResponse } from '../../services/walkAdminService';
+import type { WalkAdminResponse } from '../../services/walkAdminService';
+import type { PageResponse } from '../../types/api';
 
 const StatCard = ({ title, value, icon }: { title: string; value: string | number; icon: string }) => (
   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

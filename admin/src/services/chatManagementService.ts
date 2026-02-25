@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import type { PageResponse } from '../types/api';
 
 export interface ChatRoomItem {
   id: number;
@@ -18,12 +19,6 @@ export interface ChatMessageItem {
   content: string;
   type: 'TEXT' | 'IMAGE' | 'FILE';
   createdAt: string;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
 }
 
 export const chatManagementService = {

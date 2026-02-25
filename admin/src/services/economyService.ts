@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import type { PageResponse } from '../types/api';
 
 export interface EconomyStats {
   totalGoldCirculation: number;
@@ -16,12 +17,6 @@ export interface TransactionItem {
   amount: number;
   description: string;
   createdAt: string | null;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
 }
 
 export interface GoldProductAdmin {

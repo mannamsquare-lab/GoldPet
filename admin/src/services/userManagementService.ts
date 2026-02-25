@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import type { PageResponse } from '../types/api';
 
 export interface UserListItem {
   id: number;
@@ -37,14 +38,6 @@ export interface UserDetail {
     totalComments: number;
     badgeCount: number;
   };
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
-  size: number;
-  number: number;
 }
 
 export const userManagementService = {

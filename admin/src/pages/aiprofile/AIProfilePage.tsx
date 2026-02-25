@@ -5,8 +5,8 @@ import type {
   AIStyleAdminResponse,
   AIStyleAdminRequest,
   AIProfileStatsResponse,
-  PageResponse,
 } from '../../services/aiProfileAdminService';
+import type { PageResponse } from '../../types/api';
 
 const StatCard = ({ title, value, icon }: { title: string; value: string | number; icon: string }) => (
   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

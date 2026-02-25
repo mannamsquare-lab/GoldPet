@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import type { PageResponse } from '../types/api';
 
 export interface WalkAdminResponse {
   id: number;
@@ -46,14 +47,6 @@ export interface WalkStatsDetailResponse {
   avgDurationMinutes: number;
   totalCalories: number;
   dailyBreakdown: { date: string; count: number; totalDistance: number }[];
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
 }
 
 export interface GetWalksParams {

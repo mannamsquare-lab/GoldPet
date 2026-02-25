@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import type { PageResponse } from '../types/api';
 
 export interface AIRequestAdminResponse {
   id: number;
@@ -49,14 +50,6 @@ export interface AIProfileStatsResponse {
   successRate: number;
   dailyBreakdown: { date: string; count: number; totalDistance: number }[];
   popularStyles: { styleId: string; styleName: string; count: number }[];
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
 }
 
 export const aiProfileAdminService = {

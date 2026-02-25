@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import type { PageResponse } from '../types/api';
 
 export interface ReportItem {
   id: number;
@@ -11,12 +12,6 @@ export interface ReportItem {
   status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
   createdAt: string | null;
   resolvedAt: string | null;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
 }
 
 export const reportService = {
