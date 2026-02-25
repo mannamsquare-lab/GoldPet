@@ -76,7 +76,7 @@ class AdminSystemService(
                         priority = 100,
                         isDismissible = false,
                         startAt = now,
-                        endAt = null
+                        endAt = now.plusHours(4) // 안전장치: 최대 4시간 후 자동 해제
                     )
                 )
             }

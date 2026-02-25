@@ -31,7 +31,11 @@ export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
 
   if (!checked) return null;
 
-  if (maintenance) {
+  // 인증 관련 경로는 유지보수 모드에서도 접근 허용 (OAuth 콜백 팝업 등)
+  const EXEMPT_PATHS = ['/loginSuccess', '/login', '/splash'];
+  const isExempt = EXEMPT_PATHS.some(p => window.location.pathname.startsWith(p));
+
+  if (maintenance && !isExempt) {
     return (
       <div style={{
         position: 'fixed',

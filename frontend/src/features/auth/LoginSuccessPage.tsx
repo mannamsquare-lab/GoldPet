@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import apiClient from '../../services/api/client';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 export const LoginSuccessPage = () => {
     const [searchParams] = useSearchParams();
@@ -14,8 +16,8 @@ export const LoginSuccessPage = () => {
         // 토큰을 URL에서 즉시 제거 (브라우저 히스토리 보호)
         window.history.replaceState({}, '', '/loginSuccess');
         if (token) {
-            // Fetch user info using the token directly in the Authorization header
-            apiClient.get('/users/me', { headers: { Authorization: `Bearer ${token}` } })
+            // apiClient 대신 plain axios 사용 — 인터셉터가 localStorage의 이전 토큰으로 덮어쓰는 버그 방지
+            axios.get(`${API_BASE_URL}/api/v1/users/me`, { headers: { Authorization: `Bearer ${token}` } })
                 .then((response) => {
                     const user = response.data;
 
