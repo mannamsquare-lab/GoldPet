@@ -7,10 +7,11 @@ export interface Notification {
   type: 'MATCH' | 'LIKE' | 'MESSAGE' | 'COMMENT' | 'FOLLOW' | 'WALK' | 'NOTICE' | 'EVENT' | 'SYSTEM';
   title: string;
   message: string;
-  imageUrl?: string;
-  linkUrl?: string;
   targetId?: number;
   targetType?: string;
+  senderId?: number;
+  senderNickname?: string;
+  senderProfileImage?: string;
   isRead: boolean;
   createdAt: string;
 }
@@ -22,8 +23,7 @@ const mockNotifications: Notification[] = [
     type: 'MESSAGE',
     title: '새 메시지',
     message: '강아지조아님이 메시지를 보냈습니다.',
-    imageUrl: '/assets/images/main/main_slide_img01.png',
-    linkUrl: '/chat/room-1',
+    senderNickname: '강아지조아',
     isRead: false,
     createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
   },
@@ -32,8 +32,7 @@ const mockNotifications: Notification[] = [
     type: 'LIKE',
     title: '친구 요청',
     message: '멍멍이맘님이 좋아요를 보냈습니다.',
-    imageUrl: '/assets/images/main/main_slide_img02.png',
-    linkUrl: '/friend-list',
+    senderNickname: '멍멍이맘',
     isRead: false,
     createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
   },
@@ -42,7 +41,6 @@ const mockNotifications: Notification[] = [
     type: 'COMMENT',
     title: '댓글 알림',
     message: '내 게시글에 새 댓글이 달렸습니다.',
-    linkUrl: '/community/1',
     isRead: true,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
   },

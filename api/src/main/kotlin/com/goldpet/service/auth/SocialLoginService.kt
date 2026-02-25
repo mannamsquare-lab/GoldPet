@@ -219,7 +219,7 @@ class SocialLoginService(
         attributes: Map<String, Any>,
         skipEmailMatch: Boolean
     ): AuthResponse {
-        val linkSuggestionEnabled = systemSettingService.getString("auth.link_suggestion.enabled", "false").toBoolean()
+        val linkSuggestionEnabled = systemSettingService.getBoolean("auth.link_suggestion.enabled", false)
 
         if (!linkSuggestionEnabled) {
             // Original auto-link behavior

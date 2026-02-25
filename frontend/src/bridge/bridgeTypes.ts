@@ -44,14 +44,9 @@ export type NativeMethod =
   | 'openCamera'
   | 'openPhotoLibrary'
   | 'pickImage'
-  // 파일
-  | 'saveFile'
-  | 'readFile'
-  | 'deleteFile'
   // 앱 정보
   | 'getAppVersion'
   | 'getDeviceInfo'
-  | 'openSettings'
   // 권한 일괄 요청
   | 'requestAllPermissions';
 

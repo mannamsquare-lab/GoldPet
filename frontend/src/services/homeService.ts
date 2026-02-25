@@ -27,8 +27,6 @@ export interface HomeRecommendation {
 
 export interface HomeRecentWalk {
   id: number;
-  petName: string;
-  placeName: string;
   distanceKm: number;
   durationSeconds: number;
   endTime: string;
@@ -160,8 +158,6 @@ export const homeService = {
         recommendations,
         recentWalk: data.recentWalk ? {
           id: data.recentWalk.id,
-          petName: '', // Will need to be populated from context
-          placeName: '', // Will need geocoding
           distanceKm: data.recentWalk.distanceKm,
           durationSeconds: data.recentWalk.durationSeconds,
           endTime: data.recentWalk.endTime,

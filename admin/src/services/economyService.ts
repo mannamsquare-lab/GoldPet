@@ -17,6 +17,8 @@ export interface TransactionItem {
   amount: number;
   description: string;
   createdAt: string | null;
+  status: string;
+  balanceAfter: number;
 }
 
 export interface GoldProductAdmin {

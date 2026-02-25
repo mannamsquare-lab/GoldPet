@@ -29,6 +29,7 @@ export interface Pet {
   profileImageUrl?: string;
   profileImageUrls?: string[];
   temperamentTags?: string[];
+  ownerId?: number;
 }
 
 export interface CreatePetRequest {

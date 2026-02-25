@@ -205,14 +205,14 @@ class UserService(
         // Immutability check: reject changes to locked fields after profile is verified
         if (user.profileLockedAt != null) {
             if (request.gender != null && request.gender != user.gender)
-                throw ForbiddenException("성별은 인증 후 변경할 수 없습니다")
+                throw ForbiddenException("성별은 인증 후 변경할 수 없습니다", errorCode = "PROFILE_LOCKED")
             if (request.birthDate != null && request.birthDate != user.birthDate?.toString())
-                throw ForbiddenException("생년월일은 인증 후 변경할 수 없습니다")
+                throw ForbiddenException("생년월일은 인증 후 변경할 수 없습니다", errorCode = "PROFILE_LOCKED")
             // Normalize phone numbers (strip non-digits) before comparing to handle format differences
             if (request.phoneNumber != null && request.phoneNumber.replace(Regex("[^0-9]"), "") != user.phoneNumber?.replace(Regex("[^0-9]"), ""))
-                throw ForbiddenException("전화번호는 인증 후 변경할 수 없습니다")
+                throw ForbiddenException("전화번호는 인증 후 변경할 수 없습니다", errorCode = "PROFILE_LOCKED")
             if (request.name != null && request.name.trim() != user.name?.trim())
-                throw ForbiddenException("이름은 인증 후 변경할 수 없습니다")
+                throw ForbiddenException("이름은 인증 후 변경할 수 없습니다", errorCode = "PROFILE_LOCKED")
         }
 
         val wasPhoneNull = user.phoneNumber == null

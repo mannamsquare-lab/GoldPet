@@ -16,13 +16,8 @@ class BridgeProtocol {
   static const String openPhotoLibrary = 'openPhotoLibrary';
   static const String pickImage = 'pickImage';
   
-  static const String saveFile = 'saveFile';
-  static const String readFile = 'readFile';
-  static const String deleteFile = 'deleteFile';
-  
   static const String getAppVersion = 'getAppVersion';
   static const String getDeviceInfo = 'getDeviceInfo';
-  static const String openSettings = 'openSettings';
   static const String requestAllPermissions = 'requestAllPermissions';
   
   // 이벤트 타입

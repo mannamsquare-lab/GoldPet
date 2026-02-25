@@ -102,7 +102,21 @@ apiClient.interceptors.response.use(
         useAuthStore.getState().logout();
         window.location.href = '/account/suspended';
       }
+      // Unknown 403 errorCodes (e.g. ACCESS_DENIED for ownership checks) intentionally
+      // fall through to the Promise.reject(error) below — that is the correct default.
+    } else if (error.response?.status >= 500) {
+      // Show user-friendly error for server errors
+      alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
+
+    const status = error.response?.status;
+    if (status === 400) {
+      const errorCode = error.response?.data?.errorCode;
+      if (errorCode === 'VALIDATION_ERROR') {
+        error.validationDetails = error.response?.data?.details || {};
+      }
+    }
+
     return Promise.reject(error);
   }
 );

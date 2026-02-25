@@ -31,7 +31,7 @@ class AuthService(
 ) {
     @Transactional
     fun signup(request: SignupRequest): AuthResponse {
-        if (systemSettingService.getString("allow_signups", "true") == "false") {
+        if (!systemSettingService.getBoolean("allow_signups", true)) {
             throw BadRequestException("현재 신규 가입이 중단되었습니다.")
         }
         // Check duplicate username or email
@@ -107,7 +107,7 @@ class AuthService(
 
     @Transactional
     fun snsSignup(userId: Long, request: SnsSignupRequest): AuthResponse {
-        if (systemSettingService.getString("allow_signups", "true") == "false") {
+        if (!systemSettingService.getBoolean("allow_signups", true)) {
             throw BadRequestException("현재 신규 가입이 중단되었습니다.")
         }
         val user =

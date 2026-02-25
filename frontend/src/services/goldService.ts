@@ -22,6 +22,7 @@ export interface GoldTransaction {
   description: string;
   createdAt: string;
   balanceAfter: number;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED' | 'CANCELLED' | 'REFUNDED';
 }
 
 export interface ChargeGoldRequest {

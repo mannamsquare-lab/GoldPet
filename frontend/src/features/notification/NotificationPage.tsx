@@ -115,7 +115,7 @@ const NotificationPage = () => {
                                 <li key={item.id} className="notification_item" onClick={() => handleNotificationClick(item)}>
                                     <div className="notification_profile">
                                         <img
-                                            src={item.imageUrl || '/assets/images/common/profile_none_img.svg'}
+                                            src={item.senderProfileImage || '/assets/images/common/profile_none_img.svg'}
                                             alt=""
                                         />
                                         {!item.isRead && <span className="unread_dot" />}

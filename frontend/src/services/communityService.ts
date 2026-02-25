@@ -80,6 +80,13 @@ export const communityService = {
       const response = await apiClient.get(`/community/posts?${params}`);
       const rawPosts = response.data.content || response.data;
 
+      /**
+       * Field mapping: API → Frontend
+       * - userId           → authorId
+       * - userNickname     → authorNickname
+       * - userProfileImage → authorProfileUrl
+       * - isLikedByMe      → isLiked
+       */
       const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
         ...p,
         authorId: p.userId,

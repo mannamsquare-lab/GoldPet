@@ -14,6 +14,7 @@ export interface ChatRoom {
     profileImageUrl?: string;
   }[];
   isGroup: boolean;
+  roomType?: 'DIRECT' | 'GROUP';
 }
 
 export interface FileInfo {

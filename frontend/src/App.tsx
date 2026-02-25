@@ -56,8 +56,6 @@ import MyPagePetEditPage from './features/mypage/MyPagePetEditPage';
 import DormantAccountPage from './features/auth/DormantAccountPage';
 import WithdrawnAccountPage from './features/auth/WithdrawnAccountPage';
 import SuspendedAccountPage from './features/auth/SuspendedAccountPage';
-import PasswordExpiryPage from './features/auth/PasswordExpiryPage';
-import AutoLogoutPage from './features/auth/AutoLogoutPage';
 import PlaceListPage from './features/checkin/PlaceListPage';
 import PlaceDetailPage from './features/checkin/PlaceDetailPage';
 import GoldMainPage from './features/gold/GoldMainPage';
@@ -125,8 +123,6 @@ function App() {
                 <Route path="/account/dormant" element={<DormantAccountPage />} />
                 <Route path="/account/withdrawn" element={<WithdrawnAccountPage />} />
                 <Route path="/account/suspended" element={<SuspendedAccountPage />} />
-                <Route path="/account/password-expiry" element={<PasswordExpiryPage />} />
-                <Route path="/account/auto-logout" element={<AutoLogoutPage />} />
                 <Route path="/terms/:type" element={<TermsDetailPage />} />
               </Route>
 
