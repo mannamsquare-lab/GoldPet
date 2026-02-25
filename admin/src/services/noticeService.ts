@@ -25,6 +25,7 @@ export interface CreateAppNoticeRequest {
   targetScreen: string;
   priority: number;
   isDismissible: boolean;
+  isActive?: boolean;
   startAt: string;
   endAt?: string;
 }

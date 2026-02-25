@@ -29,6 +29,7 @@ const EMPTY_FORM: CreateAppNoticeRequest = {
   targetScreen: 'ALL',
   priority: 0,
   isDismissible: true,
+  isActive: true,
   startAt: '',
   endAt: '',
 };
@@ -80,6 +81,7 @@ export default function NoticeManagementPage() {
       targetScreen: notice.targetScreen || 'ALL',
       priority: notice.priority,
       isDismissible: notice.isDismissible,
+      isActive: notice.isActive,
       startAt: notice.startAt ? notice.startAt.slice(0, 16) : '',
       endAt: notice.endAt ? notice.endAt.slice(0, 16) : '',
     });
@@ -109,6 +111,7 @@ export default function NoticeManagementPage() {
         imageUrl: form.imageUrl || undefined,
         linkUrl: form.linkUrl || undefined,
         endAt: form.endAt || undefined,
+        isActive: form.isActive,
       };
       if (editingNotice) {
         await noticeService.updateNotice(editingNotice.id, payload);
@@ -173,10 +176,25 @@ export default function NoticeManagementPage() {
     {
       key: 'isActive',
       header: '상태',
-      render: (value) => (
-        <span className={`px-2 py-1 text-xs rounded-full ${value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+      render: (value, row) => (
+        <button
+          type="button"
+          className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${value ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+          onClick={async () => {
+            const next = !value;
+            const msg = next ? '활성화하시겠습니까?' : '비활성화하시겠습니까?';
+            if (!confirm(`"${row.title}" 공지를 ${msg}`)) return;
+            try {
+              await noticeService.updateNotice(row.id, { isActive: next });
+              queryClient.invalidateQueries({ queryKey: ['notices'] });
+            } catch {
+              alert('상태 변경에 실패했습니다.');
+            }
+          }}
+          title="클릭하여 상태 변경"
+        >
           {value ? '활성' : '비활성'}
-        </span>
+        </button>
       ),
     },
     {
@@ -291,6 +309,17 @@ export default function NoticeManagementPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 min={0}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+              <select
+                value={form.isActive ? 'true' : 'false'}
+                onChange={(e) => setForm({ ...form, isActive: e.target.value === 'true' })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="true">활성</option>
+                <option value="false">비활성</option>
+              </select>
             </div>
             <div className="flex items-center gap-2 pt-6">
               <input
