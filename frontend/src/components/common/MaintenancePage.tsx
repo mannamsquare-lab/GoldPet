@@ -48,7 +48,7 @@ export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
         <img
           src="/assets/images/common/logo.svg"
           alt="GoldPet"
-          style={{ width: '120px', marginBottom: '32px' }}
+          style={{ width: '120px', height: '32px', objectFit: 'contain', marginBottom: '32px' }}
         />
         <h1 style={{
           fontFamily: "'Pretendard', sans-serif",
