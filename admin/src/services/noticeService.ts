@@ -5,7 +5,7 @@ export interface AppNoticeResponse {
   type: string;
   title: string;
   content?: string;
-  imageUrl?: string;
+  imageUrls: string[];
   linkUrl?: string;
   targetScreen?: string;
   priority: number;
@@ -20,7 +20,7 @@ export interface CreateAppNoticeRequest {
   type: string;
   title: string;
   content?: string;
-  imageUrl?: string;
+  imageUrls?: string[];
   linkUrl?: string;
   targetScreen: string;
   priority: number;
@@ -45,5 +45,15 @@ export const noticeService = {
   },
   deleteNotice: async (id: number): Promise<void> => {
     await apiClient.delete(`/notices/${id}`);
+  },
+
+  uploadImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('category', 'notice');
+    const response = await apiClient.post('/files/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data.url;
   },
 };

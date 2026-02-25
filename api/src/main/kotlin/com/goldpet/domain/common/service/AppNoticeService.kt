@@ -1,5 +1,7 @@
 package com.goldpet.domain.common.service
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.goldpet.domain.common.dto.AppNoticeResponse
 import com.goldpet.domain.common.dto.CreateAppNoticeRequest
 import com.goldpet.domain.common.dto.UpdateAppNoticeRequest
@@ -16,6 +18,7 @@ import java.time.LocalDateTime
 class AppNoticeService(
     private val appNoticeRepository: AppNoticeRepository
 ) {
+    private val objectMapper = jacksonObjectMapper()
 
     fun getActiveNotices(screen: String?): List<AppNoticeResponse> {
         val now = LocalDateTime.now()
@@ -43,7 +46,7 @@ class AppNoticeService(
             type = request.type,
             title = request.title,
             content = request.content,
-            imageUrl = request.imageUrl,
+            imageUrls = toJson(request.imageUrls),
             linkUrl = request.linkUrl,
             targetScreen = request.targetScreen ?: "ALL",
             priority = request.priority,
@@ -62,7 +65,7 @@ class AppNoticeService(
         request.type?.let { notice.type = it }
         request.title?.let { notice.title = it }
         request.content?.let { notice.content = it }
-        request.imageUrl?.let { notice.imageUrl = it }
+        request.imageUrls?.let { notice.imageUrls = toJson(it) }
         request.linkUrl?.let { notice.linkUrl = it }
         request.targetScreen?.let { notice.targetScreen = it }
         request.priority?.let { notice.priority = it }
@@ -82,12 +85,26 @@ class AppNoticeService(
         appNoticeRepository.save(notice)
     }
 
+    private fun toJson(urls: List<String>?): String? {
+        if (urls.isNullOrEmpty()) return null
+        return objectMapper.writeValueAsString(urls)
+    }
+
+    private fun fromJson(json: String?): List<String> {
+        if (json.isNullOrBlank()) return emptyList()
+        return try {
+            objectMapper.readValue(json)
+        } catch (_: Exception) {
+            listOf(json)
+        }
+    }
+
     private fun AppNotice.toResponse() = AppNoticeResponse(
         id = id,
         type = type,
         title = title,
         content = content,
-        imageUrl = imageUrl,
+        imageUrls = fromJson(imageUrls),
         linkUrl = linkUrl,
         targetScreen = targetScreen,
         priority = priority,

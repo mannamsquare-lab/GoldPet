@@ -24,7 +24,7 @@ const EMPTY_FORM: CreateAppNoticeRequest = {
   type: 'POPUP_MODAL',
   title: '',
   content: '',
-  imageUrl: '',
+  imageUrls: [],
   linkUrl: '',
   targetScreen: 'ALL',
   priority: 0,
@@ -76,7 +76,7 @@ export default function NoticeManagementPage() {
       type: notice.type,
       title: notice.title,
       content: notice.content || '',
-      imageUrl: notice.imageUrl || '',
+      imageUrls: notice.imageUrls || [],
       linkUrl: notice.linkUrl || '',
       targetScreen: notice.targetScreen || 'ALL',
       priority: notice.priority,
@@ -108,7 +108,7 @@ export default function NoticeManagementPage() {
       const payload: CreateAppNoticeRequest = {
         ...form,
         content: form.content || undefined,
-        imageUrl: form.imageUrl || undefined,
+        imageUrls: form.imageUrls?.filter(u => u.trim()) || undefined,
         linkUrl: form.linkUrl || undefined,
         endAt: form.endAt || undefined,
         isActive: form.isActive,
@@ -280,15 +280,99 @@ export default function NoticeManagementPage() {
                 placeholder="내용을 입력하세요"
               />
             </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">이미지</label>
+              <div className="space-y-3">
+                {/* 업로드된 이미지 미리보기 */}
+                {form.imageUrls && form.imageUrls.length > 0 && form.imageUrls.some(u => u) && (
+                  <div className="flex flex-wrap gap-3">
+                    {form.imageUrls.map((url, idx) => url && (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={url}
+                          alt={`이미지 ${idx + 1}`}
+                          className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = (form.imageUrls || []).filter((_, i) => i !== idx);
+                            setForm({ ...form, imageUrls: next });
+                          }}
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="삭제"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* 파일 업로드 버튼 */}
+                <div className="flex gap-2">
+                  <label className="inline-flex items-center gap-1 px-3 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-sm cursor-pointer hover:bg-indigo-100">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    이미지 업로드
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={async (e) => {
+                        const files = e.target.files;
+                        if (!files || files.length === 0) return;
+                        for (const file of Array.from(files)) {
+                          try {
+                            const url = await noticeService.uploadImage(file);
+                            setForm(prev => ({ ...prev, imageUrls: [...(prev.imageUrls || []), url] }));
+                          } catch {
+                            alert(`이미지 업로드 실패: ${file.name}`);
+                          }
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                  <span className="text-xs text-gray-400 self-center">JPG, PNG, GIF, WebP / 최대 10MB</span>
+                </div>
+              </div>
+            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL</label>
-              <input
-                type="text"
-                value={form.imageUrl}
-                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="https://..."
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL 직접 입력</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="https://..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const input = e.currentTarget;
+                      const url = input.value.trim();
+                      if (url) {
+                        setForm(prev => ({ ...prev, imageUrls: [...(prev.imageUrls || []), url] }));
+                        input.value = '';
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                    const url = input.value.trim();
+                    if (url) {
+                      setForm(prev => ({ ...prev, imageUrls: [...(prev.imageUrls || []), url] }));
+                      input.value = '';
+                    }
+                  }}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+                >
+                  추가
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>

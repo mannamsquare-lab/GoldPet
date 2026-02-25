@@ -30,6 +30,12 @@ class AdminSystemController(
         return ResponseEntity.ok(adminSystemService.getAdmins())
     }
 
+    @Operation(summary = "점검 모드 상태 조회")
+    @GetMapping("/maintenance")
+    fun getMaintenanceStatus(): ResponseEntity<MaintenanceStatusResponse> {
+        return ResponseEntity.ok(MaintenanceStatusResponse(adminSystemService.isMaintenanceMode()))
+    }
+
     @Operation(summary = "점검 모드 설정")
     @PostMapping("/maintenance")
     fun setMaintenanceMode(@RequestBody request: MaintenanceModeRequest): ResponseEntity<Void> {
@@ -97,5 +103,9 @@ data class AdminUserResponse(
 )
 
 data class MaintenanceModeRequest(
+    val enabled: Boolean
+)
+
+data class MaintenanceStatusResponse(
     val enabled: Boolean
 )

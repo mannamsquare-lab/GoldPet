@@ -24,8 +24,8 @@ class AppNotice(
     @Column(columnDefinition = "TEXT")
     var content: String? = null,
 
-    @Column(name = "image_url", length = 500)
-    var imageUrl: String? = null,
+    @Column(name = "image_urls", columnDefinition = "TEXT")
+    var imageUrls: String? = null,
 
     @Column(name = "link_url", length = 500)
     var linkUrl: String? = null,

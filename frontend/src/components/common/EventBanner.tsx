@@ -28,9 +28,9 @@ export default function EventBanner({ notices }: EventBannerProps) {
             onClick={() => handleClick(notice)}
             style={{ cursor: notice.linkUrl ? 'pointer' : 'default' }}
           >
-            {notice.imageUrl && (
+            {notice.imageUrls.length > 0 && (
               <img
-                src={notice.imageUrl}
+                src={notice.imageUrls[0]}
                 alt={notice.title}
                 className="event-banner-card-img"
               />

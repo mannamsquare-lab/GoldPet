@@ -55,10 +55,13 @@ class AdminSystemService(
         }
     }
 
+    fun isMaintenanceMode(): Boolean {
+        val now = LocalDateTime.now()
+        return appNoticeRepository.findActiveByType(AppNoticeType.MAINTENANCE, now).isNotEmpty()
+    }
+
     @Transactional
     fun setMaintenanceMode(enabled: Boolean) {
-        systemSettingService.setValue("maintenance.mode", enabled.toString())
-
         val now = LocalDateTime.now()
         if (enabled) {
             // 이미 활성 MAINTENANCE 공지가 있으면 추가하지 않음

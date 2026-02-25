@@ -30,6 +30,11 @@ export const systemService = {
     return response.data;
   },
 
+  async getMaintenanceStatus(): Promise<{ enabled: boolean }> {
+    const response = await apiClient.get('/system/maintenance');
+    return response.data;
+  },
+
   async setMaintenanceMode(enabled: boolean): Promise<void> {
     await apiClient.post('/system/maintenance', { enabled });
   },

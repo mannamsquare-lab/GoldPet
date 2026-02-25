@@ -9,7 +9,6 @@ import type { ColumnDef } from '../../components/common/DataTable';
 
 export default function SystemPage() {
   const queryClient = useQueryClient();
-  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [signupEnabled, setSignupEnabled] = useState(true);
 
   const { data: systemInfo, isLoading: loadingSystem } = useQuery({
@@ -21,6 +20,12 @@ export default function SystemPage() {
     queryKey: ['admins'],
     queryFn: () => systemService.getAdmins(),
   });
+
+  const { data: maintenanceStatus, isLoading: loadingMaintenance } = useQuery({
+    queryKey: ['maintenanceStatus'],
+    queryFn: () => systemService.getMaintenanceStatus(),
+  });
+  const maintenanceEnabled = maintenanceStatus?.enabled ?? false;
 
   const { data: configs = [], isLoading: loadingConfigs } = useQuery({
     queryKey: ['configs'],
@@ -59,11 +64,9 @@ export default function SystemPage() {
     },
   });
 
-  // configs에서 유지보수/가입 상태 초기화
+  // configs에서 가입 상태 초기화
   useEffect(() => {
     if (configs.length > 0) {
-      const maintenanceConfig = configs.find(c => c.key === 'maintenance.mode');
-      if (maintenanceConfig) setMaintenanceEnabled(maintenanceConfig.value === 'true');
       const signupConfig = configs.find(c => c.key === 'allow_signups' || c.key === 'signup.enabled');
       if (signupConfig) setSignupEnabled(signupConfig.value === 'true');
     }
@@ -72,8 +75,8 @@ export default function SystemPage() {
   const maintenanceMutation = useMutation({
     mutationFn: (enabled: boolean) => systemService.setMaintenanceMode(enabled),
     onSuccess: (_data, enabled) => {
-      setMaintenanceEnabled(enabled);
       alert(enabled ? '유지보수 모드가 활성화되었습니다.' : '유지보수 모드가 해제되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
       queryClient.invalidateQueries({ queryKey: ['configs'] });
     },
     onError: () => {
@@ -131,7 +134,7 @@ export default function SystemPage() {
     return <span className={`px-2 py-1 text-xs rounded-full ${styles[status] || 'bg-gray-100'}`}>{status}</span>;
   };
 
-  const loading = loadingSystem || loadingAdmins || loadingConfigs || loadingCaches;
+  const loading = loadingSystem || loadingAdmins || loadingConfigs || loadingCaches || loadingMaintenance;
 
   if (loading) {
     return <div className="flex items-center justify-center h-64">로딩 중...</div>;
@@ -251,7 +254,7 @@ export default function SystemPage() {
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <h2 className="font-semibold mb-4">앱 설정</h2>
         <div className="space-y-4">
-          {configs.map(config => {
+          {configs.filter(c => c.key !== 'maintenance.mode').map(config => {
             const isBooleanValue = config.value === 'true' || config.value === 'false';
 
             return (

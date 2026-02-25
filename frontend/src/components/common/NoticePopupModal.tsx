@@ -21,6 +21,7 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
     .sort((a, b) => b.priority - a.priority);
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [imageIndex, setImageIndex] = useState(0);
   const [dismissChecked, setDismissChecked] = useState(false);
 
   if (popupNotices.length === 0 || currentIndex >= popupNotices.length) {
@@ -34,6 +35,7 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
       localStorage.setItem(getTodayKey(notice.id), 'true');
     }
     setDismissChecked(false);
+    setImageIndex(0);
     setCurrentIndex((prev) => prev + 1);
   };
 
@@ -46,14 +48,40 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
   return (
     <div className="notice-popup-overlay">
       <div className="notice-popup-modal">
-        {notice.imageUrl && (
-          <img
-            src={notice.imageUrl}
-            alt={notice.title}
-            className="notice-popup-image"
-            onClick={notice.linkUrl ? handleLinkClick : undefined}
-            style={{ cursor: notice.linkUrl ? 'pointer' : 'default' }}
-          />
+        <button className="notice-popup-close-x" onClick={handleClose} aria-label="닫기">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+        {notice.imageUrls.length > 0 && (
+          <div className="notice-popup-images">
+            <div
+              className="notice-popup-images-track"
+              style={{ transform: `translateX(-${imageIndex * 100}%)` }}
+            >
+              {notice.imageUrls.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`${notice.title} ${i + 1}`}
+                  className="notice-popup-image"
+                  onClick={notice.linkUrl ? handleLinkClick : undefined}
+                  style={{ cursor: notice.linkUrl ? 'pointer' : 'default' }}
+                />
+              ))}
+            </div>
+            {notice.imageUrls.length > 1 && (
+              <div className="notice-popup-dots">
+                {notice.imageUrls.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`notice-popup-dot${i === imageIndex ? ' active' : ''}`}
+                    onClick={() => setImageIndex(i)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         )}
         <div className="notice-popup-body">
           <h2
@@ -81,9 +109,6 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
               </label>
             </div>
           )}
-          <button className="notice-popup-close-btn" onClick={handleClose}>
-            닫기
-          </button>
         </div>
       </div>
     </div>

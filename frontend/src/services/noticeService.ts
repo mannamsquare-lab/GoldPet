@@ -5,7 +5,7 @@ export interface AppNoticeResponse {
   type: 'POPUP_MODAL' | 'MAINTENANCE' | 'EVENT_BANNER';
   title: string;
   content?: string;
-  imageUrl?: string;
+  imageUrls: string[];
   linkUrl?: string;
   targetScreen?: string;
   priority: number;
