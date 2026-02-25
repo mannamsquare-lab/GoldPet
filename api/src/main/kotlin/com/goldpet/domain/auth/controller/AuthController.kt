@@ -121,6 +121,12 @@ class AuthController(
         return ResponseEntity.ok(mapOf("success" to true))
     }
 
+    @PostMapping("/logout")
+    fun logout(): ResponseEntity<Map<String, Boolean>> {
+        // 클라이언트 측에서 토큰을 삭제하므로 서버에서는 성공 응답만 반환
+        return ResponseEntity.ok(mapOf("success" to true))
+    }
+
     @PostMapping("/refresh")
     fun refreshToken(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<AuthResponse> {
         val refreshToken = request.refreshToken
