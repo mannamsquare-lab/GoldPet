@@ -1178,14 +1178,41 @@ h6 {
 	gap: 12px;
 	cursor: pointer;
 	padding: 8px 0;
+	border: none;
+	background: none;
 }
 
 .report_modal_option input[type="radio"] {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
 	width: 20px;
 	height: 20px;
-	accent-color: var(--color-primary);
+	border: 2px solid var(--color-border);
+	border-radius: 50%;
 	cursor: pointer;
 	flex-shrink: 0;
+	position: relative;
+	background: none;
+	outline: none;
+	margin: 0;
+	padding: 0;
+}
+
+.report_modal_option input[type="radio"]:checked {
+	border-color: var(--color-primary);
+}
+
+.report_modal_option input[type="radio"]:checked::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background-color: var(--color-primary);
 }
 
 .report_modal_option span {
