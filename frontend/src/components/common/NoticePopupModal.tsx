@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { AppNoticeResponse } from '../../services/noticeService';
 import './NoticePopupModal.css';
 
@@ -23,6 +23,7 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
   const [dismissChecked, setDismissChecked] = useState(false);
+  const touchStartX = useRef(0);
 
   if (popupNotices.length === 0 || currentIndex >= popupNotices.length) {
     return null;
@@ -58,6 +59,14 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
             <div
               className="notice-popup-images-track"
               style={{ transform: `translateX(-${imageIndex * 100}%)` }}
+              onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+              onTouchEnd={(e) => {
+                const diff = touchStartX.current - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) {
+                  if (diff > 0 && imageIndex < notice.imageUrls.length - 1) setImageIndex(imageIndex + 1);
+                  if (diff < 0 && imageIndex > 0) setImageIndex(imageIndex - 1);
+                }
+              }}
             >
               {notice.imageUrls.map((url, i) => (
                 <img

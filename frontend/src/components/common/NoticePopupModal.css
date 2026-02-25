@@ -59,8 +59,9 @@
 }
 
 .notice-popup-image {
+  min-width: 100%;
   width: 100%;
-  flex-shrink: 0;
+  flex: 0 0 100%;
   display: block;
   object-fit: cover;
   max-height: 240px;
