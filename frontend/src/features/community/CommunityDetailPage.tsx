@@ -4,7 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
 import { getImageUrl } from '../../utils/imageUrl';
 import { blockService } from '../../services/blockService';
+import { reportService } from '../../services/reportService';
 import { BackButton } from '../../components/common/BackButton';
+import { ReportModal } from '../../components/common/ReportModal';
 import './CommunityPage.css';
 import { useAlert } from '../../contexts/AlertContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -20,7 +22,11 @@ export default function CommunityDetailPage() {
   const [replyTargetId, setReplyTargetId] = useState<number | null>(null);
 
   /* Action Sheet State */
-  const [actionSheetTarget, setActionSheetTarget] = useState<{ type: 'POST' | 'COMMENT' | 'OTHER_POST', id: number } | null>(null);
+  const [actionSheetTarget, setActionSheetTarget] = useState<{ type: 'POST' | 'COMMENT' | 'OTHER_POST' | 'OTHER_COMMENT', id: number } | null>(null);
+
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ type: 'POST' | 'COMMENT', targetId: number } | null>(null);
+  const [isReportSubmitting, setIsReportSubmitting] = useState(false);
 
   /* Editing State */
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -229,8 +235,33 @@ export default function CommunityDetailPage() {
   };
 
   const handleReport = () => {
+      if (!actionSheetTarget) return;
+      const type = actionSheetTarget.type === 'OTHER_POST' ? 'POST' as const : 'COMMENT' as const;
+      const targetId = actionSheetTarget.id;
       setActionSheetTarget(null);
-      showAlert('신고 기능 준비 중입니다.');
+      setReportTarget({ type, targetId });
+      setShowReportModal(true);
+  };
+
+  const handleReportSubmit = async (reason: string) => {
+      if (!reportTarget) return;
+      setIsReportSubmitting(true);
+      try {
+          await reportService.createReport({ ...reportTarget, reason });
+          setShowReportModal(false);
+          setReportTarget(null);
+          showAlert('신고가 접수되었습니다.');
+      } catch (error: any) {
+          setShowReportModal(false);
+          setReportTarget(null);
+          if (error.response?.status === 404) {
+              showAlert('신고 대상을 찾을 수 없습니다.');
+          } else {
+              showAlert('신고 접수에 실패했습니다.');
+          }
+      } finally {
+          setIsReportSubmitting(false);
+      }
   };
 
   const handleDelete = () => {
@@ -420,12 +451,21 @@ export default function CommunityDetailPage() {
 
                 {/* Comment Option Button */}
                 {comment.isMine && (
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         className="comment_util_btn"
                         onClick={() => handleOptionClick('COMMENT', comment.id)}
                     >
                         <img src="/assets/images/common/option_icon02.svg" alt="Options" />
+                    </button>
+                )}
+                {!comment.isMine && (
+                    <button
+                        type="button"
+                        className="comment_util_btn"
+                        onClick={() => handleOptionClick('OTHER_COMMENT', comment.id)}
+                    >
+                        <img src="/assets/images/community/icon_more.svg" alt="더보기" />
                     </button>
                 )}
 
@@ -474,6 +514,10 @@ export default function CommunityDetailPage() {
                               <button type="button" onClick={handleReport}>신고하기</button>
                               <button type="button" onClick={handleBlockUser}>차단하기</button>
                           </>
+                      ) : actionSheetTarget.type === 'OTHER_COMMENT' ? (
+                          <>
+                              <button type="button" onClick={handleReport}>신고하기</button>
+                          </>
                       ) : (
                           <>
                               <button type="button" onClick={handleEdit}>수정</button>
@@ -485,6 +529,12 @@ export default function CommunityDetailPage() {
               </div>
           </div>
       )}
+      <ReportModal
+          isOpen={showReportModal}
+          onClose={() => { setShowReportModal(false); setReportTarget(null); }}
+          onSubmit={handleReportSubmit}
+          isSubmitting={isReportSubmitting}
+      />
     </div>
   );
 }

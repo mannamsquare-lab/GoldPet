@@ -9,7 +9,9 @@ import type { Friend } from '../../services/friendService';
 import { friendService, formatPetTag } from '../../services/friendService';
 import { chatService } from '../../services/chatService';
 import { blockService } from '../../services/blockService';
+import { reportService } from '../../services/reportService';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
+import { ReportModal } from '../../components/common/ReportModal';
 import { useAlert } from '../../contexts/AlertContext';
 
 interface FriendCardProps {
@@ -29,6 +31,8 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
     const [isLiked, setIsLiked] = useState(false);
     const [isMutual, setIsMutual] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [isReportSubmitting, setIsReportSubmitting] = useState(false);
     const [isPetMode, setIsPetMode] = useState(true);
 
     const isAnimatingRef = useRef(false);
@@ -121,7 +125,25 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
 
     const handleReportUser = () => {
         setShowMenu(false);
-        showAlert('신고 기능 준비 중입니다.');
+        setShowReportModal(true);
+    };
+
+    const handleReportSubmit = async (reason: string) => {
+        setIsReportSubmitting(true);
+        try {
+            await reportService.createReport({ type: 'USER', targetId: data.id, reason });
+            setShowReportModal(false);
+            showAlert('신고가 접수되었습니다.');
+        } catch (error: any) {
+            setShowReportModal(false);
+            if (error.response?.status === 404) {
+                showAlert('신고 대상을 찾을 수 없습니다.');
+            } else {
+                showAlert('신고 접수에 실패했습니다.');
+            }
+        } finally {
+            setIsReportSubmitting(false);
+        }
     };
 
     const ownerImages = data.profileImages.length > 0 ? data.profileImages : (data.profileImageUrl ? [data.profileImageUrl] : [OWNER_FALLBACK]);
@@ -328,6 +350,12 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
                         )}
                     </m.div>
                 </AnimatePresence>
+            <ReportModal
+                isOpen={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                onSubmit={handleReportSubmit}
+                isSubmitting={isReportSubmitting}
+            />
         </div>
     );
 };
