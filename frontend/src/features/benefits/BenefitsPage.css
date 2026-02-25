@@ -123,7 +123,7 @@
   left: 0;
   width: 100%;
   z-index: 100;
-  background-color: #fff;
+  background-color: var(--color-bg);
   padding: 0 16px 40px;
   display: flex;
   flex-direction: column;
@@ -147,8 +147,9 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-/*  padding: 0 20px; Removed to match simple button style */
   transition: opacity 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .benefits-button:hover {
