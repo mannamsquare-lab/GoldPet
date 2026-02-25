@@ -41,16 +41,20 @@ export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#fff',
+        background: '#FFF7E6',
         padding: '24px',
         textAlign: 'center',
       }}>
-        <div style={{ fontSize: '48px', marginBottom: '24px' }}>🔧</div>
+        <img
+          src="/assets/images/common/logo.svg"
+          alt="GoldPet"
+          style={{ width: '120px', marginBottom: '32px' }}
+        />
         <h1 style={{
           fontFamily: "'Pretendard', sans-serif",
           fontSize: '22px',
           fontWeight: 700,
-          color: '#1f2937',
+          color: '#614108',
           margin: '0 0 12px 0',
         }}>
           {maintenance.title}
@@ -59,7 +63,7 @@ export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
           <p style={{
             fontFamily: "'Pretendard', sans-serif",
             fontSize: '15px',
-            color: '#6b7280',
+            color: '#8B6914',
             margin: '0 0 32px 0',
             lineHeight: 1.6,
             whiteSpace: 'pre-wrap',
@@ -70,7 +74,7 @@ export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
         <p style={{
           fontFamily: "'Pretendard', sans-serif",
           fontSize: '13px',
-          color: '#9ca3af',
+          color: '#B89A5A',
         }}>
           잠시 후 다시 시도해주세요
         </p>
