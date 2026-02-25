@@ -149,9 +149,9 @@ const AttributesPage: React.FC = () => {
                                 onChange={e => setCategory(e.target.value as any)}
                                 className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             >
-                                <option value="TRAIT">TRAIT</option>
-                                <option value="INTEREST">INTEREST</option>
-                                <option value="ALLERGY">ALLERGY</option>
+                                <option value="TRAIT">성향</option>
+                                <option value="INTEREST">관심사</option>
+                                <option value="ALLERGY">알러지</option>
                             </select>
                         </div>
 
@@ -182,9 +182,9 @@ const AttributesPage: React.FC = () => {
                                 onChange={e => setInputType(e.target.value as any)}
                                 className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             >
-                                <option value="SELECT">SELECT</option>
-                                <option value="RADIO">RADIO</option>
-                                <option value="TEXT">TEXT</option>
+                                <option value="SELECT">선택형</option>
+                                <option value="RADIO">라디오</option>
+                                <option value="TEXT">텍스트</option>
                             </select>
                         </div>
 

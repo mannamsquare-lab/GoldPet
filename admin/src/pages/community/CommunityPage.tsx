@@ -141,16 +141,17 @@ export default function CommunityPage() {
           onRowClick={(row) => navigate(`/community/${row.id}`)}
           rowClassName={(row) => row.isHidden ? 'bg-gray-100 opacity-60' : ''}
         />
+        <div className="border-t border-gray-200">
+          <Pagination
+            page={page}
+            totalPages={data?.totalPages ?? 0}
+            totalElements={data?.totalElements ?? 0}
+            size={size}
+            onPageChange={setPage}
+            onSizeChange={setSize}
+          />
+        </div>
       </div>
-
-      <Pagination
-        page={page}
-        totalPages={data?.totalPages ?? 0}
-        totalElements={data?.totalElements ?? 0}
-        size={size}
-        onPageChange={setPage}
-        onSizeChange={setSize}
-      />
     </div>
   );
 }

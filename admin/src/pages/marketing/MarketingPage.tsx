@@ -331,9 +331,9 @@ export default function MarketingPage() {
                     onChange={(e) => setTemplateForm({ ...templateForm, category: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="NOTICE">NOTICE</option>
-                    <option value="EVENT">EVENT</option>
-                    <option value="MARKETING">MARKETING</option>
+                    <option value="NOTICE">공지</option>
+                    <option value="EVENT">이벤트</option>
+                    <option value="MARKETING">마케팅</option>
                   </select>
                 </div>
                 <div className="flex gap-2">
