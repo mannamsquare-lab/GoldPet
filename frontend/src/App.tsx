@@ -74,6 +74,7 @@ import { TypeBLayout } from './components/layout/TypeBLayout';
 import { LoadingProvider } from './contexts/LoadingContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { useAppHeight } from './hooks/useAppHeight';
+import MaintenanceGuard from './components/common/MaintenancePage';
 
 /* ... imports ... */
 
@@ -85,6 +86,7 @@ function App() {
     <ErrorBoundary>
     <LazyMotion features={domAnimation}>
     <QueryClientProvider client={queryClient}>
+      <MaintenanceGuard>
       <AlertProvider>
         <LoadingProvider>
           <ToastProvider>
@@ -189,6 +191,7 @@ function App() {
           </ToastProvider>
         </LoadingProvider>
       </AlertProvider>
+      </MaintenanceGuard>
     </QueryClientProvider>
     </LazyMotion>
     </ErrorBoundary>
