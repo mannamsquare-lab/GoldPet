@@ -1,47 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatManagementService } from '../../services/chatManagementService';
-import type { ChatRoomItem, ChatMessageItem } from '../../services/chatManagementService';
+import type { ChatRoomItem } from '../../services/chatManagementService';
+import { Button } from '../../components/common/Button';
+import { Pagination } from '../../components/common/Pagination';
 
 export default function ChatManagementPage() {
-  const [rooms, setRooms] = useState<ChatRoomItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoomItem | null>(null);
-  const [messages, setMessages] = useState<ChatMessageItem[]>([]);
 
-  useEffect(() => {
-    loadRooms();
-  }, []);
+  const { data: roomsData, isLoading } = useQuery({
+    queryKey: ['chat', 'list', { page, size }],
+    queryFn: () => chatManagementService.getChatRooms({ page, size }),
+    placeholderData: (prev) => prev,
+  });
 
-  const loadRooms = async () => {
-    setLoading(true);
-    try {
-      const response = await chatManagementService.getChatRooms({ page: 0, size: 50 });
-      setRooms(response.content);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: messagesData } = useQuery({
+    queryKey: ['chat', 'messages', selectedRoom?.id],
+    queryFn: () => chatManagementService.getRoomMessages(selectedRoom!.id),
+    enabled: !!selectedRoom,
+  });
 
-  const loadMessages = async (room: ChatRoomItem) => {
-    setSelectedRoom(room);
-    try {
-      const response = await chatManagementService.getRoomMessages(room.id);
-      setMessages(response.content);
-    } catch (error) {
-      console.error('Failed to load messages:', error);
-    }
-  };
-
-  const handleDeleteRoom = async (roomId: number) => {
-    if (!confirm('이 채팅방을 삭제하시겠습니까?')) return;
-    try {
-      await chatManagementService.deleteRoom(roomId);
-      loadRooms();
+  const deleteMutation = useMutation({
+    mutationFn: (roomId: number) => chatManagementService.deleteRoom(roomId),
+    onSuccess: (_data, roomId) => {
+      queryClient.invalidateQueries({ queryKey: ['chat'] });
       if (selectedRoom?.id === roomId) setSelectedRoom(null);
-    } catch (error) {
-      alert('채팅방 삭제에 실패했습니다.');
-    }
+    },
+    onError: () => alert('채팅방 삭제에 실패했습니다.'),
+  });
+
+  const handleDeleteRoom = (roomId: number) => {
+    if (!confirm('이 채팅방을 삭제하시겠습니까?')) return;
+    deleteMutation.mutate(roomId);
   };
+
+  const rooms = roomsData?.content ?? [];
+  const messages = messagesData?.content ?? [];
 
   return (
     <div className="space-y-6">
@@ -54,7 +51,7 @@ export default function ChatManagementPage() {
             <h2 className="font-semibold">채팅방 목록</h2>
           </div>
           <div className="divide-y max-h-[600px] overflow-y-auto">
-            {loading ? (
+            {isLoading ? (
               <div className="p-8 text-center text-gray-500">로딩 중...</div>
             ) : rooms.length === 0 ? (
               <div className="p-8 text-center text-gray-500">채팅방이 없습니다.</div>
@@ -63,7 +60,7 @@ export default function ChatManagementPage() {
                 <div
                   key={room.id}
                   className={`p-4 cursor-pointer hover:bg-gray-50 ${selectedRoom?.id === room.id ? 'bg-indigo-50' : ''}`}
-                  onClick={() => loadMessages(room)}
+                  onClick={() => setSelectedRoom(room)}
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -76,17 +73,30 @@ export default function ChatManagementPage() {
                       <p className="text-sm text-gray-500 mt-1">{room.lastMessage || '메시지 없음'}</p>
                       <p className="text-xs text-gray-400 mt-1">참여자 {room.participantCount}명</p>
                     </div>
-                    <button
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room.id); }}
-                      className="text-red-500 hover:text-red-700 text-sm"
                     >
                       삭제
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))
             )}
           </div>
+          {roomsData && roomsData.totalElements > 0 && (
+            <div className="border-t">
+              <Pagination
+                page={page}
+                totalPages={roomsData.totalPages}
+                totalElements={roomsData.totalElements}
+                size={size}
+                onPageChange={setPage}
+                onSizeChange={(newSize) => { setSize(newSize); setPage(0); }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Messages */}

@@ -7,9 +7,12 @@ import LoginPage from './pages/auth/LoginPage';
 import ProfilePage from './pages/settings/ProfilePage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersPage from './pages/users/UsersPage';
+import UserDetailPage from './pages/users/UserDetailPage';
 import CommunityPage from './pages/community/CommunityPage';
+import CommunityDetailPage from './pages/community/CommunityDetailPage';
 import ChatManagementPage from './pages/chat/ChatManagementPage';
 import ReportsPage from './pages/reports/ReportsPage';
+import ReportDetailPage from './pages/reports/ReportDetailPage';
 import EconomyPage from './pages/economy/EconomyPage';
 import GamificationPage from './pages/gamification/GamificationPage';
 import LBSPage from './pages/lbs/LBSPage';
@@ -65,10 +68,10 @@ function App() {
             <Route path="notices" element={<NoticeManagementPage />} />
             <Route path="notices/:noticeId" element={<DetailPlaceholder />} />
             <Route path="system" element={<SystemPage />} />
-            <Route path="users/:userId" element={<DetailPlaceholder />} />
-            <Route path="community/:postId" element={<DetailPlaceholder />} />
+            <Route path="users/:userId" element={<UserDetailPage />} />
+            <Route path="community/:postId" element={<CommunityDetailPage />} />
             <Route path="chat/:roomId" element={<DetailPlaceholder />} />
-            <Route path="reports/:reportId" element={<DetailPlaceholder />} />
+            <Route path="reports/:reportId" element={<ReportDetailPage />} />
             <Route path="marketing/templates/:templateId" element={<DetailPlaceholder />} />
             <Route path="economy/transactions/:transactionId" element={<DetailPlaceholder />} />
             <Route path="ai-profile/requests/:requestId" element={<DetailPlaceholder />} />

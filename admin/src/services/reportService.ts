@@ -24,6 +24,11 @@ export const reportService = {
     return response.data;
   },
 
+  async getReportDetail(reportId: number): Promise<ReportItem> {
+    const response = await apiClient.get(`/reports/${reportId}`);
+    return response.data;
+  },
+
   async resolveReport(reportId: number): Promise<void> {
     await apiClient.post(`/reports/${reportId}/resolve`);
   },
