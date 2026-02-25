@@ -17,11 +17,11 @@ class SystemSettingService(
         return systemSettingRepository.findByKey(key)?.value ?: defaultValue
     }
 
-    @Cacheable("system:settings", key = "#key")
-    fun getBoolean(key: String, defaultValue: Boolean): Boolean =
-        getString(key, defaultValue.toString()).toBoolean()
+    fun getBoolean(key: String, defaultValue: Boolean): Boolean {
+        val value = systemSettingRepository.findByKey(key)?.value
+        return value?.toBoolean() ?: defaultValue
+    }
 
-    @Cacheable("system:settings", key = "#key")
     fun getInt(key: String, defaultValue: Int): Int {
         val value = systemSettingRepository.findByKey(key)?.value
         return value?.toIntOrNull() ?: defaultValue
