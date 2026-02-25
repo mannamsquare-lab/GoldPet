@@ -18,10 +18,10 @@ export interface UserDetail {
   id: number;
   email: string | null;
   nickname: string;
-  introduce: string | null;
+  intro: string | null;
   profileImageUrl: string | null;
   status: string;
-  provider: string | null;
+  oauthProvider: string | null;
   goldBalance: number;
   createdAt: string | null;
   lastLoginAt: string | null;

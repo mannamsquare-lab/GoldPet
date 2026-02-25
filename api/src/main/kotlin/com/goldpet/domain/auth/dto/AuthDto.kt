@@ -91,3 +91,38 @@ data class RefreshTokenRequest(
     @field:NotBlank(message = "Refresh token is required")
     val refreshToken: String
 )
+
+// Account recovery DTOs
+data class FindUsernameRequest(
+    @field:NotBlank(message = "Email is required")
+    @field:Email(message = "Invalid email format")
+    val email: String
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class FindUsernameResponse(
+    val username: String,
+    val snsProvider: String? = null
+)
+
+data class VerifyAccountRequest(
+    @field:NotBlank(message = "Username is required")
+    val username: String,
+
+    @field:NotBlank(message = "Email is required")
+    @field:Email(message = "Invalid email format")
+    val email: String
+)
+
+data class ResetPasswordRequest(
+    @field:NotBlank(message = "Username is required")
+    val username: String,
+
+    @field:NotBlank(message = "Email is required")
+    @field:Email(message = "Invalid email format")
+    val email: String,
+
+    @field:NotBlank(message = "Password is required")
+    @field:Size(min = 8, max = 100)
+    val password: String
+)

@@ -23,6 +23,10 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('admin_token');
       window.location.href = '/login';
+    } else if (error.response?.status === 403) {
+      localStorage.removeItem('admin_token');
+      alert('접근 권한이 없습니다. 관리자에게 문의하세요.');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

@@ -235,9 +235,7 @@ const ChatDetailPage = () => {
         onSuccess: (newMessage) => {
             queryClient.setQueryData(['chatMessages', chatId], (old: any[]) => {
                 const oldMessages = old || [];
-                // Compare as strings to handle type mismatch (REST returns number, WebSocket returns string)
-                const newId = String(newMessage.id);
-                if (oldMessages.some((m: any) => String(m.id) === newId)) {
+                if (oldMessages.some((m: any) => m.id === newMessage.id)) {
                     return oldMessages;
                 }
                 return [...oldMessages, newMessage];
@@ -548,7 +546,7 @@ const ChatDetailPage = () => {
     };
 
     const renderMessageContent = (msg: any) => {
-        const content = msg.content || msg.textContent || '';
+        const content = msg.textContent || '';
         const msgType = msg.messageType || msg.type || 'TEXT';
         const file: FileInfo | undefined = msg.file;
 

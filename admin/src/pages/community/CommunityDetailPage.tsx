@@ -120,7 +120,7 @@ export default function CommunityDetailPage() {
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <span className="px-2 py-0.5 bg-gray-100 rounded text-xs">{post.categoryName}</span>
           <span>·</span>
-          <span>{post.authorNickname}</span>
+          <span>{post.userNickname}</span>
           <span>·</span>
           <span>{post.createdAt ?? '-'}</span>
           {post.updatedAt && post.updatedAt !== post.createdAt && (
@@ -160,7 +160,7 @@ export default function CommunityDetailPage() {
           <span>조회 <strong className="text-gray-900">{post.viewCount}</strong></span>
           <span>좋아요 <strong className="text-gray-900">{post.likeCount}</strong></span>
           <span>댓글 <strong className="text-gray-900">{post.commentCount}</strong></span>
-          <span className="ml-auto text-xs text-gray-400">작성자 ID: {post.authorId}</span>
+          <span className="ml-auto text-xs text-gray-400">작성자 ID: {post.userId}</span>
         </div>
       </div>
 
@@ -183,7 +183,7 @@ export default function CommunityDetailPage() {
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-gray-900">{comment.authorNickname}</span>
+                    <span className="text-sm font-medium text-gray-900">{comment.userNickname}</span>
                     {comment.isHidden && (
                       <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded">숨김</span>
                     )}

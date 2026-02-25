@@ -7,7 +7,7 @@ export interface ChatRoomItem {
   type: 'DIRECT' | 'GROUP' | 'AI_PET';
   participantCount: number;
   lastMessage: string | null;
-  lastMessageAt: string | null;
+  lastMessageTime: string | null;
   createdAt: string;
 }
 

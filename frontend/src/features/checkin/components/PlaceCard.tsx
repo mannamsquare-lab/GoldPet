@@ -31,7 +31,7 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onClick }) => {
           {place.category}
         </span>
         <div className="place-address">{place.address}</div>
-        <div className="place-stats">체크인 {place.checkInCount}회</div>
+        <div className="place-stats">체크인 {place.checkinCount}회</div>
       </div>
     </div>
   );

@@ -34,19 +34,18 @@ export interface WalkDetailResponse {
   durationSeconds: number;
   caloriesBurned: number;
   notes: string | null;
-  coordinates: { latitude: number; longitude: number }[];
+  pathCoordinates: { latitude: number; longitude: number }[];
   spots: WalkSpotDto[];
-  pets: { id: number; name: string; species: string }[];
+  userPets: { petId: number; petName: string; breed: string; species: string }[];
   createdAt: string;
 }
 
 export interface WalkStatsDetailResponse {
   totalWalks: number;
   totalDistanceKm: number;
-  avgDistanceKm: number;
-  avgDurationMinutes: number;
-  totalCalories: number;
-  dailyBreakdown: { date: string; count: number; totalDistance: number }[];
+  averageDistanceKm: number;
+  averageDurationMinutes: number;
+  dailyBreakdown: { date: string; count: number; totalDistanceKm: number }[];
 }
 
 export interface GetWalksParams {

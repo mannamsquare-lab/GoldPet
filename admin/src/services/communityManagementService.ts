@@ -6,8 +6,8 @@ export interface PostListItem {
   title: string;
   content: string;
   categoryName: string;
-  authorNickname: string;
-  authorId: number;
+  userNickname: string;
+  userId: number;
   viewCount: number;
   likeCount: number;
   commentCount: number;
@@ -21,14 +21,14 @@ export interface PostDetail {
   content: string;
   categoryId: number;
   categoryName: string;
-  authorId: number;
-  authorNickname: string;
-  authorProfileImage: string | null;
+  userId: number;
+  userNickname: string;
+  userProfileImage: string | null;
   imageUrls: string[];
   viewCount: number;
   likeCount: number;
   commentCount: number;
-  isHidden: boolean;
+  isHidden?: boolean;
   createdAt: string | null;
   updatedAt: string | null;
   comments: CommentItem[];
@@ -37,8 +37,8 @@ export interface PostDetail {
 export interface CommentItem {
   id: number;
   content: string;
-  authorId: number;
-  authorNickname: string;
+  userId: number;
+  userNickname: string;
   isHidden: boolean;
   createdAt: string | null;
 }

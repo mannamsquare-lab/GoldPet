@@ -79,7 +79,7 @@ export default function CommunityPage() {
         <span className="px-2 py-1 text-xs bg-gray-100 rounded">{val}</span>
       ),
     },
-    { key: 'authorNickname', header: '작성자' },
+    { key: 'userNickname', header: '작성자' },
     { key: 'viewCount', header: '조회', align: 'center' },
     { key: 'likeCount', header: '좋아요', align: 'center' },
     { key: 'commentCount', header: '댓글', align: 'center' },

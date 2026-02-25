@@ -12,8 +12,17 @@ import { Button } from '../../components/common/Button';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: '활성' },
-  { value: 'INACTIVE', label: '비활성' },
+  { value: 'SUSPENDED', label: '정지' },
+  { value: 'DORMANT', label: '휴면' },
+  { value: 'WITHDRAWN', label: '탈퇴' },
 ];
+
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: '활성',
+  SUSPENDED: '정지',
+  DORMANT: '휴면',
+  WITHDRAWN: '탈퇴',
+};
 
 const FILTER_FIELDS = [
   { type: 'text' as const, key: 'search', placeholder: '닉네임으로 검색...' },
@@ -81,9 +90,12 @@ export default function UsersPage() {
       header: '상태',
       render: (_value, row) => (
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          row.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          row.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+          row.status === 'SUSPENDED' ? 'bg-red-100 text-red-800' :
+          row.status === 'DORMANT' ? 'bg-yellow-100 text-yellow-800' :
+          'bg-gray-100 text-gray-800'
         }`}>
-          {row.status === 'ACTIVE' ? '활성' : '비활성'}
+          {STATUS_LABELS[row.status] ?? row.status}
         </span>
       ),
     },

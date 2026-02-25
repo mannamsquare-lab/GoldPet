@@ -98,6 +98,9 @@ apiClient.interceptors.response.use(
       } else if (errorCode === 'WITHDRAWN_ACCOUNT') {
         useAuthStore.getState().logout();
         window.location.href = '/account/withdrawn';
+      } else if (errorCode === 'SUSPENDED_ACCOUNT') {
+        useAuthStore.getState().logout();
+        window.location.href = '/account/suspended';
       }
     }
     return Promise.reject(error);

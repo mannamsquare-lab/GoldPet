@@ -33,6 +33,7 @@ export default function AIProfileResultPage() {
   const isProcessing = request.status === 'PENDING' || request.status === 'PROCESSING';
   const isCompleted = request.status === 'COMPLETED';
   const isFailed = request.status === 'FAILED';
+  const isRefunded = request.status === 'REFUNDED';
 
   return (
     <div id="aiMake">
@@ -42,14 +43,15 @@ export default function AIProfileResultPage() {
             {isProcessing && 'AI 프로필 생성 중'}
             {isCompleted && 'AI 프로필이 완성되었어요!'}
             {isFailed && '프로필 생성에 실패했어요'}
+            {isRefunded && '환불 처리됨'}
           </strong>
         </div>
 
         {isProcessing && <GenerationProgress status={request.status} />}
 
-        {isCompleted && request.resultImageUrl && (
+        {isCompleted && request.resultUrl && (
           <>
-            <ResultDisplay imageUrl={request.resultImageUrl} promptText={request.stylePrompt || undefined} />
+            <ResultDisplay imageUrl={request.resultUrl} promptText={request.stylePrompt || undefined} />
 
             <div className="btn_wrap">
               <button type="button" className="remake_btn" onClick={() => navigate('/ai-profile')}>
@@ -74,6 +76,21 @@ export default function AIProfileResultPage() {
               프로필 생성 중 오류가 발생했습니다.
               <br />
               다시 시도해주세요.
+            </p>
+            <button
+              type="button"
+              className="submit_btn"
+              onClick={() => navigate('/ai-profile')}
+            >
+              다시 만들기
+            </button>
+          </div>
+        )}
+
+        {isRefunded && (
+          <div style={{ textAlign: 'center', marginTop: '6.67vw' }}>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '4.44vw' }}>
+              요청이 취소되어 골드가 환불되었습니다.
             </p>
             <button
               type="button"

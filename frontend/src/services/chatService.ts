@@ -3,7 +3,7 @@
 import apiClient from './api/client';
 
 export interface ChatRoom {
-  id: string;
+  id: number;
   name: string;
   lastMessage: string;
   lastMessageTime: string;
@@ -28,14 +28,14 @@ export interface FileInfo {
 }
 
 export interface ChatMessage {
-  id: string;
-  roomId: string;
+  id: number;
+  roomId: number;
   senderId: number;
-  content: string;
+  senderNickname: string;
+  textContent: string;
   timestamp: string;
   type: 'text' | 'image' | 'video' | 'file' | 'system';
   // API response fields
-  textContent?: string;
   createdAt?: string;
   messageType?: string;
   fileId?: number;

@@ -237,14 +237,14 @@ class ChatWebSocketService {
   private parseMessage(body: string): ChatMessage {
     const data = JSON.parse(body);
     return {
-      id: data.id?.toString() || `msg-${Date.now()}`,
-      roomId: data.roomId?.toString() || '',
+      id: data.id || 0,
+      roomId: data.roomId || 0,
       senderId: data.senderId || 0,
-      content: data.textContent || data.content || '',
+      senderNickname: data.senderNickname || '',
+      textContent: data.textContent || '',
       timestamp: data.createdAt || data.timestamp || new Date().toISOString(),
       type: this.mapMessageType(data.messageType || data.type),
       // Include additional fields for file attachments
-      textContent: data.textContent,
       createdAt: data.createdAt,
       messageType: data.messageType,
       fileId: data.fileId,

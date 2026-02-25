@@ -6,6 +6,7 @@ import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.user.service.UserService
 import org.springframework.data.domain.Page
@@ -47,7 +48,7 @@ class AdminUserManagementService(
             nickname = user.nickname ?: "",
             introduce = null,
             profileImageUrl = user.profileImageUrl,
-            status = if (user.isActive) "ACTIVE" else "INACTIVE",
+            status = user.status.name,
             provider = user.oauthProvider,
             goldBalance = user.goldBalance.toLong(),
             createdAt = user.createdAt.format(formatter),
@@ -75,7 +76,7 @@ class AdminUserManagementService(
         val user = userRepository.findById(userId)
             .orElseThrow { NotFoundException("User not found: $userId") }
 
-        user.isActive = (status == "ACTIVE")
+        user.status = UserStatus.valueOf(status)
         userRepository.save(user)
     }
 
@@ -107,7 +108,7 @@ class AdminUserManagementService(
             email = user.email,
             nickname = user.nickname ?: "",
             profileImageUrl = user.profileImageUrl,
-            status = if (user.isActive) "ACTIVE" else "INACTIVE",
+            status = user.status.name,
             petCount = petCount.toInt(),
             walkCount = 0,
             postCount = postCount.toInt(),

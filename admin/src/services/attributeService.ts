@@ -19,20 +19,20 @@ export type CreateAttributeRequest = Omit<PetAttribute, 'id'>;
 export type UpdateAttributeRequest = Partial<CreateAttributeRequest>;
 
 export const getAttributes = async (): Promise<PetAttribute[]> => {
-    const response = await apiClient.get<PetAttribute[]>('/admin/pet-attributes');
+    const response = await apiClient.get<PetAttribute[]>('/pet-attributes');
     return response.data;
 };
 
 export const createAttribute = async (data: CreateAttributeRequest): Promise<PetAttribute> => {
-    const response = await apiClient.post<PetAttribute>('/admin/pet-attributes', data);
+    const response = await apiClient.post<PetAttribute>('/pet-attributes', data);
     return response.data;
 };
 
 export const updateAttribute = async (id: number, data: UpdateAttributeRequest): Promise<PetAttribute> => {
-    const response = await apiClient.put<PetAttribute>(`/admin/pet-attributes/${id}`, data);
+    const response = await apiClient.put<PetAttribute>(`/pet-attributes/${id}`, data);
     return response.data;
 };
 
 export const deleteAttribute = async (id: number): Promise<void> => {
-    await apiClient.delete(`/admin/pet-attributes/${id}`);
+    await apiClient.delete(`/pet-attributes/${id}`);
 };

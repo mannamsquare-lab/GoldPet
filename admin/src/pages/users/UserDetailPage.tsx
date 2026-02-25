@@ -105,7 +105,7 @@ export default function UserDetailPage() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">로그인 제공자</dt>
-                <dd className="mt-1 text-sm text-gray-900">{user.provider || '-'}</dd>
+                <dd className="mt-1 text-sm text-gray-900">{user.oauthProvider || '-'}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">골드 잔액</dt>
@@ -119,10 +119,10 @@ export default function UserDetailPage() {
                 <dt className="text-sm font-medium text-gray-500">마지막 로그인</dt>
                 <dd className="mt-1 text-sm text-gray-900">{user.lastLoginAt || '-'}</dd>
               </div>
-              {user.introduce && (
+              {user.intro && (
                 <div className="col-span-2">
                   <dt className="text-sm font-medium text-gray-500">소개</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{user.introduce}</dd>
+                  <dd className="mt-1 text-sm text-gray-900">{user.intro}</dd>
                 </div>
               )}
             </dl>

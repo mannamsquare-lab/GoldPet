@@ -17,6 +17,23 @@ class AdminReportService(
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
+    fun getReport(reportId: Long): ReportAdminResponse {
+        val report = reportRepository.findById(reportId)
+            .orElseThrow { NotFoundException("Report not found: $reportId") }
+        return ReportAdminResponse(
+            id = report.id,
+            type = report.type.name,
+            targetId = report.targetId,
+            targetPreview = report.targetPreview,
+            reason = report.reason,
+            reporterNickname = report.reporter.nickname ?: "",
+            reporterId = report.reporter.id,
+            status = report.status.name,
+            createdAt = report.createdAt.format(formatter),
+            resolvedAt = report.resolvedAt?.format(formatter)
+        )
+    }
+
     fun getReports(status: String?, pageable: Pageable): Page<ReportAdminResponse> {
         val reports = if (status != null) {
             val reportStatus = ReportStatus.valueOf(status)

@@ -71,7 +71,8 @@ export const friendService = {
 
   getNearbyFriends: async (lat: number, lng: number, radiusMeters = 5000): Promise<Friend[]> => {
     try {
-      const response = await apiClient.get(`/friends/nearby?lat=${lat}&lng=${lng}&radius=${radiusMeters}`);
+      // Correct endpoint: GET /users/search/nearby with lon (not lng)
+      const response = await apiClient.get(`/users/search/nearby?lat=${lat}&lon=${lng}&radius=${radiusMeters}`);
       return response.data;
     } catch (error: unknown) {
       console.error('Failed to fetch nearby friends:', error);
@@ -79,9 +80,10 @@ export const friendService = {
     }
   },
 
-  searchFriends: async (query: string): Promise<Friend[]> => {
+  searchFriends: async (query: string, limit = 10): Promise<Friend[]> => {
     try {
-      const response = await apiClient.get(`/friends/search?q=${encodeURIComponent(query)}`);
+      // Correct endpoint: GET /users/search with query and limit params
+      const response = await apiClient.get(`/users/search?query=${encodeURIComponent(query)}&limit=${limit}`);
       return response.data;
     } catch (error: unknown) {
       console.error('Failed to search friends:', error);
@@ -91,38 +93,31 @@ export const friendService = {
 
   sendFriendRequest: async (userId: number): Promise<{ success: boolean }> => {
     try {
-      await apiClient.post(`/friends/requests`, { targetUserId: userId });
+      // Correct endpoint: POST /likes with { toUserId } (LikeController)
+      await apiClient.post(`/likes`, { toUserId: userId });
       return { success: true };
     } catch {
       throw new Error('친구 요청에 실패했습니다.');
     }
   },
 
+  // TODO: 백엔드 API 구현 필요 - 수락은 mutual like(MatchController)로 자동 처리됨
+  // TODO: 백엔드 API 구현 필요 - 수락은 mutual like(MatchController)로 자동 처리됨
   acceptFriendRequest: async (requestId: number): Promise<{ success: boolean }> => {
-    try {
-      await apiClient.post(`/friends/requests/${requestId}/accept`);
-      return { success: true };
-    } catch {
-      throw new Error('친구 수락에 실패했습니다.');
-    }
+    void requestId;
+    throw new Error('acceptFriendRequest: 백엔드 API가 구현되지 않았습니다. 상호 좋아요 시 자동 매칭됩니다.');
   },
 
+  // TODO: 백엔드 API 구현 필요
   rejectFriendRequest: async (requestId: number): Promise<{ success: boolean }> => {
-    try {
-      await apiClient.post(`/friends/requests/${requestId}/reject`);
-      return { success: true };
-    } catch {
-      throw new Error('친구 거절에 실패했습니다.');
-    }
+    void requestId;
+    throw new Error('rejectFriendRequest: 백엔드 API가 구현되지 않았습니다.');
   },
 
+  // TODO: 백엔드 API 구현 필요
   removeFriend: async (friendId: number): Promise<{ success: boolean }> => {
-    try {
-      await apiClient.delete(`/friends/${friendId}`);
-      return { success: true };
-    } catch {
-      throw new Error('친구 삭제에 실패했습니다.');
-    }
+    void friendId;
+    throw new Error('removeFriend: 백엔드 API가 구현되지 않았습니다.');
   },
 
   getSpecies: async (): Promise<Species[]> => {

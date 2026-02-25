@@ -20,13 +20,15 @@ export interface CreateAIProfileRequest {
 export interface AIProfileRequestResponse {
   id: number;
   petId: number;
+  petName: string;
   type: AIRequestType;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
   sourceImageUrl: string;
-  resultImageUrl: string | null;
+  resultUrl: string | null;
   stylePrompt: string | null;
+  errorMessage: string | null;
+  goldCost: number;
   createdAt: string;
-  completedAt: string | null;
 }
 
 const USE_MOCK = true;
@@ -41,13 +43,15 @@ const mockStyles: AIStyleOption[] = [
 const mockRequest: AIProfileRequestResponse = {
   id: 1,
   petId: 1,
+  petName: '테스트 반려동물',
   type: 'IMAGE',
   status: 'COMPLETED',
   sourceImageUrl: '/assets/images/common/pet_none_img.svg',
-  resultImageUrl: '/assets/images/main/main_slide_butler01.jpg',
+  resultUrl: '/assets/images/main/main_slide_butler01.jpg',
   stylePrompt: 'cartoon',
+  errorMessage: null,
+  goldCost: 50,
   createdAt: '2025-12-21T10:00:00',
-  completedAt: '2025-12-21T10:05:00',
 };
 
 class AIProfileService {

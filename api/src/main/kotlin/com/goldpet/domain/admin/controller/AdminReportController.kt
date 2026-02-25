@@ -23,6 +23,12 @@ class AdminReportController(
         return ResponseEntity.ok(adminReportService.getReports(status, pageable))
     }
 
+    @Operation(summary = "신고 단건 조회")
+    @GetMapping("/{reportId}")
+    fun getReport(@PathVariable reportId: Long): ResponseEntity<ReportAdminResponse> {
+        return ResponseEntity.ok(adminReportService.getReport(reportId))
+    }
+
     @Operation(summary = "신고 처리 (조치)")
     @PostMapping("/{reportId}/resolve")
     fun resolveReport(@PathVariable reportId: Long): ResponseEntity<Void> {

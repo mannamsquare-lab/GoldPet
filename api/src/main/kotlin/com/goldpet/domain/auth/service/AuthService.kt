@@ -4,10 +4,15 @@ import com.goldpet.domain.common.exception.*
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.auth.dto.AuthResponse
+import com.goldpet.domain.auth.dto.FindUsernameRequest
+import com.goldpet.domain.auth.dto.FindUsernameResponse
 import com.goldpet.domain.auth.dto.LoginRequest
+import com.goldpet.domain.auth.dto.ResetPasswordRequest
 import com.goldpet.domain.auth.dto.SignupRequest
 import com.goldpet.domain.auth.dto.SnsSignupRequest
+import com.goldpet.domain.auth.dto.VerifyAccountRequest
 import com.goldpet.domain.auth.exception.AccountStatusException
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
@@ -21,10 +26,14 @@ import java.time.LocalDateTime
 class AuthService(
         private val userRepository: UserRepository,
         private val passwordEncoder: PasswordEncoder,
-        private val jwtTokenProvider: JwtTokenProvider
+        private val jwtTokenProvider: JwtTokenProvider,
+        private val systemSettingService: SystemSettingService
 ) {
     @Transactional
     fun signup(request: SignupRequest): AuthResponse {
+        if (systemSettingService.getString("allow_signups", "true") == "false") {
+            throw BadRequestException("현재 신규 가입이 중단되었습니다.")
+        }
         // Check duplicate username or email
         if (userRepository.findByUsername(request.username).isPresent) {
             throw ConflictException("Username already exists")
@@ -98,6 +107,9 @@ class AuthService(
 
     @Transactional
     fun snsSignup(userId: Long, request: SnsSignupRequest): AuthResponse {
+        if (systemSettingService.getString("allow_signups", "true") == "false") {
+            throw BadRequestException("현재 신규 가입이 중단되었습니다.")
+        }
         val user =
                 userRepository.findById(userId).orElseThrow {
                     NotFoundException("User not found")
@@ -149,6 +161,47 @@ class AuthService(
             UserStatus.WITHDRAWN -> throw AccountStatusException(status, "WITHDRAWN_ACCOUNT")
             UserStatus.SUSPENDED -> throw AccountStatusException(status, "SUSPENDED_ACCOUNT")
         }
+    }
+
+    @Transactional(readOnly = true)
+    fun findUsername(request: FindUsernameRequest): FindUsernameResponse {
+        val user = userRepository.findByEmail(request.email).orElse(null)
+            ?: throw NotFoundException("해당 이메일로 가입된 계정을 찾을 수 없습니다.")
+        val username = user.username ?: throw NotFoundException("해당 이메일로 가입된 계정을 찾을 수 없습니다.")
+        val snsProvider = if (user.oauthProvider != "LOCAL") user.oauthProvider else null
+        return FindUsernameResponse(username = maskUsername(username), snsProvider = snsProvider)
+    }
+
+    @Transactional(readOnly = true)
+    fun verifyAccount(request: VerifyAccountRequest) {
+        val user = userRepository.findByUsername(request.username)
+            .orElseThrow { NotFoundException("아이디 또는 이메일이 일치하지 않습니다.") }
+        if (user.email?.lowercase() != request.email.lowercase()) {
+            throw NotFoundException("아이디 또는 이메일이 일치하지 않습니다.")
+        }
+        if (user.oauthProvider != "LOCAL") {
+            throw BadRequestException("소셜 계정은 비밀번호를 변경할 수 없습니다.")
+        }
+    }
+
+    @Transactional
+    fun resetPassword(request: ResetPasswordRequest) {
+        val user = userRepository.findByUsername(request.username)
+            .orElseThrow { NotFoundException("아이디 또는 이메일이 일치하지 않습니다.") }
+        if (user.email?.lowercase() != request.email.lowercase()) {
+            throw NotFoundException("아이디 또는 이메일이 일치하지 않습니다.")
+        }
+        if (user.oauthProvider != "LOCAL") {
+            throw BadRequestException("소셜 계정은 비밀번호를 변경할 수 없습니다.")
+        }
+        user.password = passwordEncoder.encode(request.password)
+        userRepository.save(user)
+    }
+
+    private fun maskUsername(username: String): String {
+        if (username.length <= 3) return username
+        val visible = username.length / 2
+        return username.take(visible) + "*".repeat(username.length - visible)
     }
 
     @Transactional

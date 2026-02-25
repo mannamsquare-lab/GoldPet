@@ -14,8 +14,12 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.auth.dto.ConfirmLinkRequest
 import com.goldpet.domain.auth.dto.CheckUsernameRequest
 import com.goldpet.domain.auth.dto.CheckNicknameRequest
+import com.goldpet.domain.auth.dto.FindUsernameRequest
+import com.goldpet.domain.auth.dto.FindUsernameResponse
 import com.goldpet.domain.auth.dto.NativeLoginRequest
 import com.goldpet.domain.auth.dto.RefreshTokenRequest
+import com.goldpet.domain.auth.dto.ResetPasswordRequest
+import com.goldpet.domain.auth.dto.VerifyAccountRequest
 import com.goldpet.service.auth.SocialLoginService
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
@@ -97,6 +101,24 @@ class AuthController(
     fun confirmLink(@Valid @RequestBody request: ConfirmLinkRequest): ResponseEntity<AuthResponse> {
         val response = socialLoginService.confirmLink(request.tempToken)
         return ResponseEntity.ok(response)
+    }
+
+    @PostMapping("/find-username")
+    fun findUsername(@Valid @RequestBody request: FindUsernameRequest): ResponseEntity<FindUsernameResponse> {
+        val response = authService.findUsername(request)
+        return ResponseEntity.ok(response)
+    }
+
+    @PostMapping("/verify-account")
+    fun verifyAccount(@Valid @RequestBody request: VerifyAccountRequest): ResponseEntity<Map<String, Any>> {
+        authService.verifyAccount(request)
+        return ResponseEntity.ok(mapOf("verified" to true))
+    }
+
+    @PostMapping("/reset-password")
+    fun resetPassword(@Valid @RequestBody request: ResetPasswordRequest): ResponseEntity<Map<String, Any>> {
+        authService.resetPassword(request)
+        return ResponseEntity.ok(mapOf("success" to true))
     }
 
     @PostMapping("/refresh")

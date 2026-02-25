@@ -10,7 +10,8 @@ export interface Place {
   latitude: number;
   longitude: number;
   imageUrl: string | null;
-  checkInCount: number;
+  checkinCount: number;
+  isVerified: boolean;
 }
 
 export interface CheckIn {
@@ -18,8 +19,8 @@ export interface CheckIn {
   placeId: number;
   placeName: string;
   userId: number;
-  nickname: string;
-  checkInTime: string;
+  userNickname: string;
+  createdAt: string;
   memo: string | null;
 }
 
@@ -49,7 +50,8 @@ const mockPlaces: Place[] = [
     latitude: 37.5012,
     longitude: 127.0396,
     imageUrl: null,
-    checkInCount: 45,
+    checkinCount: 45,
+    isVerified: false,
   },
   {
     id: 2,
@@ -60,7 +62,8 @@ const mockPlaces: Place[] = [
     latitude: 37.5003,
     longitude: 127.0365,
     imageUrl: null,
-    checkInCount: 32,
+    checkinCount: 32,
+    isVerified: false,
   },
   {
     id: 3,
@@ -71,7 +74,8 @@ const mockPlaces: Place[] = [
     latitude: 37.5089,
     longitude: 127.0452,
     imageUrl: null,
-    checkInCount: 78,
+    checkinCount: 78,
+    isVerified: false,
   },
   {
     id: 4,
@@ -82,7 +86,8 @@ const mockPlaces: Place[] = [
     latitude: 37.5045,
     longitude: 127.0412,
     imageUrl: null,
-    checkInCount: 23,
+    checkinCount: 23,
+    isVerified: false,
   },
 ];
 
@@ -92,8 +97,8 @@ const mockCheckIns: CheckIn[] = [
     placeId: 1,
     placeName: '펫프렌즈 카페',
     userId: 1,
-    nickname: '강아지집사',
-    checkInTime: '2025-12-21T14:30:00',
+    userNickname: '강아지집사',
+    createdAt: '2025-12-21T14:30:00',
     memo: '강아지들이 너무 좋아해요!',
   },
   {
@@ -101,8 +106,8 @@ const mockCheckIns: CheckIn[] = [
     placeId: 1,
     placeName: '펫프렌즈 카페',
     userId: 2,
-    nickname: '고양이사랑',
-    checkInTime: '2025-12-21T12:15:00',
+    userNickname: '고양이사랑',
+    createdAt: '2025-12-21T12:15:00',
     memo: null,
   },
   {
@@ -110,8 +115,8 @@ const mockCheckIns: CheckIn[] = [
     placeId: 3,
     placeName: '반려동물 놀이터 공원',
     userId: 1,
-    nickname: '강아지집사',
-    checkInTime: '2025-12-20T16:45:00',
+    userNickname: '강아지집사',
+    createdAt: '2025-12-20T16:45:00',
     memo: '산책하기 정말 좋아요',
   },
 ];
@@ -212,7 +217,8 @@ export const checkinService = {
         id: mockPlaces.length + 1,
         ...request,
         imageUrl: request.imageUrl || null,
-        checkInCount: 0,
+        checkinCount: 0,
+        isVerified: false,
       };
       return newPlace;
     }
@@ -225,7 +231,8 @@ export const checkinService = {
         id: mockPlaces.length + 1,
         ...request,
         imageUrl: request.imageUrl || null,
-        checkInCount: 0,
+        checkinCount: 0,
+        isVerified: false,
       };
       return newPlace;
     }
@@ -240,8 +247,8 @@ export const checkinService = {
         placeId: request.placeId,
         placeName: place?.name || 'Unknown',
         userId: 1,
-        nickname: '사용자',
-        checkInTime: new Date().toISOString(),
+        userNickname: '사용자',
+        createdAt: new Date().toISOString(),
         memo: request.memo || null,
       };
       return newCheckIn;
@@ -257,8 +264,8 @@ export const checkinService = {
         placeId: request.placeId,
         placeName: place?.name || 'Unknown',
         userId: 1,
-        nickname: '사용자',
-        checkInTime: new Date().toISOString(),
+        userNickname: '사용자',
+        createdAt: new Date().toISOString(),
         memo: request.memo || null,
       };
       return newCheckIn;

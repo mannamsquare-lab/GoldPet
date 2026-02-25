@@ -113,7 +113,7 @@ const PlaceDetailPage: React.FC = () => {
           <div className="place-detail-address">{place.address}</div>
           <div className="place-detail-description">{place.description}</div>
           <div className="place-detail-stats">
-            총 체크인 {place.checkInCount}회
+            총 체크인 {place.checkinCount}회
           </div>
         </div>
 
@@ -141,9 +141,9 @@ const PlaceDetailPage: React.FC = () => {
           {checkIns?.map((checkIn) => (
             <div key={checkIn.id} className="checkin-history-item">
               <div className="checkin-header">
-                <span className="nickname">{checkIn.nickname}</span>
+                <span className="nickname">{checkIn.userNickname}</span>
                 <span className="time">
-                  {formatCheckInTime(checkIn.checkInTime)}
+                  {formatCheckInTime(checkIn.createdAt)}
                 </span>
               </div>
               {checkIn.memo && <div className="memo">{checkIn.memo}</div>}
