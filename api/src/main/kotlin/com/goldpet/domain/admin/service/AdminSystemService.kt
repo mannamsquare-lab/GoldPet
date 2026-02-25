@@ -3,8 +3,12 @@ package com.goldpet.domain.admin.service
 import com.goldpet.domain.admin.controller.AdminUserResponse
 import com.goldpet.domain.admin.controller.SystemInfoResponse
 import com.goldpet.domain.admin.repository.AdminUserRepository
+import com.goldpet.domain.common.entity.AppNotice
+import com.goldpet.domain.common.entity.AppNoticeType
+import com.goldpet.domain.common.repository.AppNoticeRepository
 import com.goldpet.domain.common.service.SystemSettingService
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.time.LocalDateTime
@@ -13,7 +17,8 @@ import java.time.format.DateTimeFormatter
 @Service
 class AdminSystemService(
     private val systemSettingService: SystemSettingService,
-    private val adminUserRepository: AdminUserRepository
+    private val adminUserRepository: AdminUserRepository,
+    private val appNoticeRepository: AppNoticeRepository
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -50,8 +55,34 @@ class AdminSystemService(
         }
     }
 
+    @Transactional
     fun setMaintenanceMode(enabled: Boolean) {
         systemSettingService.setValue("maintenance.mode", enabled.toString())
+
+        val now = LocalDateTime.now()
+        if (enabled) {
+            // 이미 활성 MAINTENANCE 공지가 있으면 추가하지 않음
+            val existing = appNoticeRepository.findActiveByType(AppNoticeType.MAINTENANCE, now)
+            if (existing.isEmpty()) {
+                appNoticeRepository.save(
+                    AppNotice(
+                        type = AppNoticeType.MAINTENANCE,
+                        title = "서버 점검 중",
+                        content = "서비스 점검 중입니다. 잠시 후 다시 시도해주세요.",
+                        targetScreen = "ALL",
+                        priority = 100,
+                        isDismissible = false,
+                        startAt = now,
+                        endAt = null
+                    )
+                )
+            }
+        } else {
+            // 활성 MAINTENANCE 공지를 모두 비활성화
+            val activeNotices = appNoticeRepository.findActiveByType(AppNoticeType.MAINTENANCE, now)
+            activeNotices.forEach { it.isActive = false }
+            appNoticeRepository.saveAll(activeNotices)
+        }
     }
 
     fun getAllConfigs(): List<com.goldpet.domain.admin.controller.AppConfigResponse> {
