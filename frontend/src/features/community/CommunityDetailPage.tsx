@@ -85,7 +85,7 @@ export default function CommunityDetailPage() {
     }, 150);
   };
 
-  const handleOptionClick = (type: 'POST' | 'COMMENT' | 'OTHER_POST', id: number) => {
+  const handleOptionClick = (type: 'POST' | 'COMMENT' | 'OTHER_POST' | 'OTHER_COMMENT', id: number) => {
     setActionSheetTarget({ type, id });
   };
 
