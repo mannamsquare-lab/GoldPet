@@ -62,7 +62,7 @@ export default function SystemPage() {
   // configs에서 유지보수/가입 상태 초기화
   useEffect(() => {
     if (configs.length > 0) {
-      const maintenanceConfig = configs.find(c => c.key === 'maintenance.enabled' || c.key === 'maintenance_mode');
+      const maintenanceConfig = configs.find(c => c.key === 'maintenance.mode');
       if (maintenanceConfig) setMaintenanceEnabled(maintenanceConfig.value === 'true');
       const signupConfig = configs.find(c => c.key === 'allow_signups' || c.key === 'signup.enabled');
       if (signupConfig) setSignupEnabled(signupConfig.value === 'true');
