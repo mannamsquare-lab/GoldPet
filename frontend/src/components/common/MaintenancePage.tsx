@@ -76,7 +76,7 @@ export default function MaintenanceGuard({ children }: MaintenanceGuardProps) {
           fontSize: '13px',
           color: '#B89A5A',
         }}>
-          잠시 후 다시 시도해주세요
+          이용에 불편을 드려 죄송합니다
         </p>
       </div>
     );
