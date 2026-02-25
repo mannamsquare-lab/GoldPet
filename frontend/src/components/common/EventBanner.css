@@ -17,8 +17,8 @@
 
 .event-banner-card {
   flex-shrink: 0;
-  width: 280px;
-  height: 120px;
+  width: calc(100vw - 32px);
+  height: 140px;
   border-radius: 12px;
   overflow: hidden;
   position: relative;
