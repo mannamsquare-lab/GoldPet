@@ -37,6 +37,19 @@ export default function ChatManagementPage() {
     deleteMutation.mutate(roomId);
   };
 
+  const deleteMessageMutation = useMutation({
+    mutationFn: (messageId: number) => chatManagementService.deleteMessage(messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', selectedRoom?.id] });
+    },
+    onError: () => alert('메시지 삭제에 실패했습니다.'),
+  });
+
+  const handleDeleteMessage = (messageId: number) => {
+    if (!confirm('이 메시지를 삭제하시겠습니까?')) return;
+    deleteMessageMutation.mutate(messageId);
+  };
+
   const rooms = roomsData?.content ?? [];
   const messages = messagesData?.content ?? [];
 
@@ -114,7 +127,17 @@ export default function ChatManagementPage() {
                 <div key={msg.id} className="p-3 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-start">
                     <span className="font-medium text-sm">{msg.senderNickname}</span>
-                    <span className="text-xs text-gray-400">{msg.createdAt}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">{msg.createdAt}</span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="text-red-600 hover:text-red-900"
+                        onClick={() => handleDeleteMessage(msg.id)}
+                      >
+                        삭제
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-sm mt-1">{msg.content}</p>
                 </div>

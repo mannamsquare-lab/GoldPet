@@ -65,4 +65,15 @@ export const breedService = {
   deleteBreed: async (breedId: number): Promise<void> => {
     await apiClient.delete(`/breeds/${breedId}`);
   },
+
+  // Create species
+  createSpecies: async (data: { name: string; code: string }): Promise<SpeciesResponse> => {
+    const response = await apiClient.post('/data/species', data);
+    return response.data;
+  },
+
+  // Delete species
+  deleteSpecies: async (speciesId: number): Promise<void> => {
+    await apiClient.delete(`/data/species/${speciesId}`);
+  },
 };

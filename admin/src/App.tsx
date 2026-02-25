@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import RequireAuth from './components/auth/RequireAuth';
@@ -25,17 +25,6 @@ import SystemPage from './pages/system/SystemPage';
 import AIProfilePage from './pages/aiprofile/AIProfilePage';
 import NoticeManagementPage from './pages/notice/NoticeManagementPage';
 
-const DetailPlaceholder = () => {
-  const navigate = useNavigate();
-  return (
-    <div className="p-8 text-center">
-      <p className="text-gray-500 mb-4">상세 페이지 준비중</p>
-      <button onClick={() => navigate(-1)} className="text-indigo-600 hover:text-indigo-900">
-        ← 목록으로 돌아가기
-      </button>
-    </div>
-  );
-};
 
 function App() {
   return (
@@ -66,15 +55,10 @@ function App() {
             <Route path="data/user-attributes" element={<UserAttributesPage />} />
             <Route path="ai-profile" element={<AIProfilePage />} />
             <Route path="notices" element={<NoticeManagementPage />} />
-            <Route path="notices/:noticeId" element={<DetailPlaceholder />} />
             <Route path="system" element={<SystemPage />} />
             <Route path="users/:userId" element={<UserDetailPage />} />
             <Route path="community/:postId" element={<CommunityDetailPage />} />
-            <Route path="chat/:roomId" element={<DetailPlaceholder />} />
             <Route path="reports/:reportId" element={<ReportDetailPage />} />
-            <Route path="marketing/templates/:templateId" element={<DetailPlaceholder />} />
-            <Route path="economy/transactions/:transactionId" element={<DetailPlaceholder />} />
-            <Route path="ai-profile/requests/:requestId" element={<DetailPlaceholder />} />
           </Route>
 
           {/* Fallback */}

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { systemService } from '../../services/systemService';
 import type { AdminUser } from '../../services/systemService';
@@ -8,6 +9,8 @@ import type { ColumnDef } from '../../components/common/DataTable';
 
 export default function SystemPage() {
   const queryClient = useQueryClient();
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+  const [signupEnabled, setSignupEnabled] = useState(true);
 
   const { data: systemInfo, isLoading: loadingSystem } = useQuery({
     queryKey: ['systemInfo'],
@@ -53,6 +56,40 @@ export default function SystemPage() {
     },
     onError: () => {
       alert('캐시 초기화 실패');
+    },
+  });
+
+  // configs에서 유지보수/가입 상태 초기화
+  useEffect(() => {
+    if (configs.length > 0) {
+      const maintenanceConfig = configs.find(c => c.key === 'maintenance.enabled' || c.key === 'maintenance_mode');
+      if (maintenanceConfig) setMaintenanceEnabled(maintenanceConfig.value === 'true');
+      const signupConfig = configs.find(c => c.key === 'allow_signups' || c.key === 'signup.enabled');
+      if (signupConfig) setSignupEnabled(signupConfig.value === 'true');
+    }
+  }, [configs]);
+
+  const maintenanceMutation = useMutation({
+    mutationFn: (enabled: boolean) => systemService.setMaintenanceMode(enabled),
+    onSuccess: (_data, enabled) => {
+      setMaintenanceEnabled(enabled);
+      alert(enabled ? '유지보수 모드가 활성화되었습니다.' : '유지보수 모드가 해제되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['configs'] });
+    },
+    onError: () => {
+      alert('유지보수 모드 변경에 실패했습니다.');
+    },
+  });
+
+  const signupMutation = useMutation({
+    mutationFn: (enabled: boolean) => systemService.updateConfig('allow_signups', String(enabled)),
+    onSuccess: (_data, enabled) => {
+      setSignupEnabled(enabled);
+      alert(enabled ? '신규 가입이 허용되었습니다.' : '신규 가입이 차단되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['configs'] });
+    },
+    onError: () => {
+      alert('설정 변경에 실패했습니다.');
     },
   });
 
@@ -259,14 +296,38 @@ export default function SystemPage() {
               <p className="font-medium">유지보수 모드</p>
               <p className="text-sm text-gray-500">서비스를 중단하고 유지보수 페이지를 표시합니다</p>
             </div>
-            <Button variant="ghost">비활성</Button>
+            <Button
+              variant={maintenanceEnabled ? 'danger' : 'ghost'}
+              disabled={maintenanceMutation.isPending}
+              onClick={() => {
+                const next = !maintenanceEnabled;
+                const msg = next
+                  ? '유지보수 모드를 활성화하시겠습니까? 서비스가 중단됩니다.'
+                  : '유지보수 모드를 해제하시겠습니까?';
+                if (confirm(msg)) maintenanceMutation.mutate(next);
+              }}
+            >
+              {maintenanceMutation.isPending ? '변경 중...' : maintenanceEnabled ? '활성' : '비활성'}
+            </Button>
           </div>
           <div className="flex items-center justify-between py-3 border-b">
             <div>
               <p className="font-medium">신규 가입 허용</p>
               <p className="text-sm text-gray-500">신규 회원 가입 허용 여부</p>
             </div>
-            <Button variant="success">활성</Button>
+            <Button
+              variant={signupEnabled ? 'success' : 'ghost'}
+              disabled={signupMutation.isPending}
+              onClick={() => {
+                const next = !signupEnabled;
+                const msg = next
+                  ? '신규 가입을 허용하시겠습니까?'
+                  : '신규 가입을 차단하시겠습니까?';
+                if (confirm(msg)) signupMutation.mutate(next);
+              }}
+            >
+              {signupMutation.isPending ? '변경 중...' : signupEnabled ? '활성' : '비활성'}
+            </Button>
           </div>
           <div className="flex items-center justify-between py-3">
             <div>

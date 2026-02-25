@@ -42,5 +42,14 @@ export const dataService = {
     getCategories: async (): Promise<DataItem[]> => {
         const response = await apiClient.get<DataItem[]>('/data/categories');
         return response.data;
-    }
+    },
+
+    createCategory: async (name: string, code?: string): Promise<DataItem> => {
+        const response = await apiClient.post<DataItem>('/data/categories', { name, code });
+        return response.data;
+    },
+
+    deleteCategory: async (id: number): Promise<void> => {
+        await apiClient.delete(`/data/categories/${id}`);
+    },
 };

@@ -60,6 +60,8 @@ export default function AIProfilePage() {
     displayOrder: 0,
   });
 
+  const [selectedRequest, setSelectedRequest] = useState<AIRequestAdminResponse | null>(null);
+
   const { page, size, filters, setPage, setSize, setFilter } = useListParams({ defaultSize: 20 });
   const statusFilter = filters.status || '';
 
@@ -117,6 +119,16 @@ export default function AIProfilePage() {
     } catch (error) {
       console.error('Failed to refund request:', error);
       alert('환불 처리에 실패했습니다.');
+    }
+  };
+
+  const handleViewRequestDetail = async (id: number) => {
+    try {
+      const detail = await aiProfileAdminService.getRequestDetail(id);
+      setSelectedRequest(detail);
+    } catch (error) {
+      console.error('Failed to load request detail:', error);
+      alert('요청 상세 정보를 불러올 수 없습니다.');
     }
   };
 
@@ -209,13 +221,17 @@ export default function AIProfilePage() {
       key: 'id',
       header: '액션',
       align: 'center',
-      render: (_value, row) =>
-        row.status === 'FAILED' ? (
-          <div className="flex items-center justify-center gap-2">
-            <Button variant="link" size="sm" onClick={() => handleRetry(row.id)}>재시도</Button>
-            <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleRefund(row.id)}>환불</Button>
-          </div>
-        ) : null,
+      render: (_value, row) => (
+        <div className="flex items-center justify-center gap-2">
+          <Button variant="link" size="sm" onClick={() => handleViewRequestDetail(row.id)}>상세</Button>
+          {row.status === 'FAILED' && (
+            <>
+              <Button variant="link" size="sm" onClick={() => handleRetry(row.id)}>재시도</Button>
+              <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleRefund(row.id)}>환불</Button>
+            </>
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -441,6 +457,64 @@ export default function AIProfilePage() {
               <Button variant="primary" onClick={handleSaveStyle}>
                 {editingStyle ? '수정' : '추가'}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request Detail Modal */}
+      {selectedRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">AI 프로필 요청 상세</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">사용자</p>
+                  <p className="font-medium">{selectedRequest.userNickname || `User ${selectedRequest.userId}`}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">반려동물</p>
+                  <p className="font-medium">{selectedRequest.petName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">스타일</p>
+                  <p className="font-medium">{selectedRequest.stylePrompt || selectedRequest.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">상태</p>
+                  {getStatusBadge(selectedRequest.status)}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">비용</p>
+                  <p className="font-medium">{selectedRequest.goldCost.toLocaleString()} Gold</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">요청일시</p>
+                  <p className="font-medium">{new Date(selectedRequest.createdAt).toLocaleString('ko-KR')}</p>
+                </div>
+              </div>
+              {selectedRequest.sourceImageUrl && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">소스 이미지</p>
+                  <img src={selectedRequest.sourceImageUrl} alt="소스" className="w-32 h-32 object-cover rounded-lg border" />
+                </div>
+              )}
+              {selectedRequest.resultUrl && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">결과 이미지</p>
+                  <img src={selectedRequest.resultUrl} alt="결과" className="w-32 h-32 object-cover rounded-lg border" />
+                </div>
+              )}
+              {selectedRequest.errorMessage && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">에러 메시지</p>
+                  <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{selectedRequest.errorMessage}</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button variant="secondary" onClick={() => setSelectedRequest(null)}>닫기</Button>
             </div>
           </div>
         </div>

@@ -134,6 +134,17 @@ export default function EconomyPage() {
     onError: (e: any) => alert(e?.response?.data?.message || '상품 처리 실패'),
   });
 
+  const deleteProductMutation = useMutation({
+    mutationFn: (id: number) => economyService.deleteProduct(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['economy-products'] }),
+    onError: (e: any) => alert(e?.response?.data?.message || '상품 삭제에 실패했습니다.'),
+  });
+
+  const handleDeleteProduct = (id: number) => {
+    if (!confirm('이 상품을 삭제하시겠습니까?')) return;
+    deleteProductMutation.mutate(id);
+  };
+
   // Handlers
   const handleRefund = () => {
     if (!refundTarget || !refundReason.trim()) return;
@@ -244,9 +255,19 @@ export default function EconomyPage() {
       header: '작업',
       align: 'center',
       render: (_v, row) => (
-        <Button variant="link" size="sm" onClick={() => startEditProduct(row)}>
-          수정
-        </Button>
+        <div className="flex items-center justify-center gap-2">
+          <Button variant="link" size="sm" onClick={() => startEditProduct(row)}>
+            수정
+          </Button>
+          <Button
+            variant="link"
+            size="sm"
+            className="text-red-600 hover:text-red-900"
+            onClick={() => handleDeleteProduct(row.id)}
+          >
+            삭제
+          </Button>
+        </div>
       ),
     },
   ];

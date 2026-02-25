@@ -62,6 +62,15 @@ export default function MarketingPage() {
     category: 'NOTICE',
   });
 
+  // Banner form state
+  const [showBannerForm, setShowBannerForm] = useState(false);
+  const [bannerForm, setBannerForm] = useState({
+    title: '',
+    imageUrl: '',
+    link: '',
+    displayOrder: '1',
+  });
+
   // Send dialog state
   const [sendDialogTemplateId, setSendDialogTemplateId] = useState<number | null>(null);
   const [sendForm, setSendForm] = useState({
@@ -154,6 +163,21 @@ export default function MarketingPage() {
     mutationFn: (id: number) => marketingService.deleteBanner(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['marketing-banners'] }),
     onError: () => alert('배너 삭제에 실패했습니다.'),
+  });
+
+  const createBannerMutation = useMutation({
+    mutationFn: () => marketingService.createBanner({
+      title: bannerForm.title,
+      imageUrl: bannerForm.imageUrl || null,
+      link: bannerForm.link || null,
+      displayOrder: parseInt(bannerForm.displayOrder) || 1,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marketing-banners'] });
+      setShowBannerForm(false);
+      setBannerForm({ title: '', imageUrl: '', link: '', displayOrder: '1' });
+    },
+    onError: () => alert('배너 생성에 실패했습니다.'),
   });
 
   // Handlers
@@ -462,10 +486,72 @@ export default function MarketingPage() {
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
           <div className="p-4 border-b flex justify-between items-center">
             <h2 className="font-semibold">배너 목록</h2>
-            <Button variant="primary" size="sm">
+            <Button variant="primary" size="sm" onClick={() => setShowBannerForm(true)}>
               + 배너 추가
             </Button>
           </div>
+          {showBannerForm && (
+            <div className="p-4 border-b bg-gray-50">
+              <h3 className="font-medium mb-3">새 배너</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                  <input
+                    type="text"
+                    value={bannerForm.title}
+                    onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL</label>
+                  <input
+                    type="text"
+                    value={bannerForm.imageUrl}
+                    onChange={(e) => setBannerForm({ ...bannerForm, imageUrl: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="/banners/example.jpg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>
+                  <input
+                    type="text"
+                    value={bannerForm.link}
+                    onChange={(e) => setBannerForm({ ...bannerForm, link: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="https://..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">표시 순서</label>
+                  <input
+                    type="number"
+                    value={bannerForm.displayOrder}
+                    onChange={(e) => setBannerForm({ ...bannerForm, displayOrder: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    min={1}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    loading={createBannerMutation.isPending}
+                    onClick={() => createBannerMutation.mutate()}
+                  >
+                    생성
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => {
+                    setShowBannerForm(false);
+                    setBannerForm({ title: '', imageUrl: '', link: '', displayOrder: '1' });
+                  }}>
+                    취소
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           <DataTable
             columns={bannerColumns}
             data={banners}

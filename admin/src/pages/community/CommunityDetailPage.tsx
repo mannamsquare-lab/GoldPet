@@ -30,6 +30,14 @@ export default function CommunityDetailPage() {
     onError: () => alert('게시글 삭제에 실패했습니다.'),
   });
 
+  const unhideMutation = useMutation({
+    mutationFn: () => communityManagementService.unhidePost(Number(postId)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['community'] });
+    },
+    onError: () => alert('게시글 숨김 해제에 실패했습니다.'),
+  });
+
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: number) => communityManagementService.deleteComment(commentId),
     onSuccess: () => {
@@ -41,6 +49,11 @@ export default function CommunityDetailPage() {
   const handleHide = () => {
     if (!confirm('이 게시글을 숨기시겠습니까?')) return;
     hideMutation.mutate();
+  };
+
+  const handleUnhide = () => {
+    if (!confirm('이 게시글의 숨김을 해제하시겠습니까?')) return;
+    unhideMutation.mutate();
   };
 
   const handleDelete = () => {
@@ -75,13 +88,21 @@ export default function CommunityDetailPage() {
       backPath="/community"
       actions={
         <>
-          {!post.isHidden && (
+          {!post.isHidden ? (
             <Button
               variant="warning"
               onClick={handleHide}
               loading={hideMutation.isPending}
             >
               숨김 처리
+            </Button>
+          ) : (
+            <Button
+              variant="success"
+              onClick={handleUnhide}
+              loading={unhideMutation.isPending}
+            >
+              숨김 해제
             </Button>
           )}
           <Button

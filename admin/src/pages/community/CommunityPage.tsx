@@ -40,6 +40,12 @@ export default function CommunityPage() {
     onError: () => alert('게시글 삭제에 실패했습니다.'),
   });
 
+  const unhideMutation = useMutation({
+    mutationFn: (postId: number) => communityManagementService.unhidePost(postId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['community'] }),
+    onError: () => alert('게시글 숨김 해제에 실패했습니다.'),
+  });
+
   const handleHide = (postId: number) => {
     if (!confirm('이 게시글을 숨기시겠습니까?')) return;
     hideMutation.mutate(postId);
@@ -48,6 +54,11 @@ export default function CommunityPage() {
   const handleDelete = (postId: number) => {
     if (!confirm('정말 이 게시글을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.')) return;
     deleteMutation.mutate(postId);
+  };
+
+  const handleUnhide = (postId: number) => {
+    if (!confirm('이 게시글의 숨김을 해제하시겠습니까?')) return;
+    unhideMutation.mutate(postId);
   };
 
   const columns: ColumnDef<PostListItem>[] = [
@@ -92,10 +103,15 @@ export default function CommunityPage() {
           <Button variant="link" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/community/${row.id}`); }}>
             상세
           </Button>
-          {!row.isHidden && (
+          {!row.isHidden ? (
             <Button variant="link" size="sm" className="text-orange-600 hover:text-orange-900"
               onClick={(e) => { e.stopPropagation(); handleHide(row.id); }}>
               숨김
+            </Button>
+          ) : (
+            <Button variant="link" size="sm" className="text-green-600 hover:text-green-900"
+              onClick={(e) => { e.stopPropagation(); handleUnhide(row.id); }}>
+              숨김 해제
             </Button>
           )}
           <Button variant="link" size="sm" className="text-red-600 hover:text-red-900"

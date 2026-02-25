@@ -13,7 +13,7 @@ import { Tabs } from '../../components/common/Tabs';
 import { StatCard } from '../../components/common/StatCard';
 import { SearchFilters } from '../../components/common/SearchFilters';
 import { Button } from '../../components/common/Button';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
 const LBS_TABS = [
@@ -35,6 +35,18 @@ export default function LBSPage() {
   const [activeTab, setActiveTab] = useState<string>('stats');
   const [places, setPlaces] = useState<Place[]>([]);
   const [placesLoading, setPlacesLoading] = useState(false);
+
+  // Walk detail modal
+  const [selectedWalk, setSelectedWalk] = useState<any>(null);
+
+  // Place add modal
+  const [showPlaceForm, setShowPlaceForm] = useState(false);
+  const [placeForm, setPlaceForm] = useState({
+    name: '',
+    category: '',
+    latitude: '',
+    longitude: '',
+  });
 
   const { page, size, filters, setPage, setSize, setFilter } = useListParams({ defaultSize: 20 });
 
@@ -98,6 +110,31 @@ export default function LBSPage() {
     }
   };
 
+  const handleViewWalkDetail = async (walkId: number) => {
+    try {
+      const detail = await walkAdminService.getWalkDetail(walkId);
+      setSelectedWalk(detail);
+    } catch (error) {
+      console.error('Failed to load walk detail:', error);
+      alert('산책 상세 정보를 불러올 수 없습니다.');
+    }
+  };
+
+  const createPlaceMutation = useMutation({
+    mutationFn: () => lbsService.createPlace({
+      name: placeForm.name,
+      category: placeForm.category,
+      latitude: parseFloat(placeForm.latitude),
+      longitude: parseFloat(placeForm.longitude),
+    }),
+    onSuccess: () => {
+      loadPlaces();
+      setShowPlaceForm(false);
+      setPlaceForm({ name: '', category: '', latitude: '', longitude: '' });
+    },
+    onError: () => alert('장소 추가에 실패했습니다.'),
+  });
+
   const walkColumns: ColumnDef<WalkAdminResponse>[] = [
     { key: 'id', header: 'ID', width: '60px' },
     {
@@ -130,7 +167,7 @@ export default function LBSPage() {
       align: 'right',
       render: (_value, row) => (
         <div className="flex items-center justify-end gap-3">
-          <Button variant="link" size="sm">상세</Button>
+          <Button variant="link" size="sm" onClick={() => handleViewWalkDetail(row.id)}>상세</Button>
           <Button
             variant="link"
             size="sm"
@@ -223,8 +260,72 @@ export default function LBSPage() {
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
           <div className="p-4 border-b flex justify-between items-center">
             <h2 className="font-semibold">등록된 장소</h2>
-            <Button variant="primary">+ 장소 추가</Button>
+            <Button variant="primary" onClick={() => setShowPlaceForm(true)}>+ 장소 추가</Button>
           </div>
+          {showPlaceForm && (
+            <div className="p-4 border-b bg-gray-50">
+              <h3 className="font-medium mb-3">장소 추가</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                  <input
+                    type="text"
+                    value={placeForm.name}
+                    onChange={(e) => setPlaceForm({ ...placeForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                  <input
+                    type="text"
+                    value={placeForm.category}
+                    onChange={(e) => setPlaceForm({ ...placeForm, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    placeholder="예: 공원, 카페"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">위도</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={placeForm.latitude}
+                    onChange={(e) => setPlaceForm({ ...placeForm, latitude: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    placeholder="37.5665"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">경도</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={placeForm.longitude}
+                    onChange={(e) => setPlaceForm({ ...placeForm, longitude: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    placeholder="126.9780"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={createPlaceMutation.isPending}
+                  onClick={() => createPlaceMutation.mutate()}
+                >
+                  추가
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => {
+                  setShowPlaceForm(false);
+                  setPlaceForm({ name: '', category: '', latitude: '', longitude: '' });
+                }}>
+                  취소
+                </Button>
+              </div>
+            </div>
+          )}
           {placesLoading ? (
             <div className="p-8 text-center text-gray-500">로딩 중...</div>
           ) : (
@@ -251,6 +352,45 @@ export default function LBSPage() {
               )}
             </div>
           )}
+        </div>
+      )}
+      {/* Walk Detail Modal */}
+      {selectedWalk && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">산책 상세</h3>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">사용자</p>
+                  <p className="font-medium">{selectedWalk.userNickname || `User ${selectedWalk.userId}`}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">시작 시간</p>
+                  <p className="font-medium">{new Date(selectedWalk.startTime).toLocaleString('ko-KR')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">거리</p>
+                  <p className="font-medium">{selectedWalk.distanceKm?.toFixed(2)} km</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">소요 시간</p>
+                  <p className="font-medium">{Math.round((selectedWalk.durationSeconds || 0) / 60)}분</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">칼로리</p>
+                  <p className="font-medium">{selectedWalk.caloriesBurned} kcal</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">스팟 수</p>
+                  <p className="font-medium">{selectedWalk.spotsCount}개</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button variant="secondary" onClick={() => setSelectedWalk(null)}>닫기</Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
