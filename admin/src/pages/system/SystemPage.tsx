@@ -251,26 +251,45 @@ export default function SystemPage() {
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <h2 className="font-semibold mb-4">앱 설정</h2>
         <div className="space-y-4">
-          {configs.map(config => (
-            <div key={config.key} className="flex items-center justify-between py-3 border-b">
-              <div>
-                <p className="font-medium">{config.key}</p>
-                <p className="text-sm text-gray-500">{config.description}</p>
+          {configs.map(config => {
+            const isBooleanValue = config.value === 'true' || config.value === 'false';
+
+            return (
+              <div key={config.key} className="flex items-center justify-between py-3 border-b">
+                <div>
+                  <p className="font-medium">{config.key}</p>
+                  <p className="text-sm text-gray-500">{config.description}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isBooleanValue ? (
+                    <select
+                      defaultValue={config.value}
+                      className="border rounded px-2 py-1 w-32 text-right bg-white"
+                      onChange={(e) => {
+                        if (e.target.value !== config.value) {
+                          handleUpdateConfig(config.key, e.target.value);
+                        }
+                      }}
+                    >
+                      <option value="true">활성 (true)</option>
+                      <option value="false">비활성 (false)</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      defaultValue={config.value}
+                      className="border rounded px-2 py-1 w-32 text-right"
+                      onBlur={(e) => {
+                        if (e.target.value !== config.value) {
+                          handleUpdateConfig(config.key, e.target.value);
+                        }
+                      }}
+                    />
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  defaultValue={config.value}
-                  className="border rounded px-2 py-1 w-32 text-right"
-                  onBlur={(e) => {
-                    if (e.target.value !== config.value) {
-                      handleUpdateConfig(config.key, e.target.value);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
