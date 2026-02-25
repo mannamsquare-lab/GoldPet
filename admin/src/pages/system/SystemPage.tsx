@@ -78,6 +78,7 @@ export default function SystemPage() {
       alert(enabled ? '유지보수 모드가 활성화되었습니다.' : '유지보수 모드가 해제되었습니다.');
       queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
       queryClient.invalidateQueries({ queryKey: ['configs'] });
+      queryClient.invalidateQueries({ queryKey: ['notices'] });
     },
     onError: () => {
       alert('유지보수 모드 변경에 실패했습니다.');

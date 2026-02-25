@@ -120,6 +120,7 @@ export default function NoticeManagementPage() {
       }
       closeForm();
       queryClient.invalidateQueries({ queryKey: ['notices'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
     } catch (error) {
       console.error('Failed to save notice:', error);
       alert('저장에 실패했습니다.');
@@ -133,6 +134,7 @@ export default function NoticeManagementPage() {
     try {
       await noticeService.deleteNotice(id);
       queryClient.invalidateQueries({ queryKey: ['notices'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
     } catch (error) {
       console.error('Failed to delete notice:', error);
       alert('삭제에 실패했습니다.');
@@ -187,6 +189,7 @@ export default function NoticeManagementPage() {
             try {
               await noticeService.updateNotice(row.id, { isActive: next });
               queryClient.invalidateQueries({ queryKey: ['notices'] });
+              queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
             } catch {
               alert('상태 변경에 실패했습니다.');
             }
