@@ -7,6 +7,7 @@ import { blockService } from '../../services/blockService';
 import { reportService } from '../../services/reportService';
 import { BackButton } from '../../components/common/BackButton';
 import { ReportModal } from '../../components/common/ReportModal';
+import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import './CommunityPage.css';
 import { useAlert } from '../../contexts/AlertContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -27,6 +28,7 @@ export default function CommunityDetailPage() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ type: 'POST' | 'COMMENT', targetId: number } | null>(null);
   const [isReportSubmitting, setIsReportSubmitting] = useState(false);
+  const [galleryState, setGalleryState] = useState<{ open: boolean; images: string[]; index: number }>({ open: false, images: [], index: 0 });
 
   /* Editing State */
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -324,26 +326,27 @@ export default function CommunityDetailPage() {
           {/* Images */}
           {/* Images */}
           <div className="img_wrap">
-             {post.imageUrls && post.imageUrls.length > 0 ? (
-                 post.imageUrls.map((url, index) => {
-                     const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${url}`;
-                     return (
-                         <img
-                             key={index}
-                             src={getImageUrl(fullUrl, 'medium')}
-                             alt={`Post image ${index + 1}`}
-                             style={{ marginBottom: '16px' }}
-                             loading="lazy"
-                             onError={(e) => {
-                                 if (!e.currentTarget.dataset.fallback) {
-                                     e.currentTarget.dataset.fallback = 'true';
-                                     e.currentTarget.src = fullUrl;
-                                 }
-                             }}
-                         />
-                     );
-                 })
-             ) : post.thumbnailUrl ? (
+             {post.imageUrls && post.imageUrls.length > 0 ? (() => {
+                 const resolvedUrls = post.imageUrls.map(u =>
+                     u.startsWith('http') ? u : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${u}`
+                 );
+                 return resolvedUrls.map((fullUrl, index) => (
+                     <img
+                         key={index}
+                         src={getImageUrl(fullUrl, 'medium')}
+                         alt={`Post image ${index + 1}`}
+                         style={{ marginBottom: '16px', cursor: 'pointer' }}
+                         loading="lazy"
+                         onClick={() => setGalleryState({ open: true, images: resolvedUrls, index })}
+                         onError={(e) => {
+                             if (!e.currentTarget.dataset.fallback) {
+                                 e.currentTarget.dataset.fallback = 'true';
+                                 e.currentTarget.src = fullUrl;
+                             }
+                         }}
+                     />
+                 ));
+             })() : post.thumbnailUrl ? (
                  <img src={post.thumbnailUrl.startsWith('http') ? post.thumbnailUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${post.thumbnailUrl}`} alt="Thumbnail" />
              ) : null}
           </div>
@@ -534,6 +537,12 @@ export default function CommunityDetailPage() {
           onClose={() => { setShowReportModal(false); setReportTarget(null); }}
           onSubmit={handleReportSubmit}
           isSubmitting={isReportSubmitting}
+      />
+      <ImageGalleryModal
+          isOpen={galleryState.open}
+          images={galleryState.images}
+          initialIndex={galleryState.index}
+          onClose={() => setGalleryState(s => ({ ...s, open: false }))}
       />
     </div>
   );
