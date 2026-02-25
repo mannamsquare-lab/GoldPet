@@ -1,5 +1,5 @@
 .event-banner-section {
-  padding: 0 0 12px 0;
+  padding: 16px 0 12px 0;
 }
 
 .event-banner-scroll {
@@ -45,8 +45,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 8px 12px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
+  padding: 10px 12px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
 }
 
 .event-banner-card-title {
@@ -55,6 +55,16 @@
   font-weight: 600;
   color: #fff;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-banner-card-content {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 2px 0 0 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

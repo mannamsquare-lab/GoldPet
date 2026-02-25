@@ -37,6 +37,9 @@ export default function EventBanner({ notices }: EventBannerProps) {
             )}
             <div className="event-banner-card-overlay">
               <p className="event-banner-card-title">{notice.title}</p>
+              {notice.content && (
+                <p className="event-banner-card-content">{notice.content}</p>
+              )}
             </div>
           </div>
         ))}
