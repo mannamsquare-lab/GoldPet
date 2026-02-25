@@ -230,14 +230,13 @@ export default function EconomyPage() {
       header: '상태',
       align: 'center',
       render: (_v, row) => (
-        <button
+        <Button
+          variant={row.isActive ? 'success' : 'ghost'}
+          size="sm"
           onClick={() => handleToggleProduct(row)}
-          className={`text-xs px-2 py-1 rounded ${
-            row.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}
         >
           {row.isActive ? '활성' : '비활성'}
-        </button>
+        </Button>
       ),
     },
     {

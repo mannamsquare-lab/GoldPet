@@ -9,9 +9,9 @@ import { Tabs } from '../../components/common/Tabs';
 import type { ColumnDef } from '../../components/common/DataTable';
 
 const DATA_TABS = [
-  { key: 'species', label: 'Pet Species' },
-  { key: 'breeds', label: 'Breeds' },
-  { key: 'categories', label: 'Community Categories' },
+  { key: 'species', label: '반려동물 종' },
+  { key: 'breeds', label: '품종' },
+  { key: 'categories', label: '커뮤니티 카테고리' },
 ];
 
 interface SpeciesItem {
@@ -27,27 +27,27 @@ interface CategoryItem {
 }
 
 const speciesColumns: ColumnDef<SpeciesItem>[] = [
-  { key: 'code', header: 'Code', className: 'font-mono' },
-  { key: 'name', header: 'Name', className: 'font-medium' },
+  { key: 'code', header: '코드', className: 'font-mono' },
+  { key: 'name', header: '이름', className: 'font-medium' },
   {
     key: 'id',
-    header: 'Actions',
+    header: '관리',
     align: 'right',
     render: () => (
-      <Button variant="link" size="sm" className="text-red-600 hover:text-red-900">Delete</Button>
+      <Button variant="link" size="sm" className="text-red-600 hover:text-red-900">삭제</Button>
     ),
   },
 ];
 
 const categoryColumns: ColumnDef<CategoryItem>[] = [
-  { key: 'name', header: 'Name', className: 'font-medium' },
-  { key: 'code', header: 'Code', className: 'font-mono text-gray-500' },
+  { key: 'name', header: '이름', className: 'font-medium' },
+  { key: 'code', header: '코드', className: 'font-mono text-gray-500' },
   {
     key: 'id',
-    header: 'Actions',
+    header: '관리',
     align: 'right',
     render: () => (
-      <Button variant="link" size="sm" className="text-red-600 hover:text-red-900">Delete</Button>
+      <Button variant="link" size="sm" className="text-red-600 hover:text-red-900">삭제</Button>
     ),
   },
 ];
@@ -67,7 +67,7 @@ export default function DataPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Code/Data Management</h1>
+      <h1 className="text-2xl font-bold text-gray-900">코드/데이터 관리</h1>
 
       <Tabs tabs={DATA_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -75,9 +75,9 @@ export default function DataPage() {
         {activeTab !== 'breeds' && (
           <div className="p-4 border-b flex justify-between items-center">
             <h2 className="font-semibold">
-              {activeTab === 'species' ? 'Pet Species' : 'Community Categories'}
+              {activeTab === 'species' ? '반려동물 종' : '커뮤니티 카테고리'}
             </h2>
-            <Button variant="primary">+ Add</Button>
+            <Button variant="primary">추가</Button>
           </div>
         )}
         {activeTab === 'species' && (
@@ -85,7 +85,7 @@ export default function DataPage() {
             columns={speciesColumns}
             data={species as SpeciesItem[]}
             loading={isSpeciesLoading}
-            emptyMessage="No species found."
+            emptyMessage="등록된 종이 없습니다."
           />
         )}
         {activeTab === 'breeds' && (
@@ -96,7 +96,7 @@ export default function DataPage() {
             columns={categoryColumns}
             data={categories as CategoryItem[]}
             loading={isCategoriesLoading}
-            emptyMessage="No categories found."
+            emptyMessage="등록된 카테고리가 없습니다."
           />
         )}
       </div>

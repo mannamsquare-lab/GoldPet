@@ -1,64 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { breedService } from '../../services/breedService';
 import type { BreedResponse, SpeciesResponse } from '../../services/breedService';
+import { Button } from '../../components/common/Button';
 
 interface BreedsPageProps {
   embedded?: boolean;
 }
 
 const BreedsPage: React.FC<BreedsPageProps> = ({ embedded = false }) => {
-  const [breeds, setBreeds] = useState<BreedResponse[]>([]);
-  const [species, setSpecies] = useState<SpeciesResponse[]>([]);
+  const queryClient = useQueryClient();
   const [selectedSpeciesId, setSelectedSpeciesId] = useState<number | undefined>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Form state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBreed, setEditingBreed] = useState<BreedResponse | null>(null);
   const [formData, setFormData] = useState({ speciesId: 0, name: '', category: '', description: '' });
 
-  useEffect(() => {
-    loadSpecies();
-  }, []);
+  const { data: species = [] } = useQuery<SpeciesResponse[]>({
+    queryKey: ['species'],
+    queryFn: breedService.getSpecies,
+  });
 
-  useEffect(() => {
-    loadBreeds();
-  }, [selectedSpeciesId]);
+  const { data: breeds = [], isLoading } = useQuery<BreedResponse[]>({
+    queryKey: ['breeds', selectedSpeciesId],
+    queryFn: () => breedService.getBreeds(selectedSpeciesId),
+  });
 
-  const loadSpecies = async () => {
-    try {
-      const data = await breedService.getSpecies();
-      setSpecies(data);
-      if (data.length > 0) {
-        setSelectedSpeciesId(data[0].id);
+  const submitMutation = useMutation({
+    mutationFn: async (data: { speciesId: number; name: string; category: string; description: string }) => {
+      if (editingBreed) {
+        return breedService.updateBreed(editingBreed.id, {
+          name: data.name,
+          category: data.category || undefined,
+          description: data.description || undefined,
+        });
+      } else {
+        return breedService.createBreed({
+          speciesId: data.speciesId,
+          name: data.name,
+          category: data.category || undefined,
+          description: data.description || undefined,
+        });
       }
-    } catch (err) {
-      setError('종 목록을 불러오는데 실패했습니다.');
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['breeds'] });
+      handleCloseModal();
+    },
+  });
 
-  const loadBreeds = async () => {
-    try {
-      setLoading(true);
-      const data = await breedService.getBreeds(selectedSpeciesId);
-      setBreeds(data);
-      setError(null);
-    } catch (err) {
-      setError('품종 목록을 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const deleteMutation = useMutation({
+    mutationFn: (breedId: number) => breedService.deleteBreed(breedId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['breeds'] });
+    },
+  });
 
   const handleOpenModal = (breed?: BreedResponse) => {
     if (breed) {
       setEditingBreed(breed);
-      setFormData({ 
-          speciesId: breed.speciesId, 
-          name: breed.name, 
-          category: breed.category || '',
-          description: breed.description || '' 
+      setFormData({
+        speciesId: breed.speciesId,
+        name: breed.name,
+        category: breed.category || '',
+        description: breed.description || '',
       });
     } else {
       setEditingBreed(null);
@@ -73,80 +79,43 @@ const BreedsPage: React.FC<BreedsPageProps> = ({ embedded = false }) => {
     setFormData({ speciesId: 0, name: '', category: '', description: '' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (editingBreed) {
-        await breedService.updateBreed(editingBreed.id, {
-          name: formData.name,
-          category: formData.category || undefined,
-          description: formData.description || undefined,
-        });
-      } else {
-        await breedService.createBreed({
-          speciesId: formData.speciesId,
-          name: formData.name,
-          category: formData.category || undefined,
-          description: formData.description || undefined,
-        });
-      }
-      handleCloseModal();
-      loadBreeds();
-    } catch (err) {
-      setError('저장에 실패했습니다.');
-    }
+    submitMutation.mutate(formData);
   };
 
-  const handleDelete = async (breedId: number) => {
+  const handleDelete = (breedId: number) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
-    try {
-      await breedService.deleteBreed(breedId);
-      loadBreeds();
-    } catch (err) {
-      setError('삭제에 실패했습니다.');
-    }
+    deleteMutation.mutate(breedId);
   };
 
   const getSpeciesName = (speciesId: number) => {
-    return species.find(s => s.id === speciesId)?.name || '-';
+    return species.find((s) => s.id === speciesId)?.name || '-';
   };
 
   return (
-    <div className={embedded ? "" : "p-6"}>
-      {/* Header */}
+    <div className={embedded ? '' : 'p-6'}>
       {!embedded && (
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">품종 관리</h1>
         </div>
       )}
-      
-      {/* If embedded, we might want the button to be placed differently or just keep it. 
-          The original code had H1 and Button in the same flex container. 
-          Let's reconstruct the header area to be flexible. 
-      */}
-      <div className={`flex justify-between items-center ${embedded ? "mb-4" : "mb-6"}`}>
-        {embedded ? <div></div> : null} {/* Spacer if needed or just flex-end */}
-        {embedded && (
-             <button
-              onClick={() => handleOpenModal()}
-              className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition"
-            >
-              + 품종 추가
-            </button>
-        )}
-         {!embedded && (
-             <button
-              onClick={() => handleOpenModal()}
-              className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition"
-            >
-              + 품종 추가
-            </button>
-        )}
+
+      <div className={`flex justify-between items-center ${embedded ? 'mb-4' : 'mb-6'}`}>
+        <div></div>
+        <Button variant="primary" onClick={() => handleOpenModal()}>
+          + 품종 추가
+        </Button>
       </div>
 
-      {error && (
+      {submitMutation.isError && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+          저장에 실패했습니다.
+        </div>
+      )}
+      {deleteMutation.isError && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          삭제에 실패했습니다.
         </div>
       )}
 
@@ -179,7 +148,7 @@ const BreedsPage: React.FC<BreedsPageProps> = ({ embedded = false }) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
+            {isLoading ? (
               <tr>
                 <td colSpan={6} className="px-6 py-4 text-center text-gray-500">로딩 중...</td>
               </tr>
@@ -196,18 +165,12 @@ const BreedsPage: React.FC<BreedsPageProps> = ({ embedded = false }) => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{breed.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{breed.description || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleOpenModal(breed)}
-                      className="text-amber-600 hover:text-amber-900 mr-4"
-                    >
+                    <Button variant="link" size="sm" onClick={() => handleOpenModal(breed)}>
                       수정
-                    </button>
-                    <button
-                      onClick={() => handleDelete(breed.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
+                    </Button>
+                    <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDelete(breed.id)}>
                       삭제
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))
@@ -271,19 +234,12 @@ const BreedsPage: React.FC<BreedsPageProps> = ({ embedded = false }) => {
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
+                <Button type="button" variant="secondary" onClick={handleCloseModal}>
                   취소
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition"
-                >
+                </Button>
+                <Button type="submit" variant="primary">
                   저장
-                </button>
+                </Button>
               </div>
             </form>
           </div>

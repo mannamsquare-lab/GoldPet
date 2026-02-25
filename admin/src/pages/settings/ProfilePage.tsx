@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
 import { Shield, ShieldAlert, ShieldCheck, QrCode, X, Loader2, Copy, Check } from 'lucide-react';
+import { Button } from '../../components/common/Button';
 
 export default function ProfilePage() {
   const { user, login, token } = useAuth(); // login used effectively to update user state
@@ -141,24 +142,25 @@ export default function ProfilePage() {
             </div>
             <div className="ml-4 flex-shrink-0">
               {user.isTwoFactorEnabled ? (
-                <button
-                  type="button"
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={handleDisable}
                   disabled={isDisabling}
-                  className="bg-red-50 text-red-700 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   {isDisabling ? '해제 중...' : '해제하기'}
-                </button>
+                </Button>
               ) : (
-                <button
-                  type="button"
+                <Button
+                  variant="warning"
+                  size="sm"
                   onClick={startSetup}
                   disabled={isLoading}
-                  className="bg-amber-500 text-white hover:bg-amber-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                  className="flex items-center"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <QrCode className="w-4 h-4 mr-2" />}
                   설정하기
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -210,13 +212,14 @@ export default function ProfilePage() {
                 {error && <p className="mt-2 text-sm text-red-600 flex items-center"><ShieldAlert className="w-4 h-4 mr-1"/>{error}</p>}
               </div>
 
-              <button
+              <Button
+                variant="warning"
                 onClick={verifyAndEnable}
                 disabled={isLoading || verificationCode.length !== 6}
-                className="w-full bg-amber-500 text-white font-medium py-3 rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full"
               >
                 {isLoading ? '확인 중...' : '인증 및 활성화'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

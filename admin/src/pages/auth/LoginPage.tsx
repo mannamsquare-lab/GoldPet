@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Mail, ShieldCheck, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
+import { Button } from '../../components/common/Button';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -121,17 +122,18 @@ export default function LoginPage() {
                     />
                   </div>
                 </div>
-                <button
+                <Button
                   type="submit"
+                  variant="warning"
                   disabled={isLoading}
-                  className="w-full bg-amber-500 text-white font-medium py-2.5 rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center"
+                  className="w-full flex items-center justify-center"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                     <>
                       로그인 <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}
-                </button>
+                </Button>
               </form>
             ) : (
               <form onSubmit={handleOtpSubmit} className="space-y-4">
@@ -153,20 +155,21 @@ export default function LoginPage() {
                     required
                   />
                 </div>
-                <button
+                <Button
                   type="submit"
+                  variant="warning"
                   disabled={isLoading}
-                  className="w-full bg-amber-500 text-white font-medium py-2.5 rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center"
+                  className="w-full flex items-center justify-center"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : '인증 완료'}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="link"
                   onClick={() => setStep('credentials')}
                   className="w-full text-sm text-gray-500 hover:text-gray-700"
                 >
                   뒤로 가기
-                </button>
+                </Button>
               </form>
             )}
             
