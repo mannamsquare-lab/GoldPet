@@ -52,4 +52,36 @@ interface CommunityPostRepository : JpaRepository<CommunityPost, Long> {
         @Param("blockedUserIds") blockedUserIds: List<Long>,
         pageable: Pageable
     ): Page<CommunityPost>
+
+    // User-facing filtered versions (isHidden = false)
+    fun findAllByCategoryAndIsHiddenFalse(category: CommunityCategory, pageable: Pageable): Page<CommunityPost>
+    fun countByCategoryAndIsHiddenFalse(category: CommunityCategory): Long
+    fun findAllByIsHiddenFalse(pageable: Pageable): Page<CommunityPost>
+
+    @Query("SELECT p FROM CommunityPost p WHERE p.isHidden = false AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    fun searchByKeywordAndIsHiddenFalse(@Param("keyword") keyword: String, pageable: Pageable): Page<CommunityPost>
+
+    @Query("SELECT p FROM CommunityPost p WHERE p.isHidden = false AND LOWER(p.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+    fun findByTitleContainingIgnoreCaseAndIsHiddenFalse(@Param("title") title: String, pageable: Pageable): Page<CommunityPost>
+
+    // ExcludingUsers + isHidden filtered versions
+    @Query("SELECT p FROM CommunityPost p WHERE p.isHidden = false AND p.category = :category AND p.user.id NOT IN :blockedUserIds")
+    fun findAllByCategoryExcludingUsersAndIsHiddenFalse(
+        @Param("category") category: CommunityCategory,
+        @Param("blockedUserIds") blockedUserIds: List<Long>,
+        pageable: Pageable
+    ): Page<CommunityPost>
+
+    @Query("SELECT p FROM CommunityPost p WHERE p.isHidden = false AND p.user.id NOT IN :blockedUserIds")
+    fun findAllExcludingUsersAndIsHiddenFalse(
+        @Param("blockedUserIds") blockedUserIds: List<Long>,
+        pageable: Pageable
+    ): Page<CommunityPost>
+
+    @Query("SELECT p FROM CommunityPost p WHERE p.isHidden = false AND p.user.id NOT IN :blockedUserIds AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    fun searchByKeywordExcludingUsersAndIsHiddenFalse(
+        @Param("keyword") keyword: String,
+        @Param("blockedUserIds") blockedUserIds: List<Long>,
+        pageable: Pageable
+    ): Page<CommunityPost>
 }

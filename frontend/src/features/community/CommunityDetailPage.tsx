@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
@@ -256,7 +257,9 @@ export default function CommunityDetailPage() {
       } catch (error: any) {
           setShowReportModal(false);
           setReportTarget(null);
-          if (error.response?.status === 404) {
+          if (error.response?.status === 400) {
+              showAlert(error.response?.data?.message || '이미 신고한 대상입니다.');
+          } else if (error.response?.status === 404) {
               showAlert('신고 대상을 찾을 수 없습니다.');
           } else {
               showAlert('신고 접수에 실패했습니다.');
@@ -508,29 +511,39 @@ export default function CommunityDetailPage() {
         </div>
       </div>
       {/* Action Sheet Modal */}
-      {actionSheetTarget && (
-          <div className="comment_edit_modal" style={{ display: 'block' }}>
-              <div className="modal_wrap">
-                  <div className="action_list">
+      {actionSheetTarget && createPortal(
+          <div className="friend_card_bottomsheet_overlay" onClick={() => setActionSheetTarget(null)}>
+              <div className="friend_card_bottomsheet" onClick={(e) => e.stopPropagation()}>
+                  <div className="friend_card_bottomsheet_menu">
                       {actionSheetTarget.type === 'OTHER_POST' ? (
                           <>
-                              <button type="button" onClick={handleReport}>신고하기</button>
-                              <button type="button" onClick={handleBlockUser}>차단하기</button>
+                              <button type="button" className="friend_card_bottomsheet_item" onClick={handleBlockUser}>
+                                  차단하기
+                              </button>
+                              <div className="friend_card_bottomsheet_divider" />
+                              <button type="button" className="friend_card_bottomsheet_item" onClick={handleReport}>
+                                  신고하기
+                              </button>
                           </>
                       ) : actionSheetTarget.type === 'OTHER_COMMENT' ? (
-                          <>
-                              <button type="button" onClick={handleReport}>신고하기</button>
-                          </>
+                          <button type="button" className="friend_card_bottomsheet_item" onClick={handleReport}>
+                              신고하기
+                          </button>
                       ) : (
                           <>
-                              <button type="button" onClick={handleEdit}>수정</button>
-                              <button type="button" onClick={handleDelete}>삭제</button>
+                              <button type="button" className="friend_card_bottomsheet_item" onClick={handleEdit}>
+                                  수정
+                              </button>
+                              <div className="friend_card_bottomsheet_divider" />
+                              <button type="button" className="friend_card_bottomsheet_item" onClick={handleDelete}>
+                                  삭제
+                              </button>
                           </>
                       )}
                   </div>
-                  <button type="button" className="close_btn" onClick={() => setActionSheetTarget(null)}>닫기</button>
               </div>
-          </div>
+          </div>,
+          document.body
       )}
       <ReportModal
           isOpen={showReportModal}

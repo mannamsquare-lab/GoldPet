@@ -50,15 +50,15 @@ class CommunityService(
         val posts = if (categoryId != null) {
             val category = categoryRepository.findById(categoryId).orElseThrow { NotFoundException("Category not found") }
             if (blockedUserIds.isNotEmpty()) {
-                postRepository.findAllByCategoryExcludingUsers(category, blockedUserIds, pageable)
+                postRepository.findAllByCategoryExcludingUsersAndIsHiddenFalse(category, blockedUserIds, pageable)
             } else {
-                postRepository.findAllByCategory(category, pageable)
+                postRepository.findAllByCategoryAndIsHiddenFalse(category, pageable)
             }
         } else {
             if (blockedUserIds.isNotEmpty()) {
-                postRepository.findAllExcludingUsers(blockedUserIds, pageable)
+                postRepository.findAllExcludingUsersAndIsHiddenFalse(blockedUserIds, pageable)
             } else {
-                postRepository.findAll(pageable)
+                postRepository.findAllByIsHiddenFalse(pageable)
             }
         }
 
@@ -103,7 +103,7 @@ class CommunityService(
     fun getCategories(): List<CommunityCategoryResponse> {
         log.debug("getCategories called (Cache Miss if seeing this)")
         return getCachedCategoryEntities().map { category ->
-            val count = postRepository.countByCategory(category)
+            val count = postRepository.countByCategoryAndIsHiddenFalse(category)
             log.debug("Category {} count: {}", category.name, count)
             CommunityCategoryResponse(
                 id = category.id,
@@ -178,6 +178,7 @@ class CommunityService(
     fun toggleLike(userId: Long, postId: Long): Boolean {
         val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
+        if (post.isHidden) throw NotFoundException("Post not found")
 
         val existingLike = likeRepository.findByPostAndUser(post, user)
         return if (existingLike != null) {
@@ -195,6 +196,7 @@ class CommunityService(
     fun createComment(userId: Long, postId: Long, request: CommunityCommentCreateRequest): CommunityCommentResponse {
         val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
+        if (post.isHidden) throw NotFoundException("Post not found")
 
         val parentComment = request.parentCommentId?.let {
             commentRepository.findById(it).orElseThrow { NotFoundException("Parent comment not found") }
@@ -232,6 +234,7 @@ class CommunityService(
     fun toggleCommentLike(userId: Long, commentId: Long): Boolean {
         val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
         val comment = commentRepository.findById(commentId).orElseThrow { NotFoundException("Comment not found") }
+        if (comment.isHidden) throw NotFoundException("Comment not found")
 
         val existingLike = commentLikeRepository.findByCommentAndUser(comment, user)
         return if (existingLike != null) {
@@ -247,6 +250,7 @@ class CommunityService(
 
     fun getPostDetail(postId: Long, currentUserId: Long?): CommunityPostResponse {
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
+        if (post.isHidden) throw NotFoundException("Post not found")
 
         // Increment view count
         post.viewCount += 1
@@ -263,9 +267,9 @@ class CommunityService(
 
         val commentCount = commentRepository.countByPostId(postId)
 
-        // Fetch all comments, filter blocked users, and sort recursively
+        // Fetch all non-hidden comments, filter blocked users, and sort recursively
         val blockedIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) }?.toSet() ?: emptySet()
-        val allComments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId)
+        val allComments = commentRepository.findByPostIdAndIsHiddenFalseOrderByCreatedAtAsc(postId)
             .filter { it.user.id !in blockedIds }
         val commentMap = allComments.groupBy { it.parentComment?.id }
         val sortedComments = mutableListOf<CommunityCommentResponse>()
@@ -341,7 +345,8 @@ class CommunityService(
 
     fun getComments(postId: Long, pageable: Pageable): Page<CommunityCommentResponse> {
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
-        return commentRepository.findAllByPost(post, pageable).map { comment ->
+        if (post.isHidden) throw NotFoundException("Post not found")
+        return commentRepository.findAllByPostAndIsHiddenFalse(post, pageable).map { comment ->
             CommunityCommentResponse(
                 id = comment.id,
                 postId = post.id,
@@ -358,6 +363,7 @@ class CommunityService(
     @Transactional
     fun updatePost(postId: Long, userId: Long, request: CommunityPostUpdateRequest): CommunityPostResponse {
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
+        if (post.isHidden) throw NotFoundException("Post not found")
 
         if (post.user.id != userId) {
             throw ForbiddenException("Not authorized to update this post")
@@ -405,6 +411,7 @@ class CommunityService(
     @org.springframework.cache.annotation.CacheEvict(value = ["community:categories"], allEntries = true)
     fun deletePost(postId: Long, userId: Long) {
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
+        if (post.isHidden) throw NotFoundException("Post not found")
 
         if (post.user.id != userId) {
             throw ForbiddenException("Not authorized to delete this post")
@@ -469,9 +476,9 @@ class CommunityService(
     fun searchPosts(keyword: String, pageable: Pageable, currentUserId: Long?): Page<CommunityPostResponse> {
         val blockedUserIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) } ?: emptyList()
         val posts = if (blockedUserIds.isNotEmpty()) {
-            postRepository.searchByKeywordExcludingUsers(keyword, blockedUserIds, pageable)
+            postRepository.searchByKeywordExcludingUsersAndIsHiddenFalse(keyword, blockedUserIds, pageable)
         } else {
-            postRepository.searchByKeyword(keyword, pageable)
+            postRepository.searchByKeywordAndIsHiddenFalse(keyword, pageable)
         }
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
 

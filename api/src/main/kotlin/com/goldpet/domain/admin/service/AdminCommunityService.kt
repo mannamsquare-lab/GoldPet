@@ -49,7 +49,7 @@ class AdminCommunityService(
             viewCount = post.viewCount,
             likeCount = likeCount.toInt(),
             commentCount = comments.size,
-            isHidden = false,
+            isHidden = post.isHidden,
             createdAt = post.createdAt.format(formatter),
             updatedAt = post.updatedAt.format(formatter),
             comments = comments.map { comment ->
@@ -58,7 +58,7 @@ class AdminCommunityService(
                     content = comment.content,
                     authorId = comment.user.id,
                     authorNickname = comment.user.nickname ?: "",
-                    isHidden = false,
+                    isHidden = comment.isHidden,
                     createdAt = comment.createdAt.format(formatter)
                 )
             }
@@ -67,16 +67,18 @@ class AdminCommunityService(
 
     @Transactional
     fun hidePost(postId: Long, reason: String?) {
-        // Post hiding logic - would need isHidden field added to entity
-        // For now, just verify post exists
-        postRepository.findById(postId)
+        val post = postRepository.findById(postId)
             .orElseThrow { NotFoundException("Post not found: $postId") }
+        post.isHidden = true
+        postRepository.save(post)
     }
 
     @Transactional
     fun unhidePost(postId: Long) {
-        postRepository.findById(postId)
+        val post = postRepository.findById(postId)
             .orElseThrow { NotFoundException("Post not found: $postId") }
+        post.isHidden = false
+        postRepository.save(post)
     }
 
     @Transactional
@@ -86,8 +88,10 @@ class AdminCommunityService(
 
     @Transactional
     fun hideComment(commentId: Long, reason: String?) {
-        commentRepository.findById(commentId)
+        val comment = commentRepository.findById(commentId)
             .orElseThrow { NotFoundException("Comment not found: $commentId") }
+        comment.isHidden = true
+        commentRepository.save(comment)
     }
 
     @Transactional
@@ -109,7 +113,7 @@ class AdminCommunityService(
             viewCount = post.viewCount,
             likeCount = likeCount.toInt(),
             commentCount = commentCount.toInt(),
-            isHidden = false,
+            isHidden = post.isHidden,
             createdAt = post.createdAt.format(formatter)
         )
     }

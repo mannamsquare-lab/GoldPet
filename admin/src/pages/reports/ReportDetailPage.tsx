@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { reportService } from '../../services/reportService';
@@ -23,10 +24,49 @@ const STATUS_LABELS: Record<string, string> = {
   DISMISSED: '기각',
 };
 
+const ACTION_OPTIONS: Record<string, { value: string; label: string; default?: boolean }[]> = {
+  POST: [
+    { value: 'DELETE_POST', label: '게시글 삭제', default: true },
+    { value: 'HIDE_POST', label: '게시글 숨김' },
+    { value: 'SUSPEND_USER', label: '계정 정지 (작성자)' },
+    { value: 'WARN_USER', label: '경고' },
+  ],
+  COMMENT: [
+    { value: 'DELETE_COMMENT', label: '댓글 삭제', default: true },
+    { value: 'HIDE_COMMENT', label: '댓글 숨김' },
+    { value: 'SUSPEND_USER', label: '계정 정지 (작성자)' },
+    { value: 'WARN_USER', label: '경고' },
+  ],
+  USER: [
+    { value: 'SUSPEND_USER', label: '계정 정지', default: true },
+    { value: 'WARN_USER', label: '경고' },
+  ],
+  CHAT: [
+    { value: 'DELETE_MESSAGE', label: '메시지 삭제', default: true },
+    { value: 'SUSPEND_USER', label: '계정 정지 (발신자)' },
+    { value: 'WARN_USER', label: '경고' },
+  ],
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  DELETE_POST: '게시글 삭제',
+  HIDE_POST: '게시글 숨김',
+  DELETE_COMMENT: '댓글 삭제',
+  HIDE_COMMENT: '댓글 숨김',
+  DELETE_MESSAGE: '메시지 삭제',
+  SUSPEND_USER: '계정 정지',
+  WARN_USER: '경고',
+};
+
 export default function ReportDetailPage() {
   const { reportId } = useParams<{ reportId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<string>('');
+  const [adminNote, setAdminNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const { data: report, isLoading, isError } = useQuery({
     queryKey: ['reports', 'detail', reportId],
@@ -34,16 +74,33 @@ export default function ReportDetailPage() {
     enabled: !!reportId,
   });
 
-  const handleAction = async (action: 'resolve' | 'dismiss') => {
+  const openModal = () => {
     if (!report) return;
-    const msg = action === 'resolve' ? '조치 완료 처리하시겠습니까?' : '기각하시겠습니까?';
-    if (!confirm(msg)) return;
+    const defaultAction = ACTION_OPTIONS[report.type]?.find(o => o.default)?.value ?? '';
+    setSelectedAction(defaultAction);
+    setAdminNote('');
+    setShowModal(true);
+  };
+
+  const handleResolve = async () => {
+    if (!report || !selectedAction) return;
+    setSubmitting(true);
     try {
-      if (action === 'resolve') {
-        await reportService.resolveReport(report.id);
-      } else {
-        await reportService.dismissReport(report.id);
-      }
+      await reportService.resolveReport(report.id, selectedAction, adminNote || undefined);
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      navigate('/reports');
+    } catch {
+      alert('처리에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDismiss = async () => {
+    if (!report) return;
+    if (!confirm('기각하시겠습니까?')) return;
+    try {
+      await reportService.dismissReport(report.id);
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       navigate('/reports');
     } catch {
@@ -53,10 +110,10 @@ export default function ReportDetailPage() {
 
   const actions = report?.status === 'PENDING' ? (
     <>
-      <Button variant="success" onClick={() => handleAction('resolve')}>
+      <Button variant="success" onClick={openModal}>
         조치 완료
       </Button>
-      <Button variant="secondary" onClick={() => handleAction('dismiss')}>
+      <Button variant="secondary" onClick={handleDismiss}>
         기각
       </Button>
     </>
@@ -138,7 +195,94 @@ export default function ReportDetailPage() {
           )}
           <p className="mt-3 text-xs text-gray-400">대상 ID: {report.targetId}</p>
         </div>
+
+        {/* Resolution Info (RESOLVED status) */}
+        {report.status === 'RESOLVED' && (
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">처리 내역</h2>
+            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div>
+                <dt className="text-sm font-medium text-gray-500">수행된 조치</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {report.actionType ? (ACTION_LABELS[report.actionType] ?? report.actionType) : '-'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">처리자</dt>
+                <dd className="mt-1 text-sm text-gray-900">{report.resolvedByName ?? '-'}</dd>
+              </div>
+              {report.adminNote && (
+                <div className="col-span-2 sm:col-span-3">
+                  <dt className="text-sm font-medium text-gray-500">관리자 메모</dt>
+                  <dd className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">{report.adminNote}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        )}
       </div>
+
+      {/* Action Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">제재 액션 선택</h3>
+
+            <div className="space-y-2 mb-4">
+              {(ACTION_OPTIONS[report.type] ?? []).map(option => (
+                <label key={option.value} className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="actionType"
+                    value={option.value}
+                    checked={selectedAction === option.value}
+                    onChange={() => setSelectedAction(option.value)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-sm text-gray-900">{option.label}</span>
+                </label>
+              ))}
+            </div>
+
+            {selectedAction === 'SUSPEND_USER' && (
+              <p className="text-xs text-amber-600 bg-amber-50 rounded px-3 py-2 mb-4">
+                계정만 정지되며, 콘텐츠는 삭제되지 않습니다.
+              </p>
+            )}
+            {(selectedAction === 'HIDE_POST' || selectedAction === 'HIDE_COMMENT') && (
+              <p className="text-xs text-blue-600 bg-blue-50 rounded px-3 py-2 mb-4">
+                콘텐츠가 숨김 처리되며, 관리자 페이지에서 복원할 수 있습니다.
+              </p>
+            )}
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                관리자 메모 <span className="text-gray-400 font-normal">(선택)</span>
+              </label>
+              <textarea
+                value={adminNote}
+                onChange={e => setAdminNote(e.target.value)}
+                rows={3}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="처리 사유나 참고 내용을 입력하세요."
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setShowModal(false)} disabled={submitting}>
+                취소
+              </Button>
+              <Button
+                variant="success"
+                onClick={handleResolve}
+                disabled={!selectedAction || submitting}
+              >
+                {submitting ? '처리 중...' : '조치 실행'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DetailPageLayout>
   );
 }

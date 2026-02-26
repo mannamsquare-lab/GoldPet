@@ -30,7 +30,7 @@ class Report(
     @Column(name = "target_preview")
     val targetPreview: String? = null,
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     val reason: String,
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,8 +44,14 @@ class Report(
     @Column(name = "resolved_at")
     var resolvedAt: LocalDateTime? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resolved_by")
-    var resolvedBy: User? = null
+    @Column(name = "resolved_by")
+    var resolvedByAdminId: Long? = null,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action_type")
+    var actionType: ReportActionType? = null,
+
+    @Column(name = "admin_note")
+    var adminNote: String? = null
 
 ) : BaseTimeEntity()

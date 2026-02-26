@@ -11,9 +11,10 @@ enum class NotificationType {
     COMMENT,    // 댓글 알림
     FOLLOW,     // 팔로우 알림
     WALK,       // 산책 알림
-    NOTICE,     // 공지사항
-    EVENT,      // 이벤트
-    SYSTEM      // 시스템 알림
+    NOTICE,          // 공지사항
+    EVENT,           // 이벤트
+    SYSTEM,          // 시스템 알림
+    REPORT_RESOLVED  // 신고 처리 결과 알림 (resolve/dismiss 모두 사용)
 }
 
 @Entity

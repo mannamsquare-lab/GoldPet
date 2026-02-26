@@ -6,9 +6,15 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 
 interface CommunityCommentRepository : JpaRepository<CommunityComment, Long> {
     fun findAllByPost(post: CommunityPost, pageable: Pageable): Page<CommunityComment>
+    fun findAllByPostAndIsHiddenFalse(post: CommunityPost, pageable: Pageable): Page<CommunityComment>
+
+    @Query("SELECT c FROM CommunityComment c LEFT JOIN FETCH c.user LEFT JOIN FETCH c.parentComment WHERE c.post.id = :postId AND c.isHidden = false ORDER BY c.createdAt ASC")
+    fun findByPostIdAndIsHiddenFalseOrderByCreatedAtAsc(@Param("postId") postId: Long): List<CommunityComment>
 
     // Admin methods
     fun findByPostIdOrderByCreatedAtAsc(postId: Long): List<CommunityComment>

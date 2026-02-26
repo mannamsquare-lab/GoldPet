@@ -51,15 +51,10 @@ export default function ReportsPage() {
     filters: { status },
   });
 
-  const handleResolve = async (reportId: number, action: 'resolve' | 'dismiss') => {
-    const msg = action === 'resolve' ? '조치하시겠습니까?' : '기각하시겠습니까?';
-    if (!confirm(msg)) return;
+  const handleDismiss = async (reportId: number) => {
+    if (!confirm('기각하시겠습니까?')) return;
     try {
-      if (action === 'resolve') {
-        await reportService.resolveReport(reportId);
-      } else {
-        await reportService.dismissReport(reportId);
-      }
+      await reportService.dismissReport(reportId);
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch {
       alert('처리에 실패했습니다.');
@@ -117,7 +112,7 @@ export default function ReportsPage() {
                 variant="link"
                 size="sm"
                 className="text-green-600 hover:text-green-900"
-                onClick={(e) => { e.stopPropagation(); handleResolve(row.id, 'resolve'); }}
+                onClick={(e) => { e.stopPropagation(); navigate(`/reports/${row.id}`); }}
               >
                 조치
               </Button>
@@ -125,7 +120,7 @@ export default function ReportsPage() {
                 variant="link"
                 size="sm"
                 className="text-gray-600 hover:text-gray-900"
-                onClick={(e) => { e.stopPropagation(); handleResolve(row.id, 'dismiss'); }}
+                onClick={(e) => { e.stopPropagation(); handleDismiss(row.id); }}
               >
                 기각
               </Button>

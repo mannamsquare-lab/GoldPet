@@ -12,6 +12,9 @@ export interface ReportItem {
   status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
   createdAt: string | null;
   resolvedAt: string | null;
+  actionType: string | null;
+  adminNote: string | null;
+  resolvedByName: string | null;
 }
 
 export const reportService = {
@@ -29,8 +32,8 @@ export const reportService = {
     return response.data;
   },
 
-  async resolveReport(reportId: number): Promise<void> {
-    await apiClient.post(`/reports/${reportId}/resolve`);
+  async resolveReport(reportId: number, actionType: string, adminNote?: string): Promise<void> {
+    await apiClient.post(`/reports/${reportId}/resolve`, { actionType, adminNote });
   },
 
   async dismissReport(reportId: number): Promise<void> {

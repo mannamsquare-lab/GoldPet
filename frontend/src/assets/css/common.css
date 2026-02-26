@@ -1099,7 +1099,7 @@ h6 {
 
 .friend_card_bottomsheet {
 	width: 100%;
-	background-color: var(--color-bg);
+	background-color: #EFE1C4;
 	border-radius: 16px 16px 0 0;
 	padding: 24px 24px 40px;
 	display: flex;
@@ -1133,7 +1133,7 @@ h6 {
 .friend_card_bottomsheet_divider {
 	width: 100%;
 	height: 1px;
-	background-color: var(--color-border);
+	background-color: #A58A54;
 }
 
 /* Report Modal */
@@ -2968,54 +2968,6 @@ h6 {
 	width: 24px;
 }
 
-#communityContainer .detail_wrap .comment_edit_modal {
-	width: 100%;
-	height: 100vh;
-	position: fixed;
-	top: 0;
-	left: 0;
-	z-index: 150;
-	background-color: rgba(0, 0, 0, 0.8);
-	display: none;
-}
-
-#communityContainer .detail_wrap .comment_edit_modal .modal_wrap {
-	width: 100%;
-	background-color: #FFF7E6;
-	padding: 24px 24px 40px;
-	border-top-left-radius: 16px;
-	border-top-right-radius: 16px;
-	position: fixed;
-	bottom: 0;
-}
-
-#communityContainer .detail_wrap .comment_edit_modal .modal_wrap ul {
-	display: -webkit-box;
-	display: -ms-flexbox;
-	display: flex;
-	gap: 16px;
-	-webkit-box-orient: vertical;
-	-webkit-box-direction: normal;
-	-ms-flex-direction: column;
-	flex-direction: column;
-}
-
-#communityContainer .detail_wrap .comment_edit_modal .modal_wrap ul button {
-	font-size: 16px;
-	font-weight: 500;
-	color: #614108;
-}
-
-#communityContainer .detail_wrap .comment_edit_modal .modal_wrap .close_btn {
-	width: 100%;
-	height: 48px;
-	margin: 24px 0 0;
-	background-color: #614108;
-	border-radius: 48px;
-	color: #fff;
-	font-size: 16px;
-	font-weight: 600;
-}
 
 #communityContainer .like_comment_count {
 	padding: 16px 0 0;

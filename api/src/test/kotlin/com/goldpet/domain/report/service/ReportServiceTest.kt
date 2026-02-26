@@ -1,5 +1,7 @@
 package com.goldpet.domain.report.service
 
+import com.goldpet.domain.admin.service.AdminCommunityService
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
 import com.goldpet.domain.report.dto.CreateReportRequest
@@ -35,6 +37,12 @@ class ReportServiceTest {
     @Mock
     private lateinit var commentRepository: CommunityCommentRepository
 
+    @Mock
+    private lateinit var systemSettingService: SystemSettingService
+
+    @Mock
+    private lateinit var adminCommunityService: AdminCommunityService
+
     private lateinit var reportService: ReportService
 
     private lateinit var testUser: User
@@ -43,7 +51,7 @@ class ReportServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        reportService = ReportService(reportRepository, userRepository, postRepository, commentRepository)
+        reportService = ReportService(reportRepository, userRepository, postRepository, commentRepository, systemSettingService, adminCommunityService)
 
         testUser = User(
             id = 1L,

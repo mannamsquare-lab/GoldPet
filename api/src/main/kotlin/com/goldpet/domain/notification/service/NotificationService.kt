@@ -193,4 +193,30 @@ class NotificationService(
             senderId = fromUserId
         ))
     }
+
+    @Transactional
+    fun notifyReportResolved(toUserId: Long, actionLabel: String) {
+        createNotification(CreateNotificationRequest(
+            userId = toUserId,
+            type = NotificationType.REPORT_RESOLVED,
+            title = "신고 처리 완료",
+            message = "회원님의 신고가 처리되었습니다. 조치: $actionLabel",
+            targetId = null,
+            targetType = "REPORT",
+            senderId = null
+        ))
+    }
+
+    @Transactional
+    fun notifyReportDismissed(toUserId: Long) {
+        createNotification(CreateNotificationRequest(
+            userId = toUserId,
+            type = NotificationType.REPORT_RESOLVED,
+            title = "신고 검토 완료",
+            message = "회원님의 신고가 검토 후 기각되었습니다",
+            targetId = null,
+            targetType = "REPORT",
+            senderId = null
+        ))
+    }
 }

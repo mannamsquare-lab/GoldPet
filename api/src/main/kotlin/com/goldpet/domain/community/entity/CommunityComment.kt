@@ -27,6 +27,9 @@ class CommunityComment(
     var content: String,
 
     @Column(nullable = false)
-    var likeCount: Int = 0
+    var likeCount: Int = 0,
+
+    @Column(nullable = false)
+    var isHidden: Boolean = false
 
 ) : BaseTimeEntity()

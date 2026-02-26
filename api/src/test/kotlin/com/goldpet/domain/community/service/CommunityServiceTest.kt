@@ -130,7 +130,7 @@ class CommunityServiceTest {
             CommunityCategory(id = 2L, code = "QNA", name = "질문게시판")
         )
         whenever(categoryRepository.findAll()).thenReturn(categories)
-        whenever(postRepository.countByCategory(any())).thenReturn(10L)
+        whenever(postRepository.countByCategoryAndIsHiddenFalse(any())).thenReturn(10L)
 
         // When
         val result = communityService.getCategories()
@@ -222,7 +222,7 @@ class CommunityServiceTest {
         whenever(likeRepository.existsByPostAndUser(any(), any())).thenReturn(false)
         whenever(commentRepository.existsByPostIdAndUserId(any(), any())).thenReturn(false)
         whenever(commentRepository.countByPostId(1L)).thenReturn(0L)
-        whenever(commentRepository.findByPostIdOrderByCreatedAtAsc(1L)).thenReturn(emptyList())
+        whenever(commentRepository.findByPostIdAndIsHiddenFalseOrderByCreatedAtAsc(1L)).thenReturn(emptyList())
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
 
         // When
@@ -372,7 +372,7 @@ class CommunityServiceTest {
         val page = PageImpl(posts, pageable, 1)
 
         whenever(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory))
-        whenever(postRepository.findAllByCategory(testCategory, pageable)).thenReturn(page)
+        whenever(postRepository.findAllByCategoryAndIsHiddenFalse(testCategory, pageable)).thenReturn(page)
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
         whenever(likeRepository.existsByPostAndUser(any(), any())).thenReturn(false)
         whenever(commentRepository.existsByPostIdAndUserId(any(), any())).thenReturn(false)
@@ -394,7 +394,7 @@ class CommunityServiceTest {
         val posts = listOf(testPost)
         val page = PageImpl(posts, pageable, 1)
 
-        whenever(postRepository.searchByKeyword("테스트", pageable)).thenReturn(page)
+        whenever(postRepository.searchByKeywordAndIsHiddenFalse("테스트", pageable)).thenReturn(page)
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
         whenever(likeRepository.existsByPostAndUser(any(), any())).thenReturn(false)
 

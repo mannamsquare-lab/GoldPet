@@ -4,6 +4,7 @@ import com.goldpet.domain.common.exception.*
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.domain.auth.dto.LoginRequest
 import com.goldpet.domain.auth.dto.SignupRequest
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.Assertions.*
@@ -26,6 +27,9 @@ class AuthServiceTest {
     @Mock
     private lateinit var jwtTokenProvider: JwtTokenProvider
 
+    @Mock
+    private lateinit var systemSettingService: SystemSettingService
+
     private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var authService: AuthService
 
@@ -33,7 +37,8 @@ class AuthServiceTest {
     fun setUp() {
         MockitoAnnotations.openMocks(this)
         passwordEncoder = BCryptPasswordEncoder()
-        authService = AuthService(userRepository, passwordEncoder, jwtTokenProvider)
+        authService = AuthService(userRepository, passwordEncoder, jwtTokenProvider, systemSettingService)
+        whenever(systemSettingService.getBoolean("allow_signups", true)).thenReturn(true)
     }
 
     private fun createTestUser(id: Long, oauthId: String, nickname: String): User {
