@@ -136,7 +136,6 @@ function App() {
                 <Route path="/friend-list" element={<FriendsListPage />} />
                 <Route path="/chat" element={<ChatListPage />} />
                 <Route path="/walk" element={<WalkPage />} />
-                <Route path="/walk/map" element={<WalkMapPage />} />
                 <Route path="/walk/ranking" element={<WalkRankingPage />} />
                 <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
                 <Route path="/community" element={<CommunityListPage />} />
@@ -149,6 +148,9 @@ function App() {
 
               {/* No Layout: Community Detail (uses own history_util header) */}
               <Route path="/community/:postId" element={<CommunityDetailPage />} />
+
+              {/* No Layout: Walk Map (uses MainHeader back-only + BottomNav) */}
+              <Route path="/walk/map" element={<WalkMapPage />} />
 
               {/* Layout B pages using SubPageLayout internally */}
               <Route path="/mypage" element={<MyPage />} />

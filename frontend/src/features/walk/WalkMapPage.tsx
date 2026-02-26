@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import apiClient from '../../services/api/client';
 import { useAlert } from '../../contexts/AlertContext';
+import { MainHeader } from '../../components/common/MainHeader';
+import { BottomNav } from '../../components/common/BottomNav';
 import './WalkPage.css';
 
 const DEFAULT_LAT = 37.5665;
@@ -149,95 +151,84 @@ export const WalkMapPage = () => {
     }, []);
 
     return (
-        <div id="walkContainer">
-            <div className="talk_wrap">
-                <p>
-                    골드펫과 함께 <br />
-                    즐거운 산책을 즐겨보세요.
-                </p>
-                <button type="button" onClick={() => navigate('/location/setting')}>
-                    <img src="/assets/images/common/pin_icon.svg" alt="지도 마커" />
-                    {address}
+        <div id="wrap" className="gp-layout-page">
+            <MainHeader variant="back-only" />
+
+            <div id="walkContainer">
+                <div className="walk_wrap">
+                    {/* 지도 */}
+                    <div className="map_box">
+                        <div className="map_box_inner">
+                            {mapLoadFailed ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px' }}>
+                                    <p style={{ color: '#8B8B8B', fontSize: '14px' }}>지도를 불러올 수 없습니다</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => window.location.reload()}
+                                        style={{ padding: '8px 20px', borderRadius: '20px', border: '1px solid #D4A574', backgroundColor: '#F9ECD2', color: '#614108', fontSize: '13px', cursor: 'pointer' }}
+                                    >
+                                        새로고침
+                                    </button>
+                                </div>
+                            ) : (
+                                <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+                            )}
+                        </div>
+                        <div className="walk_map_location_chip">
+                            <img src="/assets/images/common/pin_icon.svg" alt="" />
+                            <span>{address}</span>
+                        </div>
+                    </div>
+
+                    {/* 산책 데이터 */}
+                    <div className="walk_data_section">
+                        <p className="walk_map_section_title">산책을 시작해보세요!</p>
+                        <div className="txt_wrap">
+                            <dl>
+                                <dt>거리(km)</dt>
+                                <dd>{stats.totalDistanceKm.toFixed(1)}</dd>
+                            </dl>
+                            <dl>
+                                <dt>시간(분)</dt>
+                                <dd>{stats.totalDurationMinutes.toLocaleString()}</dd>
+                            </dl>
+                            <dl>
+                                <dt>칼로리(Kcal)</dt>
+                                <dd>{stats.totalCalories.toLocaleString()}</dd>
+                            </dl>
+                            <dl>
+                                <dt>적립(Gold)</dt>
+                                <dd>{stats.totalGoldEarned.toLocaleString()}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    {/* 공개 여부 */}
+                    <div className="open_check">
+                        <input type="checkbox" id="open" />
+                        <label htmlFor="open">다른 사용자들에게 공개할 지 선택해주세요.</label>
+                    </div>
+                </div>
+
+                {/* 산책 시작 고정 버튼 */}
+                <button type="button" className="walk_start_fixed_btn" onClick={async () => {
+                    if (nativeBridge.isAvailable()) {
+                        try {
+                            await nativeBridge.callMethod('startWalk');
+                        } catch (e) {
+                            showAlert('산책 시작에 실패했습니다.');
+                        }
+                    } else {
+                        showAlert('모바일 앱에서만 가능한 기능입니다.');
+                        navigate('/walk');
+                    }
+                }}>
+                    <img src="/assets/images/walk/play_icon.svg" alt="" />
+                    산책 시작
                 </button>
             </div>
 
-            <div className="walk_wrap">
-                {/* 지도 */}
-                <div className="map_box">
-                    {mapLoadFailed ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px' }}>
-                            <p style={{ color: '#8B8B8B', fontSize: '14px' }}>지도를 불러올 수 없습니다</p>
-                            <button
-                                type="button"
-                                onClick={() => window.location.reload()}
-                                style={{ padding: '8px 20px', borderRadius: '20px', border: '1px solid #D4A574', backgroundColor: '#F9ECD2', color: '#614108', fontSize: '13px', cursor: 'pointer' }}
-                            >
-                                새로고침
-                            </button>
-                        </div>
-                    ) : (
-                        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-                    )}
-                </div>
-
-                <div className="txt_wrap">
-                    <dl>
-                        <dt>거리(km)</dt>
-                        <dd>{stats.totalDistanceKm.toFixed(1)}</dd>
-                    </dl>
-                    <dl>
-                        <dt>시간(분)</dt>
-                        <dd>{stats.totalDurationMinutes.toLocaleString()}</dd>
-                    </dl>
-                    <dl>
-                        <dt>칼로리(Kcal)</dt>
-                        <dd>{stats.totalCalories.toLocaleString()}</dd>
-                    </dl>
-                    <dl>
-                        <dt>적립(Gold)</dt>
-                        <dd>{stats.totalGoldEarned.toLocaleString()}</dd>
-                    </dl>
-                </div>
-
-                <div className="link_wrap">
-                    <button type="button" onClick={async () => {
-                        if (nativeBridge.isAvailable()) {
-                            try {
-                                await nativeBridge.callMethod('openCamera');
-                            } catch (e) {
-                                showAlert('카메라를 열 수 없습니다.');
-                            }
-                        } else {
-                            showAlert('모바일 앱에서만 가능한 기능입니다.');
-                        }
-                    }}>
-                        <img src="/assets/images/walk/camera_icon.svg" alt="" />
-                        사진 촬영하기
-                    </button>
-                    <button type="button" onClick={async () => {
-                        // Hybrid Check
-                        if (nativeBridge.isAvailable()) {
-                            try {
-                                await nativeBridge.callMethod('startWalk');
-                            } catch (e) {
-                                showAlert('산책 시작에 실패했습니다.');
-                            }
-                        } else {
-                            // Web Fallback
-                            showAlert('모바일 앱에서만 가능한 기능입니다.');
-                            navigate('/walk');
-                        }
-                    }}>
-                        <img src="/assets/images/walk/play_icon.svg" alt="" />
-                        산책 시작하기
-                    </button>
-                </div>
-
-                <div className="open_check">
-                    <input type="checkbox" id="open" />
-                    <label htmlFor="open">다른 사용자들에게 공개할 지 선택해주세요.</label>
-                </div>
-            </div>
+            <BottomNav />
         </div>
     );
 };
