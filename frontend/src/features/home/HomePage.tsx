@@ -12,6 +12,7 @@ import type { AppNoticeResponse } from '../../services/noticeService';
 import { useAlert } from '../../contexts/AlertContext';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { getImageUrl } from '../../utils/imageUrl';
+import { formatAgeGroup } from '../../utils/formatters';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 
 import { Loading } from '../../components/common/Loading';
@@ -286,9 +287,9 @@ export default function HomePage() {
                                                     ) : (
                                                         <>
                                                             <p data-swiper-parallax="-300">
-                                                                {item.ownerAge ? `${item.ownerAge}살 ∙ ` : ''}{item.locationText || '위치 미설정'} ∙ {item.distance}
+                                                                {formatAgeGroup(item.ownerAge)}{item.ownerAge && item.ownerMbti ? ' ∙ ' : ''}{item.ownerMbti || ''}<br />
+                                                                {item.locationText || '위치 미설정'} ∙ {item.distance}
                                                             </p>
-                                                            {item.ownerMbti && <p data-swiper-parallax="-280">{item.ownerMbti}</p>}
                                                             {item.ownerIntro && <><br /><p data-swiper-parallax="-250">{item.ownerIntro}</p></>}
                                                         </>
                                                     )}

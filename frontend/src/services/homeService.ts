@@ -1,6 +1,7 @@
 // Home Service - API integration for Home features
 
 import apiClient from './api/client';
+import { truncateLocation, formatDistanceKm } from '../utils/formatters';
 
 export interface HomeRecommendation {
   id: number;
@@ -39,12 +40,6 @@ export interface HomeDataResponse {
     hasUnread: boolean;
     count: number;
   };
-}
-
-// Format distance from meters to Korean string
-function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)}m 이내`;
-  return `${(meters / 1000).toFixed(1)}km 이내`;
 }
 
 // Mock data for fallback
@@ -137,7 +132,7 @@ export const homeService = {
         petAge: r.petAge,
         petBreed: r.petBreed,
         description: r.description || '',
-        distance: formatDistance(r.distance),
+        distance: formatDistanceKm(r.distance),
         images: r.images.length > 0 ? r.images : ['/assets/images/common/pet_none_img02.svg'],
         isNeutered: r.isNeutered,
         gender: r.petGender,
@@ -150,7 +145,7 @@ export const homeService = {
         ownerMbti: r.ownerMbti,
         ownerInterests: r.ownerInterests || [],
         ownerHobbies: r.ownerHobbies || [],
-        locationText: r.locationText,
+        locationText: truncateLocation(r.locationText),
         tags: r.tags || [],
       }));
 

@@ -13,6 +13,7 @@ import { reportService } from '../../services/reportService';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import { ReportModal } from '../../components/common/ReportModal';
 import { useAlert } from '../../contexts/AlertContext';
+import { truncateLocation, formatAgeGroup, formatDistanceKm } from '../../utils/formatters';
 
 interface FriendCardProps {
     data: Friend;
@@ -53,11 +54,6 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const formatDistance = (dist: number) => {
-        if (dist >= 1000) return `${(dist / 1000).toFixed(1)}km`;
-        return `${dist}m`;
     };
 
     const handleLike = async () => {
@@ -226,7 +222,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
                                 <div className="pet_detail">
                                     <p>
                                         {data.petAge}살 ∙ {data.petBreed} <br />
-                                        {data.locationText || '위치 미설정'} ∙ {formatDistance(data.distance)} 이내
+                                        {truncateLocation(data.locationText)} ∙ {formatDistanceKm(data.distance)}
                                     </p>
                                     <br />
                                     <p>{data.description}</p>
@@ -294,9 +290,9 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
                                 </div>
                                 <div className="pet_detail">
                                     <p>
-                                        {data.ownerAge ? `${data.ownerAge}살` : ''}{data.ownerAge ? ' ∙ ' : ''}{data.locationText || '위치 미설정'} ∙ {formatDistance(data.distance)} 이내
+                                        {formatAgeGroup(data.ownerAge)}{data.ownerAge && data.ownerMbti ? ' ∙ ' : ''}{data.ownerMbti || ''}<br />
+                                        {truncateLocation(data.locationText)} ∙ {formatDistanceKm(data.distance)}
                                     </p>
-                                    {data.ownerMbti && <p>{data.ownerMbti}</p>}
                                     <br />
                                     {data.ownerIntro && <p>{data.ownerIntro}</p>}
                                     {(data.ownerInterests.length > 0 || data.ownerHobbies.length > 0) && (
