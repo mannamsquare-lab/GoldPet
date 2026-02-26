@@ -29,6 +29,10 @@ class NativeBridge {
   late final NativeAuthService nativeAuthService;
   late final PermissionService permissionService;
 
+  /// Overlay color change callback (set by HybridWebView)
+  /// Parameters: (topColor, bottomColor) — null means clear overlay
+  Function(Color?, Color?)? onOverlayColorChange;
+
   NativeBridge(this.webViewController) {
     locationService = LocationService();
     cameraService = CameraService();
@@ -295,6 +299,21 @@ class NativeBridge {
         case 'setCurrentChatRoom':
           final chatRoomId = params?['chatRoomId'] as String?;
           pushNotificationService.setCurrentChatRoom(chatRoomId);
+          return {'success': true};
+
+        // 오버레이 색상 제어 (SafeArea 동기화)
+        case BridgeProtocol.setOverlayColor:
+          final colorHex = params?['color'] as String? ?? '#000000';
+          final colorValue = int.parse(colorHex.replaceFirst('#', ''), radix: 16) | 0xFF000000;
+          final bottomColorHex = params?['bottomColor'] as String?;
+          final bottomColor = bottomColorHex != null
+              ? Color(int.parse(bottomColorHex.replaceFirst('#', ''), radix: 16) | 0xFF000000)
+              : Color(colorValue);
+          onOverlayColorChange?.call(Color(colorValue), bottomColor);
+          return {'success': true};
+
+        case BridgeProtocol.clearOverlayColor:
+          onOverlayColorChange?.call(null, null);
           return {'success': true};
 
         default:

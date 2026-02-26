@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import type { AppNoticeResponse } from '../../services/noticeService';
 import './NoticePopupModal.css';
+import { useOverlayColor } from '../../hooks/useOverlayColor';
 
 interface NoticePopupModalProps {
   notices: AppNoticeResponse[];
@@ -24,6 +25,8 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
   const [imageIndex, setImageIndex] = useState(0);
   const [dismissChecked, setDismissChecked] = useState(false);
   const touchStartX = useRef(0);
+
+  useOverlayColor(popupNotices.length > 0 && currentIndex < popupNotices.length);
 
   if (popupNotices.length === 0 || currentIndex >= popupNotices.length) {
     return null;

@@ -25,5 +25,9 @@ class BridgeProtocol {
   static const String locationUpdated = 'locationUpdated';
   static const String permissionStatusChanged = 'permissionStatusChanged';
   static const String appStateChanged = 'appStateChanged';
+
+  // 오버레이 색상 제어
+  static const String setOverlayColor = 'setOverlayColor';
+  static const String clearOverlayColor = 'clearOverlayColor';
 }
 

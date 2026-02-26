@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useOverlayColor } from '../../hooks/useOverlayColor';
 
 interface ReportModalProps {
     isOpen: boolean;
@@ -13,6 +14,8 @@ const REPORT_REASONS = ['욕설/비방', '음란물', '스팸/광고', '사기/�
 export function ReportModal({ isOpen, onClose, onSubmit, isSubmitting = false }: ReportModalProps) {
     const [selectedReason, setSelectedReason] = useState('');
     const [customReason, setCustomReason] = useState('');
+
+    useOverlayColor(isOpen);
 
     if (!isOpen) return null;
 

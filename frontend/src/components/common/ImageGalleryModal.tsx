@@ -5,6 +5,7 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { getImageUrl } from '../../utils/imageUrl';
+import { useOverlayColor } from '../../hooks/useOverlayColor';
 
 interface ImageGalleryModalProps {
     isOpen: boolean;
@@ -45,6 +46,8 @@ export const ImageGalleryModal = ({
             return () => { document.body.style.overflow = ''; };
         }
     }, [isOpen]);
+
+    useOverlayColor(isOpen);
 
     if (!isOpen) return null;
 

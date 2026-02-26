@@ -1,6 +1,7 @@
 
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { m, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { FLIP_HALF_DURATION, FLIP_EASING } from '../../config/cardFlipAnimation';
@@ -35,6 +36,8 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
     const [showReportModal, setShowReportModal] = useState(false);
     const [isReportSubmitting, setIsReportSubmitting] = useState(false);
     const [isPetMode, setIsPetMode] = useState(true);
+
+    useOverlayColor(showMenu || showReportModal, '#000000', '#EFE1C4');
 
     const isAnimatingRef = useRef(false);
     const handleToggle = () => {

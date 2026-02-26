@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -25,6 +26,8 @@ export default function CommunityDetailPage() {
 
   /* Action Sheet State */
   const [actionSheetTarget, setActionSheetTarget] = useState<{ type: 'POST' | 'COMMENT' | 'OTHER_POST' | 'OTHER_COMMENT', id: number } | null>(null);
+
+  useOverlayColor(!!actionSheetTarget, '#000000', '#EFE1C4');
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ type: 'POST' | 'COMMENT', targetId: number } | null>(null);

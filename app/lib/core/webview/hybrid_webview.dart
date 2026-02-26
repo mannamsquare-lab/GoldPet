@@ -30,6 +30,8 @@ class _HybridWebViewState extends State<HybridWebView> {
   late final BridgeMessageHandler _bridgeController;
   Color _scaffoldColor = const Color(0xFFEFE1C4);
   Color _bottomSafeAreaColor = const Color(0xFFEFE1C4);
+  Color? _overlayColor;
+  Color? _bottomOverlayColor;
   DateTime? _lastBackPressTime;
 
   @override
@@ -226,6 +228,26 @@ class _HybridWebViewState extends State<HybridWebView> {
     // Bridge 초기화 (서비스는 Bridge 내부에서 생성됨)
     _bridge = NativeBridge(_controller);
 
+    // 오버레이 색상 제어 콜백 연결
+    _bridge.onOverlayColorChange = (color, bottomColor) {
+      if (!mounted) return;
+      setState(() {
+        _overlayColor = color;
+        _bottomOverlayColor = bottomColor;
+      });
+      // 오버레이 상태에 따라 StatusBar/NavigationBar 아이콘 밝기 변경
+      final effectiveBottomColor = bottomColor ?? _bottomSafeAreaColor;
+      final isBottomDark = bottomColor != null && bottomColor.computeLuminance() < 0.5;
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        statusBarColor: color ?? _scaffoldColor,
+        statusBarIconBrightness: color != null ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: Platform.isAndroid ? const Color(0x00000000) : effectiveBottomColor,
+        systemNavigationBarDividerColor: Platform.isAndroid ? const Color(0x00000000) : effectiveBottomColor,
+        systemNavigationBarContrastEnforced: false,
+        systemNavigationBarIconBrightness: isBottomDark ? Brightness.light : Brightness.dark,
+      ));
+    };
+
     // 서비스 참조 가져오기
     _locationService = _bridge.locationService;
 
@@ -326,6 +348,19 @@ class _HybridWebViewState extends State<HybridWebView> {
     if (uri == null) return;
     final path = uri.path;
 
+    // 라우트 변경 시 오버레이 색상 초기화 (safety net)
+    if (_overlayColor != null) {
+      setState(() { _overlayColor = null; _bottomOverlayColor = null; });
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        statusBarColor: _scaffoldColor,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Platform.isAndroid ? const Color(0x00000000) : _bottomSafeAreaColor,
+        systemNavigationBarDividerColor: Platform.isAndroid ? const Color(0x00000000) : _bottomSafeAreaColor,
+        systemNavigationBarContrastEnforced: false,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ));
+    }
+
     bool isTypeB = false;
 
     // Exact match (main tab pages only)
@@ -403,11 +438,11 @@ class _HybridWebViewState extends State<HybridWebView> {
         _handleBackNavigation();
       },
       child: Scaffold(
-        backgroundColor: _scaffoldColor,
+        backgroundColor: _overlayColor ?? _scaffoldColor,
         body: SafeArea(
           bottom: false,
           child: ColoredBox(
-            color: _bottomSafeAreaColor,
+            color: _bottomOverlayColor ?? _bottomSafeAreaColor,
             child: Padding(
               padding: EdgeInsets.only(bottom: bottomPadding),
               child: Platform.isAndroid

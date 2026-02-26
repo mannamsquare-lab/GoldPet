@@ -1,5 +1,6 @@
 
 import ReactDOM from 'react-dom';
+import { useOverlayColor } from '../../hooks/useOverlayColor';
 
 interface AlertModalProps {
     isOpen: boolean;
@@ -18,6 +19,8 @@ export const AlertModal = ({
     confirmText = '확인',
     cancelText = '취소'
 }: AlertModalProps) => {
+    useOverlayColor(isOpen);
+
     if (!isOpen) return null;
 
     const content = (
