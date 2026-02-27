@@ -52,73 +52,70 @@ export default function NoticePopupModal({ notices }: NoticePopupModalProps) {
   return (
     <div className="notice-popup-overlay">
       <div className="notice-popup-modal">
-        <button className="notice-popup-close-x" onClick={handleClose} aria-label="닫기">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6l12 12" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </button>
-        {notice.imageUrls.length > 0 && (
-          <div className="notice-popup-images">
-            <div
-              className="notice-popup-images-track"
-              style={{ transform: `translateX(-${imageIndex * 100}%)` }}
-              onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-              onTouchEnd={(e) => {
-                const diff = touchStartX.current - e.changedTouches[0].clientX;
-                if (Math.abs(diff) > 50) {
-                  if (diff > 0 && imageIndex < notice.imageUrls.length - 1) setImageIndex(imageIndex + 1);
-                  if (diff < 0 && imageIndex > 0) setImageIndex(imageIndex - 1);
-                }
-              }}
-            >
-              {notice.imageUrls.map((url, i) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`${notice.title} ${i + 1}`}
-                  className="notice-popup-image"
-                  onClick={notice.linkUrl ? handleLinkClick : undefined}
-                  style={{ cursor: notice.linkUrl ? 'pointer' : 'default' }}
+        <div className="notice-popup-content-wrap">
+          {/* Top row: dismiss checkbox (left) + close button (right) */}
+          <div className="notice-popup-top-row">
+            {notice.isDismissible ? (
+              <div className="notice-popup-dismiss-row">
+                <input
+                  type="checkbox"
+                  id="notice-dismiss-check"
+                  checked={dismissChecked}
+                  onChange={(e) => setDismissChecked(e.target.checked)}
                 />
-              ))}
-            </div>
-            {notice.imageUrls.length > 1 && (
-              <div className="notice-popup-dots">
-                {notice.imageUrls.map((_, i) => (
-                  <span
+                <label htmlFor="notice-dismiss-check" className="notice-popup-dismiss-label">
+                  오늘 하루 열지 않기
+                </label>
+              </div>
+            ) : (
+              <div />
+            )}
+            <button className="notice-popup-close-btn" onClick={handleClose} aria-label="닫기">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Image carousel */}
+          {notice.imageUrls.length > 0 && (
+            <div className="notice-popup-images">
+              <div
+                className="notice-popup-images-track"
+                style={{ transform: `translateX(-${imageIndex * 100}%)` }}
+                onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                onTouchEnd={(e) => {
+                  const diff = touchStartX.current - e.changedTouches[0].clientX;
+                  if (Math.abs(diff) > 50) {
+                    if (diff > 0 && imageIndex < notice.imageUrls.length - 1) setImageIndex(imageIndex + 1);
+                    if (diff < 0 && imageIndex > 0) setImageIndex(imageIndex - 1);
+                  }
+                }}
+              >
+                {notice.imageUrls.map((url, i) => (
+                  <img
                     key={i}
-                    className={`notice-popup-dot${i === imageIndex ? ' active' : ''}`}
-                    onClick={() => setImageIndex(i)}
+                    src={url}
+                    alt={`${notice.title} ${i + 1}`}
+                    className="notice-popup-image"
+                    onClick={notice.linkUrl ? handleLinkClick : undefined}
+                    style={{ cursor: notice.linkUrl ? 'pointer' : 'default' }}
                   />
                 ))}
               </div>
-            )}
-          </div>
-        )}
-        <div className="notice-popup-body">
-          <h2
-            className="notice-popup-title"
-            onClick={notice.linkUrl ? handleLinkClick : undefined}
-            style={{ cursor: notice.linkUrl ? 'pointer' : 'default' }}
-          >
-            {notice.title}
-          </h2>
-          {notice.content && (
-            <p className="notice-popup-content">{notice.content}</p>
+            </div>
           )}
-        </div>
-        <div className="notice-popup-footer">
-          {notice.isDismissible && (
-            <div className="notice-popup-dismiss-row">
-              <input
-                type="checkbox"
-                id="notice-dismiss-check"
-                checked={dismissChecked}
-                onChange={(e) => setDismissChecked(e.target.checked)}
-              />
-              <label htmlFor="notice-dismiss-check" className="notice-popup-dismiss-label">
-                오늘 하루 그만 보기
-              </label>
+
+          {/* Dot indicators */}
+          {notice.imageUrls.length > 1 && (
+            <div className="notice-popup-dots">
+              {notice.imageUrls.map((_, i) => (
+                <span
+                  key={i}
+                  className={`notice-popup-dot${i === imageIndex ? ' active' : ''}`}
+                  onClick={() => setImageIndex(i)}
+                />
+              ))}
             </div>
           )}
         </div>
