@@ -255,7 +255,7 @@ export default function SystemPage() {
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <h2 className="font-semibold mb-4">앱 설정</h2>
         <div className="space-y-4">
-          {configs.filter(c => c.key !== 'maintenance.mode').map(config => {
+          {[...configs].filter(c => c.key !== 'maintenance.mode').sort((a, b) => a.key.localeCompare(b.key)).map(config => {
             const isBooleanValue = config.value === 'true' || config.value === 'false';
 
             return (
