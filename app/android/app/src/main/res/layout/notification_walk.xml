@@ -14,14 +14,11 @@
         android:scaleType="fitStart"
         android:importantForAccessibility="no" />
 
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="10dp" />
-
     <!-- Stats: 거리 | 시간 | 칼로리 (no dividers) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
@@ -110,14 +107,11 @@
         </LinearLayout>
     </LinearLayout>
 
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="24dp" />
-
     <!-- Spot action buttons: 응가 | 쉬 | 사진 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:orientation="horizontal"
         android:gravity="center">
 
