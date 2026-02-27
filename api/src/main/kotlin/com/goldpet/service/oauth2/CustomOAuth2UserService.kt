@@ -2,6 +2,7 @@ package com.goldpet.service.oauth2
 
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.entity.UserProfileImage
 import com.goldpet.domain.user.repository.UserRepository
 import com.nimbusds.jwt.JWTParser
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -181,6 +182,10 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
                             phoneNumber = null
                     )
             user = userRepository.save(user)
+            if (user.profileImageUrl != null) {
+                user.profileImages.add(UserProfileImage(user = user, imageUrl = user.profileImageUrl!!, orderIndex = 0))
+                userRepository.save(user)
+            }
         } else {
             // Update user details if necessary (protect user-customized data)
             var changed = false
@@ -191,7 +196,9 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
                 user.nickname = nickname; changed = true
             }
             if (profileImage != null && user.profileImages.isEmpty() && user.profileImageUrl != profileImage) {
-                user.profileImageUrl = profileImage; changed = true
+                user.profileImageUrl = profileImage
+                user.profileImages.add(UserProfileImage(user = user, imageUrl = profileImage, orderIndex = 0))
+                changed = true
             }
             if (changed) user = userRepository.save(user)
         }

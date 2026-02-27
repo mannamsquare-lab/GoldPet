@@ -17,11 +17,11 @@ interface WalkRepository : JpaRepository<Walk, Long> {
     ): List<Walk>
 
     @Query("""
-        SELECT w.user.id, w.user.nickname, w.user.profileImageUrl,
+        SELECT w.user.id, w.user.nickname, MAX(w.user.profileImageUrl),
                SUM(w.distanceKm), COUNT(w)
         FROM Walk w
         WHERE w.startTime >= :since
-        GROUP BY w.user.id, w.user.nickname, w.user.profileImageUrl
+        GROUP BY w.user.id, w.user.nickname
         ORDER BY SUM(w.distanceKm) DESC
     """)
     fun findRankingsSince(

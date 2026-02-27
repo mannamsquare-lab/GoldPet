@@ -56,6 +56,11 @@ class PetService(
 
         val savedPet = petRepository.save(pet)
 
+        if (request.profileImageUrls.isNullOrEmpty() && savedPet.profileImageUrl != null) {
+            savedPet.profileImages.add(PetProfileImage(pet = savedPet, imageUrl = savedPet.profileImageUrl!!, orderIndex = 0))
+            petRepository.save(savedPet)
+        }
+
         try {
             badgeAwardService.checkAndAwardBadges(userId, BadgeConditionType.PET_REGISTER)
         } catch (e: Exception) {
@@ -109,7 +114,14 @@ class PetService(
         request.birthDate?.let { pet.birthDate = it }
         request.weightKg?.let { pet.weightKg = it }
         request.isNeutered?.let { pet.isNeutered = it }
-        request.profileImageUrl?.let { pet.profileImageUrl = it }
+        request.profileImageUrl?.let {
+            pet.profileImageUrl = it
+            if (pet.profileImages.isEmpty()) {
+                pet.profileImages.add(PetProfileImage(pet = pet, imageUrl = it, orderIndex = 0))
+            } else {
+                pet.profileImages[0].imageUrl = it
+            }
+        }
         request.profileImageUrls?.let { urls ->
             pet.profileImages.clear()
             urls.forEachIndexed { index, url ->

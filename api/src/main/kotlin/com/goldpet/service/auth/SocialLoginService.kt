@@ -10,6 +10,7 @@ import com.goldpet.domain.auth.repository.UserAuthProviderRepository
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.entity.UserProfileImage
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -297,6 +298,11 @@ class SocialLoginService(
         )
         user = userRepository.save(user)
 
+        if (user.profileImageUrl != null) {
+            user.profileImages.add(UserProfileImage(user = user, imageUrl = user.profileImageUrl!!, orderIndex = 0))
+            userRepository.save(user)
+        }
+
         userAuthProviderRepository.save(
             UserAuthProvider(
                 user = user,
@@ -355,6 +361,10 @@ class SocialLoginService(
                 phoneNumber = null
             )
             user = userRepository.save(user)
+            if (user.profileImageUrl != null) {
+                user.profileImages.add(UserProfileImage(user = user, imageUrl = user.profileImageUrl!!, orderIndex = 0))
+                userRepository.save(user)
+            }
         } else {
             syncUserFields(user, provider, oauthId, email, nickname, profileImage)
         }
@@ -380,7 +390,11 @@ class SocialLoginService(
         var changed = false
         if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
         if (nickname != null && user.nickname == null) { user.nickname = nickname; changed = true }
-        if (profileImage != null && user.profileImages.isEmpty() && user.profileImageUrl != profileImage) { user.profileImageUrl = profileImage; changed = true }
+        if (profileImage != null && user.profileImages.isEmpty() && user.profileImageUrl != profileImage) {
+            user.profileImageUrl = profileImage
+            user.profileImages.add(UserProfileImage(user = user, imageUrl = profileImage, orderIndex = 0))
+            changed = true
+        }
         if (user.oauthProvider.isBlank()) { user.oauthProvider = provider; user.oauthId = oauthId; changed = true }
         if (changed) userRepository.save(user)
     }

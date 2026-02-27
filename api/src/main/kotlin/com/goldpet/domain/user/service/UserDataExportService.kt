@@ -34,7 +34,7 @@ class UserDataExportService(
                 "birthDate" to user.birthDate?.toString(),
                 "phoneNumber" to user.phoneNumber,
                 "mainLocationText" to user.mainLocationText,
-                "profileImageUrl" to user.profileImageUrl,
+                "profileImageUrl" to (user.profileImages.firstOrNull()?.imageUrl ?: user.profileImageUrl),
                 "intro" to user.intro,
                 "mbti" to user.mbti,
                 "createdAt" to user.createdAt.toString(),
@@ -48,7 +48,7 @@ class UserDataExportService(
                     "breed" to pet.breed?.name,
                     "gender" to pet.gender,
                     "birthDate" to pet.birthDate?.toString(),
-                    "profileImageUrl" to pet.profileImageUrl
+                    "profileImageUrl" to (pet.profileImages.firstOrNull()?.imageUrl ?: pet.profileImageUrl)
                 )
             },
             "posts" to posts.map { post ->

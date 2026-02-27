@@ -269,7 +269,14 @@ class UserService(
     fun updateUserProfileImages(userId: Long, request: ProfileImageUpdateRequest): User {
         val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
         
-        request.profileImageUrl?.let { user.profileImageUrl = it }
+        request.profileImageUrl?.let {
+            user.profileImageUrl = it
+            if (user.profileImages.isEmpty()) {
+                user.profileImages.add(UserProfileImage(user = user, imageUrl = it, orderIndex = 0))
+            } else {
+                user.profileImages[0].imageUrl = it
+            }
+        }
         request.profileImageUrls?.let { urls ->
             user.profileImages.clear()
             urls.forEachIndexed { index, url ->
