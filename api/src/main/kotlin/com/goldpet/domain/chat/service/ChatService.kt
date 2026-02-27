@@ -135,10 +135,11 @@ class ChatService(
         // Send notification to other participants (not the sender)
         if (request.messageType != MessageType.SYSTEM) {
             val participants = chatRoomParticipantRepository.findAllByChatRoomId(chatRoom.id)
-            val messagePreview = request.textContent ?: when (request.messageType) {
+            val messagePreview = request.textContent?.takeIf { it.isNotBlank() } ?: when (request.messageType) {
                 MessageType.IMAGE -> "사진을 보냈습니다"
                 MessageType.VIDEO -> "동영상을 보냈습니다"
                 MessageType.FILE -> "파일을 보냈습니다"
+                MessageType.EMOTICON -> "이모티콘을 보냈습니다"
                 else -> "메시지를 보냈습니다"
             }
 

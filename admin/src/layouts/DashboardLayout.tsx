@@ -17,7 +17,8 @@ import {
   Bell,
   User,
   Sparkles,
-  BellRing
+  BellRing,
+  Smile
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +28,7 @@ const NAVIGATION = [
   { name: '내 정보', path: '/profile', icon: User },
   { name: '회원 관리', path: '/users', icon: Users },
   { name: '채팅 관리', path: '/chat', icon: MessageSquare },
+  { name: '이모티콘 관리', path: '/emoticons', icon: Smile },
   { name: '커뮤니티 관리', path: '/community', icon: MessageCircle },
   { name: '마케팅 관리', path: '/marketing', icon: Megaphone },
   { name: '신고/콘텐츠', path: '/reports', icon: AlertTriangle },

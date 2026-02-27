@@ -3,6 +3,7 @@ package com.goldpet.domain.chat.controller
 import com.goldpet.domain.chat.dto.ChatMessageRequest
 import com.goldpet.domain.chat.dto.ChatMessageResponse
 import com.goldpet.domain.chat.service.ChatService
+import com.goldpet.domain.emoticon.service.EmoticonService
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessageSendingOperations
@@ -17,13 +18,15 @@ data class TypingEvent(
 @Controller
 class WebSocketChatController(
     private val simpMessageSendingOperations: SimpMessageSendingOperations,
-    private val chatService: ChatService
+    private val chatService: ChatService,
+    private val emoticonService: EmoticonService
 ) {
 
     @MessageMapping("/chat.sendMessage")
     fun sendMessage(@Payload chatMessageRequest: ChatMessageRequest) {
         val savedMessage = chatService.saveChatMessage(chatMessageRequest)
-        val chatMessageResponse = ChatMessageResponse.from(savedMessage)
+        val emoticon = savedMessage.emoticonId?.let { emoticonService.getById(it) }
+        val chatMessageResponse = ChatMessageResponse.from(savedMessage, emoticon = emoticon)
         simpMessageSendingOperations.convertAndSend("/topic/chat/${chatMessageRequest.roomId}", chatMessageResponse)
     }
 

@@ -14,6 +14,7 @@ import { useAlert } from '../../contexts/AlertContext';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import { blockService } from '../../services/blockService';
 import { CACHE_TIME } from '../../config/queryConfig';
+import EmoticonPicker from './EmoticonPicker';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -150,6 +151,7 @@ const ChatDetailPage = () => {
     const isGroupChat = location.pathname.includes('/chat/group/');
     const [message, setMessage] = useState('');
     const [showAttachMenu, setShowAttachMenu] = useState(false);
+    const [showEmoticonPicker, setShowEmoticonPicker] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -232,8 +234,8 @@ const ChatDetailPage = () => {
 
     // Send Message Mutation
     const sendMutation = useMutation({
-        mutationFn: async ({ content, messageType, fileId }: { content: string; messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE'; fileId?: number }) => {
-            return chatService.sendMessage(chatId!, content, { messageType, fileId });
+        mutationFn: async ({ content, messageType, fileId, emoticonId }: { content: string | null; messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number }) => {
+            return chatService.sendMessage(chatId!, content, { messageType, fileId, emoticonId });
         },
         onError: () => showToast('메시지 전송에 실패했습니다.', 'error'),
         onSuccess: (newMessage) => {
@@ -431,6 +433,11 @@ const ChatDetailPage = () => {
         sendMutation.mutate({ content: text });
     };
 
+    const handleSendEmoticon = (emoticonId: number) => {
+        sendMutation.mutate({ content: null, messageType: 'EMOTICON', emoticonId });
+        setShowEmoticonPicker(false);
+    };
+
     const handleBlockUser = () => {
         setShowHeaderMenu(false);
         if (!otherParticipant) return;
@@ -605,6 +612,19 @@ const ChatDetailPage = () => {
             );
         }
 
+        // Handle emoticon messages
+        if ((msgType === 'EMOTICON' || msgType === 'emoticon') && (msg.emoticonImageUrl || msg.emoticonId)) {
+            return (
+                <div className="chat_detail_message_emoticon">
+                    {msg.emoticonImageUrl ? (
+                        <img src={msg.emoticonImageUrl} alt={msg.emoticonName || '이모티콘'} />
+                    ) : (
+                        <div className="chat_detail_message_emoticon_deleted">삭제된 이모티콘</div>
+                    )}
+                </div>
+            );
+        }
+
         // Default: text message - use ExpandableText component
         return <ExpandableText content={content} />;
     };
@@ -696,9 +716,14 @@ const ChatDetailPage = () => {
                             </div>
                         )}
                         <div className="chat_detail_message_content">
-                            <div className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}`}>
-                                {renderMessageContent(msg)}
-                            </div>
+                            {(() => {
+                                const isEmoticon = msg.type === 'emoticon' || msg.messageType === 'EMOTICON';
+                                return (
+                                    <div className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}`}>
+                                        {renderMessageContent(msg)}
+                                    </div>
+                                );
+                            })()}
                             <div className="chat_detail_message_time">{time}</div>
                         </div>
                     </div>
@@ -778,6 +803,14 @@ const ChatDetailPage = () => {
                 />
             )}
 
+            {/* Emoticon Picker */}
+            {showEmoticonPicker && (
+                <EmoticonPicker
+                    onSelect={handleSendEmoticon}
+                    onClose={() => setShowEmoticonPicker(false)}
+                />
+            )}
+
             {/* Input Area */}
             <div className="chat_detail_input_area">
                 {/* Quick Replies */}
@@ -827,6 +860,19 @@ const ChatDetailPage = () => {
                     )}
 
                     <div className="chat_detail_input_wrap">
+                        <button
+                            type="button"
+                            className={`chat_detail_attach_btn btn-effect ${showEmoticonPicker ? 'active' : ''}`}
+                            onClick={() => { setShowEmoticonPicker(!showEmoticonPicker); setShowAttachMenu(false); }}
+                            aria-label="이모티콘"
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" stroke="var(--color-primary)" strokeWidth="2"/>
+                                <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round"/>
+                                <circle cx="9" cy="10" r="1" fill="var(--color-primary)"/>
+                                <circle cx="15" cy="10" r="1" fill="var(--color-primary)"/>
+                            </svg>
+                        </button>
                         <button
                             type="button"
                             className={`chat_detail_attach_btn btn-effect ${showAttachMenu ? 'active' : ''}`}

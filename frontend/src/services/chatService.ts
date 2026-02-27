@@ -35,12 +35,15 @@ export interface ChatMessage {
   senderNickname: string;
   textContent: string;
   timestamp: string;
-  type: 'text' | 'image' | 'video' | 'file' | 'system';
+  type: 'text' | 'image' | 'video' | 'file' | 'system' | 'emoticon';
   // API response fields
   createdAt?: string;
   messageType?: string;
   fileId?: number;
   file?: FileInfo;
+  emoticonId?: number;
+  emoticonImageUrl?: string;
+  emoticonName?: string;
 }
 
 export const chatService = {
@@ -56,14 +59,15 @@ export const chatService = {
 
   sendMessage: async (
     roomId: string,
-    content: string,
-    options?: { messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE'; fileId?: number }
+    content: string | null,
+    options?: { messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number }
   ): Promise<ChatMessage> => {
     try {
       const response = await apiClient.post(`/chat/rooms/${roomId}/messages`, {
         content: content || null,
         messageType: options?.messageType || 'TEXT',
         fileId: options?.fileId || null,
+        emoticonId: options?.emoticonId || null,
       });
       return response.data;
     } catch {

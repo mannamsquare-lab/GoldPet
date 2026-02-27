@@ -24,6 +24,7 @@ import UserAttributesPage from './pages/data/UserAttributesPage';
 import SystemPage from './pages/system/SystemPage';
 import AIProfilePage from './pages/aiprofile/AIProfilePage';
 import NoticeManagementPage from './pages/notice/NoticeManagementPage';
+import EmoticonManagementPage from './pages/emoticon/EmoticonManagementPage';
 
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
             <Route path="data/user-attributes" element={<UserAttributesPage />} />
             <Route path="ai-profile" element={<AIProfilePage />} />
             <Route path="notices" element={<NoticeManagementPage />} />
+            <Route path="emoticons" element={<EmoticonManagementPage />} />
             <Route path="system" element={<SystemPage />} />
             <Route path="users/:userId" element={<UserDetailPage />} />
             <Route path="community/:postId" element={<CommunityDetailPage />} />

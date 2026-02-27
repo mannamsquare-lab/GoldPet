@@ -913,3 +913,104 @@
   text-decoration: underline;
 }
 
+/* Emoticon Picker */
+.chat_detail_emoticon_picker {
+  background: #EFE1C4;
+  padding: 24px;
+  padding-bottom: 40px;
+}
+
+.chat_detail_emoticon_grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 24px;
+  justify-items: center;
+}
+
+.chat_detail_emoticon_item {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.chat_detail_emoticon_item img {
+  max-width: 32px;
+  max-height: 32px;
+  object-fit: contain;
+}
+
+.chat_detail_emoticon_dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+  margin-top: 24px;
+}
+
+.chat_detail_emoticon_dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #A58A54;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.chat_detail_emoticon_dot.active {
+  background: #614108;
+}
+
+.chat_detail_emoticon_empty {
+  text-align: center;
+  color: #727272;
+  font-size: 14px;
+  padding: 40px 0;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Emoticon Message Rendering */
+.chat_detail_message_emoticon {
+  width: 128px;
+  height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat_detail_message_emoticon img {
+  max-width: 100px;
+  max-height: 90px;
+  object-fit: contain;
+}
+
+.chat_detail_message_emoticon_deleted {
+  width: 64px;
+  height: 64px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 10px;
+  color: #999;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Bubble override for emoticon messages */
+.chat_detail_message_bubble_emoticon {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+

@@ -3,6 +3,7 @@ package com.goldpet.domain.chat.dto
 import com.goldpet.domain.chat.entity.ChatMessage
 import com.goldpet.domain.chat.entity.MessageType
 import com.goldpet.domain.common.entity.FileAttachment
+import com.goldpet.domain.emoticon.entity.Emoticon
 import java.time.LocalDateTime
 
 data class FileInfo(
@@ -26,12 +27,14 @@ data class ChatMessageResponse(
     val fileId: Long?,
     val file: FileInfo?,
     val emoticonId: Long?,
+    val emoticonImageUrl: String?,
+    val emoticonName: String?,
     val emojiCode: String?,
     val createdAt: LocalDateTime,
     val readCount: Int
 ) {
     companion object {
-        fun from(chatMessage: ChatMessage, fileAttachment: FileAttachment? = null): ChatMessageResponse {
+        fun from(chatMessage: ChatMessage, fileAttachment: FileAttachment? = null, emoticon: Emoticon? = null): ChatMessageResponse {
             return ChatMessageResponse(
                 id = chatMessage.id,
                 roomId = chatMessage.chatRoom.id,
@@ -53,6 +56,8 @@ data class ChatMessageResponse(
                     )
                 },
                 emoticonId = chatMessage.emoticonId,
+                emoticonImageUrl = emoticon?.imageUrl,
+                emoticonName = emoticon?.name,
                 emojiCode = chatMessage.emojiCode,
                 createdAt = chatMessage.createdAt,
                 readCount = chatMessage.readCount

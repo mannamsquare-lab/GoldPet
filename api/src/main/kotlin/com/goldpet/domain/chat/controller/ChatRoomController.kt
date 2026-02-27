@@ -6,6 +6,7 @@ import com.goldpet.domain.chat.dto.ChatMessageResponse
 import com.goldpet.domain.chat.dto.SendMessageRequest
 import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
+import com.goldpet.domain.emoticon.service.EmoticonService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*
 class ChatRoomController(
     private val chatService: ChatService,
     private val fileAttachmentRepository: FileAttachmentRepository,
+    private val emoticonService: EmoticonService,
     private val simpMessageSendingOperations: SimpMessageSendingOperations
 ) {
     @PostMapping
@@ -68,8 +70,16 @@ class ChatRoomController(
             emptyMap()
         }
 
+        // Batch-fetch emoticons for messages with emoticonId
+        val emoticonIds = messages.mapNotNull { it.emoticonId }
+        val emoticons = emoticonService.getByIds(emoticonIds)
+
         return ResponseEntity.ok(messages.map { msg ->
-            ChatMessageResponse.from(msg, msg.fileId?.let { fileAttachments[it] })
+            ChatMessageResponse.from(
+                msg,
+                msg.fileId?.let { fileAttachments[it] },
+                msg.emoticonId?.let { emoticons[it] }
+            )
         })
     }
 
@@ -84,14 +94,18 @@ class ChatRoomController(
             senderId = userDetails.id,
             messageType = request.messageType,
             textContent = request.content,
-            fileId = request.fileId
+            fileId = request.fileId,
+            emoticonId = request.emoticonId
         )
         val message = chatService.saveChatMessage(messageRequest)
 
         // Fetch file attachment if present
         val fileAttachment = request.fileId?.let { fileAttachmentRepository.findById(it).orElse(null) }
 
-        val chatMessageResponse = ChatMessageResponse.from(message, fileAttachment)
+        // Fetch emoticon if present
+        val emoticon = request.emoticonId?.let { emoticonService.getById(it) }
+
+        val chatMessageResponse = ChatMessageResponse.from(message, fileAttachment, emoticon)
 
         // Broadcast to WebSocket subscribers for real-time updates (chat detail page)
         simpMessageSendingOperations.convertAndSend("/topic/chat/$roomId", chatMessageResponse)

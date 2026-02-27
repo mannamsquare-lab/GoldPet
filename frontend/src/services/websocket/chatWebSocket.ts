@@ -257,10 +257,13 @@ class ChatWebSocketService {
         width: data.file.width,
         height: data.file.height,
       } : undefined,
+      emoticonId: data.emoticonId,
+      emoticonImageUrl: data.emoticonImageUrl,
+      emoticonName: data.emoticonName,
     };
   }
 
-  private mapMessageType(type: string): 'text' | 'image' | 'video' | 'file' | 'system' {
+  private mapMessageType(type: string): 'text' | 'image' | 'video' | 'file' | 'system' | 'emoticon' {
     switch (type?.toUpperCase()) {
       case 'IMAGE':
         return 'image';
@@ -270,6 +273,8 @@ class ChatWebSocketService {
         return 'file';
       case 'SYSTEM':
         return 'system';
+      case 'EMOTICON':
+        return 'emoticon';
       default:
         return 'text';
     }
