@@ -308,6 +308,13 @@ mixin _$WalkResponse {
   List<WalkSpotDto> get spots => throw _privateConstructorUsedError;
   double? get caloriesBurned => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
+  String? get startAddress => throw _privateConstructorUsedError;
+  double? get startLatitude => throw _privateConstructorUsedError;
+  double? get startLongitude => throw _privateConstructorUsedError;
+  double? get endLatitude => throw _privateConstructorUsedError;
+  double? get endLongitude => throw _privateConstructorUsedError;
+  List<String> get petNames => throw _privateConstructorUsedError;
+  List<int> get petIds => throw _privateConstructorUsedError;
 
   /// Serializes this WalkResponse to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -337,6 +344,13 @@ abstract class $WalkResponseCopyWith<$Res> {
     List<WalkSpotDto> spots,
     double? caloriesBurned,
     String? notes,
+    String? startAddress,
+    double? startLatitude,
+    double? startLongitude,
+    double? endLatitude,
+    double? endLongitude,
+    List<String> petNames,
+    List<int> petIds,
   });
 }
 
@@ -365,6 +379,13 @@ class _$WalkResponseCopyWithImpl<$Res, $Val extends WalkResponse>
     Object? spots = null,
     Object? caloriesBurned = freezed,
     Object? notes = freezed,
+    Object? startAddress = freezed,
+    Object? startLatitude = freezed,
+    Object? startLongitude = freezed,
+    Object? endLatitude = freezed,
+    Object? endLongitude = freezed,
+    Object? petNames = null,
+    Object? petIds = null,
   }) {
     return _then(
       _value.copyWith(
@@ -408,6 +429,34 @@ class _$WalkResponseCopyWithImpl<$Res, $Val extends WalkResponse>
                 ? _value.notes
                 : notes // ignore: cast_nullable_to_non_nullable
                       as String?,
+            startAddress: freezed == startAddress
+                ? _value.startAddress
+                : startAddress // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            startLatitude: freezed == startLatitude
+                ? _value.startLatitude
+                : startLatitude // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            startLongitude: freezed == startLongitude
+                ? _value.startLongitude
+                : startLongitude // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            endLatitude: freezed == endLatitude
+                ? _value.endLatitude
+                : endLatitude // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            endLongitude: freezed == endLongitude
+                ? _value.endLongitude
+                : endLongitude // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            petNames: null == petNames
+                ? _value.petNames
+                : petNames // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
+            petIds: null == petIds
+                ? _value.petIds
+                : petIds // ignore: cast_nullable_to_non_nullable
+                      as List<int>,
           )
           as $Val,
     );
@@ -434,6 +483,13 @@ abstract class _$$WalkResponseImplCopyWith<$Res>
     List<WalkSpotDto> spots,
     double? caloriesBurned,
     String? notes,
+    String? startAddress,
+    double? startLatitude,
+    double? startLongitude,
+    double? endLatitude,
+    double? endLongitude,
+    List<String> petNames,
+    List<int> petIds,
   });
 }
 
@@ -461,6 +517,13 @@ class __$$WalkResponseImplCopyWithImpl<$Res>
     Object? spots = null,
     Object? caloriesBurned = freezed,
     Object? notes = freezed,
+    Object? startAddress = freezed,
+    Object? startLatitude = freezed,
+    Object? startLongitude = freezed,
+    Object? endLatitude = freezed,
+    Object? endLongitude = freezed,
+    Object? petNames = null,
+    Object? petIds = null,
   }) {
     return _then(
       _$WalkResponseImpl(
@@ -504,6 +567,34 @@ class __$$WalkResponseImplCopyWithImpl<$Res>
             ? _value.notes
             : notes // ignore: cast_nullable_to_non_nullable
                   as String?,
+        startAddress: freezed == startAddress
+            ? _value.startAddress
+            : startAddress // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        startLatitude: freezed == startLatitude
+            ? _value.startLatitude
+            : startLatitude // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        startLongitude: freezed == startLongitude
+            ? _value.startLongitude
+            : startLongitude // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        endLatitude: freezed == endLatitude
+            ? _value.endLatitude
+            : endLatitude // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        endLongitude: freezed == endLongitude
+            ? _value.endLongitude
+            : endLongitude // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        petNames: null == petNames
+            ? _value._petNames
+            : petNames // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
+        petIds: null == petIds
+            ? _value._petIds
+            : petIds // ignore: cast_nullable_to_non_nullable
+                  as List<int>,
       ),
     );
   }
@@ -523,8 +614,17 @@ class _$WalkResponseImpl implements _WalkResponse {
     required final List<WalkSpotDto> spots,
     this.caloriesBurned,
     this.notes,
+    this.startAddress,
+    this.startLatitude,
+    this.startLongitude,
+    this.endLatitude,
+    this.endLongitude,
+    final List<String> petNames = const [],
+    final List<int> petIds = const [],
   }) : _path = path,
-       _spots = spots;
+       _spots = spots,
+       _petNames = petNames,
+       _petIds = petIds;
 
   factory _$WalkResponseImpl.fromJson(Map<String, dynamic> json) =>
       _$$WalkResponseImplFromJson(json);
@@ -561,10 +661,37 @@ class _$WalkResponseImpl implements _WalkResponse {
   final double? caloriesBurned;
   @override
   final String? notes;
+  @override
+  final String? startAddress;
+  @override
+  final double? startLatitude;
+  @override
+  final double? startLongitude;
+  @override
+  final double? endLatitude;
+  @override
+  final double? endLongitude;
+  final List<String> _petNames;
+  @override
+  @JsonKey()
+  List<String> get petNames {
+    if (_petNames is EqualUnmodifiableListView) return _petNames;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_petNames);
+  }
+
+  final List<int> _petIds;
+  @override
+  @JsonKey()
+  List<int> get petIds {
+    if (_petIds is EqualUnmodifiableListView) return _petIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_petIds);
+  }
 
   @override
   String toString() {
-    return 'WalkResponse(id: $id, userId: $userId, startTime: $startTime, endTime: $endTime, distanceKm: $distanceKm, durationSeconds: $durationSeconds, path: $path, spots: $spots, caloriesBurned: $caloriesBurned, notes: $notes)';
+    return 'WalkResponse(id: $id, userId: $userId, startTime: $startTime, endTime: $endTime, distanceKm: $distanceKm, durationSeconds: $durationSeconds, path: $path, spots: $spots, caloriesBurned: $caloriesBurned, notes: $notes, startAddress: $startAddress, startLatitude: $startLatitude, startLongitude: $startLongitude, endLatitude: $endLatitude, endLongitude: $endLongitude, petNames: $petNames, petIds: $petIds)';
   }
 
   @override
@@ -585,7 +712,19 @@ class _$WalkResponseImpl implements _WalkResponse {
             const DeepCollectionEquality().equals(other._spots, _spots) &&
             (identical(other.caloriesBurned, caloriesBurned) ||
                 other.caloriesBurned == caloriesBurned) &&
-            (identical(other.notes, notes) || other.notes == notes));
+            (identical(other.notes, notes) || other.notes == notes) &&
+            (identical(other.startAddress, startAddress) ||
+                other.startAddress == startAddress) &&
+            (identical(other.startLatitude, startLatitude) ||
+                other.startLatitude == startLatitude) &&
+            (identical(other.startLongitude, startLongitude) ||
+                other.startLongitude == startLongitude) &&
+            (identical(other.endLatitude, endLatitude) ||
+                other.endLatitude == endLatitude) &&
+            (identical(other.endLongitude, endLongitude) ||
+                other.endLongitude == endLongitude) &&
+            const DeepCollectionEquality().equals(other._petNames, _petNames) &&
+            const DeepCollectionEquality().equals(other._petIds, _petIds));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -602,6 +741,13 @@ class _$WalkResponseImpl implements _WalkResponse {
     const DeepCollectionEquality().hash(_spots),
     caloriesBurned,
     notes,
+    startAddress,
+    startLatitude,
+    startLongitude,
+    endLatitude,
+    endLongitude,
+    const DeepCollectionEquality().hash(_petNames),
+    const DeepCollectionEquality().hash(_petIds),
   );
 
   /// Create a copy of WalkResponse
@@ -630,6 +776,13 @@ abstract class _WalkResponse implements WalkResponse {
     required final List<WalkSpotDto> spots,
     final double? caloriesBurned,
     final String? notes,
+    final String? startAddress,
+    final double? startLatitude,
+    final double? startLongitude,
+    final double? endLatitude,
+    final double? endLongitude,
+    final List<String> petNames,
+    final List<int> petIds,
   }) = _$WalkResponseImpl;
 
   factory _WalkResponse.fromJson(Map<String, dynamic> json) =
@@ -655,6 +808,20 @@ abstract class _WalkResponse implements WalkResponse {
   double? get caloriesBurned;
   @override
   String? get notes;
+  @override
+  String? get startAddress;
+  @override
+  double? get startLatitude;
+  @override
+  double? get startLongitude;
+  @override
+  double? get endLatitude;
+  @override
+  double? get endLongitude;
+  @override
+  List<String> get petNames;
+  @override
+  List<int> get petIds;
 
   /// Create a copy of WalkResponse
   /// with the given fields replaced by the non-null parameter values.
@@ -679,6 +846,7 @@ mixin _$CreateWalkRequest {
   List<WalkSpotDto> get spots => throw _privateConstructorUsedError;
   double? get caloriesBurned => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
+  List<int> get petIds => throw _privateConstructorUsedError;
 
   /// Serializes this CreateWalkRequest to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -706,6 +874,7 @@ abstract class $CreateWalkRequestCopyWith<$Res> {
     List<WalkSpotDto> spots,
     double? caloriesBurned,
     String? notes,
+    List<int> petIds,
   });
 }
 
@@ -732,6 +901,7 @@ class _$CreateWalkRequestCopyWithImpl<$Res, $Val extends CreateWalkRequest>
     Object? spots = null,
     Object? caloriesBurned = freezed,
     Object? notes = freezed,
+    Object? petIds = null,
   }) {
     return _then(
       _value.copyWith(
@@ -767,6 +937,10 @@ class _$CreateWalkRequestCopyWithImpl<$Res, $Val extends CreateWalkRequest>
                 ? _value.notes
                 : notes // ignore: cast_nullable_to_non_nullable
                       as String?,
+            petIds: null == petIds
+                ? _value.petIds
+                : petIds // ignore: cast_nullable_to_non_nullable
+                      as List<int>,
           )
           as $Val,
     );
@@ -791,6 +965,7 @@ abstract class _$$CreateWalkRequestImplCopyWith<$Res>
     List<WalkSpotDto> spots,
     double? caloriesBurned,
     String? notes,
+    List<int> petIds,
   });
 }
 
@@ -816,6 +991,7 @@ class __$$CreateWalkRequestImplCopyWithImpl<$Res>
     Object? spots = null,
     Object? caloriesBurned = freezed,
     Object? notes = freezed,
+    Object? petIds = null,
   }) {
     return _then(
       _$CreateWalkRequestImpl(
@@ -851,6 +1027,10 @@ class __$$CreateWalkRequestImplCopyWithImpl<$Res>
             ? _value.notes
             : notes // ignore: cast_nullable_to_non_nullable
                   as String?,
+        petIds: null == petIds
+            ? _value._petIds
+            : petIds // ignore: cast_nullable_to_non_nullable
+                  as List<int>,
       ),
     );
   }
@@ -868,8 +1048,10 @@ class _$CreateWalkRequestImpl implements _CreateWalkRequest {
     final List<WalkSpotDto> spots = const [],
     this.caloriesBurned,
     this.notes,
+    final List<int> petIds = const [],
   }) : _path = path,
-       _spots = spots;
+       _spots = spots,
+       _petIds = petIds;
 
   factory _$CreateWalkRequestImpl.fromJson(Map<String, dynamic> json) =>
       _$$CreateWalkRequestImplFromJson(json);
@@ -905,10 +1087,18 @@ class _$CreateWalkRequestImpl implements _CreateWalkRequest {
   final double? caloriesBurned;
   @override
   final String? notes;
+  final List<int> _petIds;
+  @override
+  @JsonKey()
+  List<int> get petIds {
+    if (_petIds is EqualUnmodifiableListView) return _petIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_petIds);
+  }
 
   @override
   String toString() {
-    return 'CreateWalkRequest(startTime: $startTime, endTime: $endTime, distanceKm: $distanceKm, durationSeconds: $durationSeconds, path: $path, spots: $spots, caloriesBurned: $caloriesBurned, notes: $notes)';
+    return 'CreateWalkRequest(startTime: $startTime, endTime: $endTime, distanceKm: $distanceKm, durationSeconds: $durationSeconds, path: $path, spots: $spots, caloriesBurned: $caloriesBurned, notes: $notes, petIds: $petIds)';
   }
 
   @override
@@ -927,7 +1117,8 @@ class _$CreateWalkRequestImpl implements _CreateWalkRequest {
             const DeepCollectionEquality().equals(other._spots, _spots) &&
             (identical(other.caloriesBurned, caloriesBurned) ||
                 other.caloriesBurned == caloriesBurned) &&
-            (identical(other.notes, notes) || other.notes == notes));
+            (identical(other.notes, notes) || other.notes == notes) &&
+            const DeepCollectionEquality().equals(other._petIds, _petIds));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -942,6 +1133,7 @@ class _$CreateWalkRequestImpl implements _CreateWalkRequest {
     const DeepCollectionEquality().hash(_spots),
     caloriesBurned,
     notes,
+    const DeepCollectionEquality().hash(_petIds),
   );
 
   /// Create a copy of CreateWalkRequest
@@ -971,6 +1163,7 @@ abstract class _CreateWalkRequest implements CreateWalkRequest {
     final List<WalkSpotDto> spots,
     final double? caloriesBurned,
     final String? notes,
+    final List<int> petIds,
   }) = _$CreateWalkRequestImpl;
 
   factory _CreateWalkRequest.fromJson(Map<String, dynamic> json) =
@@ -992,6 +1185,8 @@ abstract class _CreateWalkRequest implements CreateWalkRequest {
   double? get caloriesBurned;
   @override
   String? get notes;
+  @override
+  List<int> get petIds;
 
   /// Create a copy of CreateWalkRequest
   /// with the given fields replaced by the non-null parameter values.

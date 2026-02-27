@@ -4,13 +4,18 @@ import com.goldpet.domain.gamification.entity.BadgeConditionType
 import com.goldpet.domain.gamification.service.BadgeAwardService
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.gold.service.GoldService
+import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.entity.Walk
+import com.goldpet.domain.walk.entity.WalkPet
 import com.goldpet.domain.walk.repository.WalkRepository
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.PrecisionModel
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,8 +25,10 @@ import org.springframework.transaction.annotation.Transactional
 class WalkService(
     private val walkRepository: WalkRepository,
     private val userRepository: UserRepository,
+    private val petRepository: PetRepository,
     private val goldService: GoldService,
-    private val badgeAwardService: BadgeAwardService
+    private val badgeAwardService: BadgeAwardService,
+    private val naverGeocodingService: NaverGeocodingService
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
 
@@ -41,9 +48,9 @@ class WalkService(
         )
         
         // Add spots
-        val geometryFactory = org.locationtech.jts.geom.GeometryFactory()
+        val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
         request.spots.forEach { spotDto ->
-            val point = geometryFactory.createPoint(org.locationtech.jts.geom.Coordinate(spotDto.longitude, spotDto.latitude))
+            val point = geometryFactory.createPoint(Coordinate(spotDto.longitude, spotDto.latitude))
             walk.spots.add(com.goldpet.domain.walk.entity.WalkSpot(
                 walk = walk,
                 location = point,
@@ -52,6 +59,28 @@ class WalkService(
                 imageUrl = spotDto.imageUrl,
                 note = spotDto.note
             ))
+        }
+
+        // Derive start/end locations from path (server-side, not from client)
+        val startCoord = request.path.firstOrNull()
+        val endCoord = request.path.lastOrNull()
+        if (startCoord != null) {
+            walk.startLocation = geometryFactory.createPoint(Coordinate(startCoord[1], startCoord[0])) // [lon, lat]
+            try {
+                walk.startAddress = naverGeocodingService.reverseGeocode(startCoord[0], startCoord[1])
+            } catch (e: Exception) {
+                // Geocoding failure is non-fatal — walk save continues
+                log.warn("Reverse geocoding failed for walk start: {}", e.message)
+            }
+        }
+        if (endCoord != null) {
+            walk.endLocation = geometryFactory.createPoint(Coordinate(endCoord[1], endCoord[0])) // [lon, lat]
+        }
+
+        // Resolve pet ownership and create WalkPet associations
+        if (request.petIds.isNotEmpty()) {
+            val ownedPets = petRepository.findByOwnerId(userId).filter { it.id in request.petIds }
+            walk.walkPets = ownedPets.map { WalkPet(walk = walk, pet = it) }.toMutableList()
         }
 
         val savedWalk = walkRepository.save(walk)

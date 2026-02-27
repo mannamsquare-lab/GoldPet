@@ -4,6 +4,7 @@ import com.goldpet.domain.common.entity.BaseTimeEntity
 import com.goldpet.domain.user.entity.User
 import jakarta.persistence.*
 import org.locationtech.jts.geom.LineString
+import org.locationtech.jts.geom.Point
 import java.time.LocalDateTime
 
 @Entity
@@ -37,6 +38,17 @@ class Walk(
     var notes: String?,
 
     @OneToMany(mappedBy = "walk", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var spots: MutableList<WalkSpot> = mutableListOf()
+    var spots: MutableList<WalkSpot> = mutableListOf(),
+
+    var startAddress: String? = null,
+
+    @Column(columnDefinition = "geometry(Point, 4326)")
+    var startLocation: Point? = null,
+
+    @Column(columnDefinition = "geometry(Point, 4326)")
+    var endLocation: Point? = null,
+
+    @OneToMany(mappedBy = "walk", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var walkPets: MutableList<WalkPet> = mutableListOf()
 
 ) : BaseTimeEntity()

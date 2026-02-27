@@ -7,6 +7,7 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 
 @Service
 class NaverGeocodingService(
@@ -14,7 +15,10 @@ class NaverGeocodingService(
     @Value("\${ncp.maps.client-secret:}") private val clientSecret: String
 ) {
     private val log = LoggerFactory.getLogger(NaverGeocodingService::class.java)
-    private val restTemplate = RestTemplate()
+    private val restTemplate = RestTemplate(SimpleClientHttpRequestFactory().apply {
+        setConnectTimeout(3000)
+        setReadTimeout(3000)
+    })
 
     fun reverseGeocode(lat: Double, lng: Double): String {
         val url = "https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc?coords=$lng,$lat&output=json&orders=legalcode"

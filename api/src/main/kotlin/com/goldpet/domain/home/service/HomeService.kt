@@ -1,10 +1,11 @@
 package com.goldpet.domain.home.service
 
 import com.goldpet.domain.common.exception.*
+import com.goldpet.domain.home.dto.HomeRecentWalkResponse
 import com.goldpet.domain.home.dto.HomeResponse
 import com.goldpet.domain.home.dto.NotificationSummary
 import com.goldpet.domain.friend.service.FriendService
-import com.goldpet.domain.walk.service.WalkService
+import com.goldpet.domain.walk.repository.WalkRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
@@ -14,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class HomeService(
     private val friendService: FriendService,
-    private val walkService: WalkService,
+    private val walkRepository: WalkRepository,
     private val notificationService: NotificationService,
     private val userRepository: UserRepository
 ) {
@@ -38,9 +39,17 @@ class HomeService(
             pageable = PageRequest.of(0, 10)
         ).content
 
-        // Get most recent walk
-        val recentWalks = walkService.getWalksByUser(userId)
-        val recentWalk = recentWalks.firstOrNull()
+        // Get most recent walk (single query, no full list fetch)
+        val recentWalk = walkRepository.findFirstByUserIdOrderByStartTimeDesc(userId)?.let { w ->
+            HomeRecentWalkResponse(
+                id = w.id,
+                distanceKm = w.distanceKm,
+                durationSeconds = w.durationSeconds,
+                endTime = w.endTime,
+                startAddress = w.startAddress,
+                petNames = w.walkPets.map { it.pet.name },
+            )
+        }
 
         // Get notification unread count
         val unreadCount = notificationService.getUnreadCount(userId)

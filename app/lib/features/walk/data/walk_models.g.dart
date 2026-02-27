@@ -45,6 +45,21 @@ _$WalkResponseImpl _$$WalkResponseImplFromJson(Map<String, dynamic> json) =>
           .toList(),
       caloriesBurned: (json['caloriesBurned'] as num?)?.toDouble(),
       notes: json['notes'] as String?,
+      startAddress: json['startAddress'] as String?,
+      startLatitude: (json['startLatitude'] as num?)?.toDouble(),
+      startLongitude: (json['startLongitude'] as num?)?.toDouble(),
+      endLatitude: (json['endLatitude'] as num?)?.toDouble(),
+      endLongitude: (json['endLongitude'] as num?)?.toDouble(),
+      petNames:
+          (json['petNames'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      petIds:
+          (json['petIds'] as List<dynamic>?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$$WalkResponseImplToJson(_$WalkResponseImpl instance) =>
@@ -59,6 +74,13 @@ Map<String, dynamic> _$$WalkResponseImplToJson(_$WalkResponseImpl instance) =>
       'spots': instance.spots,
       'caloriesBurned': instance.caloriesBurned,
       'notes': instance.notes,
+      'startAddress': instance.startAddress,
+      'startLatitude': instance.startLatitude,
+      'startLongitude': instance.startLongitude,
+      'endLatitude': instance.endLatitude,
+      'endLongitude': instance.endLongitude,
+      'petNames': instance.petNames,
+      'petIds': instance.petIds,
     };
 
 _$CreateWalkRequestImpl _$$CreateWalkRequestImplFromJson(
@@ -80,6 +102,11 @@ _$CreateWalkRequestImpl _$$CreateWalkRequestImplFromJson(
       const [],
   caloriesBurned: (json['caloriesBurned'] as num?)?.toDouble(),
   notes: json['notes'] as String?,
+  petIds:
+      (json['petIds'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList() ??
+      const [],
 );
 
 Map<String, dynamic> _$$CreateWalkRequestImplToJson(
@@ -93,4 +120,5 @@ Map<String, dynamic> _$$CreateWalkRequestImplToJson(
   'spots': instance.spots,
   'caloriesBurned': instance.caloriesBurned,
   'notes': instance.notes,
+  'petIds': instance.petIds,
 };

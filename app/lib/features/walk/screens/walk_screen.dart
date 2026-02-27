@@ -79,6 +79,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   String _currentAddress = '';
   DateTime? _lastGeocodingTime;
   String? _petImageUrl;
+  List<int> _petIds = [];
   Uint8List? _petMarkerBytes;
   final Map<String, NOverlayImage> _spotMarkerImages = {};
 
@@ -162,6 +163,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       if (pets.isNotEmpty) {
         _petImageUrl = pets.first['profileImageUrl'] as String?;
       }
+      _petIds = pets.map<int>((p) => p['id'] as int).toList();
     } catch (e) {
       debugPrint('[WalkScreen] Failed to fetch pet data: $e');
     }
@@ -924,6 +926,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       path: pathList,
       spots: _spots,
       caloriesBurned: caloriesBurned,
+      petIds: _petIds,
     );
 
     setState(() => _isWalking = false);

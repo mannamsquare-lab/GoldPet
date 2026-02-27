@@ -27,10 +27,17 @@ sealed class WalkResponse with _$WalkResponse {
     required DateTime endTime,
     required double distanceKm,
     required int durationSeconds,
-    required List<List<double>> path, 
+    required List<List<double>> path,
     required List<WalkSpotDto> spots,
     double? caloriesBurned,
     String? notes,
+    String? startAddress,
+    double? startLatitude,
+    double? startLongitude,
+    double? endLatitude,
+    double? endLongitude,
+    @Default([]) List<String> petNames,
+    @Default([]) List<int> petIds,
   }) = _WalkResponse;
 
   factory WalkResponse.fromJson(Map<String, dynamic> json) =>
@@ -48,6 +55,7 @@ sealed class CreateWalkRequest with _$CreateWalkRequest {
     @Default([]) List<WalkSpotDto> spots,
     double? caloriesBurned,
     String? notes,
+    @Default([]) List<int> petIds,
   }) = _CreateWalkRequest;
 
   factory CreateWalkRequest.fromJson(Map<String, dynamic> json) =>

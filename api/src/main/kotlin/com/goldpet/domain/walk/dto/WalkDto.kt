@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
 import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.PrecisionModel
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.LineString
 import java.time.LocalDateTime
@@ -21,9 +22,10 @@ data class CreateWalkRequest(
     val spots: List<WalkSpotDto> = emptyList(),
     val caloriesBurned: Double?,
     val notes: String?,
+    val petIds: List<Long> = emptyList(),
 ) {
     fun toLineString(): LineString {
-        val geometryFactory = GeometryFactory()
+        val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
         val coords = path.map { Coordinate(it[1], it[0]) }.toTypedArray() // JTS expects (longitude, latitude)
         return geometryFactory.createLineString(coords)
     }
@@ -49,6 +51,13 @@ data class WalkResponse(
     val spots: List<WalkSpotDto>,
     val caloriesBurned: Double?,
     val notes: String?,
+    val startAddress: String? = null,
+    val startLatitude: Double? = null,
+    val startLongitude: Double? = null,
+    val endLatitude: Double? = null,
+    val endLongitude: Double? = null,
+    val petNames: List<String> = emptyList(),
+    val petIds: List<Long> = emptyList(),
 ) {
     companion object {
         fun from(walk: Walk): WalkResponse {
@@ -72,7 +81,14 @@ data class WalkResponse(
                     )
                 },
                 caloriesBurned = walk.caloriesBurned,
-                notes = walk.notes
+                notes = walk.notes,
+                startAddress = walk.startAddress,
+                startLatitude = walk.startLocation?.y,
+                startLongitude = walk.startLocation?.x,
+                endLatitude = walk.endLocation?.y,
+                endLongitude = walk.endLocation?.x,
+                petNames = walk.walkPets.map { it.pet.name },
+                petIds = walk.walkPets.map { it.pet.id },
             )
         }
 
@@ -87,7 +103,10 @@ data class WalkResponse(
                 path = emptyList(), // Hide detailed route for non-owner views
                 spots = emptyList(), // Hide spots for non-owner views
                 caloriesBurned = walk.caloriesBurned,
-                notes = null // Hide notes for non-owner views
+                notes = null, // Hide notes for non-owner views
+                startAddress = walk.startAddress,
+                petNames = walk.walkPets.map { it.pet.name },
+                petIds = walk.walkPets.map { it.pet.id },
             )
         }
     }

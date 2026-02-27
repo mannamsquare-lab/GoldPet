@@ -383,7 +383,15 @@ export default function HomePage() {
                     </div>
                     <div className="txt_wrap">
                         <p>
-                            📏 <span>{homeData.recentWalk.distanceKm.toFixed(1)}km</span> 산책했어요.
+                            📏 <span>
+                                {homeData.recentWalk.petNames && homeData.recentWalk.petNames.length > 0
+                                    ? `${homeData.recentWalk.petNames.join(', ')}과 `
+                                    : ''}
+                                {homeData.recentWalk.startAddress
+                                    ? `${homeData.recentWalk.startAddress}에서 `
+                                    : ''}
+                                {homeData.recentWalk.distanceKm.toFixed(1)}km 산책하셨네요
+                            </span>
                         </p>
                     </div>
                 </section>

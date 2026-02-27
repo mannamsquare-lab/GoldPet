@@ -31,6 +31,8 @@ export interface HomeRecentWalk {
   distanceKm: number;
   durationSeconds: number;
   endTime: string;
+  startAddress: string | null;
+  petNames: string[];
 }
 
 export interface HomeDataResponse {
@@ -156,6 +158,8 @@ export const homeService = {
           distanceKm: data.recentWalk.distanceKm,
           durationSeconds: data.recentWalk.durationSeconds,
           endTime: data.recentWalk.endTime,
+          startAddress: data.recentWalk.startAddress ?? null,
+          petNames: data.recentWalk.petNames ?? [],
         } : null,
         notifications: data.notifications || { hasUnread: false, count: 0 },
       };

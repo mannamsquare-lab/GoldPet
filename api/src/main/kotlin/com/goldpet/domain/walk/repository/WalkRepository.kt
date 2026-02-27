@@ -80,4 +80,6 @@ interface WalkRepository : JpaRepository<Walk, Long> {
     fun sumCaloriesByUserId(@Param("userId") userId: Long): Double
 
     fun countByUserId(userId: Long): Long
+
+    fun findFirstByUserIdOrderByStartTimeDesc(userId: Long): Walk?
 }

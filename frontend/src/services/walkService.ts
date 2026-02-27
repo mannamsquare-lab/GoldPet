@@ -25,6 +25,13 @@ export interface WalkSession {
   distance: number;
   calories: number;
   pathPoints?: { lat: number; lng: number }[];
+  startAddress?: string;
+  startLatitude?: number;
+  startLongitude?: number;
+  endLatitude?: number;
+  endLongitude?: number;
+  petNames?: string[];
+  petIds?: number[];
 }
 
 export interface WalkRankingEntry {
