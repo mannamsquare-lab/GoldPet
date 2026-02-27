@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../data/walk_models.dart';
@@ -67,6 +71,33 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   String? _pendingSpotAction;
 
+  // --- New state for redesign ---
+  bool _isPaused = false;
+  DateTime? _pauseStartTime;
+  Duration _totalPauseDuration = Duration.zero;
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
+  String _currentAddress = '';
+  DateTime? _lastGeocodingTime;
+  String? _petImageUrl;
+  Uint8List? _petMarkerBytes;
+  final Map<String, NOverlayImage> _spotMarkerImages = {};
+
+  // Design colors (from Figma)
+  static const Color _panelBg = Color(0xFFEFE1C4);
+  static const Color _actionBarBg = Color(0xFFF9ECD2);
+  static const Color _handleColor = Color(0xFFA58A54);
+  static const Color _statLabelColor = Color(0xFF727272);
+
+  // Header constants
+  static const double _headerToolbarHeight = 56.0;
+
+  // Sheet size helpers
+  double get _bottomSafeArea => MediaQuery.of(context).padding.bottom;
+  double get _headerTotalHeight => MediaQuery.of(context).padding.top + _headerToolbarHeight;
+  double get _mapAreaHeight => MediaQuery.of(context).size.height - _headerTotalHeight;
+  double get _collapsedSheetSize => (60.0 + _bottomSafeArea) / _mapAreaHeight;
+  double get _expandedSheetSize => (240.0 + _bottomSafeArea) / _mapAreaHeight;
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +116,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       }
     });
     _initializeLocation();
+    _fetchPetData();
     // Handle initial spot action from deep link (after location init)
     if (widget.initialSpotAction != null) {
       Future.delayed(const Duration(seconds: 2), () {
@@ -105,19 +137,219 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     _stopWalkWidget();
     _durationNotifier.dispose();
     _distanceNotifier.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _isWalking && _startTime != null) {
-      // 화면 복귀 시 실제 경과 시간으로 즉시 보정
-      _durationNotifier.value = DateTime.now().difference(_startTime!).inSeconds;
+      if (!_isPaused) {
+        // Subtract paused time from wall-clock diff on app resume
+        final elapsed = DateTime.now().difference(_startTime!);
+        _durationNotifier.value = (elapsed - _totalPauseDuration).inSeconds;
+      }
+      // If paused, don't update timer -- it stays frozen at the pause moment
     }
   }
 
+  // --- Pet data and marker ---
+
+  Future<void> _fetchPetData() async {
+    try {
+      final response = await ApiClient().dio.get('/api/v1/pets/my');
+      final pets = response.data as List;
+      if (pets.isNotEmpty) {
+        _petImageUrl = pets.first['profileImageUrl'] as String?;
+      }
+    } catch (e) {
+      debugPrint('[WalkScreen] Failed to fetch pet data: $e');
+    }
+  }
+
+  Future<void> _buildPetMarkerImage() async {
+    // 1. Download pet image to bytes
+    ui.Image? petImage;
+    if (_petImageUrl != null) {
+      try {
+        final response = await http.get(Uri.parse(_petImageUrl!));
+        if (response.statusCode == 200) {
+          final codec = await ui.instantiateImageCodec(response.bodyBytes);
+          final frame = await codec.getNextFrame();
+          petImage = frame.image;
+        }
+      } catch (e) {
+        debugPrint('[WalkScreen] Failed to download pet image: $e');
+      }
+    }
+
+    // 2. Paint custom marker onto Canvas (3x resolution for crisp display)
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    const markerWidth = 180.0;
+    const markerHeight = 240.0;
+
+    // --- Pet circle (large, prominent) ---
+    const circleCenter = Offset(90, 90);
+    const circleRadius = 54.0;
+    const borderWidth = 6.0;
+
+    // Draw colored border circle
+    final borderPaint = Paint()
+      ..color = AppColors.primary
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(circleCenter, circleRadius + borderWidth, borderPaint);
+
+    if (petImage != null) {
+      // Clip and draw pet image inside circle
+      canvas.save();
+      canvas.clipPath(Path()..addOval(Rect.fromCircle(center: circleCenter, radius: circleRadius)));
+      final srcRect = Rect.fromLTWH(0, 0, petImage.width.toDouble(), petImage.height.toDouble());
+      final dstRect = Rect.fromCircle(center: circleCenter, radius: circleRadius);
+      canvas.drawImageRect(petImage, srcRect, dstRect, Paint());
+      canvas.restore();
+    } else {
+      // Fallback: white circle inside border
+      canvas.drawCircle(circleCenter, circleRadius, Paint()..color = Colors.white);
+      canvas.drawCircle(circleCenter, 24, Paint()..color = AppColors.primary.withValues(alpha: 0.3));
+    }
+
+    // --- "출발" badge below circle ---
+    final badgePaint = Paint()..color = AppColors.primary;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(const Rect.fromLTWH(48, 150, 84, 36), const Radius.circular(18)),
+      badgePaint,
+    );
+    final textPainter = TextPainter(
+      text: const TextSpan(
+        text: '출발',
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    textPainter.paint(canvas, Offset((markerWidth - textPainter.width) / 2, 157));
+
+    // --- Connecting line from badge to "here" dot ---
+    final linePaint = Paint()
+      ..color = AppColors.primary
+      ..strokeWidth = 3;
+    canvas.drawLine(const Offset(90, 186), const Offset(90, 204), linePaint);
+
+    // --- "Here" dot (red with white border) ---
+    const hereDotCenter = Offset(90, 216);
+    canvas.drawCircle(hereDotCenter, 12, Paint()..color = Colors.white);
+    canvas.drawCircle(hereDotCenter, 10, Paint()..color = const Color(0xFFFF5005));
+    canvas.drawCircle(hereDotCenter, 7, Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3);
+
+    // 3. Convert to bytes
+    final picture = recorder.endRecording();
+    final img = await picture.toImage(markerWidth.toInt(), markerHeight.toInt());
+    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+    _petMarkerBytes = byteData!.buffer.asUint8List();
+  }
+
+  Future<void> _addPetStartMarker() async {
+    if (_petMarkerBytes == null || _initialPosition == null) return;
+    try {
+      // NOverlayImage.fromByteArray() returns Future -- MUST be awaited
+      final overlayImage = await NOverlayImage.fromByteArray(_petMarkerBytes!);
+      final marker = NMarker(
+        id: 'pet_start',
+        position: _initialPosition!,
+        icon: overlayImage,
+        size: const Size(60, 80),
+        anchor: const NPoint(0.5, 1.0),
+      );
+      marker.setOnTapListener((_) {}); // prevent map tap-through
+      _mapController?.addOverlay(marker);
+    } catch (e) {
+      debugPrint('[WalkScreen] Failed to add pet marker: $e');
+    }
+  }
+
+  // --- Spot marker overlay images ---
+
+  Future<NOverlayImage> _getSpotMarkerImage(String type) async {
+    if (_spotMarkerImages.containsKey(type)) return _spotMarkerImages[type]!;
+
+    final pngAsset = switch (type) {
+      'POOP' => 'assets/images/walk/marker_poop.png',
+      'PEE' => 'assets/images/walk/marker_pee.png',
+      'PHOTO' => 'assets/images/walk/marker_camera.png',
+      _ => 'assets/images/walk/marker_poop.png',
+    };
+
+    final overlayImage = NOverlayImage.fromAssetImage(pngAsset);
+    _spotMarkerImages[type] = overlayImage;
+    return overlayImage;
+  }
+
+  // --- Reverse geocoding ---
+
+  Future<void> _updateAddress(double lat, double lng) async {
+    // Throttle: max once every 10 seconds
+    final now = DateTime.now();
+    if (_lastGeocodingTime != null && now.difference(_lastGeocodingTime!).inSeconds < 10) return;
+    _lastGeocodingTime = now;
+
+    try {
+      final response = await ApiClient().dio.get(
+        '/api/v1/maps/reverse-geocode',
+        queryParameters: {'lat': lat, 'lng': lng},
+      );
+      if (mounted) {
+        setState(() => _currentAddress = response.data['address'] as String? ?? '');
+      }
+    } catch (e) {
+      debugPrint('[WalkScreen] Reverse geocode failed: $e');
+    }
+  }
+
+  // --- Pause / Resume ---
+
+  void _togglePause() {
+    setState(() {
+      if (_isPaused) {
+        // Resume
+        _totalPauseDuration += DateTime.now().difference(_pauseStartTime!);
+        _pauseStartTime = null;
+        _isPaused = false;
+        // Resume GPS stream
+        _positionStreamSubscription?.resume();
+      } else {
+        // Pause
+        _pauseStartTime = DateTime.now();
+        _isPaused = true;
+        // Pause GPS stream to save battery
+        _positionStreamSubscription?.pause();
+      }
+    });
+  }
+
+  // --- Back navigation ---
+
+  void _handleBackNavigation() async {
+    if (_isWalking) {
+      final confirmed = await showGoldPetConfirm(
+        context,
+        message: '산책을 종료하시겠습니까?',
+        confirmText: '종료',
+        cancelText: '취소',
+      );
+      if (confirmed) {
+        _stopWalk();
+      }
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  // --- Location and walk lifecycle (preserved) ---
+
   Future<void> _initializeLocation() async {
-    // ... (same permission logic)
     debugPrint('[WalkScreen] _initializeLocation started');
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -295,11 +527,20 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     _mapController?.clearOverlays(); // Clear previous path/markers
     _startTime = DateTime.now();
 
+    // Reset pause state
+    _isPaused = false;
+    _pauseStartTime = null;
+    _totalPauseDuration = Duration.zero;
+
     setState(() {
       _isWalking = true;
     });
 
     _startWalkWidget();
+
+    // Build and add pet marker at start position
+    await _buildPetMarkerImage();
+    await _addPetStartMarker();
 
     // Execute any pending spot action that arrived before walk started
     if (_pendingSpotAction != null) {
@@ -311,8 +552,9 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     }
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_startTime != null) {
-        _durationNotifier.value = DateTime.now().difference(_startTime!).inSeconds;
+      if (_startTime != null && !_isPaused) {
+        final elapsed = DateTime.now().difference(_startTime!);
+        _durationNotifier.value = (elapsed - _totalPauseDuration).inSeconds;
         _updateWalkWidget(_durationNotifier.value, _distanceNotifier.value);
       }
     });
@@ -352,6 +594,10 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   }
 
   void _updateLocation(Position position) {
+    // Guard: discard GPS events that arrive while paused
+    // (StreamSubscription.pause() may buffer events on some platforms)
+    if (_isPaused) return;
+
     // 1. Accuracy filter — reject unreliable GPS readings
     if (position.accuracy > _maxAccuracyMeters) {
       debugPrint('[Walk] Rejected: accuracy ${position.accuracy.toStringAsFixed(1)}m > ${_maxAccuracyMeters}m');
@@ -395,6 +641,9 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     }
 
     _mapController?.updateCamera(NCameraUpdate.scrollAndZoomTo(target: latLng));
+
+    // Update reverse geocode address
+    _updateAddress(position.latitude, position.longitude);
   }
 
   void _updatePolyline() {
@@ -431,11 +680,13 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
       _spots.add(spot);
 
+      final spotIcon = await _getSpotMarkerImage(type);
       final marker = NMarker(
         id: 'spot_${_spots.length}',
         position: latLng,
-        caption: NOverlayCaption(text: _getSpotLabel(type)),
-        iconTintColor: _getSpotColor(type),
+        icon: spotIcon,
+        size: const Size(32, 32),
+        anchor: const NPoint(0.5, 0.5),
       );
 
       _markers.add(marker);
@@ -456,34 +707,103 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       // 1. Get GPS location first (before camera opens)
       final position = await Geolocator.getCurrentPosition();
 
-      // 2. Open camera
       final picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-        maxWidth: 1920,
-        maxHeight: 1920,
-      );
-      if (photo == null) return;
+      late CroppedFile finalCroppedFile;
+      String? memoText;
 
-      // Wait for widget to be ready after camera returns
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (!mounted) return;
+      // 2. Retake loop
+      while (true) {
+        // 2a. Open camera
+        final XFile? photo = await picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 80,
+          maxWidth: 1920,
+          maxHeight: 1920,
+        );
+        // 2b. User cancelled camera
+        if (photo == null) return;
 
-      // 3. Show memo bottom sheet (community write style)
-      final note = await showModalBottomSheet<String>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (ctx) => _PhotoMemoSheet(photoPath: photo.path),
-      );
-      if (!mounted) return;
+        // 2c. Wait for map to recover after camera activity returns
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (!mounted) return;
+        setState(() {}); // Force rebuild to refresh map view
 
-      // 4. Upload photo to server
+        // 2d. Verify photo file exists
+        final photoFile = File(photo.path);
+        if (!await photoFile.exists()) {
+          debugPrint('Photo file not found: ${photo.path}');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('사진 파일을 찾을 수 없습니다.')),
+            );
+          }
+          return;
+        }
+        debugPrint('Photo file exists: ${photo.path} (${await photoFile.length()} bytes)');
+
+        // 2e. Open image cropper
+        CroppedFile? cropped;
+        try {
+          cropped = await ImageCropper().cropImage(
+            sourcePath: photo.path,
+            uiSettings: [
+              AndroidUiSettings(
+                toolbarTitle: '사진 편집',
+                toolbarColor: AppColors.primary,
+                toolbarWidgetColor: Colors.white,
+                initAspectRatio: CropAspectRatioPreset.original,
+                lockAspectRatio: false,
+              ),
+              IOSUiSettings(
+                title: '사진 편집',
+                doneButtonTitle: '저장',
+                cancelButtonTitle: '취소',
+              ),
+            ],
+          );
+        } catch (e) {
+          debugPrint('ImageCropper error: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('사진 편집 오류: $e')),
+            );
+          }
+          return;
+        }
+        // 2f. Cropper cancelled
+        if (cropped == null) return;
+
+        // 2f. Show redesigned bottom sheet
+        if (!mounted) return;
+        final result = await showModalBottomSheet<Map<String, dynamic>>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (ctx) => _PhotoMemoSheet(photoPath: cropped!.path),
+        );
+        if (!mounted) return;
+
+        // 2g. Handle result
+        if (result == null) {
+          // Dismissed
+          return;
+        } else if (result['retake'] == true) {
+          // Continue loop for retake
+          continue;
+        } else {
+          // {'memo': text} — proceed
+          finalCroppedFile = cropped;
+          memoText = result['memo'] as String?;
+          break;
+        }
+      }
+
+      // 3. Upload using cropped file path
       String? imageUrl;
       try {
+        final fileName = finalCroppedFile.path.split('/').last;
         final formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(photo.path, filename: photo.name),
+          'file': await MultipartFile.fromFile(finalCroppedFile.path, filename: fileName),
         });
         final response = await ApiClient().dio.post('/api/v1/files/upload', data: formData);
         imageUrl = response.data['url'] as String?;
@@ -493,7 +813,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
       if (!mounted) return;
 
-      // 5. Create spot with photo info
+      // 4. Create spot with photo info
       final latLng = NLatLng(position.latitude, position.longitude);
       final spot = WalkSpotDto(
         latitude: position.latitude,
@@ -501,18 +821,18 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
         type: 'PHOTO',
         timestamp: DateTime.now(),
         imageUrl: imageUrl,
-        note: (note != null && note.isNotEmpty) ? note : null,
+        note: (memoText != null && memoText.isNotEmpty) ? memoText : null,
       );
       _spots.add(spot);
 
-      // 6. Add marker on map
+      // 5. Add marker on map
+      final spotIcon = await _getSpotMarkerImage('PHOTO');
       final marker = NMarker(
         id: 'spot_${_spots.length}',
         position: latLng,
-        caption: NOverlayCaption(
-          text: (note != null && note.isNotEmpty) ? note : '사진',
-        ),
-        iconTintColor: _getSpotColor('PHOTO'),
+        icon: spotIcon,
+        size: const Size(32, 32),
+        anchor: const NPoint(0.5, 0.5),
       );
       _markers.add(marker);
       _mapController?.addOverlay(marker);
@@ -525,8 +845,9 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     } catch (e) {
       debugPrint('Error adding photo spot: $e');
       if (mounted) {
+        if (e is DioException && e.response?.statusCode == 401) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('사진 저장 실패: $e')),
+          const SnackBar(content: Text('사진 저장 실패: 네트워크 오류가 발생했습니다')),
         );
       }
     }
@@ -534,24 +855,23 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   String _getSpotLabel(String type) {
     switch (type) {
-      case 'PEE': return '배변(소)';
-      case 'POOP': return '배변(대)';
+      case 'PEE': return '쉬';
+      case 'POOP': return '응가';
       case 'PHOTO': return '사진';
       default: return '스팟';
     }
   }
 
-  Color _getSpotColor(String type) {
-    switch (type) {
-      case 'PEE': return AppColors.warning;
-      case 'POOP': return AppColors.primaryDark;
-      case 'PHOTO': return AppColors.info;
-      default: return Colors.grey;
-    }
-  }
 
   void _stopWalk() async {
     if (!_isWalking) return;
+
+    // Stop-while-paused: account for ongoing pause duration
+    if (_isPaused && _pauseStartTime != null) {
+      _totalPauseDuration += DateTime.now().difference(_pauseStartTime!);
+      _pauseStartTime = null;
+      _isPaused = false;
+    }
 
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
@@ -561,6 +881,9 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     final startTime =
         _startTime ??
         endTime.subtract(Duration(seconds: _durationNotifier.value));
+
+    // Compute correct duration excluding paused time
+    final durationSeconds = (endTime.difference(startTime) - _totalPauseDuration).inSeconds;
 
     // Ensure path has at least 2 points (JTS LineString requirement)
     if (_path.length < 2) {
@@ -597,7 +920,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       startTime: startTime,
       endTime: endTime,
       distanceKm: _distanceNotifier.value,
-      durationSeconds: _durationNotifier.value,
+      durationSeconds: durationSeconds,
       path: pathList,
       spots: _spots,
       caloriesBurned: caloriesBurned,
@@ -611,13 +934,15 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('산책이 저장되었습니다! 🐾')));
+        ).showSnackBar(const SnackBar(content: Text('산책이 저장되었습니다!')));
       }
     } catch (e) {
       if (mounted) {
+        // 401 auth expiry is handled by the global ApiClient interceptor dialog
+        if (e is DioException && e.response?.statusCode == 401) return;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+        ).showSnackBar(const SnackBar(content: Text('저장 실패: 네트워크 오류가 발생했습니다')));
       }
     }
   }
@@ -629,147 +954,92 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  // --- Build methods ---
+
+  Widget _buildHeader() {
+    return Container(
+      color: AppColors.background,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: _headerToolbarHeight,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: _handleBackNavigation,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background, // #FFF7E6
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          color: AppColors.primary, // #614108
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          '산책',
-          style: TextStyle(
-            color: AppColors.primary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
+          // Header bar (status bar + toolbar)
+          _buildHeader(),
+
+          // Map + overlays fill remaining space
           Expanded(
-            child: _isInitializing
-                ? const Center(child: CircularProgressIndicator())
-                : NaverMap(
-                    key: _mapKey,
-                    options: NaverMapViewOptions(
-                      initialCameraPosition: _initialPosition != null
-                          ? NCameraPosition(target: _initialPosition!, zoom: 16)
-                          : const NCameraPosition(
-                              target: NLatLng(37.5665, 126.9780),
-                              zoom: 16,
-                            ),
-                      locationButtonEnable: true,
-                      logoClickEnable: false,
-                      consumeSymbolTapEvents: false,
-                    ),
-                    onMapReady: (controller) {
-                      _mapController = controller;
-                      // Always enable location tracking to center on current position
-                      controller.setLocationTrackingMode(
-                        NLocationTrackingMode.follow,
-                      );
-                    },
-                  ),
-          ),
-          Container(
-            padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(context).padding.bottom),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: Column(
+            child: Stack(
               children: [
-                if (_isWalking) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      ValueListenableBuilder<int>(
-                        valueListenable: _durationNotifier,
-                        builder: (context, seconds, _) {
-                          return _WalkStat(
-                            value: _formatDuration(seconds),
-                            label: '시간',
-                          );
-                        },
-                      ),
-                      ValueListenableBuilder<double>(
-                        valueListenable: _distanceNotifier,
-                        builder: (context, distance, _) {
-                          return _WalkStat(
-                            value: '${distance.toStringAsFixed(2)} km',
-                            label: '거리',
-                          );
-                        },
-                      ),
-                      ValueListenableBuilder<double>(
-                        valueListenable: _distanceNotifier,
-                        builder: (context, distance, _) {
-                          return _WalkStat(
-                            value: '${(distance * 50).toStringAsFixed(0)} kcal',
-                            label: '칼로리',
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // Spot Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _SpotButton(
-                          label: '쉬~',
-                          icon: Icons.water_drop,
-                          color: AppColors.warning,
-                          onTap: () => _addSpot('PEE')),
-                      _SpotButton(
-                          label: '응가',
-                          icon: Icons.circle,
-                          color: AppColors.primaryDark,
-                          onTap: () => _addSpot('POOP')),
-                      _SpotButton(
-                          label: '사진',
-                          icon: Icons.camera_alt,
-                          color: AppColors.info,
-                          onTap: () => _addSpot('PHOTO')),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                ElevatedButton(
-                  onPressed: _isWalking ? _stopWalk : _startWalk,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _isWalking
-                        ? AppColors.error
-                        : AppColors.primary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: Text(
-                    _isWalking ? '산책 종료' : '산책 시작',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                // Layer 0: NaverMap fills the map area
+                Positioned.fill(
+                  child: _isInitializing
+                      ? const Center(child: CircularProgressIndicator())
+                      : NaverMap(
+                          key: _mapKey,
+                          options: NaverMapViewOptions(
+                            initialCameraPosition: _initialPosition != null
+                                ? NCameraPosition(target: _initialPosition!, zoom: 16)
+                                : const NCameraPosition(
+                                    target: NLatLng(37.5665, 126.9780),
+                                    zoom: 16,
+                                  ),
+                            locationButtonEnable: true,
+                            logoClickEnable: false,
+                            consumeSymbolTapEvents: false,
+                          ),
+                          onMapReady: (controller) {
+                            _mapController = controller;
+                            controller.setLocationTrackingMode(
+                              NLocationTrackingMode.follow,
+                            );
+                          },
+                        ),
                 ),
+
+                // Layer 1: Location chip (top-right of map area)
+                if (_isWalking && _currentAddress.isNotEmpty)
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: _LocationChip(address: _currentAddress),
+                  ),
+
+                // Layer 2: DraggableScrollableSheet info panel
+                if (_isWalking)
+                  _buildInfoPanel(),
+
+                // Layer 3: Walk controls
+                if (_isWalking)
+                  _buildWalkControls(),
+
+                // Layer 4: Start button
+                if (!_isWalking && !_isInitializing)
+                  _buildStartButton(),
               ],
             ),
           ),
@@ -777,30 +1047,323 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       ),
     );
   }
+
+  Widget _buildInfoPanel() {
+    return DraggableScrollableSheet(
+      controller: _sheetController,
+      initialChildSize: _expandedSheetSize,
+      minChildSize: _collapsedSheetSize,
+      maxChildSize: _expandedSheetSize,
+      snap: true,
+      snapSizes: [_collapsedSheetSize, _expandedSheetSize],
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: _panelBg,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            boxShadow: [
+              BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2)),
+            ],
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              children: [
+                // Drag handle
+                _buildDragHandle(),
+                // Stats row
+                _buildStatsRow(),
+                const SizedBox(height: 16),
+                // Action buttons row
+                _buildActionButtonsRow(),
+                // Bottom safe area padding
+                SizedBox(height: _bottomSafeArea),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDragHandle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: _handleColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          // Distance
+          Expanded(
+            child: ValueListenableBuilder<double>(
+              valueListenable: _distanceNotifier,
+              builder: (context, distance, _) {
+                return _WalkStat(
+                  value: distance.toStringAsFixed(2),
+                  unit: 'km',
+                  label: '거리',
+                );
+              },
+            ),
+          ),
+          // Time
+          Expanded(
+            child: ValueListenableBuilder<int>(
+              valueListenable: _durationNotifier,
+              builder: (context, seconds, _) {
+                return _WalkStat(
+                  value: _formatDuration(seconds),
+                  label: '시간',
+                );
+              },
+            ),
+          ),
+          // Calories
+          Expanded(
+            child: ValueListenableBuilder<double>(
+              valueListenable: _distanceNotifier,
+              builder: (context, distance, _) {
+                return _WalkStat(
+                  value: (distance * 50).toStringAsFixed(0),
+                  unit: 'Kcal',
+                  label: '칼로리',
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtonsRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: _actionBarBg,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _SpotButton(
+              label: '응가',
+              svgAsset: 'assets/images/walk/icon_poop.svg',
+              onTap: () => _addSpot('POOP'),
+            ),
+            _SpotButton(
+              label: '쉬',
+              svgAsset: 'assets/images/walk/icon_pee.svg',
+              onTap: () => _addSpot('PEE'),
+            ),
+            _SpotButton(
+              label: '사진',
+              svgAsset: 'assets/images/walk/icon_camera.svg',
+              onTap: () => _addSpot('PHOTO'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWalkControls() {
+    return ListenableBuilder(
+      listenable: _sheetController,
+      builder: (context, child) {
+        double sheetHeight;
+        try {
+          sheetHeight = _sheetController.size * _mapAreaHeight;
+        } catch (_) {
+          sheetHeight = _expandedSheetSize * _mapAreaHeight;
+        }
+        return Positioned(
+          right: 16,
+          bottom: sheetHeight + 16,
+          child: child!,
+        );
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Stop button
+          GestureDetector(
+            onTap: () async {
+              final confirmed = await showGoldPetConfirm(
+                context,
+                message: '산책을 종료하고 기록을 저장하시겠습니까?',
+                confirmText: '종료',
+                cancelText: '취소',
+              );
+              if (confirmed) _stopWalk();
+            },
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF353D4C).withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: _handleColor,
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Play/Pause button
+          GestureDetector(
+            onTap: _togglePause,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF353D4C).withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: _isPaused
+                    ? CustomPaint(
+                        size: const Size(14, 14),
+                        painter: _PlayIconPainter(color: _handleColor),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: _handleColor,
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          Container(
+                            width: 6,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: _handleColor,
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStartButton() {
+    return Positioned(
+      left: 24,
+      right: 24,
+      bottom: 40 + MediaQuery.of(context).padding.bottom,
+      child: ElevatedButton(
+        onPressed: _startWalk,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          elevation: 4,
+        ),
+        child: const Text(
+          '산책 시작',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+// --- Extracted widgets ---
 
 class _WalkStat extends StatelessWidget {
   final String value;
+  final String? unit;
   final String label;
 
-  const _WalkStat({required this.value, required this.label});
+  const _WalkStat({required this.value, this.unit, required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            if (unit != null) ...[
+              const SizedBox(width: 2),
+              Text(
+                unit!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 10, color: _WalkScreenState._statLabelColor),
         ),
       ],
     );
@@ -809,14 +1372,12 @@ class _WalkStat extends StatelessWidget {
 
 class _SpotButton extends StatelessWidget {
   final String label;
-  final IconData icon;
-  final Color color;
+  final String svgAsset;
   final VoidCallback onTap;
 
   const _SpotButton({
     required this.label,
-    required this.icon,
-    required this.color,
+    required this.svgAsset,
     required this.onTap,
   });
 
@@ -825,25 +1386,64 @@ class _SpotButton extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: SvgPicture.asset(svgAsset),
             ),
-            child: Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF727272),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationChip extends StatelessWidget {
+  final String address;
+  const _LocationChip({required this.address});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.location_on, size: 16, color: AppColors.primary),
+          const SizedBox(width: 4),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
+            child: Text(
+              address,
+              style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 }
 
-/// Community write page style bottom sheet for photo memo
+/// Redesigned photo + memo bottom sheet for walk photo spots
 class _PhotoMemoSheet extends StatefulWidget {
   final String photoPath;
   const _PhotoMemoSheet({required this.photoPath});
@@ -864,126 +1464,153 @@ class _PhotoMemoSheetState extends State<_PhotoMemoSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFF7E6),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '사진 메모',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                      onPressed: () => Navigator.pop(context, ''),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Photo preview
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.file(
-                    File(widget.photoPath),
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Label
-                const Text(
-                  '메모',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Textarea
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: TextField(
-                    controller: _textController,
-                    maxLines: 5,
-                    decoration: const InputDecoration(
-                      hintText: '이 장소에 대한 메모를 남겨보세요.',
-                      hintStyle: TextStyle(
-                        color: AppColors.textHint,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(16),
-                    ),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Submit button
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context, _textController.text),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      '저장하기',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFFFF7E6),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 8),
+          // Section title: 사진
+          const Text(
+            '사진',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF333333),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Photo preview
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.file(
+              File(widget.photoPath),
+              height: 220,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Section title: 메모
+          const Text(
+            '메모',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF333333),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Memo text field
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              controller: _textController,
+              maxLength: 100,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: '이 장소에 대한 메모를 남겨보세요.',
+                border: InputBorder.none,
+                counterText: '',
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Character counter
+          Align(
+            alignment: Alignment.centerRight,
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _textController,
+              builder: (context, value, _) {
+                return Text(
+                  '${value.text.length}/100자',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF999999),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.camera_alt, size: 18),
+                  label: const Text('다시 촬영'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF614108),
+                    side: const BorderSide(color: Color(0xFF614108)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context, <String, dynamic>{'retake': true}),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF614108),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context, <String, dynamic>{'memo': _textController.text}),
+                  child: const Text('저장'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
+}
+
+class _PlayIconPainter extends CustomPainter {
+  final Color color;
+  _PlayIconPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, size.height / 2)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
