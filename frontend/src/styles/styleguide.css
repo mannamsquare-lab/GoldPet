@@ -358,3 +358,114 @@
   letter-spacing: -0.32px;
   margin: 0;
 }
+
+/* === Maintenance Page (Figma 676:96406) === */
+
+.gp-maintenance-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+}
+
+.gp-maintenance-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 64px;
+  width: 312px;
+}
+
+.gp-maintenance-branding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.gp-maintenance-tagline {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.32px;
+  line-height: 1.4;
+  text-align: center;
+  margin: 0;
+}
+
+.gp-maintenance-logo {
+  width: 90px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.gp-maintenance-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 16px;
+  width: 100%;
+}
+
+.gp-maintenance-icon-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--color-bg-warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.gp-maintenance-icon-img {
+  width: 120px;
+  height: 120px;
+}
+
+.gp-maintenance-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  text-align: center;
+}
+
+.gp-maintenance-title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-page-title);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.48px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.gp-maintenance-desc {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  letter-spacing: -0.32px;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.gp-maintenance-footer {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  letter-spacing: -0.28px;
+  line-height: 1.4;
+  margin: 0;
+}
