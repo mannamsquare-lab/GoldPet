@@ -267,6 +267,7 @@ export default function SystemPage() {
                 <div className="flex items-center gap-2">
                   {isBooleanValue ? (
                     <select
+                      key={`${config.key}-${config.value}`}
                       defaultValue={config.value}
                       className="border rounded px-2 py-1 w-32 text-right bg-white"
                       onChange={(e) => {
@@ -280,6 +281,7 @@ export default function SystemPage() {
                     </select>
                   ) : (
                     <input
+                      key={`${config.key}-${config.value}`}
                       type="text"
                       defaultValue={config.value}
                       className="border rounded px-2 py-1 w-32 text-right"
