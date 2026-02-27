@@ -36,6 +36,7 @@ class AppNoticeService(
 
     fun getAllNotices(): List<AppNoticeResponse> {
         return appNoticeRepository.findAll()
+            .filter { it.isActive }
             .sortedByDescending { it.priority }
             .map { it.toResponse() }
     }
