@@ -31,9 +31,11 @@ class WalkNotificationHelper(private val context: Context) {
     init {
         createChannel()
         val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        // SINGLE_TOP + CLEAR_TOP ensures the existing MainActivity is reused
-        // (onNewIntent) instead of creating a new instance from the notification.
-        val intentFlags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        // NEW_TASK brings existing task to foreground; SINGLE_TOP delivers
+        // to onNewIntent() instead of recreating the Activity.
+        // Avoid CLEAR_TOP — it destroys and recreates the Activity when
+        // taskAffinity="" (Flutter default), causing full app restart.
+        val intentFlags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         contentIntent = PendingIntent.getActivity(
             context, 0,
             Intent(Intent.ACTION_VIEW, Uri.parse("goldpet://walk")).addFlags(intentFlags),
