@@ -21,4 +21,5 @@ data class HomeRecentWalkResponse(
     val endTime: LocalDateTime,
     val startAddress: String?,
     val petNames: List<String>,
+    val petProfileImageUrls: List<String>,
 )

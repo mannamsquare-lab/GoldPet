@@ -33,6 +33,7 @@ export interface HomeRecentWalk {
   endTime: string;
   startAddress: string | null;
   petNames: string[];
+  petProfileImageUrls: string[];
 }
 
 export interface HomeDataResponse {
@@ -160,6 +161,7 @@ export const homeService = {
           endTime: data.recentWalk.endTime,
           startAddress: data.recentWalk.startAddress ?? null,
           petNames: data.recentWalk.petNames ?? [],
+          petProfileImageUrls: data.recentWalk.petProfileImageUrls ?? [],
         } : null,
         notifications: data.notifications || { hasUnread: false, count: 0 },
       };

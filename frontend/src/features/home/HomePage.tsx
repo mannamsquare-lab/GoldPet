@@ -391,14 +391,23 @@ export default function HomePage() {
                         <p><img src="/assets/images/main/time_icon.svg" alt="시간 icon" />{formatTimeAgo(homeData.recentWalk.endTime)}</p>
                     </div>
                     <div className="txt_wrap">
+                        <div className="img_wrap">
+                            <img
+                                src={homeData.recentWalk.petProfileImageUrls && homeData.recentWalk.petProfileImageUrls.length > 0
+                                    ? getImageUrl(homeData.recentWalk.petProfileImageUrls[0], 'small')
+                                    : '/assets/images/common/pet_none_img02.svg'}
+                                alt=""
+                                onError={(e) => { e.currentTarget.src = '/assets/images/common/pet_none_img02.svg'; }}
+                            />
+                        </div>
                         <p>
                             {homeData.recentWalk.petNames && homeData.recentWalk.petNames.length > 0 && (
-                                <>🐶 <span>{homeData.recentWalk.petNames.join(', ')}{getPostposition(homeData.recentWalk.petNames[homeData.recentWalk.petNames.length - 1])}</span><br /></>
+                                <>🐶 <span>{homeData.recentWalk.petNames.join(', ')}</span>{getPostposition(homeData.recentWalk.petNames[homeData.recentWalk.petNames.length - 1])}<br /></>
                             )}
                             {homeData.recentWalk.startAddress && (
-                                <>📍 <span>{homeData.recentWalk.startAddress}에서</span><br /></>
+                                <>📍 <span>{homeData.recentWalk.startAddress}</span>에서<br /></>
                             )}
-                            🐾 <span>{homeData.recentWalk.distanceKm.toFixed(0)}km</span> 산책하셨네요.
+                            📏 <span>{homeData.recentWalk.distanceKm.toFixed(0)}km</span> 산책하셨네요.
                         </p>
                     </div>
                 </section>

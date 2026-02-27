@@ -41,13 +41,15 @@ class HomeService(
 
         // Get most recent walk (single query, no full list fetch)
         val recentWalk = walkRepository.findFirstByUserIdOrderByStartTimeDesc(userId)?.let { w ->
+            val walkPets = w.walkPets
             HomeRecentWalkResponse(
                 id = w.id,
                 distanceKm = w.distanceKm,
                 durationSeconds = w.durationSeconds,
                 endTime = w.endTime,
                 startAddress = w.startAddress,
-                petNames = w.walkPets.map { it.pet.name },
+                petNames = walkPets.map { it.pet.name },
+                petProfileImageUrls = walkPets.mapNotNull { it.pet.profileImageUrl },
             )
         }
 
