@@ -26,7 +26,8 @@ export type NativeEventType =
   | 'pushNotificationClicked'
   | 'locationUpdated'
   | 'permissionStatusChanged'
-  | 'appStateChanged';
+  | 'appStateChanged'
+  | 'authExpired';
 
 export type NativeMethod =
   // 푸시 알림

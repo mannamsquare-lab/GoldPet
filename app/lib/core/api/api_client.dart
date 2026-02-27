@@ -16,6 +16,13 @@ class ApiClient {
   late final Dio _dio;
   final _storage = const FlutterSecureStorage();
 
+  /// Auth expiry dedup guard -- prevents multiple dialogs on concurrent 401s
+  static bool _isAuthExpired = false;
+
+  /// Callback invoked once when auth expires (refresh fails).
+  /// Set by HybridWebView to show dialog + redirect to login.
+  static VoidCallback? onAuthExpired;
+
   ApiClient._internal() {
     _dio = Dio(
       BaseOptions(
@@ -68,6 +75,13 @@ class ApiClient {
               } catch (_) {
                 // Refresh failed - clear tokens and let error propagate
               }
+            }
+            // Trigger auth expiry callback (dedup: only once)
+            // Set flag before async clearToken() to prevent race on concurrent 401s
+            if (!_isAuthExpired) {
+              _isAuthExpired = true;
+              debugPrint('[AuthExpiry] Token refresh failed, showing expiry dialog');
+              onAuthExpired?.call();
             }
             await clearToken();
           }
@@ -143,6 +157,8 @@ class ApiClient {
   Future<void> setToken(String accessToken, String refreshToken) async {
     await _storage.write(key: StorageKeys.accessToken, value: accessToken);
     await _storage.write(key: StorageKeys.refreshToken, value: refreshToken);
+    // Reset auth expiry flag on re-login
+    _isAuthExpired = false;
   }
 
   Future<void> clearToken() async {

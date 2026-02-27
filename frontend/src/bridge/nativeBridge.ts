@@ -19,6 +19,7 @@ class NativeBridge {
   private eventBuffer = new Map<string, { data: any; timestamp: number }[]>();
   private static readonly BUFFERABLE_EVENTS: Set<string> = new Set([
     'pushNotificationClicked',
+    'authExpired',
   ]);
   private static readonly BUFFER_TTL_MS = 10_000; // 10 seconds
 

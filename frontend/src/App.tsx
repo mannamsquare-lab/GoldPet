@@ -44,6 +44,7 @@ import { ProfileTermsPage } from './features/profile/ProfileTermsPage';
 import ScrollToTop from './components/common/ScrollToTop';
 import { PullToRefresh } from './components/common/PullToRefresh';
 import { PushNotificationHandler } from './components/common/PushNotificationHandler';
+import { AuthExpiredHandler } from './components/common/AuthExpiredHandler';
 import AIProfilePage from './features/aiprofile/AIProfilePage';
 import AIProfileStyleSelectPage from './features/aiprofile/AIProfileStyleSelectPage';
 import AIProfileResultPage from './features/aiprofile/AIProfileResultPage';
@@ -92,6 +93,7 @@ function App() {
            <BrowserRouter>
             <ScrollToTop />
             <PushNotificationHandler />
+            <AuthExpiredHandler />
             <PullToRefresh />
             <Routes>
               {/* ... routes ... */}

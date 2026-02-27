@@ -5,8 +5,10 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:image_picker/image_picker.dart';
+import '../api/api_client.dart';
 import '../bridge/bridge_message_handler.dart';
 import '../bridge/native_bridge.dart';
+import '../constants/keys.dart';
 import '../services/location_service.dart';
 import '../widgets/goldpet_alert_dialog.dart';
 import 'dart:io';
@@ -227,6 +229,26 @@ class _HybridWebViewState extends State<HybridWebView> {
 
     // Bridge 초기화 (서비스는 Bridge 내부에서 생성됨)
     _bridge = NativeBridge(_controller);
+
+    // Auth expiry 콜백: 401 refresh 실패 시 알럿 표시 + 로그인 페이지 이동
+    ApiClient.onAuthExpired = () {
+      final ctx = rootNavigatorKey.currentContext;
+      if (ctx == null) return;
+      showGoldPetAlert(
+        ctx,
+        message: '로그인이 만료되었습니다.\n다시 로그인해주세요.',
+        confirmText: '확인',
+        barrierDismissible: false,
+        onConfirm: () {
+          debugPrint('[AuthExpiry] Popped all Flutter screens, sending authExpired to React');
+          rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+          // Small delay to ensure WebView is visible before sending event
+          Future.delayed(const Duration(milliseconds: 200), () {
+            _bridge.sendEventToReact('authExpired', {});
+          });
+        },
+      );
+    };
 
     // 오버레이 색상 제어 콜백 연결
     _bridge.onOverlayColorChange = (color, bottomColor) {
