@@ -38,27 +38,42 @@ class WalkNotificationHelper(private val context: Context) {
         val intentFlags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         contentIntent = PendingIntent.getActivity(
             context, 0,
-            Intent(Intent.ACTION_VIEW, Uri.parse("goldpet://walk")).addFlags(intentFlags),
+            Intent(context, MainActivity::class.java).apply {
+                data = Uri.parse("goldpet://walk")
+                flags = intentFlags
+            },
             piFlags
         )
         peePendingIntent = PendingIntent.getActivity(
             context, 1,
-            Intent(Intent.ACTION_VIEW, Uri.parse("goldpet://spot/pee")).addFlags(intentFlags),
+            Intent(context, MainActivity::class.java).apply {
+                data = Uri.parse("goldpet://spot/pee")
+                flags = intentFlags
+            },
             piFlags
         )
         poopPendingIntent = PendingIntent.getActivity(
             context, 2,
-            Intent(Intent.ACTION_VIEW, Uri.parse("goldpet://spot/poop")).addFlags(intentFlags),
+            Intent(context, MainActivity::class.java).apply {
+                data = Uri.parse("goldpet://spot/poop")
+                flags = intentFlags
+            },
             piFlags
         )
         photoPendingIntent = PendingIntent.getActivity(
             context, 3,
-            Intent(Intent.ACTION_VIEW, Uri.parse("goldpet://spot/photo")).addFlags(intentFlags),
+            Intent(context, MainActivity::class.java).apply {
+                data = Uri.parse("goldpet://spot/photo")
+                flags = intentFlags
+            },
             piFlags
         )
         stopPendingIntent = PendingIntent.getActivity(
             context, 4,
-            Intent(Intent.ACTION_VIEW, Uri.parse("goldpet://walk/stop")).addFlags(intentFlags),
+            Intent(context, MainActivity::class.java).apply {
+                data = Uri.parse("goldpet://walk/stop")
+                flags = intentFlags
+            },
             piFlags
         )
 

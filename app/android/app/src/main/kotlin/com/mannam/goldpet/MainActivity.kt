@@ -2,7 +2,6 @@ package com.mannam.goldpet
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
@@ -94,7 +93,14 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
+        // For goldpet:// deep links, skip FlutterActivity.onNewIntent() which
+        // triggers Flutter's navigation system and pushes '/' on the Navigator,
+        // covering the current screen. We handle these via MethodChannel only.
+        setIntent(intent)
+        val isOurDeepLink = intent.data?.scheme == "goldpet"
+        if (!isOurDeepLink) {
+            super.onNewIntent(intent)
+        }
         handleDeepLinkIntent(intent, isColdStart = false)
     }
 
@@ -106,11 +112,12 @@ class MainActivity : FlutterActivity() {
         if (host != "walk" && host != "spot") return
 
         val uriString = uri.toString()
-        if (isColdStart) {
-            // Flutter not ready yet — buffer for getInitialLink pull
-            initialDeepLink = uriString
-        } else {
-            // Warm start — push directly
+        // Always buffer as fallback — handles Activity recreation where
+        // onNewIntent() fires before Dart MethodCallHandler is registered.
+        initialDeepLink = uriString
+
+        if (!isColdStart) {
+            // Also try immediate push for truly warm cases (Dart ready)
             deepLinkChannel?.invokeMethod("onDeepLink", uriString)
         }
     }

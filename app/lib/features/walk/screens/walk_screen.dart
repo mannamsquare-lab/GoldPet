@@ -130,6 +130,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   @override
   void dispose() {
+    debugPrint('[WalkScreen] dispose() called');
     WalkScreen.isOnStack = false;
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();

@@ -8,6 +8,34 @@ import 'package:goldpet_app/features/walk/screens/walk_screen.dart';
 import 'package:goldpet_app/core/services/app_version_service.dart';
 import 'package:goldpet_app/core/widgets/force_update_dialog.dart';
 
+/// Debug observer to log every Navigator push/pop/replace/remove event.
+class _DebugNavigatorObserver extends NavigatorObserver {
+  @override
+  void didPush(Route route, Route? previousRoute) {
+    debugPrint('[NAV] PUSH ${_routeName(route)} (prev: ${_routeName(previousRoute)})');
+  }
+
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    debugPrint('[NAV] POP ${_routeName(route)} (showing: ${_routeName(previousRoute)})');
+  }
+
+  @override
+  void didReplace({Route? newRoute, Route? oldRoute}) {
+    debugPrint('[NAV] REPLACE ${_routeName(oldRoute)} → ${_routeName(newRoute)}');
+  }
+
+  @override
+  void didRemove(Route route, Route? previousRoute) {
+    debugPrint('[NAV] REMOVE ${_routeName(route)}');
+  }
+
+  static String _routeName(Route? route) {
+    if (route == null) return 'null';
+    return route.settings.name ?? route.runtimeType.toString();
+  }
+}
+
 class HybridApp extends StatefulWidget {
   const HybridApp({super.key});
 
@@ -37,8 +65,27 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint('[DL] Lifecycle: $state, isOnStack=${WalkScreen.isOnStack}, navHash=${rootNavigatorKey.currentState.hashCode}');
     if (state == AppLifecycleState.resumed) {
       _checkAppVersion();
+      _checkPendingDeepLink();
+    }
+  }
+
+  /// Check for deep links buffered on the native side.
+  /// Covers the case where Activity was destroyed while backgrounded
+  /// and onNewIntent() fired before the Dart handler was registered,
+  /// so the invokeMethod("onDeepLink") was silently lost.
+  Future<void> _checkPendingDeepLink() async {
+    debugPrint('[DL] _checkPendingDeepLink called');
+    try {
+      final link = await _deepLinkChannel.invokeMethod<String>('getInitialLink');
+      debugPrint('[DL] pending link from native: $link');
+      if (link != null && mounted) {
+        _handleDeepLink(link);
+      }
+    } catch (e) {
+      debugPrint('[DL] _checkPendingDeepLink error: $e');
     }
   }
 
@@ -82,6 +129,7 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
     _deepLinkChannel.setMethodCallHandler((call) async {
       if (call.method == 'onDeepLink') {
         final uri = call.arguments as String?;
+        debugPrint('[DL] onDeepLink push received: $uri');
         if (uri != null) _handleDeepLink(uri);
       }
     });
@@ -89,17 +137,35 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
     // Pull handler: cold start deep link (buffered on native side)
     try {
       final initialLink = await _deepLinkChannel.invokeMethod<String>('getInitialLink');
+      debugPrint('[DL] getInitialLink returned: $initialLink');
       if (initialLink != null) {
-        // Slight delay to ensure navigation is ready
-        await Future.delayed(const Duration(milliseconds: 500));
-        _handleDeepLink(initialLink);
+        // On cold start (Activity destroyed → recreated), the Navigator may
+        // not be mounted yet.  Wait for the first frame, then poll until
+        // rootNavigatorKey is available before delivering the deep link.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleColdStartDeepLink(initialLink);
+        });
       }
-    } catch (_) {
-      // Channel not ready or no initial link — ignore
+    } catch (e) {
+      debugPrint('[DL] getInitialLink error: $e');
+    }
+  }
+
+  /// Retry deep-link delivery until the Navigator is ready (max ~3 s).
+  void _handleColdStartDeepLink(String link, [int attempt = 0]) {
+    debugPrint('[DL] _handleColdStartDeepLink attempt=$attempt, nav=${rootNavigatorKey.currentState}');
+    if (!mounted || attempt > 10) return;
+    if (rootNavigatorKey.currentState != null) {
+      _handleDeepLink(link);
+    } else {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _handleColdStartDeepLink(link, attempt + 1);
+      });
     }
   }
 
   void _handleDeepLink(String uriString) {
+    debugPrint('[DL] _handleDeepLink: $uriString');
     final uri = Uri.tryParse(uriString);
     if (uri == null || uri.scheme != 'goldpet') return;
 
@@ -119,20 +185,37 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
     }
 
     if (host == 'walk' || host == 'spot') {
-      if (_isPushingWalkScreen) return; // push in progress, ignore
+      debugPrint('[DL] isOnStack=${WalkScreen.isOnStack}, isPushing=$_isPushingWalkScreen, navHash=${rootNavigatorKey.currentState.hashCode}');
+      if (_isPushingWalkScreen) {
+        debugPrint('[DL] BLOCKED: push in progress');
+        return;
+      }
       if (WalkScreen.isOnStack) {
-        // WalkScreen already showing — deliver spot action via global stream
+        // WalkScreen was pushed and dispose() hasn't run — deliver spot action
+        debugPrint('[DL] WalkScreen on stack, spotAction=$spotAction');
         if (spotAction != null) {
           walkSpotActionController.add(spotAction);
         }
+        // If no spotAction (stats/body click), PendingIntent already brought
+        // the app to foreground with WalkScreen visible — nothing more needed.
       } else {
         // Push new WalkScreen
+        final nav = rootNavigatorKey.currentState;
+        debugPrint('[DL] Pushing WalkScreen, nav=$nav');
+        if (nav == null) {
+          debugPrint('[DL] FAILED: navigator is null');
+          return;
+        }
         _isPushingWalkScreen = true;
-        rootNavigatorKey.currentState?.push(
+        nav.push(
           MaterialPageRoute(
             builder: (_) => WalkScreen(initialSpotAction: spotAction),
           ),
-        ).then((_) {
+        );
+        // Clear the pushing guard after the push animation (~300ms).
+        // nav.push().then() only fires when the route is POPPED, which
+        // would block all subsequent deep links while WalkScreen is showing.
+        Future.delayed(const Duration(milliseconds: 500), () {
           _isPushingWalkScreen = false;
         });
       }
@@ -146,6 +229,7 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
 
     return MaterialApp(
       navigatorKey: rootNavigatorKey,
+      navigatorObservers: [_DebugNavigatorObserver()],
       title: 'GoldPet',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.brown, useMaterial3: true),
