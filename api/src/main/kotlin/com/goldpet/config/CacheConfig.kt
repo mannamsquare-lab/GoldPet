@@ -1,7 +1,10 @@
 package com.goldpet.config
 
+import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.event.EventListener
 import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.connection.RedisConnectionFactory
@@ -52,5 +55,15 @@ class CacheConfig {
             .withCacheConfiguration("gold:products", staticDataConfig)
             .withCacheConfiguration("user:stats", postFeedConfig)
             .build()
+    }
+
+    @EventListener(ApplicationReadyEvent::class)
+    fun clearCachesOnStartup(event: ApplicationReadyEvent) {
+        val log = LoggerFactory.getLogger(CacheConfig::class.java)
+        val cm = event.applicationContext.getBean(RedisCacheManager::class.java)
+        cm.cacheNames.forEach { name ->
+            cm.getCache(name)?.clear()
+        }
+        log.info("All Redis caches cleared on startup (Flyway migration sync)")
     }
 }
