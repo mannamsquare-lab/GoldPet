@@ -394,7 +394,7 @@ export default function HomePage() {
                         <div className="img_wrap">
                             <img
                                 src={homeData.recentWalk.petProfileImageUrls && homeData.recentWalk.petProfileImageUrls.length > 0
-                                    ? getImageUrl(homeData.recentWalk.petProfileImageUrls[0], 'small')
+                                    ? getImageUrl(homeData.recentWalk.petProfileImageUrls[0], 'thumbnail')
                                     : '/assets/images/common/pet_none_img02.svg'}
                                 alt=""
                                 onError={(e) => { e.currentTarget.src = '/assets/images/common/pet_none_img02.svg'; }}
