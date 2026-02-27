@@ -25,6 +25,15 @@ const OWNER_FALLBACK = '/assets/images/common/profile_none_img.svg';
 const PET_FALLBACK_FN = (index: number) =>
     `/assets/images/main/main_slide_img0${(index % 3) + 1}.png`;
 
+/** 마지막 글자의 받침 유무로 '와'/'과' 반환 */
+function getPostposition(name: string): string {
+    if (!name) return '와';
+    const lastChar = name.charCodeAt(name.length - 1);
+    // 한글 유니코드 범위: 0xAC00 ~ 0xD7A3
+    if (lastChar < 0xAC00 || lastChar > 0xD7A3) return '와';
+    return (lastChar - 0xAC00) % 28 === 0 ? '와' : '과';
+}
+
 function formatTimeAgo(endTime: string): string {
     const now = new Date();
     const end = new Date(endTime);
@@ -383,15 +392,13 @@ export default function HomePage() {
                     </div>
                     <div className="txt_wrap">
                         <p>
-                            📏 <span>
-                                {homeData.recentWalk.petNames && homeData.recentWalk.petNames.length > 0
-                                    ? `${homeData.recentWalk.petNames.join(', ')}과 `
-                                    : ''}
-                                {homeData.recentWalk.startAddress
-                                    ? `${homeData.recentWalk.startAddress}에서 `
-                                    : ''}
-                                {homeData.recentWalk.distanceKm.toFixed(1)}km 산책하셨네요
-                            </span>
+                            {homeData.recentWalk.petNames && homeData.recentWalk.petNames.length > 0 && (
+                                <>🐶 <span>{homeData.recentWalk.petNames.join(', ')}{getPostposition(homeData.recentWalk.petNames[homeData.recentWalk.petNames.length - 1])}</span><br /></>
+                            )}
+                            {homeData.recentWalk.startAddress && (
+                                <>📍 <span>{homeData.recentWalk.startAddress}에서</span><br /></>
+                            )}
+                            🐾 <span>{homeData.recentWalk.distanceKm.toFixed(0)}km</span> 산책하셨네요.
                         </p>
                     </div>
                 </section>
