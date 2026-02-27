@@ -43,6 +43,7 @@ export interface HomeDataResponse {
     hasUnread: boolean;
     count: number;
   };
+  myPetNames: string[];
 }
 
 // Mock data for fallback
@@ -120,6 +121,7 @@ const mockHomeData: HomeDataResponse = {
     hasUnread: false,
     count: 0,
   },
+  myPetNames: [],
 };
 
 export const homeService = {
@@ -164,6 +166,7 @@ export const homeService = {
           petProfileImageUrls: data.recentWalk.petProfileImageUrls ?? [],
         } : null,
         notifications: data.notifications || { hasUnread: false, count: 0 },
+        myPetNames: data.myPetNames ?? [],
       };
     } catch {
       return mockHomeData;

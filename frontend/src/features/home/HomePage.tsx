@@ -378,7 +378,9 @@ export default function HomePage() {
                     <img src="/assets/images/main/ai_banner_img.png" alt="블러 처리된 사진" />
                     <div className="txt_wrap">
                         <h2>아직 AI 프로필이 없으시네요?</h2>
-                        <p>멍텅구리의 다양한 모습을 지금 만나 보세요!</p>
+                        <p>{homeData.myPetNames.length > 0
+                            ? `${homeData.myPetNames[0]}의 다양한 모습을 지금 만나 보세요!`
+                            : '다양한 모습을 지금 만나 보세요!'}</p>
                     </div>
                 </a>
             </section>

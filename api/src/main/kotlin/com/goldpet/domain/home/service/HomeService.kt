@@ -8,6 +8,7 @@ import com.goldpet.domain.friend.service.FriendService
 import com.goldpet.domain.walk.repository.WalkRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.pet.repository.PetRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,7 +18,8 @@ class HomeService(
     private val friendService: FriendService,
     private val walkRepository: WalkRepository,
     private val notificationService: NotificationService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val petRepository: PetRepository
 ) {
     @Transactional(readOnly = true)
     fun getHomeData(userId: Long): HomeResponse {
@@ -58,13 +60,17 @@ class HomeService(
         // Get notification unread count
         val unreadCount = notificationService.getUnreadCount(userId)
 
+        // Get user's pet names
+        val myPetNames = petRepository.findByOwnerId(userId).map { it.name }
+
         return HomeResponse(
             recommendations = recommendations,
             recentWalk = recentWalk,
             notifications = NotificationSummary(
                 hasUnread = unreadCount > 0,
                 count = unreadCount
-            )
+            ),
+            myPetNames = myPetNames
         )
     }
 }

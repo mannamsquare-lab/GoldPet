@@ -6,7 +6,8 @@ import java.time.LocalDateTime
 data class HomeResponse(
     val recommendations: List<FriendResponse>,
     val recentWalk: HomeRecentWalkResponse?,
-    val notifications: NotificationSummary
+    val notifications: NotificationSummary,
+    val myPetNames: List<String> = emptyList()
 )
 
 data class NotificationSummary(
