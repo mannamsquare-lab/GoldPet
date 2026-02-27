@@ -23,6 +23,7 @@ dependencies:
   webview_flutter: ^4.9.0
   geolocator: ^14.0.2
   image_picker: ^1.1.2
+  image_cropper: ^8.0.2
   path_provider: ^2.1.2
   shared_preferences: ^2.3.2
   http: ^1.2.2
@@ -65,6 +66,7 @@ flutter:
   assets:
     - assets/images/splash/
     - assets/images/common/
+    - assets/images/walk/
   fonts:
     - family: Pretendard
       fonts:
