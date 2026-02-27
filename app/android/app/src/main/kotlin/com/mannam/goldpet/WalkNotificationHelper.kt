@@ -65,14 +65,12 @@ class WalkNotificationHelper(private val context: Context) {
             setOnClickPendingIntent(R.id.btn_pee, peePendingIntent)
             setOnClickPendingIntent(R.id.btn_poop, poopPendingIntent)
             setOnClickPendingIntent(R.id.btn_photo, photoPendingIntent)
-            setOnClickPendingIntent(R.id.btn_stop, stopPendingIntent)
         }
 
         cachedBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setCustomContentView(cachedLayout)
             .setCustomBigContentView(cachedLayout)
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setContentIntent(contentIntent)
             .setOngoing(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -81,6 +79,7 @@ class WalkNotificationHelper(private val context: Context) {
             .setSilent(true)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .addAction(0, "종료", stopPendingIntent)
     }
 
     private fun createChannel() {

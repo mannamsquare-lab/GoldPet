@@ -2,7 +2,59 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// MARK: - Spot Action Button
+// MARK: - Design Constants
+
+private enum WalkWidgetStyle {
+    static let goldColor = Color(red: 0.988, green: 0.902, blue: 0.486) // #FCE67C
+    static let brownColor = Color(red: 0.38, green: 0.255, blue: 0.031) // #614108
+    static let beigeColor = Color(red: 0.976, green: 0.925, blue: 0.824) // #F9ECD2
+}
+
+// MARK: - Lock Screen Spot Button (Image-based)
+
+struct LockScreenSpotButton: View {
+    let imageName: String
+    let label: String
+    let url: String
+    let showBeigeBackground: Bool
+
+    init(imageName: String, label: String, url: String, showBeigeBackground: Bool = false) {
+        self.imageName = imageName
+        self.label = label
+        self.url = url
+        self.showBeigeBackground = showBeigeBackground
+    }
+
+    var body: some View {
+        Link(destination: URL(string: url)!) {
+            VStack(spacing: 4) {
+                if showBeigeBackground {
+                    ZStack {
+                        Circle()
+                            .fill(WalkWidgetStyle.beigeColor)
+                            .frame(width: 40, height: 40)
+                        Image("IconCamera")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 17)
+                    }
+                } else {
+                    Image(imageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 40, height: 40)
+                        .clipShape(Circle())
+                }
+                Text(label)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+// MARK: - Dynamic Island Spot Button (SF Symbol-based)
 
 struct SpotActionButton: View {
     let icon: String
@@ -18,12 +70,10 @@ struct SpotActionButton: View {
                     .foregroundColor(color)
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
-            .background(Color.white.opacity(0.5))
-            .cornerRadius(8)
         }
     }
 }
@@ -53,84 +103,82 @@ struct WalkLiveActivityView: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            // Stats row
+        VStack(spacing: 10) {
+            // GoldPet Logo
+            HStack {
+                Image("Logo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 45, height: 12)
+                Spacer()
+            }
+
+            // Stats row (no dividers)
             HStack(spacing: 0) {
                 // Distance
                 VStack(spacing: 2) {
                     Text(formattedDistance)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(.black)
-                    Text("km")
-                        .font(.system(size: 11))
-                        .foregroundColor(.gray)
+                        .foregroundColor(WalkWidgetStyle.goldColor)
+                    Text("산책 거리 (km)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 .frame(maxWidth: .infinity)
-
-                // Divider
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 1, height: 32)
 
                 // Duration
                 VStack(spacing: 2) {
                     Text(formattedDuration)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(.black)
-                    Text("시간")
-                        .font(.system(size: 11))
-                        .foregroundColor(.gray)
+                        .foregroundColor(WalkWidgetStyle.goldColor)
+                    Text("소요시간")
+                        .font(.system(size: 10))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 .frame(maxWidth: .infinity)
-
-                // Divider
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 1, height: 32)
 
                 // Calories
                 VStack(spacing: 2) {
                     Text(formattedCalories)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(.black)
-                    Text("kcal")
-                        .font(.system(size: 11))
-                        .foregroundColor(.gray)
+                        .foregroundColor(WalkWidgetStyle.goldColor)
+                    Text("소요 칼로리 (Kcal)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 .frame(maxWidth: .infinity)
             }
 
-            // Spot action buttons + stop button
+            Spacer().frame(height: 14) // 24px total gap (10 from VStack spacing + 14 here)
+
+            // Spot action buttons: 응가 -> 쉬 -> 사진
             HStack(spacing: 6) {
-                SpotActionButton(
-                    icon: "drop.fill",
-                    label: "쉬~",
-                    url: "goldpet://spot/pee",
-                    color: Color(red: 0.9, green: 0.7, blue: 0.2)
-                )
-                SpotActionButton(
-                    icon: "circle.fill",
+                LockScreenSpotButton(
+                    imageName: "IconPoop",
                     label: "응가",
-                    url: "goldpet://spot/poop",
-                    color: Color(red: 0.55, green: 0.35, blue: 0.17)
+                    url: "goldpet://spot/poop"
                 )
-                SpotActionButton(
-                    icon: "camera.fill",
+                LockScreenSpotButton(
+                    imageName: "IconPee",
+                    label: "쉬",
+                    url: "goldpet://spot/pee"
+                )
+                LockScreenSpotButton(
+                    imageName: "IconCamera",
                     label: "사진",
                     url: "goldpet://spot/photo",
-                    color: Color(red: 0.3, green: 0.6, blue: 0.85)
-                )
-                SpotActionButton(
-                    icon: "stop.fill",
-                    label: "종료",
-                    url: "goldpet://walk/stop",
-                    color: .red
+                    showBeigeBackground: true
                 )
             }
-            .padding(.horizontal, 4)
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 12)
     }
 }
 
@@ -139,15 +187,15 @@ struct WalkLiveActivityView: View {
 struct DynamicIslandSpotButtons: View {
     var body: some View {
         HStack(spacing: 8) {
-            Link(destination: URL(string: "goldpet://spot/pee")!) {
-                Image(systemName: "drop.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(red: 0.9, green: 0.7, blue: 0.2))
-            }
             Link(destination: URL(string: "goldpet://spot/poop")!) {
                 Image(systemName: "circle.fill")
                     .font(.system(size: 14))
                     .foregroundColor(Color(red: 0.55, green: 0.35, blue: 0.17))
+            }
+            Link(destination: URL(string: "goldpet://spot/pee")!) {
+                Image(systemName: "drop.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(Color(red: 0.9, green: 0.7, blue: 0.2))
             }
             Link(destination: URL(string: "goldpet://spot/photo")!) {
                 Image(systemName: "camera.fill")
@@ -171,7 +219,7 @@ struct WalkLiveActivity: Widget {
             // Lock screen / banner view
             WalkLiveActivityView(state: context.state)
                 .widgetURL(URL(string: "goldpet://walk"))
-                .activityBackgroundTint(Color(red: 0.976, green: 0.925, blue: 0.824))
+                .activityBackgroundTint(WalkWidgetStyle.brownColor.opacity(0.9))
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
