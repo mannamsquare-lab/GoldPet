@@ -23,9 +23,11 @@ class CacheConfig {
             .registerModule(com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
             .registerModule(com.fasterxml.jackson.module.kotlin.KotlinModule.Builder().build())
 
+        // Kotlin data class는 final이므로 NON_FINAL 대신 EVERYTHING 사용
+        // (NON_FINAL은 final 타입에 @class 타입 정보를 포함하지 않아 역직렬화 실패)
         objectMapper.activateDefaultTyping(
             objectMapper.polymorphicTypeValidator,
-            com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.NON_FINAL,
+            com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.EVERYTHING,
             com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
         )
 
