@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 type ToastType = 'success' | 'error' | 'info';
@@ -32,64 +32,32 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setToasts(prev => prev.filter(t => t.id !== id));
     };
 
+    // Listen for CustomEvent from non-React code (e.g. axios interceptor)
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            if (detail?.message) {
+                showToast(detail.message, detail.type);
+            }
+        };
+        window.addEventListener('gp-show-toast', handler);
+        return () => window.removeEventListener('gp-show-toast', handler);
+    }, [showToast]);
+
     return (
         <ToastContext.Provider value={{ showToast }}>
             {children}
-            <div className="toast_container">
+            <div className="gp-snackbar-container">
                 {toasts.map(toast => (
-                    <div 
-                        key={toast.id} 
-                        className={`toast_message ${toast.type}`} 
+                    <div
+                        key={toast.id}
+                        className="gp-snackbar"
                         onClick={() => removeToast(toast.id)}
                     >
                         {toast.message}
                     </div>
                 ))}
             </div>
-            <style>{`
-                .toast_container {
-                    position: fixed;
-                    bottom: 50px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    z-index: 10000;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                    pointer-events: none;
-                    width: 100%;
-                    align-items: center;
-                    padding: 0 20px;
-                }
-                .toast_message {
-                    background: rgba(30, 30, 30, 0.85); /* Default dark background for all */
-                    color: white;
-                    padding: 14px 20px;
-                    border-radius: 8px;
-                    font-size: 15px;
-                    font-weight: 500;
-                    pointer-events: auto;
-                    animation: fadeIn 0.3s forwards, fadeOut 0.3s 2.7s forwards;
-                    width: 100%;
-                    max-width: 500px;
-                    text-align: center;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    line-height: 1.4;
-                    word-break: keep-all;
-                }
-                /* Removed specific background colors for success/error to keep uniform dark style */
-                .toast_message.error { }
-                .toast_message.success { }
-                
-                @keyframes fadeIn { 
-                    from { opacity: 0; transform: translateY(10px); } 
-                    to { opacity: 1; transform: translateY(0); } 
-                }
-                @keyframes fadeOut { 
-                    from { opacity: 1; transform: translateY(0); } 
-                    to { opacity: 0; transform: translateY(10px); } 
-                }
-            `}</style>
         </ToastContext.Provider>
     );
 };
