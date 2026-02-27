@@ -49,7 +49,9 @@ class HomeService(
                 endTime = w.endTime,
                 startAddress = w.startAddress,
                 petNames = walkPets.map { it.pet.name },
-                petProfileImageUrls = walkPets.mapNotNull { it.pet.profileImageUrl },
+                petProfileImageUrls = walkPets.mapNotNull { wp ->
+                    wp.pet.profileImages.firstOrNull()?.imageUrl ?: wp.pet.profileImageUrl
+                },
             )
         }
 
