@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { emoticonService } from '../../services/emoticonService';
+import { fileService } from '../../services/fileService';
 import type { EmoticonResponse, CreateEmoticonRequest } from '../../services/emoticonService';
 import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';
@@ -27,6 +28,7 @@ export default function EmoticonManagementPage() {
   const [editingEmoticon, setEditingEmoticon] = useState<EmoticonResponse | null>(null);
   const [form, setForm] = useState<CreateEmoticonRequest>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const { data: emoticons = [], isLoading } = useQuery({
     queryKey: ['emoticons'],
@@ -65,6 +67,29 @@ export default function EmoticonManagementPage() {
     setShowForm(false);
     setEditingEmoticon(null);
     setForm(EMPTY_FORM);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('파일 크기는 10MB 이하여야 합니다.');
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await fileService.uploadFile(file);
+      setForm({ ...form, imageUrl: result.url });
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      alert('이미지 업로드에 실패했습니다.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -229,24 +254,40 @@ export default function EmoticonManagementPage() {
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL *</label>
-              <input
-                type="text"
-                value={form.imageUrl}
-                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="https://..."
-              />
-              {form.imageUrl && (
-                <div className="mt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">이미지 *</label>
+              <div className="flex gap-3 items-start">
+                <div className="flex-1">
+                  <div className="flex gap-2">
+                    <label className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors ${uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      {uploading ? '업로드 중...' : '이미지 업로드'}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/gif,image/webp"
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-xs text-gray-400 self-center">또는 URL 직접 입력</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={form.imageUrl}
+                    onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                    className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    placeholder="https://..."
+                  />
+                </div>
+                {form.imageUrl && (
                   <img
                     src={form.imageUrl}
                     alt="미리보기"
                     style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                   />
-                </div>
-              )}
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">정렬 순서</label>
