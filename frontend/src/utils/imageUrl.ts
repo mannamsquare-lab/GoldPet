@@ -15,6 +15,9 @@ export function getImageUrl(
 ): string {
   if (variant === 'original') return originalUrl;
 
+  // GIF files: return original (animated GIFs have no static thumbnail)
+  if (originalUrl.toLowerCase().endsWith('.gif')) return originalUrl;
+
   // Match pattern: http(s)://host/bucket/{uuid}.{ext}
   const match = originalUrl.match(/^(.+\/[0-9a-f-]{36})\.[a-z]+$/i);
   if (!match) return originalUrl;  // Legacy or external URL -- use as-is
