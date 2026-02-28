@@ -315,7 +315,7 @@ export default function CommunityDetailPage() {
           {/* Profile */}
           <div className="detail_profile">
             <div className="profile_img">
-              <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" />
+              <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
             </div>
             <div className="txt_wrap">
               <strong>{post.authorNickname}</strong>
@@ -395,7 +395,7 @@ export default function CommunityDetailPage() {
               >
                  <div className="detail_profile">
                     <div className="profile_img">
-                      <img src={comment.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" />
+                      <img src={comment.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
                     </div>
                 </div>
                 <div className="comment_info">

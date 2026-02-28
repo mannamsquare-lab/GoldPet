@@ -73,7 +73,7 @@ export default function MyPostsPage() {
                     <li key={post.id} onClick={() => navigate(`/community/${post.id}`)}>
                       <div className="list_profile">
                         <div className="profile_img">
-                          <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" />
+                          <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
                         </div>
                         <div className="txt_wrap">
                           <strong>{post.authorNickname}</strong>
