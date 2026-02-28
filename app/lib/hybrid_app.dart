@@ -4,6 +4,7 @@ import 'package:goldpet_app/core/webview/hybrid_webview.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:goldpet_app/core/constants/app_constants.dart';
 import 'package:goldpet_app/core/constants/keys.dart';
+import 'package:goldpet_app/core/api/api_client.dart';
 import 'package:goldpet_app/features/walk/screens/walk_screen.dart';
 import 'package:goldpet_app/core/services/app_version_service.dart';
 import 'package:goldpet_app/core/widgets/force_update_dialog.dart';
@@ -67,8 +68,21 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     debugPrint('[DL] Lifecycle: $state, isOnStack=${WalkScreen.isOnStack}, navHash=${rootNavigatorKey.currentState.hashCode}');
     if (state == AppLifecycleState.resumed) {
+      // iOS에서 앱 복귀 시 토큰 사전 갱신 (WKWebView content process kill 대비)
+      _refreshTokenOnResume();
       _checkAppVersion();
       _checkPendingDeepLink();
+    }
+  }
+
+  /// 앱 복귀 시 토큰을 사전 갱신하여 WKWebView 리로드 시 401 방지.
+  /// 실패해도 앱 동작에 영향 없음 (non-blocking).
+  Future<void> _refreshTokenOnResume() async {
+    try {
+      await ApiClient().refreshTokenIfNeeded();
+      debugPrint('[TokenRefresh] App resume token refresh completed');
+    } catch (e) {
+      debugPrint('[TokenRefresh] App resume token refresh failed (non-blocking): $e');
     }
   }
 

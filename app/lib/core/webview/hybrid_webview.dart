@@ -14,6 +14,7 @@ import '../widgets/goldpet_alert_dialog.dart';
 import '../../features/walk/screens/walk_screen.dart';
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// React 앱을 로드하는 WebView 래퍼
 class HybridWebView extends StatefulWidget {
@@ -73,6 +74,9 @@ class _HybridWebViewState extends State<HybridWebView> {
             _injectUrlChangeMonitor();
             // 현재 URL 기반으로 시스템 바 컬러 업데이트
             _updateSystemBarColors(url);
+            // iOS WKWebView content process kill 후 페이지 리로드 시
+            // Flutter secure storage의 토큰을 React에 동기화
+            _syncTokensToReact();
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint('WebView error: ${error.description}');
@@ -296,6 +300,28 @@ class _HybridWebViewState extends State<HybridWebView> {
         });
       },
     );
+  }
+
+  /// Flutter secure storage의 토큰을 React에 동기화.
+  /// iOS WKWebView content process kill 후 페이지 리로드 시
+  /// React Zustand hydration 전에 토큰을 주입하여 401 방지.
+  Future<void> _syncTokensToReact() async {
+    try {
+      const storage = FlutterSecureStorage();
+      final accessToken = await storage.read(key: StorageKeys.accessToken);
+      final refreshToken = await storage.read(key: StorageKeys.refreshToken);
+      if (accessToken != null && accessToken.isNotEmpty) {
+        // 브릿지 스크립트 주입 후 약간의 딜레이를 주어 채널이 준비되도록 함
+        await Future.delayed(const Duration(milliseconds: 300));
+        _bridge.sendEventToReact('tokenSync', {
+          'accessToken': accessToken,
+          'refreshToken': refreshToken ?? '',
+        });
+        debugPrint('[TokenSync] Synced tokens to React on page load');
+      }
+    } catch (e) {
+      debugPrint('[TokenSync] Failed to sync tokens: $e');
+    }
   }
 
   String? _extractFallbackUrl(String intentUrl) {

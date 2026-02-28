@@ -27,7 +27,8 @@ export type NativeEventType =
   | 'locationUpdated'
   | 'permissionStatusChanged'
   | 'appStateChanged'
-  | 'authExpired';
+  | 'authExpired'
+  | 'tokenSync';
 
 export type NativeMethod =
   // 푸시 알림

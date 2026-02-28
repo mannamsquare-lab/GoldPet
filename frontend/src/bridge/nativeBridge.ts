@@ -20,6 +20,7 @@ class NativeBridge {
   private static readonly BUFFERABLE_EVENTS: Set<string> = new Set([
     'pushNotificationClicked',
     'authExpired',
+    'tokenSync',
   ]);
   private static readonly BUFFER_TTL_MS = 10_000; // 10 seconds
 
