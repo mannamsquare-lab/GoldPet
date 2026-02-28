@@ -11,6 +11,7 @@ import '../bridge/native_bridge.dart';
 import '../constants/keys.dart';
 import '../services/location_service.dart';
 import '../widgets/goldpet_alert_dialog.dart';
+import '../../features/walk/screens/walk_screen.dart';
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -231,23 +232,15 @@ class _HybridWebViewState extends State<HybridWebView> {
     _bridge = NativeBridge(_controller);
 
     // Auth expiry 콜백: 401 refresh 실패 시 알럿 표시 + 로그인 페이지 이동
+    // 산책 중이면 다이얼로그/popUntil을 억제하고, 산책 종료 후 처리하도록 지연
     ApiClient.onAuthExpired = () {
-      final ctx = rootNavigatorKey.currentContext;
-      if (ctx == null) return;
-      showGoldPetAlert(
-        ctx,
-        message: '로그인이 만료되었습니다.\n다시 로그인해주세요.',
-        confirmText: '확인',
-        barrierDismissible: false,
-        onConfirm: () {
-          debugPrint('[AuthExpiry] Popped all Flutter screens, sending authExpired to React');
-          rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
-          // Small delay to ensure WebView is visible before sending event
-          Future.delayed(const Duration(milliseconds: 200), () {
-            _bridge.sendEventToReact('authExpired', {});
-          });
-        },
-      );
+      // Walk-aware deferral: 산책 활성 중이면 인증 만료를 지연 처리
+      if (WalkScreen.isOnStack) {
+        debugPrint('[AuthExpiry] Walk active — deferring auth expiry');
+        WalkScreen.authExpiredDuringWalk = true;
+        return;
+      }
+      _showAuthExpiredDialog();
     };
 
     // 오버레이 색상 제어 콜백 연결
@@ -284,6 +277,25 @@ class _HybridWebViewState extends State<HybridWebView> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  /// 인증 만료 다이얼로그 표시 + 모든 Flutter 화면 pop + React에 이벤트 전송
+  void _showAuthExpiredDialog() {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null) return;
+    showGoldPetAlert(
+      ctx,
+      message: '로그인이 만료되었습니다.\n다시 로그인해주세요.',
+      confirmText: '확인',
+      barrierDismissible: false,
+      onConfirm: () {
+        debugPrint('[AuthExpiry] Popped all Flutter screens, sending authExpired to React');
+        rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _bridge.sendEventToReact('authExpired', {});
+        });
+      },
+    );
   }
 
   String? _extractFallbackUrl(String intentUrl) {

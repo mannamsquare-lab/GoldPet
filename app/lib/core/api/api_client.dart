@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
 import '../constants/keys.dart';
+import '../../features/walk/data/walk_local_storage.dart';
+import '../../features/walk/screens/walk_screen.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
@@ -159,10 +161,59 @@ class ApiClient {
     await _storage.write(key: StorageKeys.refreshToken, value: refreshToken);
     // Reset auth expiry flag on re-login
     _isAuthExpired = false;
+    // 재로그인 후 보류된 산책 데이터 자동 복구 시도
+    _recoverPendingWalk();
+  }
+
+  /// 로컬에 저장된 보류 산책 데이터를 서버에 전송.
+  /// setToken()에서 호출되며, 보류 데이터가 없으면 no-op.
+  /// 산책 화면이 활성 중이면 복구를 건너뜀 (새 산책과의 충돌 방지).
+  Future<void> _recoverPendingWalk() async {
+    try {
+      // 산책 화면이 활성 중이면 복구 건너뜀
+      if (WalkScreen.isOnStack) return;
+
+      final walkData = await WalkLocalStorage.loadWalkData();
+      if (walkData == null) return;
+
+      final response = await _dio.post('/api/v1/walks', data: walkData.toJson());
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await WalkLocalStorage.clearWalkData();
+        debugPrint('[WalkRecovery] Pending walk saved successfully');
+      }
+    } catch (e) {
+      debugPrint('[WalkRecovery] Failed to recover pending walk: $e');
+      // 실패 시 로컬 데이터 유지 — 다음 setToken() 호출 시 재시도
+    }
   }
 
   Future<void> clearToken() async {
     await _storage.delete(key: StorageKeys.accessToken);
     await _storage.delete(key: StorageKeys.refreshToken);
+  }
+
+  /// 산책 시작 전 토큰을 사전 갱신하여 만료 확률을 최소화.
+  /// 실패해도 산책은 진행됨 (non-blocking).
+  Future<void> refreshTokenIfNeeded() async {
+    final refreshToken = await _storage.read(key: StorageKeys.refreshToken);
+    if (refreshToken == null || refreshToken.isEmpty) return;
+    await _performTokenRefresh(refreshToken);
+  }
+
+  /// 토큰 갱신 공통 로직. 인터셉터와 refreshTokenIfNeeded()에서 공유.
+  Future<void> _performTokenRefresh(String refreshToken) async {
+    final refreshDio = Dio(BaseOptions(
+      baseUrl: ApiConstants.baseUrl,
+      headers: {'Content-Type': 'application/json'},
+    ));
+    final response = await refreshDio.post(
+      '/api/v1/auth/refresh',
+      data: {'refreshToken': refreshToken},
+    );
+    if (response.statusCode == 200) {
+      final newAccessToken = response.data['accessToken'] as String;
+      final newRefreshToken = response.data['refreshToken'] as String;
+      await setToken(newAccessToken, newRefreshToken);
+    }
   }
 }

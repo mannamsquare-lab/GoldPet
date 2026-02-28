@@ -16,6 +16,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../data/walk_models.dart';
 import '../data/walk_repository.dart';
+import '../data/walk_local_storage.dart';
 import '../../../core/widgets/goldpet_alert_dialog.dart';
 
 /// Global stream for delivering spot actions to an existing WalkScreen
@@ -29,6 +30,10 @@ class WalkScreen extends ConsumerStatefulWidget {
   /// Set in initState(), cleared in dispose(). Used by hybrid_app and native_bridge
   /// to prevent duplicate WalkScreen pushes from deep links or bridge calls.
   static bool isOnStack = false;
+
+  /// Set by HybridWebView when auth expires during an active walk.
+  /// The auth expiry dialog is deferred until the walk ends naturally.
+  static bool authExpiredDuringWalk = false;
 
   const WalkScreen({super.key, this.initialSpotAction});
 
@@ -103,6 +108,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   void initState() {
     super.initState();
     WalkScreen.isOnStack = true;
+    WalkLocalStorage.initialize(); // Pre-cache SharedPreferences for dispose
     WidgetsBinding.instance.addObserver(this);
     // Subscribe to global spot action stream (for deep link actions on existing screen)
     _spotActionSubscription = walkSpotActionController.stream.listen((type) {
@@ -130,8 +136,27 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   @override
   void dispose() {
-    debugPrint('[WalkScreen] dispose() called');
+    debugPrint('[WalkScreen] dispose() called, isWalking=$_isWalking');
+    // Best-effort local save if walk was active (data already on disk from periodic saves)
+    if (_isWalking && _startTime != null && _path.length >= 2) {
+      try {
+        final request = CreateWalkRequest(
+          startTime: _startTime!,
+          endTime: DateTime.now(),
+          distanceKm: _distanceNotifier.value,
+          durationSeconds: _durationNotifier.value,
+          path: _path.map((e) => [e.latitude, e.longitude]).toList(),
+          spots: List<WalkSpotDto>.from(_spots),
+          caloriesBurned: _distanceNotifier.value * 50.0,
+          petIds: _petIds,
+        );
+        WalkLocalStorage.saveWalkDataBestEffort(request);
+      } catch (e) {
+        debugPrint('[WalkScreen] Dispose emergency save failed: $e');
+      }
+    }
     WalkScreen.isOnStack = false;
+    WalkScreen.authExpiredDuringWalk = false;
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
@@ -488,6 +513,13 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   }
 
   void _startWalk() async {
+    // 산책 시작 전 토큰 사전 갱신 (만료 확률 최소화, 실패해도 진행)
+    try {
+      await ApiClient().refreshTokenIfNeeded();
+    } catch (_) {
+      // Non-blocking: 갱신 실패해도 산책은 진행
+    }
+
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (mounted) _showServiceDisabledDialog();
@@ -557,8 +589,14 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_startTime != null && !_isPaused) {
         final elapsed = DateTime.now().difference(_startTime!);
-        _durationNotifier.value = (elapsed - _totalPauseDuration).inSeconds;
-        _updateWalkWidget(_durationNotifier.value, _distanceNotifier.value);
+        final elapsedSeconds = (elapsed - _totalPauseDuration).inSeconds;
+        _durationNotifier.value = elapsedSeconds;
+        _updateWalkWidget(elapsedSeconds, _distanceNotifier.value);
+
+        // Periodic local save every 60 seconds (safety net for app kill/crash)
+        if (elapsedSeconds > 0 && elapsedSeconds % 60 == 0 && _path.length >= 2) {
+          _saveWalkDataLocally();
+        }
       }
     });
 
@@ -866,6 +904,28 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   }
 
 
+  /// 현재 산책 데이터를 로컬 저장소에 저장 (주기적 저장 + 비상 저장용)
+  Future<void> _saveWalkDataLocally() async {
+    try {
+      if (_startTime == null || _path.length < 2) return;
+      final endTime = DateTime.now();
+      final durationSeconds = _durationNotifier.value;
+      final request = CreateWalkRequest(
+        startTime: _startTime!,
+        endTime: endTime,
+        distanceKm: _distanceNotifier.value,
+        durationSeconds: durationSeconds,
+        path: _path.map((e) => [e.latitude, e.longitude]).toList(),
+        spots: List<WalkSpotDto>.from(_spots),
+        caloriesBurned: _distanceNotifier.value * 50.0,
+        petIds: _petIds,
+      );
+      await WalkLocalStorage.saveWalkData(request);
+    } catch (e) {
+      debugPrint('[WalkScreen] Periodic local save failed: $e');
+    }
+  }
+
   void _stopWalk() async {
     if (!_isWalking) return;
 
@@ -934,16 +994,39 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
     try {
       await ref.read(walkRepositoryProvider).createWalk(request);
+      // 성공 시 로컬 저장소의 보류 데이터 제거
+      await WalkLocalStorage.clearWalkData();
 
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('산책이 저장되었습니다!')));
+
+        // 산책 중 인증 만료가 지연되었으면, 저장 완료 후 인증 만료 처리
+        if (WalkScreen.authExpiredDuringWalk) {
+          WalkScreen.authExpiredDuringWalk = false;
+          debugPrint('[WalkScreen] Walk saved successfully, now handling deferred auth expiry');
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          // dispose()에서 isOnStack = false 처리 후, 다음 프레임에서 인증 만료 알림
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ApiClient.onAuthExpired?.call();
+          });
+          return;
+        }
       }
     } catch (e) {
       if (mounted) {
-        // 401 auth expiry is handled by the global ApiClient interceptor dialog
-        if (e is DioException && e.response?.statusCode == 401) return;
+        if (e is DioException && e.response?.statusCode == 401) {
+          // 인증 만료: 산책 데이터를 로컬에 저장 후 인증 만료 처리
+          await WalkLocalStorage.saveWalkData(request);
+          debugPrint('[WalkScreen] Walk data saved locally due to auth expiry');
+          WalkScreen.authExpiredDuringWalk = false;
+          // 직접 pop (onAuthExpired의 walk-aware guard를 우회)
+          if (mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+          return;
+        }
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('저장 실패: 네트워크 오류가 발생했습니다')));
