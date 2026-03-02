@@ -48,7 +48,7 @@ class User(
         @Column(name = "is_community_alert_enabled", nullable = false)
         var isCommunityAlertEnabled: Boolean = true,
         @Column(name = "is_marketing_alert_enabled", nullable = false)
-        var isMarketingAlertEnabled: Boolean = false,
+        var isMarketingAlertEnabled: Boolean = true,
         @Column(name = "is_location_sharing_enabled", nullable = false)
         var isLocationSharingEnabled: Boolean = true,
         @Column(name = "is_profile_public", nullable = false) var isProfilePublic: Boolean = true,
