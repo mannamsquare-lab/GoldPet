@@ -6,6 +6,7 @@ import { petService } from '../../services/petService';
 import type { Pet } from '../../services/petService';
 import { useToast } from '../../contexts/ToastContext';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
+import CustomSelect from '../../components/common/CustomSelect';
 import './AIProfilePage.css';
 
 export default function AIProfileResultPage() {
@@ -217,17 +218,13 @@ export default function AIProfileResultPage() {
                 {pets.length === 0 ? (
                   <p className="ai-apply-no-pets">등록된 반려동물이 없습니다.</p>
                 ) : (
-                  <select
+                  <CustomSelect
                     className="ai-apply-select"
-                    value={selectedPetId ?? ''}
-                    onChange={(e) => setSelectedPetId(Number(e.target.value))}
-                  >
-                    {pets.map((pet) => (
-                      <option key={pet.id} value={pet.id}>
-                        {pet.name}
-                      </option>
-                    ))}
-                  </select>
+                    value={selectedPetId != null ? String(selectedPetId) : ''}
+                    options={pets.map((pet) => ({ label: pet.name, value: String(pet.id) }))}
+                    placeholder="반려동물을 선택해 주세요"
+                    onChange={(val) => setSelectedPetId(Number(val))}
+                  />
                 )}
               </div>
 

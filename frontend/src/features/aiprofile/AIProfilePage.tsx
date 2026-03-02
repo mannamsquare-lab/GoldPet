@@ -2,6 +2,14 @@ import { useNavigate } from 'react-router-dom';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import './AIProfilePage.css';
 
+function BtnBlobBg() {
+  return (
+    <svg className="ai-intro-btn-bg" preserveAspectRatio="none" viewBox="0 0 160 48" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 24C0 37.2548 4.7 48 24 48H136C149.2 48 160 41.0824 160 24C160 10.7452 158.8 0.5 136 0H24C3.4 0 0 10.7452 0 24Z" fill="#614108"/>
+    </svg>
+  );
+}
+
 export default function AIProfilePage() {
   const navigate = useNavigate();
 
@@ -20,28 +28,30 @@ export default function AIProfilePage() {
 
         <div className="ai-intro-img-wrap">
           <img
-            src="/assets/images/ai_make/intro_img.jpg"
+            src="/assets/images/ai_make/intro_sample_3.png"
             alt="AI 프로필 예시"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/assets/images/main/main_slide_butler01.jpg';
-            }}
+            className="ai-intro-main-img"
           />
+          <span className="ai-intro-bubble ai-intro-bubble--left">예쁘게 만들어달라멍</span>
+          <span className="ai-intro-bubble ai-intro-bubble--right">빨리 만들어달라냥</span>
         </div>
 
         <div className="ai-intro-btn-wrap">
           <button
             type="button"
-            className="ai-intro-btn ai-intro-btn--simple"
+            className="ai-intro-btn"
             onClick={() => navigate('/ai-profile/simple')}
           >
-            간단하게 <strong>만들기</strong>
+            <BtnBlobBg />
+            <span className="ai-intro-btn-text">간단하게 만들기</span>
           </button>
           <button
             type="button"
-            className="ai-intro-btn ai-intro-btn--custom"
+            className="ai-intro-btn"
             onClick={() => navigate('/ai-profile/custom')}
           >
-            원하는 대로 <strong>만들기</strong>
+            <BtnBlobBg />
+            <span className="ai-intro-btn-text">원하는 대로 만들기</span>
           </button>
         </div>
       </div>

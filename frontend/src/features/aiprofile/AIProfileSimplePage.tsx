@@ -84,63 +84,64 @@ export default function AIProfileSimplePage() {
           <div className="ai-simple-loading">반려동물 정보를 불러오는 중...</div>
         ) : selectedPet ? (
           <>
-            {/* Large blob-masked hero image */}
-            <div className="ai-simple-hero-img-wrap">
-              <img
-                src={
-                  selectedPet.profileImageUrl ||
-                  selectedPet.profileImageUrls?.[0] ||
-                  '/assets/images/common/pet_none_img.svg'
-                }
-                alt={selectedPet.name}
-                className="ai-simple-hero-img"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/assets/images/common/pet_none_img.svg';
-                }}
-              />
+            {/* Profile photo section */}
+            <div className="ai-simple-profile-section">
+              <div className="ai-simple-hero-img-wrap">
+                <img
+                  src={
+                    selectedPet.profileImageUrl ||
+                    selectedPet.profileImageUrls?.[0] ||
+                    '/assets/images/common/pet_none_img.svg'
+                  }
+                  alt={selectedPet.name}
+                  className="ai-simple-hero-img"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/images/common/pet_none_img.svg';
+                  }}
+                />
+                <span className="ai-simple-hero-label">대표사진</span>
+              </div>
+
+              {/* Additional images strip */}
+              {additionalImages.length > 0 && (
+                <div className="ai-simple-extra-imgs">
+                  {additionalImages.map((url, i) => (
+                    <div key={i} className="ai-simple-extra-img-wrap">
+                      <img
+                        src={url}
+                        alt={`추가 사진 ${i + 1}`}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/assets/images/common/pet_none_img.svg';
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Additional images strip */}
-            {additionalImages.length > 0 && (
-              <div className="ai-simple-extra-imgs">
-                {additionalImages.map((url, i) => (
-                  <div key={i} className="ai-simple-extra-img-wrap">
-                    <img
-                      src={url}
-                      alt={`추가 사진 ${i + 1}`}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/assets/images/common/pet_none_img.svg';
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Pet info card */}
-            <div className="ai-simple-info-card">
-              <h3 className="ai-simple-pet-name">{selectedPet.name}</h3>
-              <div className="ai-simple-info-rows">
-                <div className="ai-simple-info-row">
+            {/* Pet info section */}
+            <div className="ai-simple-info-section">
+              <h3 className="ai-simple-info-title">추가 정보</h3>
+              <div className="ai-simple-info-cards">
+                <div className="ai-simple-info-card">
                   <span className="ai-simple-info-label">종류</span>
                   <span className="ai-simple-info-value">{selectedPet.species || '미등록'}</span>
                 </div>
-                <div className="ai-simple-info-row">
+                <div className="ai-simple-info-card">
                   <span className="ai-simple-info-label">품종</span>
                   <span className="ai-simple-info-value">{selectedPet.breed || '미등록'}</span>
                 </div>
-                <div className="ai-simple-info-row">
+                <div className="ai-simple-info-card">
                   <span className="ai-simple-info-label">성별</span>
                   <span className="ai-simple-info-value">{genderLabel(selectedPet.gender)}</span>
                 </div>
                 {selectedPet.temperamentTags && selectedPet.temperamentTags.length > 0 && (
-                  <div className="ai-simple-info-row ai-simple-info-row--tags">
+                  <div className="ai-simple-info-card">
                     <span className="ai-simple-info-label">특징</span>
-                    <div className="ai-simple-pet-tags">
-                      {selectedPet.temperamentTags.map((tag) => (
-                        <span key={tag} className="ai-simple-pet-tag">{PET_TAG_MAPPINGS[tag] || tag}</span>
-                      ))}
-                    </div>
+                    <span className="ai-simple-info-value">
+                      {selectedPet.temperamentTags.map((tag) => PET_TAG_MAPPINGS[tag] || tag).join(', ')}
+                    </span>
                   </div>
                 )}
               </div>

@@ -9,31 +9,35 @@ class AIPromptBuilder {
     /**
      * Build a detailed English prompt for Leonardo AI based on pet info and style.
      */
-    fun buildPrompt(pet: Pet, stylePrompt: String?, presetId: String?): String {
+    fun buildPrompt(pet: Pet?, stylePrompt: String?, presetId: String?): String {
         val parts = mutableListOf<String>()
 
         // Base subject
-        val species = pet.species.name.lowercase()
-        val breed = pet.breed?.name
-        val subject = if (breed != null) "$breed $species" else species
-        parts.add("A cute $subject portrait")
+        if (pet != null) {
+            val species = pet.species.name.lowercase()
+            val breed = pet.breed?.name
+            val subject = if (breed != null) "$breed $species" else species
+            parts.add("A cute $subject portrait")
 
-        // Physical characteristics
-        pet.gender?.let { gender ->
-            val genderStr = when (gender.uppercase()) {
-                "MALE", "M" -> "male"
-                "FEMALE", "F" -> "female"
-                else -> null
+            // Physical characteristics
+            pet.gender?.let { gender ->
+                val genderStr = when (gender.uppercase()) {
+                    "MALE", "M" -> "male"
+                    "FEMALE", "F" -> "female"
+                    else -> null
+                }
+                genderStr?.let { parts.add(it) }
             }
-            genderStr?.let { parts.add(it) }
-        }
 
-        // Temperament tags
-        pet.temperamentTags?.takeIf { it.isNotBlank() }?.let { tags ->
-            val tagList = tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            if (tagList.isNotEmpty()) {
-                parts.add("personality: ${tagList.joinToString(", ")}")
+            // Temperament tags
+            pet.temperamentTags?.takeIf { it.isNotBlank() }?.let { tags ->
+                val tagList = tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                if (tagList.isNotEmpty()) {
+                    parts.add("personality: ${tagList.joinToString(", ")}")
+                }
             }
+        } else {
+            parts.add("A cute pet portrait")
         }
 
         // Style

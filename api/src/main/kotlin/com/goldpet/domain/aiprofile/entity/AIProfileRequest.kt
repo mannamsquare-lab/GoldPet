@@ -31,8 +31,8 @@ class AIProfileRequest(
     val user: User,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_id", nullable = false)
-    val pet: Pet,
+    @JoinColumn(name = "pet_id")
+    val pet: Pet? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

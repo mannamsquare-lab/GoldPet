@@ -11,7 +11,7 @@ export interface AIStyleOption {
 export type AIRequestType = 'IMAGE' | 'VIDEO' | 'AVATAR';
 
 export interface CreateAIProfileRequest {
-  petId: number;
+  petId: number | null;
   type: AIRequestType;
   sourceImageUrl: string;
   stylePrompt?: string | null;
@@ -21,8 +21,8 @@ export interface CreateAIProfileRequest {
 
 export interface AIProfileRequestResponse {
   id: number;
-  petId: number;
-  petName: string;
+  petId: number | null;
+  petName: string | null;
   type: AIRequestType;
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
   sourceImageUrl: string;

@@ -6,7 +6,7 @@ import com.goldpet.domain.aiprofile.entity.AIRequestType
 import java.time.LocalDateTime
 
 data class CreateAIProfileRequest(
-    val petId: Long,
+    val petId: Long? = null,
     val type: AIRequestType,
     val sourceImageUrl: String,
     val stylePrompt: String? = null
@@ -14,8 +14,8 @@ data class CreateAIProfileRequest(
 
 data class AIProfileRequestResponse(
     val id: Long,
-    val petId: Long,
-    val petName: String,
+    val petId: Long?,
+    val petName: String?,
     val type: AIRequestType,
     val sourceImageUrl: String,
     val stylePrompt: String?,
@@ -30,8 +30,8 @@ data class AIProfileRequestResponse(
     companion object {
         fun from(request: AIProfileRequest) = AIProfileRequestResponse(
             id = request.id,
-            petId = request.pet.id,
-            petName = request.pet.name,
+            petId = request.pet?.id,
+            petName = request.pet?.name,
             type = request.type,
             sourceImageUrl = request.sourceImageUrl,
             stylePrompt = request.stylePrompt,

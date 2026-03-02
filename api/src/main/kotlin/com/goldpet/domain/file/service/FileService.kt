@@ -95,7 +95,7 @@ class FileService(
      */
     private fun determineBucket(category: String?): StorageBucket {
         return when (category?.lowercase()) {
-            "profile", "pet", "avatar", "community", "notice" -> StorageBucket.PUBLIC
+            "profile", "pet", "avatar", "community", "notice", "ai-profile" -> StorageBucket.PUBLIC
             else -> StorageBucket.PRIVATE
         }
     }

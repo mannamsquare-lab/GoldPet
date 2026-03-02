@@ -75,12 +75,16 @@ class AIProfileService(
     fun createRequest(userId: Long, request: CreateAIProfileRequest): AIProfileRequestResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { NotFoundException("User not found") }
-        val pet = petRepository.findById(request.petId)
-            .orElseThrow { NotFoundException("Pet not found") }
 
-        // 펫 소유자 확인
-        if (pet.owner.id != userId) {
-            throw ForbiddenException("Not your pet")
+        val pet = if (request.petId != null) {
+            val found = petRepository.findById(request.petId)
+                .orElseThrow { NotFoundException("Pet not found") }
+            if (found.owner.id != userId) {
+                throw ForbiddenException("Not your pet")
+            }
+            found
+        } else {
+            null
         }
 
         // 일일 생성 한도 체크
@@ -126,7 +130,7 @@ class AIProfileService(
     }
 
     @Transactional
-    fun applyResultAsProfile(requestId: Long, userId: Long, applyAs: String): AIProfileRequestResponse {
+    fun applyResultAsProfile(requestId: Long, userId: Long, petId: Long, applyAs: String): AIProfileRequestResponse {
         val request = aiRequestRepository.findById(requestId)
             .orElseThrow { NotFoundException("Request not found") }
 
@@ -141,19 +145,24 @@ class AIProfileService(
         val resultUrl = request.resultUrl
             ?: throw BadRequestException("결과 이미지가 없습니다.")
 
-        val pet = request.pet
+        val pet = petRepository.findById(petId)
+            .orElseThrow { NotFoundException("Pet not found") }
+
+        if (pet.owner.id != userId) {
+            throw ForbiddenException("Not your pet")
+        }
+
         when (applyAs.uppercase()) {
             "MAIN" -> {
                 pet.profileImageUrl = resultUrl
             }
             "ADDITIONAL" -> {
-                // Additional profile images handled via PetProfileImage entity
-                // For now just update the main profile URL as well
                 pet.profileImageUrl = resultUrl
             }
             else -> throw BadRequestException("applyAs must be MAIN or ADDITIONAL")
         }
 
+        petRepository.save(pet)
         return AIProfileRequestResponse.from(request)
     }
 
