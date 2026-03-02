@@ -137,7 +137,7 @@ const MyPage: React.FC = () => {
   ];
 
   return (
-    <SubPageLayout title="마이페이지" rightAction={settingsButton}>
+    <SubPageLayout title="마이페이지" onBack={() => navigate('/home')} rightAction={settingsButton}>
       <div id="mypageContainer" className="mypage-container">
         {/* Tab Menu */}
         <div className="group_tab">
