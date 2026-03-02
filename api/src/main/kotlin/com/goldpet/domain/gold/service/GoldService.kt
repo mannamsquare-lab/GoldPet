@@ -104,7 +104,7 @@ class GoldService(
         }
 
         if (user.goldBalance < request.amount) {
-            throw BadRequestException("Insufficient gold balance")
+            throw BadRequestException("골드 잔액이 부족합니다.")
         }
 
         user.goldBalance -= request.amount
