@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { petService, type Pet } from '../../services/petService';
 import { aiProfileService } from '../../services/aiProfileService';
+import { PET_TAG_MAPPINGS } from '../../services/friendService';
 import { useAlert } from '../../contexts/AlertContext';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import './AIProfilePage.css';
@@ -136,7 +137,7 @@ export default function AIProfileSimplePage() {
                     <span className="ai-simple-info-label">특징</span>
                     <div className="ai-simple-pet-tags">
                       {selectedPet.temperamentTags.map((tag) => (
-                        <span key={tag} className="ai-simple-pet-tag">{tag}</span>
+                        <span key={tag} className="ai-simple-pet-tag">{PET_TAG_MAPPINGS[tag] || tag}</span>
                       ))}
                     </div>
                   </div>
