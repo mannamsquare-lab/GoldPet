@@ -26,7 +26,7 @@ export const BottomNav = () => {
                     </button>
                 </li>
                 <li className="ai_btn">
-                    <button type="button" className="btn-effect">
+                    <button type="button" className="btn-effect" onClick={() => navigate('/ai-profile')}>
                         <img src="/assets/images/layout/b_fix_center_icon.png" alt="AI" />
                     </button>
                 </li>
