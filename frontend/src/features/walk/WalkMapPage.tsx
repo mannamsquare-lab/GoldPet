@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import apiClient from '../../services/api/client';
@@ -138,17 +138,29 @@ export const WalkMapPage = () => {
     }, []);
 
     // Fetch walk stats
+    const fetchStats = useCallback(async () => {
+        try {
+            const response = await apiClient.get('/walks/my/stats');
+            setStats(response.data);
+        } catch {
+            // Keep default zeros
+        }
+    }, []);
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await apiClient.get('/walks/my/stats');
-                setStats(response.data);
-            } catch {
-                // Keep default zeros
+        fetchStats();
+    }, [fetchStats]);
+
+    // 네이티브 산책 완료 후 복귀 시 통계 갱신
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                fetchStats();
             }
         };
-        fetchStats();
-    }, []);
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [fetchStats]);
 
     return (
         <div id="wrap" className="gp-layout-page">

@@ -43,6 +43,7 @@ class WalkScreen extends ConsumerStatefulWidget {
 
 class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObserver {
   bool _isWalking = false;
+  bool _isSaving = false;
   NaverMapController? _mapController;
   bool _isInitializing = true;
   NLatLng? _initialPosition;
@@ -113,7 +114,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     // Subscribe to global spot action stream (for deep link actions on existing screen)
     _spotActionSubscription = walkSpotActionController.stream.listen((type) {
       if (type == 'STOP') {
-        if (_isWalking) _stopWalk();
+        if (_isWalking) unawaited(_stopWalk());
         return;
       }
       if (_isWalking) {
@@ -123,7 +124,6 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       }
     });
     _initializeLocation();
-    _fetchPetData();
     // Handle initial spot action from deep link (after location init)
     if (widget.initialSpotAction != null) {
       Future.delayed(const Duration(seconds: 2), () {
@@ -138,7 +138,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   void dispose() {
     debugPrint('[WalkScreen] dispose() called, isWalking=$_isWalking');
     // Best-effort local save if walk was active (data already on disk from periodic saves)
-    if (_isWalking && _startTime != null && _path.length >= 2) {
+    if ((_isWalking || _isSaving) && _startTime != null && _path.length >= 2) {
       try {
         final request = CreateWalkRequest(
           startTime: _startTime!,
@@ -200,7 +200,8 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     ui.Image? petImage;
     if (_petImageUrl != null) {
       try {
-        final response = await http.get(Uri.parse(_petImageUrl!));
+        final imageUrl = _petImageUrl!.replaceFirst('http://', 'https://');
+        final response = await http.get(Uri.parse(imageUrl));
         if (response.statusCode == 200) {
           final codec = await ui.instantiateImageCodec(response.bodyBytes);
           final frame = await codec.getNextFrame();
@@ -359,7 +360,8 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   // --- Back navigation ---
 
-  void _handleBackNavigation() async {
+  Future<void> _handleBackNavigation() async {
+    if (_isSaving) return; // 저장 중 네비게이션 차단
     if (_isWalking) {
       final confirmed = await showGoldPetConfirm(
         context,
@@ -368,7 +370,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
         cancelText: '취소',
       );
       if (confirmed) {
-        _stopWalk();
+        await _stopWalk();
       }
     } else {
       Navigator.of(context).pop();
@@ -419,6 +421,12 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       if (mounted) {
         setState(() => _isInitializing = false);
       }
+      // Auto-start: GPS 성공 시 바로 산책 시작, 실패 시 React로 복귀
+      if (mounted && _initialPosition != null) {
+        _startWalk();
+      } else if (mounted && _initialPosition == null) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
@@ -431,13 +439,17 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       cancelText: '취소',
     );
     if (confirmed) {
-      Geolocator.openLocationSettings();
+      await Geolocator.openLocationSettings();
+      // 설정에서 돌아온 후 위치 초기화 재시도
+      if (mounted) _initializeLocation();
     } else {
       setState(() => _isInitializing = false);
+      if (mounted) Navigator.of(context).pop();
     }
   }
 
   void _showPermissionDialog() async {
+    if (!mounted) return;
     final confirmed = await showGoldPetConfirm(
       context,
       message: '산책 경로를 기록하려면 위치 권한이 필요합니다.\n설정에서 "앱을 사용하는 동안 허용"으로 변경해주세요.',
@@ -445,9 +457,15 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       cancelText: '취소',
     );
     if (confirmed) {
-      openAppSettings();
+      await openAppSettings();
+      // 설정에서 돌아온 후 위치 초기화 재시도
+      if (mounted) {
+        setState(() => _isInitializing = true);
+        _initializeLocation();
+      }
     } else {
       setState(() => _isInitializing = false);
+      if (mounted) Navigator.of(context).pop();
     }
   }
 
@@ -519,6 +537,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     } catch (_) {
       // Non-blocking: 갱신 실패해도 산책은 진행
     }
+    if (!mounted) return;
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -543,10 +562,12 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     // 백그라운드 위치 권한 요청 (whileInUse일 때만)
     if (permission == LocationPermission.whileInUse) {
       final shouldRequest = await _showBackgroundPermissionDialog();
+      if (!mounted) return;
       if (shouldRequest) {
         // Android 11+ / iOS 모두: requestPermission()은 "항상 허용"을 표시하지 않거나
         // 호출이 무한 대기할 수 있으므로, 설정 화면을 열어 사용자가 직접 변경하도록 함
         await Geolocator.openAppSettings();
+        if (!mounted) return;
         permission = await Geolocator.checkPermission();
       }
       // whileInUse로 유지되더라도 진행 (Android foreground service / iOS blue bar)
@@ -573,8 +594,13 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
     _startWalkWidget();
 
+    // Fetch pet data (with timeout to prevent blocking walk start)
+    await _fetchPetData().timeout(const Duration(seconds: 3), onTimeout: () {});
+    if (!mounted) return;
+
     // Build and add pet marker at start position
     await _buildPetMarkerImage();
+    if (!mounted) return;
     await _addPetStartMarker();
 
     // Execute any pending spot action that arrived before walk started
@@ -676,8 +702,14 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       _lastAcceptedPosition = position;
       _updatePolyline();
     } else {
+      // First GPS stream point: this is the TRUE walk start position
       _path.add(latLng);
       _lastAcceptedPosition = position;
+
+      // Relocate pet start marker to match actual path start
+      _initialPosition = latLng;
+      _addPetStartMarker(); // addOverlay with same ID 'pet_start' replaces existing
+
       _updatePolyline();
     }
 
@@ -734,9 +766,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       _mapController?.addOverlay(marker);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_getSpotLabel(type)} 스팟이 기록되었습니다!')),
-        );
+        _showGoldPetSnackBar('${_getSpotLabel(type)} 스팟이 기록되었습니다!');
       }
     } catch (e) {
       debugPrint('Error adding spot: $e');
@@ -774,9 +804,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
         if (!await photoFile.exists()) {
           debugPrint('Photo file not found: ${photo.path}');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('사진 파일을 찾을 수 없습니다.')),
-            );
+            _showGoldPetSnackBar('사진 파일을 찾을 수 없습니다.');
           }
           return;
         }
@@ -805,9 +833,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
         } catch (e) {
           debugPrint('ImageCropper error: $e');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('사진 편집 오류: $e')),
-            );
+            _showGoldPetSnackBar('사진 편집 오류가 발생했습니다.');
           }
           return;
         }
@@ -879,17 +905,13 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       _mapController?.addOverlay(marker);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('사진이 저장되었습니다!')),
-        );
+        _showGoldPetSnackBar('사진이 저장되었습니다!');
       }
     } catch (e) {
       debugPrint('Error adding photo spot: $e');
       if (mounted) {
         if (e is DioException && e.response?.statusCode == 401) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('사진 저장 실패: 네트워크 오류가 발생했습니다')),
-        );
+        _showGoldPetSnackBar('사진 저장 실패: 네트워크 오류가 발생했습니다.');
       }
     }
   }
@@ -926,8 +948,12 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     }
   }
 
-  void _stopWalk() async {
+  Future<void> _stopWalk() async {
     if (!_isWalking) return;
+
+    // Save original pause state for possible rollback
+    final wasPaused = _isPaused;
+    final savedPauseStartTime = _pauseStartTime;
 
     // Stop-while-paused: account for ongoing pause duration
     if (_isPaused && _pauseStartTime != null) {
@@ -936,10 +962,6 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       _isPaused = false;
     }
 
-    _timer?.cancel();
-    _positionStreamSubscription?.cancel();
-    _stopWalkWidget();
-
     final endTime = DateTime.now();
     final startTime =
         _startTime ??
@@ -947,6 +969,25 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
     // Compute correct duration excluding paused time
     final durationSeconds = (endTime.difference(startTime) - _totalPauseDuration).inSeconds;
+
+    // Client-side guard: backend requires durationSeconds > 0 (@Positive)
+    if (durationSeconds < 1) {
+      // Restore pause state since walk continues
+      if (wasPaused) {
+        _isPaused = true;
+        _pauseStartTime = savedPauseStartTime;
+        _totalPauseDuration -= DateTime.now().difference(savedPauseStartTime!);
+      }
+      if (mounted) {
+        _showGoldPetSnackBar('산책 시간이 너무 짧습니다. 조금 더 걸어주세요!');
+      }
+      return;
+    }
+
+    // Committed to saving -- now safe to cancel resources
+    _timer?.cancel();
+    _positionStreamSubscription?.cancel();
+    _stopWalkWidget();
 
     // Ensure path has at least 2 points (JTS LineString requirement)
     if (_path.length < 2) {
@@ -990,7 +1031,10 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       petIds: _petIds,
     );
 
-    setState(() => _isWalking = false);
+    setState(() {
+      _isWalking = false;
+      _isSaving = true;
+    });
 
     try {
       await ref.read(walkRepositoryProvider).createWalk(request);
@@ -998,24 +1042,26 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       await WalkLocalStorage.clearWalkData();
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('산책이 저장되었습니다!')));
+        setState(() => _isSaving = false);
 
         // 산책 중 인증 만료가 지연되었으면, 저장 완료 후 인증 만료 처리
         if (WalkScreen.authExpiredDuringWalk) {
           WalkScreen.authExpiredDuringWalk = false;
           debugPrint('[WalkScreen] Walk saved successfully, now handling deferred auth expiry');
           Navigator.of(context).popUntil((route) => route.isFirst);
-          // dispose()에서 isOnStack = false 처리 후, 다음 프레임에서 인증 만료 알림
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ApiClient.onAuthExpired?.call();
           });
           return;
         }
+        // 저장 완료 → 확인 메시지 후 React 산책 페이지로 복귀
+        _showGoldPetSnackBar('산책이 저장되었습니다!');
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isSaving = false);
         if (e is DioException && e.response?.statusCode == 401) {
           // 인증 만료: 산책 데이터를 로컬에 저장 후 인증 만료 처리
           await WalkLocalStorage.saveWalkData(request);
@@ -1027,11 +1073,100 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
           }
           return;
         }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('저장 실패: 네트워크 오류가 발생했습니다')));
+        if (e is DioException && e.response?.statusCode == 400) {
+          // 검증 오류: 재시도해도 실패하므로 로컬 저장 후 복귀
+          debugPrint('[WalkScreen] Walk save validation error: ${e.response?.data}');
+          await WalkLocalStorage.saveWalkData(request);
+          if (mounted) {
+            _showGoldPetSnackBar('산책 데이터 저장 중 문제가 발생했습니다. 다음 접속 시 자동으로 재시도됩니다.');
+            Navigator.of(context).pop();
+          }
+          return;
+        }
+        // 네트워크 오류: 재시도 다이얼로그
+        await _retrySaveWalk(request);
       }
     }
+  }
+
+  Future<void> _retrySaveWalk(CreateWalkRequest request) async {
+    const maxAttempts = 3;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (!mounted) return;
+      final retry = await showGoldPetConfirm(
+        context,
+        message: '산책 저장에 실패했습니다. 다시 시도하시겠습니까? ($attempt/$maxAttempts)',
+        confirmText: '재시도',
+        cancelText: '취소',
+      );
+      if (!retry || !mounted) break;
+
+      setState(() => _isSaving = true);
+      try {
+        await ref.read(walkRepositoryProvider).createWalk(request);
+        await WalkLocalStorage.clearWalkData();
+        if (mounted) {
+          setState(() => _isSaving = false);
+
+          if (WalkScreen.authExpiredDuringWalk) {
+            WalkScreen.authExpiredDuringWalk = false;
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ApiClient.onAuthExpired?.call();
+            });
+            return;
+          }
+
+          // 저장 완료 → 확인 메시지 후 React 산책 페이지로 복귀
+          _showGoldPetSnackBar('산책이 저장되었습니다!');
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) Navigator.of(context).pop();
+          return;
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isSaving = false);
+        if (e is DioException && e.response?.statusCode == 401) {
+          await WalkLocalStorage.saveWalkData(request);
+          if (mounted) {
+            WalkScreen.authExpiredDuringWalk = false;
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+          return;
+        }
+        // 다음 반복에서 재시도 다이얼로그 표시
+      }
+    }
+    // 모든 재시도 소진 또는 사용자 취소: 로컬 저장 후 React로 복귀
+    await WalkLocalStorage.saveWalkData(request);
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _showGoldPetSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            color: Colors.white,
+            letterSpacing: -0.28,
+            height: 1.4,
+          ),
+        ),
+        backgroundColor: const Color(0xE6614108), // rgba(97,65,8,0.9)
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.all(16),
+        elevation: 8,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   String _formatDuration(int seconds) {
@@ -1071,9 +1206,14 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Column(
+    return PopScope(
+      canPop: !_isWalking && !_isSaving,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBackNavigation();
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Column(
         children: [
           // Header bar (status bar + toolbar)
           _buildHeader(),
@@ -1124,13 +1264,35 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
                 if (_isWalking)
                   _buildWalkControls(),
 
-                // Layer 4: Start button
-                if (!_isWalking && !_isInitializing)
-                  _buildStartButton(),
+                // Layer 4: Saving overlay
+                if (_isSaving)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(color: Colors.white),
+                            SizedBox(height: 16),
+                            Text(
+                              '산책 기록 저장 중...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -1298,7 +1460,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
                 confirmText: '종료',
                 cancelText: '취소',
               );
-              if (confirmed) _stopWalk();
+              if (confirmed) await _stopWalk();
             },
             child: Container(
               width: 48,
@@ -1380,32 +1542,6 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildStartButton() {
-    return Positioned(
-      left: 24,
-      right: 24,
-      bottom: 40 + MediaQuery.of(context).padding.bottom,
-      child: ElevatedButton(
-        onPressed: _startWalk,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          elevation: 4,
-        ),
-        child: const Text(
-          '산책 시작',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // --- Extracted widgets ---
