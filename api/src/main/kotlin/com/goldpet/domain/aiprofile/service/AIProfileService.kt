@@ -118,6 +118,7 @@ class AIProfileService(
             type = request.type,
             sourceImageUrl = request.sourceImageUrl,
             stylePrompt = request.stylePrompt,
+            petType = request.petType,
             goldCost = goldCost
         )
 

@@ -17,7 +17,7 @@ data class GenerationResult(
 @Profile("local", "dev", "prod")
 class LeonardoApiClient(
     private val restTemplate: RestTemplate,
-    @Value("\${LEONARDO_API_KEY:}") private val apiKey: String
+    @Value("\${leonardo.api-key:}") private val apiKey: String
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val baseUrl = "https://cloud.leonardo.ai/api/rest/v1"

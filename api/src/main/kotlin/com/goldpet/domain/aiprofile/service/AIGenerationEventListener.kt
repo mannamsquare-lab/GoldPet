@@ -60,7 +60,7 @@ class AIGenerationEventListener(
             // Build prompt using pet info
             val style = request.stylePrompt?.let { aiStyleRepository.findById(it).orElse(null) }
             val presetId = style?.presetId
-            val prompt = promptBuilder.buildPrompt(request.pet, request.stylePrompt, presetId)
+            val prompt = promptBuilder.buildPrompt(request.pet, request.stylePrompt, presetId, request.petType)
             val negativePrompt = promptBuilder.buildNegativePrompt()
 
             // c. Create generation → save generationId

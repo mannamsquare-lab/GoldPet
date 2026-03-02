@@ -9,7 +9,9 @@ data class CreateAIProfileRequest(
     val petId: Long? = null,
     val type: AIRequestType,
     val sourceImageUrl: String,
-    val stylePrompt: String? = null
+    val stylePrompt: String? = null,
+    val petType: String? = null,
+    val mode: String? = null
 )
 
 data class AIProfileRequestResponse(

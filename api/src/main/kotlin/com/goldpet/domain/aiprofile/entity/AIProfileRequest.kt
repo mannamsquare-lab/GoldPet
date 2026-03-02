@@ -57,6 +57,9 @@ class AIProfileRequest(
     @Column(name = "gold_cost", nullable = false)
     val goldCost: Int = 10,
 
+    @Column(name = "pet_type")
+    val petType: String? = null,
+
     @Column(name = "leonardo_generation_id")
     var leonardoGenerationId: String? = null,
 

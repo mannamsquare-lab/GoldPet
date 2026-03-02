@@ -45,7 +45,8 @@ ncp:
     client-secret: QA9LJNOB6JI7R7e4QN86Cm6oJCBr653o0tEFe5uA
 
 # Leonardo AI
-LEONARDO_API_KEY: "${LEONARDO_API_KEY:0bb324bf-388a-4a27-87b2-15773c3a8573}"
+leonardo:
+  api-key: ${LEONARDO_API_KEY:0bb324bf-388a-4a27-87b2-15773c3a8573}
 
 # AI Profile settings (stored in system_settings table, these are fallback defaults)
 ai:
