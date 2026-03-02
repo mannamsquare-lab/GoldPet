@@ -108,7 +108,7 @@ class WalkService(
     }
 
     fun getWalksByUser(userId: Long): List<WalkResponse> {
-        val walks = walkRepository.findByUserId(userId)
+        val walks = walkRepository.findByUserIdOrderByStartTimeDesc(userId)
         return walks.map { WalkResponse.from(it) }
     }
 
