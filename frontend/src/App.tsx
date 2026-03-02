@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { LazyMotion, domAnimation } from 'motion/react';
@@ -77,6 +78,9 @@ import { useAppHeight } from './hooks/useAppHeight';
 import MaintenanceGuard from './components/common/MaintenancePage';
 
 /* ... imports ... */
+
+const AIProfileSimplePage = lazy(() => import('./features/aiprofile/AIProfileSimplePage'));
+const AIProfileCustomPage = lazy(() => import('./features/aiprofile/AIProfileCustomPage'));
 
 function App() {
   useAppHeight();
@@ -171,6 +175,8 @@ function App() {
               {/* AI Profile Routes */}
               <Route path="/ai-profile" element={<AIProfilePage />} />
               <Route path="/ai-profile/styles" element={<AIProfileStyleSelectPage />} />
+              <Route path="/ai-profile/simple" element={<Suspense fallback={null}><AIProfileSimplePage /></Suspense>} />
+              <Route path="/ai-profile/custom" element={<Suspense fallback={null}><AIProfileCustomPage /></Suspense>} />
               <Route path="/ai-profile/result/:requestId" element={<AIProfileResultPage />} />
 
               {/* Chat - No Layout */}

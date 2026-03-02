@@ -55,6 +55,12 @@ class AIProfileRequest(
     var errorMessage: String? = null,
 
     @Column(name = "gold_cost", nullable = false)
-    val goldCost: Int = 10
+    val goldCost: Int = 10,
+
+    @Column(name = "leonardo_generation_id")
+    var leonardoGenerationId: String? = null,
+
+    @Column(name = "leonardo_image_id")
+    var leonardoImageId: String? = null
 
 ) : BaseTimeEntity()

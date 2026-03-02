@@ -27,6 +27,9 @@ class AIStyle(
     @Column(name = "display_order", nullable = false)
     var displayOrder: Int = 0,
 
+    @Column(name = "preset_id", length = 100)
+    var presetId: String? = null,
+
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 

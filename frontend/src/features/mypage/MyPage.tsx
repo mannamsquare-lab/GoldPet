@@ -22,27 +22,6 @@ const GoldCoinIcon = () => (
   <img className="mypage-gold-coin" src="/assets/images/common/gold_icon.svg" alt="골드" />
 );
 
-const GenderIcon: React.FC<{ gender?: 'MALE' | 'FEMALE' }> = ({ gender }) => {
-  if (!gender) return null;
-  if (gender === 'FEMALE') {
-    return (
-      <svg className="mypage-pet-gender-icon female" viewBox="0 0 16 16" fill="none">
-        <circle cx="8" cy="6" r="4" stroke="#FF69B4" strokeWidth="1.5" />
-        <line x1="8" y1="10" x2="8" y2="15" stroke="#FF69B4" strokeWidth="1.5" />
-        <line x1="6" y1="13" x2="10" y2="13" stroke="#FF69B4" strokeWidth="1.5" />
-      </svg>
-    );
-  }
-  return (
-    <svg className="mypage-pet-gender-icon male" viewBox="0 0 16 16" fill="none">
-      <circle cx="7" cy="9" r="4" stroke="#4A90D9" strokeWidth="1.5" />
-      <line x1="10" y1="6" x2="14" y2="2" stroke="#4A90D9" strokeWidth="1.5" />
-      <line x1="11" y1="2" x2="14" y2="2" stroke="#4A90D9" strokeWidth="1.5" />
-      <line x1="14" y1="2" x2="14" y2="5" stroke="#4A90D9" strokeWidth="1.5" />
-    </svg>
-  );
-};
-
 const MyPage: React.FC = () => {
   const navigate = useNavigate();
   const { user: authUser } = useAuthStore();

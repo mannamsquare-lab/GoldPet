@@ -3,6 +3,7 @@ package com.goldpet.domain.aiprofile.controller
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.aiprofile.dto.AIProfileRequestResponse
 import com.goldpet.domain.aiprofile.dto.AIStyleOption
+import com.goldpet.domain.aiprofile.dto.ApplyProfileRequest
 import com.goldpet.domain.aiprofile.dto.CreateAIProfileRequest
 import com.goldpet.domain.aiprofile.service.AIProfileService
 import io.swagger.v3.oas.annotations.Operation
@@ -76,5 +77,24 @@ class AIProfileController(
     ): ResponseEntity<Void> {
         aiProfileService.cancelRequest(requestId, principal.id)
         return ResponseEntity.noContent().build()
+    }
+
+    @Operation(summary = "AI 생성 결과를 펫 프로필에 적용")
+    @PostMapping("/requests/{requestId}/apply")
+    fun applyResultAsProfile(
+        @PathVariable requestId: Long,
+        @AuthenticationPrincipal principal: UserPrincipal,
+        @RequestBody applyRequest: ApplyProfileRequest
+    ): ResponseEntity<AIProfileRequestResponse> {
+        val response = aiProfileService.applyResultAsProfile(requestId, principal.id, applyRequest.applyAs)
+        return ResponseEntity.ok(response)
+    }
+
+    @Operation(summary = "일일 생성 사용량 조회")
+    @GetMapping("/daily-usage")
+    fun getDailyUsage(
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<Map<String, Int>> {
+        return ResponseEntity.ok(aiProfileService.getDailyUsage(principal.id))
     }
 }

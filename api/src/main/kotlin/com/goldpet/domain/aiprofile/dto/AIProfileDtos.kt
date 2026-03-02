@@ -23,7 +23,9 @@ data class AIProfileRequestResponse(
     val resultUrl: String?,
     val errorMessage: String?,
     val goldCost: Int,
-    val createdAt: LocalDateTime?
+    val createdAt: LocalDateTime?,
+    val leonardoGenerationId: String? = null,
+    val leonardoImageId: String? = null
 ) {
     companion object {
         fun from(request: AIProfileRequest) = AIProfileRequestResponse(
@@ -37,7 +39,9 @@ data class AIProfileRequestResponse(
             resultUrl = request.resultUrl,
             errorMessage = request.errorMessage,
             goldCost = request.goldCost,
-            createdAt = request.createdAt
+            createdAt = request.createdAt,
+            leonardoGenerationId = request.leonardoGenerationId,
+            leonardoImageId = request.leonardoImageId
         )
     }
 }
@@ -47,5 +51,11 @@ data class AIStyleOption(
     val name: String,
     val description: String,
     val previewUrl: String,
-    val goldCost: Int
+    val goldCost: Int,
+    val presetId: String? = null
+)
+
+data class ApplyProfileRequest(
+    val applyAs: String,  // "MAIN" or "ADDITIONAL"
+    val petId: Long
 )

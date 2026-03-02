@@ -14,7 +14,9 @@ export interface CreateAIProfileRequest {
   petId: number;
   type: AIRequestType;
   sourceImageUrl: string;
-  stylePrompt?: string;
+  stylePrompt?: string | null;
+  mode?: 'SIMPLE' | 'CUSTOM';
+  petType?: 'dog' | 'cat' | 'other';
 }
 
 export interface AIProfileRequestResponse {
@@ -31,75 +33,43 @@ export interface AIProfileRequestResponse {
   createdAt: string;
 }
 
-const USE_MOCK = true;
-
-const mockStyles: AIStyleOption[] = [
-  { id: 'cartoon', name: '카툰 스타일', description: '귀여운 카툰 느낌으로 변환', previewUrl: '/assets/images/ai/style_cartoon.jpg', goldCost: 50 },
-  { id: 'watercolor', name: '수채화 스타일', description: '부드러운 수채화 느낌으로 변환', previewUrl: '/assets/images/ai/style_watercolor.jpg', goldCost: 50 },
-  { id: 'pixel', name: '픽셀 아트', description: '레트로 픽셀 아트 스타일', previewUrl: '/assets/images/ai/style_pixel.jpg', goldCost: 30 },
-  { id: 'realistic', name: '사실적 스타일', description: '고품질 사실적 이미지', previewUrl: '/assets/images/ai/style_realistic.jpg', goldCost: 100 },
-];
-
-const mockRequest: AIProfileRequestResponse = {
-  id: 1,
-  petId: 1,
-  petName: '테스트 반려동물',
-  type: 'IMAGE',
-  status: 'COMPLETED',
-  sourceImageUrl: '/assets/images/common/pet_none_img.svg',
-  resultUrl: '/assets/images/main/main_slide_butler01.jpg',
-  stylePrompt: 'cartoon',
-  errorMessage: null,
-  goldCost: 50,
-  createdAt: '2025-12-21T10:00:00',
-};
+export interface ApplyToProfileRequest {
+  applyAs: 'MAIN' | 'ADDITIONAL';
+  petId: number;
+}
 
 class AIProfileService {
   async getStyles(): Promise<AIStyleOption[]> {
-    if (USE_MOCK) {
-      return Promise.resolve(mockStyles);
-    }
     const response = await apiClient.get<AIStyleOption[]>('/ai-profile/styles');
     return response.data;
   }
 
   async createRequest(request: CreateAIProfileRequest): Promise<AIProfileRequestResponse> {
-    if (USE_MOCK) {
-      return Promise.resolve(mockRequest);
-    }
     const response = await apiClient.post<AIProfileRequestResponse>('/ai-profile/requests', request);
     return response.data;
   }
 
   async getMyRequests(page: number): Promise<AIProfileRequestResponse[]> {
-    if (USE_MOCK) {
-      return Promise.resolve([mockRequest]);
-    }
     const response = await apiClient.get<AIProfileRequestResponse[]>(`/ai-profile/requests?page=${page}`);
     return response.data;
   }
 
   async getRequest(requestId: number): Promise<AIProfileRequestResponse> {
-    if (USE_MOCK) {
-      return Promise.resolve(mockRequest);
-    }
     const response = await apiClient.get<AIProfileRequestResponse>(`/ai-profile/requests/${requestId}`);
     return response.data;
   }
 
   async getPendingCount(): Promise<number> {
-    if (USE_MOCK) {
-      return Promise.resolve(0);
-    }
-    const response = await apiClient.get<number>('/ai-profile/pending-count');
-    return response.data;
+    const response = await apiClient.get<{ count: number }>('/ai-profile/pending-count');
+    return response.data.count;
   }
 
   async cancelRequest(requestId: number): Promise<void> {
-    if (USE_MOCK) {
-      return Promise.resolve();
-    }
     await apiClient.delete(`/ai-profile/requests/${requestId}`);
+  }
+
+  async applyToProfile(requestId: number, data: ApplyToProfileRequest): Promise<void> {
+    await apiClient.post(`/ai-profile/requests/${requestId}/apply`, data);
   }
 }
 
