@@ -110,7 +110,7 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <SubPageLayout title="설정">
+    <SubPageLayout title="설정" onBack={() => navigate('/mypage')}>
       <div className="settings-container">
         {/* 알림 설정 */}
         <div className="settings-group">

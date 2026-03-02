@@ -9,11 +9,11 @@ const MyPagePetEditPage: React.FC = () => {
     const editPetId = searchParams.get('petId') ? Number(searchParams.get('petId')) : null;
 
     return (
-        <SubPageLayout title={editPetId ? '반려동물 수정' : '반려동물 등록'}>
+        <SubPageLayout title={editPetId ? '반려동물 수정' : '반려동물 등록'} onBack={() => navigate('/mypage')}>
             <PetForm
                 petId={editPetId ?? undefined}
                 onSuccess={() => navigate('/mypage')}
-                onCancel={() => navigate(-1)}
+                onCancel={() => navigate('/mypage')}
             />
         </SubPageLayout>
     );

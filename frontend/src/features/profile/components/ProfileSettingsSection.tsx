@@ -8,11 +8,6 @@ interface ProfileSettingsSectionProps {
     onNotificationChange?: (enabled: boolean) => Promise<void>;
 }
 
-export const ProfileSettingsSection: React.FC<ProfileSettingsSectionProps> = ({
-    onEdit,
-    editLabel = '수정하기',
-}) => {
-    return (
-        <button type="button" className="submit_btn" onClick={onEdit}>{editLabel}</button>
-    );
+export const ProfileSettingsSection: React.FC<ProfileSettingsSectionProps> = () => {
+    return <></>;
 };

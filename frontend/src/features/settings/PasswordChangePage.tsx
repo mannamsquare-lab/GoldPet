@@ -50,7 +50,7 @@ const PasswordChangePage: React.FC = () => {
     try {
       await userService.changePassword(currentPassword, newPassword);
       showToast('비밀번호가 변경되었습니다.', 'success');
-      navigate(-1);
+      navigate('/settings');
     } catch (error: any) {
       const message = error.response?.data?.message || '비밀번호 변경에 실패했습니다.';
       if (message.includes('현재 비밀번호')) {
@@ -64,7 +64,7 @@ const PasswordChangePage: React.FC = () => {
   };
 
   return (
-    <SubPageLayout title="비밀번호 변경">
+    <SubPageLayout title="비밀번호 변경" onBack={() => navigate('/settings')}>
       <div className="settings-container">
         <form onSubmit={handleSubmit}>
           <div className="settings-group">

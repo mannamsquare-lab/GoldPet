@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { petService, FALLBACK_ATTRIBUTES_SCHEMA } from '../../services/petService';
 import { userService } from '../../services/userService';
+import { CACHE_TIME } from '../../config/queryConfig';
 import { Loading } from '../../components/common/Loading';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import { ProfileSettingsSection } from './components/ProfileSettingsSection';
@@ -25,6 +26,17 @@ const ProfilePetTab: React.FC = () => {
     });
 
     const currentUser = fetchedUser || user;
+
+    const { data: stats } = useQuery({
+        queryKey: ['users', 'stats'],
+        queryFn: () => userService.getMyStats(),
+        ...CACHE_TIME.DYNAMIC,
+    });
+
+    const formatCount = (n: number): string => {
+        if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+        return String(n);
+    };
 
     const handleNotificationChange = async (enabled: boolean) => {
         if (!user) return;
@@ -207,17 +219,17 @@ const ProfilePetTab: React.FC = () => {
                 <div className="count_wrap">
                     <dl>
                         <dt>매칭</dt>
-                        <dd>128</dd>
+                        <dd>{formatCount(stats?.matchingCount ?? 0)}</dd>
                     </dl>
                     <div></div>
                     <dl>
                         <dt>좋아요</dt>
-                        <dd>2.4K</dd>
+                        <dd>{formatCount(stats?.likesCount ?? 0)}</dd>
                     </dl>
                     <div></div>
                     <dl>
                         <dt>친구</dt>
-                        <dd>48</dd>
+                        <dd>{formatCount(stats?.friendsCount ?? 0)}</dd>
                     </dl>
                 </div>
             </div>

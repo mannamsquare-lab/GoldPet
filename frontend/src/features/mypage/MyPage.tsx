@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { m } from 'motion/react';
 import { useAuthStore } from '../../stores/authStore';
 import { userService } from '../../services/userService';
 import { petService } from '../../services/petService';
 import { goldService } from '../../services/goldService';
 import { CACHE_TIME } from '../../config/queryConfig';
+import { TAB_DURATION, TAB_EASING } from '../../config/cardFlipAnimation';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import './MyPage.css';
@@ -44,6 +46,8 @@ const GenderIcon: React.FC<{ gender?: 'MALE' | 'FEMALE' }> = ({ gender }) => {
 const MyPage: React.FC = () => {
   const navigate = useNavigate();
   const { user: authUser } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<'owner' | 'pet'>('owner');
+  const isAnimatingRef = useRef(false);
 
   const { data: apiUser } = useQuery({
     queryKey: ['users', 'me'],
@@ -69,6 +73,12 @@ const MyPage: React.FC = () => {
     ...CACHE_TIME.DYNAMIC,
   });
 
+  const handleTabChange = (tab: 'owner' | 'pet') => {
+    if (isAnimatingRef.current || tab === activeTab) return;
+    isAnimatingRef.current = true;
+    setActiveTab(tab);
+  };
+
   const formatCount = (n: number): string => {
     if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
     return String(n);
@@ -79,6 +89,32 @@ const MyPage: React.FC = () => {
   const profileImages = user?.profileImageUrls?.length
     ? user.profileImageUrls
     : [user?.profileImageUrl || '/assets/images/common/profile_none_img.svg'];
+
+  const firstPet = myPets && myPets.length > 0 ? myPets[0] : null;
+  const petImages = firstPet?.profileImageUrl
+    ? [firstPet.profileImageUrl]
+    : ['/assets/images/common/pet_none_img.svg'];
+
+  const ownerHasProfile = (user?.profileImageUrls?.length ?? 0) > 0;
+  const petHasProfile = myPets != null && myPets.length > 0;
+
+  const hasProfile = activeTab === 'owner' ? ownerHasProfile : petHasProfile;
+
+  const handleFloatingButtonClick = () => {
+    if (activeTab === 'owner') {
+      if (hasProfile) {
+        navigate('/profile?tab=owner');
+      } else {
+        navigate('/profile/owner/edit');
+      }
+    } else {
+      if (hasProfile) {
+        navigate('/profile?tab=pet');
+      } else {
+        navigate('/mypage/pet/edit');
+      }
+    }
+  };
 
   const settingsButton = (
     <button
@@ -102,118 +138,152 @@ const MyPage: React.FC = () => {
 
   return (
     <SubPageLayout title="마이페이지" rightAction={settingsButton}>
-      <div className="mypage-container">
-        {/* Profile Section */}
-        <div className="mypage-profile">
-          {/* Photo Slider — reuse ProfileImageSlider for consistent sizing */}
-          <div className="mypage-photo-slider">
-            <ProfileImageSlider
-              className="mypage-couple-img"
-              swiperWrapperClass="mypage-img-wrap"
-              images={profileImages}
-              navigation={true}
-              innerChildren={
-                <>
-                  <div className="swiper-pet-prev"></div>
-                  <div className="swiper-pet-next"></div>
-                </>
-              }
-            />
-          </div>
-
-          {/* Nickname */}
-          <div className="mypage-nickname">{user?.nickname || '사용자'}</div>
-
-          {/* Stats */}
-          <div className="mypage-stats">
-            <dl className="mypage-stats-item">
-              <dt>매칭</dt>
-              <dd>{formatCount(stats?.matchingCount ?? 0)}</dd>
-            </dl>
-            <div className="mypage-stats-divider" />
-            <dl className="mypage-stats-item">
-              <dt>좋아요</dt>
-              <dd>{formatCount(stats?.likesCount ?? 0)}</dd>
-            </dl>
-            <div className="mypage-stats-divider" />
-            <dl className="mypage-stats-item">
-              <dt>친구</dt>
-              <dd>{formatCount(stats?.friendsCount ?? 0)}</dd>
-            </dl>
-          </div>
+      <div id="mypageContainer" className="mypage-container">
+        {/* Tab Menu */}
+        <div className="group_tab">
+          <button
+            type="button"
+            className={activeTab === 'owner' ? 'active' : ''}
+            onClick={() => handleTabChange('owner')}
+          >
+            반려인
+          </button>
+          <button
+            type="button"
+            className={activeTab === 'pet' ? 'active' : ''}
+            onClick={() => handleTabChange('pet')}
+          >
+            반려동물
+          </button>
         </div>
 
-        {/* Gold Section */}
-        <div className="mypage-gold-section">
-          <div className="mypage-section-title">보유 골드</div>
-          <div className="mypage-gold-card">
-            <div className="mypage-gold-amount">
-              <GoldCoinIcon />
-              <span className="mypage-gold-value">
-                {(goldBalance?.balance || 0).toLocaleString()}
-              </span>
+        {/* Owner Tab */}
+        <m.div
+          animate={{ opacity: activeTab === 'owner' ? 1 : 0 }}
+          transition={{ duration: TAB_DURATION, ease: TAB_EASING }}
+          onAnimationComplete={() => { isAnimatingRef.current = false; }}
+          style={activeTab === 'owner'
+            ? { position: 'relative' as const, width: '100%' }
+            : { visibility: 'hidden' as const, pointerEvents: 'none' as const, position: 'absolute' as const, width: '100%' }}
+        >
+          <div className="mypage-tab-content">
+            {/* Profile Section */}
+            <div className="mypage-profile">
+              <div className="mypage-photo-slider">
+                <ProfileImageSlider
+                  className="mypage-couple-img"
+                  swiperWrapperClass="mypage-img-wrap"
+                  images={profileImages}
+                  navigation={true}
+                  innerChildren={
+                    <>
+                      <div className="swiper-pet-prev"></div>
+                      <div className="swiper-pet-next"></div>
+                    </>
+                  }
+                />
+              </div>
+
+              <div className="mypage-nickname">{user?.nickname || '사용자'}</div>
+
+              <div className="mypage-stats">
+                <dl className="mypage-stats-item">
+                  <dt>매칭</dt>
+                  <dd>{formatCount(stats?.matchingCount ?? 0)}</dd>
+                </dl>
+                <div className="mypage-stats-divider" />
+                <dl className="mypage-stats-item">
+                  <dt>좋아요</dt>
+                  <dd>{formatCount(stats?.likesCount ?? 0)}</dd>
+                </dl>
+                <div className="mypage-stats-divider" />
+                <dl className="mypage-stats-item">
+                  <dt>친구</dt>
+                  <dd>{formatCount(stats?.friendsCount ?? 0)}</dd>
+                </dl>
+              </div>
             </div>
-            <button className="mypage-gold-charge-btn" onClick={() => navigate('/gold/purchase')}>
-              충전
-            </button>
-          </div>
-        </div>
 
-        {/* Pet Section */}
-        <div className="mypage-pet-section">
-          <div className="mypage-pet-header">
-            <div className="mypage-section-title" style={{ padding: 0 }}>나의 반려동물</div>
-            <button className="mypage-pet-add" onClick={() => navigate('/mypage/pet/edit')}>+ 추가</button>
-          </div>
-          {myPets && myPets.length > 0 ? (
-            <div className="mypage-pet-list">
-              {myPets.map((pet) => (
-                <div key={pet.id} className="mypage-pet-card" onClick={() => navigate(`/mypage/pet/edit?petId=${pet.id}`)}>
-                  <img
-                    className="mypage-pet-photo"
-                    src={pet.profileImageUrl || '/assets/images/common/pet_none_img.svg'}
-                    alt={pet.name}
-                  />
-                  <div className="mypage-pet-info">
-                    <div className="mypage-pet-name-row">
-                      <span className="mypage-pet-name">{pet.name}</span>
-                      <GenderIcon gender={pet.gender} />
-                    </div>
-                    {pet.isNeutered && <span className="mypage-pet-neutered">중성화 OK</span>}
-                    {pet.breed && <span className="mypage-pet-breed">{pet.breed}</span>}
-                  </div>
+            {/* Gold Section */}
+            <div className="mypage-gold-section">
+              <div className="mypage-section-title">보유 골드</div>
+              <div className="mypage-gold-card">
+                <div className="mypage-gold-amount">
+                  <GoldCoinIcon />
+                  <span className="mypage-gold-value">
+                    {(goldBalance?.balance || 0).toLocaleString()}
+                  </span>
+                </div>
+                <button className="mypage-gold-charge-btn" onClick={() => navigate('/gold/purchase')}>
+                  충전
+                </button>
+              </div>
+            </div>
+
+            {/* Menu Section */}
+            <div className="mypage-menu-section">
+              {menuItems.map((item) => (
+                <div key={item.label} className="mypage-menu-item" onClick={() => navigate(item.path)}>
+                  <span>{item.label}</span>
+                  <ChevronRight />
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="mypage-pet-empty">
-              <span>등록된 반려동물이 없습니다</span>
-              <button
-                className="mypage-gold-charge-btn"
-                style={{ width: 'auto', padding: '0 24px' }}
-                onClick={() => navigate('/mypage/pet/edit')}
-              >
-                등록하기
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Menu Section */}
-        <div className="mypage-menu-section">
-          {menuItems.map((item) => (
-            <div key={item.label} className="mypage-menu-item" onClick={() => navigate(item.path)}>
-              <span>{item.label}</span>
-              <ChevronRight />
-            </div>
-          ))}
-
-          {/* Profile Edit */}
-          <div className="mypage-menu-item" onClick={() => navigate('/profile')}>
-            <span>프로필 수정</span>
-            <ChevronRight />
           </div>
-        </div>
+        </m.div>
+
+        {/* Pet Tab */}
+        <m.div
+          animate={{ opacity: activeTab === 'pet' ? 1 : 0 }}
+          transition={{ duration: TAB_DURATION, ease: TAB_EASING }}
+          onAnimationComplete={() => { isAnimatingRef.current = false; }}
+          style={activeTab === 'pet'
+            ? { position: 'relative' as const, width: '100%' }
+            : { visibility: 'hidden' as const, pointerEvents: 'none' as const, position: 'absolute' as const, width: '100%' }}
+        >
+          <div className="mypage-tab-content">
+            {/* Pet Profile Section */}
+            <div className="mypage-profile">
+              <div className="mypage-photo-slider">
+                <ProfileImageSlider
+                  className="mypage-couple-img"
+                  swiperWrapperClass="mypage-img-wrap"
+                  images={petImages}
+                  navigation={false}
+                  innerChildren={null}
+                />
+              </div>
+
+              <div className="mypage-nickname">
+                {firstPet?.name || '이름'}
+              </div>
+
+              {!firstPet && (
+                <div className="mypage-pet-tab-empty">
+                  <span>등록된 반려동물이 없습니다</span>
+                </div>
+              )}
+            </div>
+
+            {/* Menu Section */}
+            <div className="mypage-menu-section">
+              {menuItems.map((item) => (
+                <div key={item.label} className="mypage-menu-item" onClick={() => navigate(item.path)}>
+                  <span>{item.label}</span>
+                  <ChevronRight />
+                </div>
+              ))}
+            </div>
+          </div>
+        </m.div>
+
+        {/* Floating Bottom Button */}
+        <button
+          className="mypage-floating-btn"
+          onClick={handleFloatingButtonClick}
+        >
+          {hasProfile ? '프로필 보기' : '프로필 등록'}
+        </button>
       </div>
     </SubPageLayout>
   );

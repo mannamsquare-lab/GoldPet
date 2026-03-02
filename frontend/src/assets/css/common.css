@@ -3422,6 +3422,53 @@ h6 {
 	padding: 0 16px 55px;
 }
 
+/* MyPage Tab Styling (mirrors #profileContainer .group_tab) */
+#mypageContainer .group_tab {
+	width: calc(100% - 32px);
+	position: relative;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
+	-webkit-box-pack: center;
+	-ms-flex-pack: center;
+	justify-content: center;
+	gap: 2px;
+	margin: 0 auto;
+}
+
+#mypageContainer .group_tab:after {
+	width: 100%;
+	height: 2px;
+	display: block;
+	content: "";
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	background-color: #614108;
+}
+
+#mypageContainer .group_tab button {
+	flex: 1;
+	height: 46px;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	position: relative;
+	background-color: #EFE1C4;
+	font-size: 16px;
+	font-weight: 500;
+	color: #614108;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+}
+
+#mypageContainer .group_tab button.active {
+	z-index: 1;
+	border: 2px solid #614108;
+	border-bottom: 0;
+	background-color: #FFF7E6;
+	font-weight: 700;
+}
+
 #profileContainer .profile_info_wrap .profile_name_info {
 	border-radius: 16px;
 	margin: 32px 0 0;

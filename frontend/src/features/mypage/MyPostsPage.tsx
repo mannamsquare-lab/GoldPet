@@ -36,7 +36,7 @@ export default function MyPostsPage() {
   });
 
   return (
-    <SubPageLayout title="내가 쓴 글">
+    <SubPageLayout title="내가 쓴 글" onBack={() => navigate('/mypage')}>
       <div id="myPostsContainer">
         {/* Tab menu - same as #friendFind .group_tab */}
         <div className="group_tab">

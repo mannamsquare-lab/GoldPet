@@ -1,7 +1,7 @@
 /* MyPage - Figma node 506:60811 */
 
 .mypage-container {
-  padding: 16px 16px 40px;
+  padding: 16px 16px 80px;
   display: flex;
   flex-direction: column;
   gap: 40px;
@@ -348,3 +348,37 @@
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
+
+/* === Tab Content === */
+.mypage-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* === Pet Tab Empty State === */
+.mypage-pet-tab-empty {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 8px 0;
+}
+
+/* === Floating Bottom Button === */
+.mypage-floating-btn {
+  position: sticky;
+  bottom: 16px;
+  display: block;
+  width: calc(100% - 32px);
+  margin: 24px auto 0;
+  height: 48px;
+  background-color: #614108;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  border-radius: 48px;
+  cursor: pointer;
+  z-index: 5;
+}
+

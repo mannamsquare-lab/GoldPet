@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { blockService } from '../../services/blockService';
 import type { BlockedUser } from '../../services/blockService';
@@ -8,6 +9,7 @@ import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import './BlockManagementPage.css';
 
 const BlockManagementPage: React.FC = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showConfirm } = useAlert();
 
@@ -39,7 +41,7 @@ const BlockManagementPage: React.FC = () => {
   };
 
   return (
-    <SubPageLayout title="차단 관리">
+    <SubPageLayout title="차단 관리" onBack={() => navigate('/mypage')}>
       <div className="block-management">
         {isLoading ? (
           <div className="block-empty">
