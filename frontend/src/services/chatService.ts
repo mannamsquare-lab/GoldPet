@@ -48,6 +48,8 @@ export interface ChatMessage {
   replyToId?: number;
   replyToSenderNickname?: string;
   replyToTextContent?: string;
+  // Soft delete
+  deletedAt?: string;
 }
 
 export interface ChatRequestItem {
@@ -171,4 +173,8 @@ export const chatService = {
 
   deleteChatRequest: async (requestId: number): Promise<void> =>
     apiClient.delete(`/chat/rooms/requests/${requestId}`).then(r => r.data),
+
+  deleteMessage: async (roomId: string, messageId: number): Promise<void> => {
+    await apiClient.delete(`/chat/rooms/${roomId}/messages/${messageId}`);
+  },
 };

@@ -4,7 +4,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
-import type { FileInfo } from '../../services/chatService';
+import type { FileInfo, ChatMessage } from '../../services/chatService';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useAuthStore } from '../../stores/authStore';
 import { Loading } from '../../components/common/Loading';
@@ -16,6 +16,7 @@ import { blockService } from '../../services/blockService';
 import { CACHE_TIME } from '../../config/queryConfig';
 import EmoticonPicker from './EmoticonPicker';
 import InviteGroupChatModal from './InviteGroupChatModal';
+import { useLongPress } from './hooks/useLongPress';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -145,6 +146,67 @@ const formatFileSize = (bytes: number): string => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+interface ChatMessageItemProps {
+    msg: ChatMessage;
+    isMine: boolean;
+    isGroupChat: boolean;
+    currentRoom: { participants?: { id: number; profileImageUrl?: string; nickname?: string }[] } | null | undefined;
+    chatUser: { name: string; profileImg?: string; profileImgs?: string[] };
+    onLongPress: (msg: ChatMessage, isMine: boolean, position: { x: number; y: number }) => void;
+    renderMessageContent: (msg: ChatMessage) => React.ReactNode;
+}
+
+const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLongPress, renderMessageContent }: ChatMessageItemProps) => {
+    const longPressHandlers = useLongPress(
+        useCallback((pos) => onLongPress(msg, isMine, pos), [msg, isMine, onLongPress])
+    );
+
+    const isDeleted = !!msg.deletedAt;
+    const isEmoticon = msg.messageType === 'EMOTICON' || (msg as any).type === 'emoticon';
+    const hasReply = !!msg.replyToId;
+    const timestamp = (msg as any).timestamp || msg.createdAt;
+    const time = timestamp ? new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+
+    return (
+        <div className={`chat_detail_message ${isMine ? 'chat_detail_message_mine' : 'chat_detail_message_other'}`}>
+            {!isMine && (
+                <div className="chat_detail_message_profile">
+                    <img
+                        src={
+                            isGroupChat
+                                ? (currentRoom?.participants?.find(p => p.id === Number(msg.senderId))?.profileImageUrl || '/assets/images/temp/temp_dog_profile.png')
+                                : (chatUser.profileImg || '/assets/images/temp/temp_dog_profile.png')
+                        }
+                        alt={isGroupChat ? 'User' : chatUser.name}
+                    />
+                </div>
+            )}
+            <div className="chat_detail_message_content">
+                <div
+                    className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}${hasReply ? ' has_reply' : ''}`}
+                    {...(isDeleted ? {} : longPressHandlers)}
+                >
+                    {hasReply && (
+                        <div className="chat_detail_reply_quote">
+                            <span className="chat_detail_reply_quote_name">{(msg as any).replyToSenderNickname}에게 답장</span>
+                            <div className="chat_detail_reply_quote_divider" />
+                            <span className="chat_detail_reply_quote_text">{(msg as any).replyToTextContent}</span>
+                        </div>
+                    )}
+                    {isDeleted ? (
+                        <span className="chat_detail_message_deleted">삭제된 메시지입니다</span>
+                    ) : (
+                        renderMessageContent(msg)
+                    )}
+                </div>
+                <div className="chat_detail_message_actions">
+                    <span className="chat_detail_message_time">{time}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const ChatDetailPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -159,6 +221,15 @@ const ChatDetailPage = () => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const [replyingTo, setReplyingTo] = useState<{ messageId: number; senderNickname: string; textContent: string } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{
+        messageId: number;
+        isMine: boolean;
+        x: number;
+        y: number;
+        textContent: string;
+        senderNickname: string;
+        messageType: string;
+    } | null>(null);
 
     useOverlayColor(!!previewImageUrl);
 
@@ -477,6 +548,68 @@ const ChatDetailPage = () => {
         });
     };
 
+    const handleContextMenuOpen = useCallback((msg: ChatMessage, isMine: boolean, position: { x: number; y: number }) => {
+        // Dismiss keyboard to prevent iOS WKWebView position: fixed issues
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+        // Adjust Y for iOS visual viewport offset
+        const vpOffset = window.visualViewport?.offsetTop || 0;
+        setContextMenu({
+            messageId: msg.id,
+            isMine,
+            x: position.x,
+            y: position.y + vpOffset,
+            textContent: msg.textContent || '',
+            senderNickname: msg.senderNickname || '',
+            messageType: msg.messageType || 'TEXT',
+        });
+    }, []);
+
+    const handleCopyMessage = useCallback(() => {
+        if (!contextMenu) return;
+        const text = contextMenu.textContent;
+        navigator.clipboard?.writeText(text)
+            .then(() => showToast('복사되었습니다'))
+            .catch(() => {
+                // Fallback for WebView
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.cssText = 'position:fixed;opacity:0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('복사되었습니다');
+            });
+        setContextMenu(null);
+    }, [contextMenu, showToast]);
+
+    const handleReplyFromMenu = useCallback(() => {
+        if (!contextMenu) return;
+        setReplyingTo({
+            messageId: contextMenu.messageId,
+            senderNickname: contextMenu.senderNickname,
+            textContent: contextMenu.textContent,
+        });
+        setContextMenu(null);
+        setTimeout(() => textareaRef.current?.focus(), 100);
+    }, [contextMenu]);
+
+    const handleDeleteMessage = useCallback(() => {
+        if (!contextMenu) return;
+        setContextMenu(null);
+        showConfirm('메시지를 삭제하시겠습니까?', async () => {
+            try {
+                await chatService.deleteMessage(chatId!, contextMenu.messageId);
+                queryClient.invalidateQueries({ queryKey: ['chatMessages', chatId] });
+                showToast('메시지가 삭제되었습니다');
+            } catch {
+                showToast('메시지 삭제에 실패했습니다');
+            }
+        });
+    }, [contextMenu, chatId, queryClient, showConfirm, showToast]);
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         // 한글 IME 조합 중이면 무시 (마지막 글자 중복 방지)
         if (e.nativeEvent.isComposing) return;
@@ -726,61 +859,63 @@ const ChatDetailPage = () => {
                 </div>
             )}
 
+            {/* Context Menu Overlay */}
+            {contextMenu && (
+                <div className="chat_detail_context_overlay" onClick={() => setContextMenu(null)}>
+                    <div
+                        className="chat_detail_context_menu"
+                        style={{
+                            top: Math.min(contextMenu.y, window.innerHeight - (contextMenu.isMine ? 144 : 96) - 8),
+                            left: Math.min(Math.max(contextMenu.x - 70, 8), window.innerWidth - 148),
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {contextMenu.messageType === 'TEXT' && (
+                            <button type="button" onClick={handleCopyMessage}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                                </svg>
+                                복사
+                            </button>
+                        )}
+                        <button type="button" onClick={handleReplyFromMenu}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="9 17 4 12 9 7"/>
+                                <path d="M20 18v-2a4 4 0 00-4-4H4"/>
+                            </svg>
+                            답장
+                        </button>
+                        {contextMenu.isMine && (
+                            <button type="button" className="chat_detail_context_menu_delete" onClick={handleDeleteMessage}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                </svg>
+                                삭제
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Messages */}
             <div className="chat_detail_messages" ref={messagesContainerRef}>
-                {messages.map((msg: any) => {
-                    const timestamp = msg.timestamp || msg.createdAt;
-                    // Compare as numbers (both should be numbers, but ensure type consistency)
+                {messages.map((msg: ChatMessage) => {
                     const isMine = Number(msg.senderId) === currentUserId;
-                    const time = timestamp ? new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
-                    const isEmoticon = msg.type === 'emoticon' || msg.messageType === 'EMOTICON';
-                    const hasReply = !!msg.replyToId;
-
                     return (
-                    <div
-                        key={msg.id}
-                        className={`chat_detail_message ${isMine ? 'chat_detail_message_mine' : 'chat_detail_message_other'}`}
-                    >
-                        {!isMine && (
-                            <div className="chat_detail_message_profile">
-                                <img
-                                    src={
-                                        isGroupChat
-                                            ? (currentRoom?.participants?.find(p => p.id === Number(msg.senderId))?.profileImageUrl || '/assets/images/temp/temp_dog_profile.png')
-                                            : ('profileImg' in chatUser ? chatUser.profileImg : '/assets/images/temp/temp_dog_profile.png')
-                                    }
-                                    alt={isGroupChat ? 'User' : chatUser.name}
-                                />
-                            </div>
-                        )}
-                        <div className="chat_detail_message_content">
-                            <div className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}${hasReply ? ' has_reply' : ''}`}>
-                                {hasReply && (
-                                    <div className="chat_detail_reply_quote">
-                                        <span className="chat_detail_reply_quote_name">{msg.replyToSenderNickname}에게 답장</span>
-                                        <div className="chat_detail_reply_quote_divider" />
-                                        <span className="chat_detail_reply_quote_text">{msg.replyToTextContent}</span>
-                                    </div>
-                                )}
-                                {renderMessageContent(msg)}
-                            </div>
-                            <div className="chat_detail_message_actions">
-                                <button
-                                    type="button"
-                                    className="chat_detail_reply_btn"
-                                    onClick={() => setReplyingTo({
-                                        messageId: msg.id,
-                                        senderNickname: msg.senderNickname || '',
-                                        textContent: msg.textContent || '',
-                                    })}
-                                >
-                                    답장
-                                </button>
-                                <span className="chat_detail_message_time">{time}</span>
-                            </div>
-                        </div>
-                    </div>
-                )})}
+                        <ChatMessageItem
+                            key={msg.id}
+                            msg={msg}
+                            isMine={isMine}
+                            isGroupChat={isGroupChat}
+                            currentRoom={currentRoom}
+                            chatUser={'profileImg' in chatUser ? chatUser : { name: chatUser.name, profileImgs: (chatUser as any).profileImgs }}
+                            onLongPress={handleContextMenuOpen}
+                            renderMessageContent={renderMessageContent}
+                        />
+                    );
+                })}
 
                 {/* Typing Indicator */}
                 {typingUsers.size > 0 && (

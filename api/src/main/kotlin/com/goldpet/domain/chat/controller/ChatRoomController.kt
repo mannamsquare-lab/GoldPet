@@ -124,6 +124,20 @@ class ChatRoomController(
         return ResponseEntity.status(HttpStatus.CREATED).body(chatMessageResponse)
     }
 
+    @DeleteMapping("/{roomId}/messages/{messageId}")
+    fun deleteMessage(
+        @PathVariable roomId: Long,
+        @PathVariable messageId: Long,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<Void> {
+        chatService.deleteMessage(roomId, messageId, userDetails.id)
+        simpMessageSendingOperations.convertAndSend(
+            "/topic/chat/$roomId",
+            mapOf("type" to "MESSAGE_DELETED", "messageId" to messageId)
+        )
+        return ResponseEntity.noContent().build()
+    }
+
     @PostMapping("/{roomId}/read")
     fun markAsRead(
         @PathVariable roomId: Long,

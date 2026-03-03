@@ -23,6 +23,23 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
   // Handle incoming WebSocket messages
   const handleMessage = useCallback(
     (message: ChatMessage) => {
+      // Handle MESSAGE_DELETED events from WebSocket
+      if ((message as any).type === 'MESSAGE_DELETED') {
+        const deletedId = (message as any).messageId;
+        queryClient.setQueryData(
+          ['chatMessages', roomId],
+          (oldMessages: ChatMessage[] | undefined) => {
+            if (!oldMessages) return oldMessages;
+            return oldMessages.map((msg) =>
+              String(msg.id) === String(deletedId)
+                ? { ...msg, deletedAt: new Date().toISOString(), textContent: null }
+                : msg
+            );
+          }
+        );
+        return;
+      }
+
       queryClient.setQueryData(
         ['chatMessages', roomId],
         (oldMessages: ChatMessage[] | undefined) => {

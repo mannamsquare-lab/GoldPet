@@ -111,8 +111,15 @@ class ChatWebSocketService {
 
     const subscription = this.client.subscribe(destination, (message: IMessage) => {
       try {
-        const chatMessage = this.parseMessage(message.body);
+        const data = JSON.parse(message.body);
         const handlers = this.messageHandlers.get(roomId) || [];
+        if (data.type === 'MESSAGE_DELETED') {
+          handlers.forEach((handler) =>
+            handler({ type: 'MESSAGE_DELETED', messageId: data.messageId } as any)
+          );
+          return;
+        }
+        const chatMessage = this.parseMessage(message.body);
         handlers.forEach((handler) => handler(chatMessage));
       } catch (error) {
         console.error('[WebSocket] Failed to parse message:', error);

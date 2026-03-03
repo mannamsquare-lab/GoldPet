@@ -34,17 +34,19 @@ data class ChatMessageResponse(
     val readCount: Int,
     val replyToId: Long? = null,
     val replyToSenderNickname: String? = null,
-    val replyToTextContent: String? = null
+    val replyToTextContent: String? = null,
+    val deletedAt: LocalDateTime? = null
 ) {
     companion object {
         fun from(chatMessage: ChatMessage, fileAttachment: FileAttachment? = null, emoticon: Emoticon? = null): ChatMessageResponse {
+            val isDeleted = chatMessage.deletedAt != null
             return ChatMessageResponse(
                 id = chatMessage.id,
                 roomId = chatMessage.chatRoom.id,
                 senderId = chatMessage.sender?.id,
                 senderNickname = chatMessage.sender?.nickname,
                 messageType = chatMessage.messageType,
-                textContent = chatMessage.textContent,
+                textContent = if (isDeleted) null else chatMessage.textContent,
                 fileId = chatMessage.fileId,
                 file = fileAttachment?.let {
                     FileInfo(
@@ -66,7 +68,8 @@ data class ChatMessageResponse(
                 readCount = chatMessage.readCount,
                 replyToId = chatMessage.replyTo?.id,
                 replyToSenderNickname = chatMessage.replyTo?.sender?.nickname,
-                replyToTextContent = chatMessage.replyTo?.textContent
+                replyToTextContent = chatMessage.replyTo?.textContent,
+                deletedAt = chatMessage.deletedAt
             )
         }
     }

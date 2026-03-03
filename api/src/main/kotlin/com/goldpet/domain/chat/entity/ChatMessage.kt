@@ -3,6 +3,7 @@ package com.goldpet.domain.chat.entity
 import com.goldpet.domain.common.entity.BaseTimeEntity
 import com.goldpet.domain.user.entity.User
 import jakarta.persistence.*
+import java.time.LocalDateTime
 
 enum class MessageType {
     TEXT, IMAGE, VIDEO, FILE, EMOTICON, EMOJI, SYSTEM
@@ -44,6 +45,14 @@ class ChatMessage(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reply_to_id")
-    val replyTo: ChatMessage? = null
+    val replyTo: ChatMessage? = null,
 
-) : BaseTimeEntity()
+    @Column(name = "deleted_at")
+    var deletedAt: LocalDateTime? = null
+
+) : BaseTimeEntity() {
+    fun softDelete() {
+        this.deletedAt = LocalDateTime.now()
+        // DO NOT clear textContent - preserve for reply chain references and audit trail
+    }
+}

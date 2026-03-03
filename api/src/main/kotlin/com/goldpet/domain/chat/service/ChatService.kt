@@ -334,6 +334,20 @@ class ChatService(
         chatRequestRepository.save(request)
     }
 
+    @Transactional
+    fun deleteMessage(roomId: Long, messageId: Long, userId: Long) {
+        val message = chatMessageRepository.findById(messageId)
+            .orElseThrow { NotFoundException("Message not found") }
+        if (message.chatRoom.id != roomId) {
+            throw BadRequestException("Message does not belong to this room")
+        }
+        if (message.sender?.id != userId) {
+            throw ForbiddenException("Not authorized to delete this message")
+        }
+        message.softDelete()
+        chatMessageRepository.save(message)
+    }
+
     /**
      * Delete a rejected chat request.
      */

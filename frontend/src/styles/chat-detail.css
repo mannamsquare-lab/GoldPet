@@ -1170,19 +1170,76 @@
   align-self: flex-end;
 }
 
-.chat_detail_reply_btn {
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid #A58A54;
-  background: var(--color-bg);
-  color: #A58A54;
-  font-size: 10px;
+/* Context Menu Overlay */
+.chat_detail_context_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 200;
+}
+
+/* Context Menu Dropdown */
+.chat_detail_context_menu {
+  position: fixed;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 140px;
+  z-index: 201;
+  animation: chat_detail_context_fade_in 0.15s ease-out;
+}
+
+@keyframes chat_detail_context_fade_in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.chat_detail_context_menu button {
+  width: 100%;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
-  line-height: 14px;
+  color: var(--color-primary);
   cursor: pointer;
-  white-space: nowrap;
+  text-align: left;
+}
+
+.chat_detail_context_menu button:active {
+  background: var(--color-bg);
+}
+
+.chat_detail_context_menu button:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chat_detail_context_menu button svg {
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+}
+
+.chat_detail_context_menu_delete {
+  color: #E74C3C !important;
+}
+
+/* Deleted message placeholder */
+.chat_detail_message_deleted {
+  font-size: 14px;
+  font-style: italic;
+  color: #999;
+  font-family: Pretendard, sans-serif;
 }
 
 /* Reply Preview (above input) */
