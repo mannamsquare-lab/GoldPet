@@ -391,6 +391,10 @@
   display: block;
 }
 
+.create_group_btn_vector.right {
+  transform: scaleX(-1);
+}
+
 /* ===== Create Group Chat Page ===== */
 #createGroupChat {
   min-height: 100vh;

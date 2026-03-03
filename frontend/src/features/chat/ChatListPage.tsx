@@ -172,12 +172,12 @@ const ChatListPage = () => {
                             className="create_group_btn btn-effect"
                             onClick={() => setShowCreateGroupModal(true)}
                         >
-                            <svg className="create_group_btn_vector left" width="8" height="36" viewBox="0 0 8 36" fill="none">
-                                <path d="M8 0H2C0.895 0 0 0.895 0 2V34C0 35.105 0.895 36 2 36H8L4 18L8 0Z" fill="currentColor"/>
+                            <svg className="create_group_btn_vector left" width="16" height="36" viewBox="0 0 16 36" fill="none">
+                                <path d="M0 18C0 27.9411 6 36 16 36V0C5 0 0 8.05887 0 18Z" fill="currentColor"/>
                             </svg>
                             <span className="create_group_btn_text">그룹 채팅 만들기</span>
-                            <svg className="create_group_btn_vector right" width="8" height="36" viewBox="0 0 8 36" fill="none">
-                                <path d="M0 0H6C7.105 0 8 0.895 8 2V34C8 35.105 7.105 36 6 36H0L4 18L0 0Z" fill="currentColor"/>
+                            <svg className="create_group_btn_vector right" width="16" height="36" viewBox="0 0 16 36" fill="none">
+                                <path d="M0 18C0 27.9411 6 36 16 36V0C5 0 0 8.05887 0 18Z" fill="currentColor"/>
                             </svg>
                         </button>
                     </div>
