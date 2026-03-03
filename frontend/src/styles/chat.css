@@ -389,10 +389,13 @@
   height: 36px;
   flex-shrink: 0;
   display: block;
+  margin-right: -0.5px;
 }
 
 .create_group_btn_vector.right {
   transform: scaleX(-1);
+  margin-right: 0;
+  margin-left: -0.5px;
 }
 
 /* ===== Create Group Chat Page ===== */
