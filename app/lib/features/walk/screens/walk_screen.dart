@@ -1048,6 +1048,9 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
         if (WalkScreen.authExpiredDuringWalk) {
           WalkScreen.authExpiredDuringWalk = false;
           debugPrint('[WalkScreen] Walk saved successfully, now handling deferred auth expiry');
+          _showGoldPetSnackBar('산책이 저장되었습니다!');
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (!mounted) return;
           Navigator.of(context).popUntil((route) => route.isFirst);
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ApiClient.onAuthExpired?.call();
@@ -1060,6 +1063,10 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
         if (mounted) Navigator.of(context).pop();
       }
     } catch (e) {
+      debugPrint('[WalkScreen] Walk save error: $e');
+      if (e is DioException) {
+        debugPrint('[WalkScreen] DioException status=${e.response?.statusCode}, data=${e.response?.data}, type=${e.type}');
+      }
       if (mounted) {
         setState(() => _isSaving = false);
         if (e is DioException && e.response?.statusCode == 401) {
@@ -1067,9 +1074,10 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
           await WalkLocalStorage.saveWalkData(request);
           debugPrint('[WalkScreen] Walk data saved locally due to auth expiry');
           WalkScreen.authExpiredDuringWalk = false;
-          // 직접 pop (onAuthExpired의 walk-aware guard를 우회)
           if (mounted) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            _showGoldPetSnackBar('산책이 저장되었습니다! 다음 로그인 시 서버에 동기화됩니다.');
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
           }
           return;
         }
@@ -1110,6 +1118,9 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
           if (WalkScreen.authExpiredDuringWalk) {
             WalkScreen.authExpiredDuringWalk = false;
+            _showGoldPetSnackBar('산책이 저장되었습니다!');
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (!mounted) return;
             Navigator.of(context).popUntil((route) => route.isFirst);
             WidgetsBinding.instance.addPostFrameCallback((_) {
               ApiClient.onAuthExpired?.call();
@@ -1124,12 +1135,15 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
           return;
         }
       } catch (e) {
+        debugPrint('[WalkScreen] Retry save error: $e');
         if (mounted) setState(() => _isSaving = false);
         if (e is DioException && e.response?.statusCode == 401) {
           await WalkLocalStorage.saveWalkData(request);
           if (mounted) {
             WalkScreen.authExpiredDuringWalk = false;
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            _showGoldPetSnackBar('산책이 저장되었습니다! 다음 로그인 시 서버에 동기화됩니다.');
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
           }
           return;
         }
@@ -1140,7 +1154,9 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     await WalkLocalStorage.saveWalkData(request);
     if (mounted) {
       setState(() => _isSaving = false);
-      Navigator.of(context).pop();
+      _showGoldPetSnackBar('산책이 저장되었습니다! 다음 접속 시 자동으로 동기화됩니다.');
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) Navigator.of(context).pop();
     }
   }
 

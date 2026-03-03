@@ -71,11 +71,17 @@ class ApiClient {
                   // Retry the original request with new token
                   final opts = error.requestOptions;
                   opts.headers['Authorization'] = 'Bearer $newAccessToken';
-                  final retryResponse = await refreshDio.fetch(opts);
-                  return handler.resolve(retryResponse);
+                  try {
+                    final retryResponse = await refreshDio.fetch(opts);
+                    return handler.resolve(retryResponse);
+                  } catch (retryError) {
+                    debugPrint('[AuthExpiry] Retry after token refresh failed: $retryError');
+                    // 토큰 갱신은 성공했으나 원래 요청 재시도 실패 — 원본 에러 전파
+                    return handler.next(error);
+                  }
                 }
-              } catch (_) {
-                // Refresh failed - clear tokens and let error propagate
+              } catch (refreshError) {
+                debugPrint('[AuthExpiry] Token refresh failed: $refreshError');
               }
             }
             // Trigger auth expiry callback (dedup: only once)
@@ -168,6 +174,7 @@ class ApiClient {
   /// 로컬에 저장된 보류 산책 데이터를 서버에 전송.
   /// setToken()에서 호출되며, 보류 데이터가 없으면 no-op.
   /// 산책 화면이 활성 중이면 복구를 건너뜀 (새 산책과의 충돌 방지).
+  /// 인터셉터가 없는 별도 Dio를 사용하여 401 재진입 루프를 방지.
   Future<void> _recoverPendingWalk() async {
     try {
       // 산책 화면이 활성 중이면 복구 건너뜀
@@ -176,7 +183,17 @@ class ApiClient {
       final walkData = await WalkLocalStorage.loadWalkData();
       if (walkData == null) return;
 
-      final response = await _dio.post('/api/v1/walks', data: walkData.toJson());
+      // 인터셉터 없는 별도 Dio로 전송 (401 재진입 방지)
+      final token = await _storage.read(key: StorageKeys.accessToken);
+      if (token == null) return;
+      final recoveryDio = Dio(BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ));
+      final response = await recoveryDio.post('/api/v1/walks', data: walkData.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
         await WalkLocalStorage.clearWalkData();
         debugPrint('[WalkRecovery] Pending walk saved successfully');
@@ -190,6 +207,7 @@ class ApiClient {
   Future<void> clearToken() async {
     await _storage.delete(key: StorageKeys.accessToken);
     await _storage.delete(key: StorageKeys.refreshToken);
+    _isAuthExpired = false;
   }
 
   /// 산책 시작 전 토큰을 사전 갱신하여 만료 확률을 최소화.
