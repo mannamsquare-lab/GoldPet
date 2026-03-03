@@ -152,6 +152,7 @@ const ChatDetailPage = () => {
     const [message, setMessage] = useState('');
     const [showAttachMenu, setShowAttachMenu] = useState(false);
     const [showEmoticonPicker, setShowEmoticonPicker] = useState(false);
+    const [selectedEmoticon, setSelectedEmoticon] = useState<{ id: number; imageUrl: string } | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -433,8 +434,14 @@ const ChatDetailPage = () => {
         sendMutation.mutate({ content: text });
     };
 
-    const handleSendEmoticon = (emoticonId: number) => {
-        sendMutation.mutate({ content: null, messageType: 'EMOTICON', emoticonId });
+    const handleSelectEmoticon = (emoticon: { id: number; imageUrl: string }) => {
+        setSelectedEmoticon(emoticon);
+    };
+
+    const handleSendSelectedEmoticon = () => {
+        if (!selectedEmoticon) return;
+        sendMutation.mutate({ content: null, messageType: 'EMOTICON', emoticonId: selectedEmoticon.id });
+        setSelectedEmoticon(null);
         setShowEmoticonPicker(false);
     };
 
@@ -478,7 +485,7 @@ const ChatDetailPage = () => {
         const textarea = textareaRef.current;
         if (textarea) {
             textarea.style.height = 'auto';
-            const maxHeight = 120; // ~4-5 lines max
+            const maxHeight = 88; // ~4 lines max
             textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
         }
     };
@@ -748,6 +755,24 @@ const ChatDetailPage = () => {
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* Emoticon Preview Overlay */}
+            {selectedEmoticon && (
+                <div className="chat_detail_emoticon_preview_overlay">
+                    <div className="chat_detail_emoticon_preview_content">
+                        <img src={selectedEmoticon.imageUrl} alt="이모티콘 미리보기" />
+                        <button
+                            type="button"
+                            className="chat_detail_emoticon_preview_close"
+                            onClick={() => setSelectedEmoticon(null)}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M12 4L4 12M4 4L12 12" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* File Preview */}
             {selectedFiles.length > 0 && (
                 <div className="chat_detail_file_preview_container">
@@ -803,14 +828,6 @@ const ChatDetailPage = () => {
                 />
             )}
 
-            {/* Emoticon Picker */}
-            {showEmoticonPicker && (
-                <EmoticonPicker
-                    onSelect={handleSendEmoticon}
-                    onClose={() => setShowEmoticonPicker(false)}
-                />
-            )}
-
             {/* Input Area */}
             <div className="chat_detail_input_area">
                 {/* Quick Replies */}
@@ -862,19 +879,6 @@ const ChatDetailPage = () => {
                     <div className="chat_detail_input_wrap">
                         <button
                             type="button"
-                            className={`chat_detail_attach_btn btn-effect ${showEmoticonPicker ? 'active' : ''}`}
-                            onClick={() => { setShowEmoticonPicker(!showEmoticonPicker); setShowAttachMenu(false); }}
-                            aria-label="이모티콘"
-                        >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="12" cy="12" r="10" stroke="var(--color-primary)" strokeWidth="2"/>
-                                <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round"/>
-                                <circle cx="9" cy="10" r="1" fill="var(--color-primary)"/>
-                                <circle cx="15" cy="10" r="1" fill="var(--color-primary)"/>
-                            </svg>
-                        </button>
-                        <button
-                            type="button"
                             className={`chat_detail_attach_btn btn-effect ${showAttachMenu ? 'active' : ''}`}
                             onClick={handleAttachClick}
                         >
@@ -882,35 +886,64 @@ const ChatDetailPage = () => {
                                 <path d="M12.544 4.3847L5.44005 11.4887C3.59572 13.333 3.75132 16.4789 5.57312 18.3007C7.39492 20.1225 10.6668 20.4041 12.5111 18.5597L19.6151 11.4558C20.9564 10.1144 20.8255 8.09719 19.5006 6.77225C18.1756 5.44731 16.1584 5.31639 14.817 6.65773L8.82838 12.6464C8.0265 13.4483 7.60881 14.6088 8.4369 15.4369C9.26499 16.265 10.4255 15.8473 11.2274 15.0454L16.6368 9.63603" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round"/>
                             </svg>
                         </button>
-                        <textarea
-                            ref={textareaRef}
-                            className="chat_detail_input"
-                            placeholder={selectedFiles.length > 0 ? "캡션을 입력하세요..." : "메세지를 입력하세요..."}
-                            value={message}
-                            maxLength={5000}
-                            rows={1}
-                            onChange={(e) => {
-                                setMessage(e.target.value);
-                                handleTyping();
-                            }}
-                            onKeyDown={handleKeyDown}
-                        />
-                        {message.length > 100 && (
-                            <span className="chat_detail_char_count">
-                                {message.length}/5000
-                            </span>
-                        )}
+                        <div className="chat_detail_input_field">
+                            <textarea
+                                ref={textareaRef}
+                                className="chat_detail_input"
+                                placeholder={selectedFiles.length > 0 ? "캡션을 입력하세요..." : "메세지를 입력하세요..."}
+                                value={message}
+                                maxLength={5000}
+                                rows={1}
+                                onChange={(e) => {
+                                    setMessage(e.target.value);
+                                    handleTyping();
+                                }}
+                                onKeyDown={handleKeyDown}
+                            />
+                            {message.length > 100 && (
+                                <span className="chat_detail_char_count">
+                                    {message.length}/5000
+                                </span>
+                            )}
+                            <button
+                                type="button"
+                                className={`chat_detail_emoji_btn btn-effect ${showEmoticonPicker ? 'active' : ''}`}
+                                onClick={() => {
+                                    const opening = !showEmoticonPicker;
+                                    setShowEmoticonPicker(opening);
+                                    setShowAttachMenu(false);
+                                    if (opening) { textareaRef.current?.blur(); }
+                                    if (!opening) { setSelectedEmoticon(null); }
+                                }}
+                                aria-label="이모티콘"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="var(--color-primary)" strokeWidth="2"/>
+                                    <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round"/>
+                                    <circle cx="9" cy="10" r="1" fill="var(--color-primary)"/>
+                                    <circle cx="15" cy="10" r="1" fill="var(--color-primary)"/>
+                                </svg>
+                            </button>
+                        </div>
                         <button
                             type="button"
                             className="chat_detail_send_btn btn-effect"
-                            onClick={handleSendMessage}
-                            disabled={(!message.trim() && selectedFiles.length === 0) || isUploading}
+                            onClick={selectedEmoticon ? handleSendSelectedEmoticon : handleSendMessage}
+                            disabled={(!message.trim() && selectedFiles.length === 0 && !selectedEmoticon) || isUploading}
                         >
                             <span>{isUploading ? `${uploadProgress}%` : '전송'}</span>
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* Emoticon Picker */}
+            {showEmoticonPicker && (
+                <EmoticonPicker
+                    onSelect={handleSelectEmoticon}
+                    onClose={() => setShowEmoticonPicker(false)}
+                />
+            )}
 
             {/* Image Preview Modal */}
             {previewImageUrl && (

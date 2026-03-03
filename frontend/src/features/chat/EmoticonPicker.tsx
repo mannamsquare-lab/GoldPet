@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { emoticonService } from '../../services/emoticonService';
 
 interface EmoticonPickerProps {
-  onSelect: (emoticonId: number) => void;
+  onSelect: (emoticon: { id: number; imageUrl: string }) => void;
   onClose: () => void;
 }
 
@@ -11,6 +11,7 @@ const ITEMS_PER_PAGE = 12;
 
 const EmoticonPicker = ({ onSelect, onClose: _onClose }: EmoticonPickerProps) => {
   const [page, setPage] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: emoticons = [] } = useQuery({
     queryKey: ['emoticons'],
@@ -19,7 +20,19 @@ const EmoticonPicker = ({ onSelect, onClose: _onClose }: EmoticonPickerProps) =>
   });
 
   const totalPages = Math.max(1, Math.ceil(emoticons.length / ITEMS_PER_PAGE));
-  const pageItems = emoticons.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const newPage = Math.round(el.scrollLeft / el.clientWidth);
+    setPage(Math.min(newPage, totalPages - 1));
+  }, [totalPages]);
+
+  const scrollToPage = (p: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: p * el.clientWidth, behavior: 'smooth' });
+  };
 
   return (
     <div className="chat_detail_emoticon_picker" onClick={(e) => e.stopPropagation()}>
@@ -27,18 +40,34 @@ const EmoticonPicker = ({ onSelect, onClose: _onClose }: EmoticonPickerProps) =>
         <div className="chat_detail_emoticon_empty">사용 가능한 이모티콘이 없습니다</div>
       ) : (
         <>
-          <div className="chat_detail_emoticon_grid">
-            {pageItems.map((emoticon) => (
-              <button
-                key={emoticon.id}
-                type="button"
-                className="chat_detail_emoticon_item"
-                onClick={() => onSelect(emoticon.id)}
-                title={emoticon.name || undefined}
-              >
-                <img src={emoticon.imageUrl} alt={emoticon.name || '이모티콘'} />
-              </button>
-            ))}
+          <div
+            ref={scrollRef}
+            className="chat_detail_emoticon_scroll"
+            onScroll={handleScroll}
+          >
+            {Array.from({ length: totalPages }).map((_, pageIndex) => {
+              const pageItems = emoticons.slice(
+                pageIndex * ITEMS_PER_PAGE,
+                (pageIndex + 1) * ITEMS_PER_PAGE
+              );
+              return (
+                <div key={pageIndex} className="chat_detail_emoticon_page">
+                  <div className="chat_detail_emoticon_grid">
+                    {pageItems.map((emoticon) => (
+                      <button
+                        key={emoticon.id}
+                        type="button"
+                        className="chat_detail_emoticon_item"
+                        onClick={() => onSelect({ id: emoticon.id, imageUrl: emoticon.imageUrl })}
+                        title={emoticon.name || undefined}
+                      >
+                        <img src={emoticon.imageUrl} alt={emoticon.name || '이모티콘'} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
           {totalPages > 1 && (
             <div className="chat_detail_emoticon_dots">
@@ -47,7 +76,7 @@ const EmoticonPicker = ({ onSelect, onClose: _onClose }: EmoticonPickerProps) =>
                   key={i}
                   type="button"
                   className={`chat_detail_emoticon_dot${i === page ? ' active' : ''}`}
-                  onClick={() => setPage(i)}
+                  onClick={() => scrollToPage(i)}
                   aria-label={`페이지 ${i + 1}`}
                 />
               ))}

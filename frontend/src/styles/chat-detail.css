@@ -213,6 +213,7 @@
   gap: 16px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .chat_detail_message {
@@ -365,8 +366,8 @@
 }
 
 .chat_detail_attach_btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 8px;
   background: var(--color-bg);
   border-radius: 999px;
@@ -378,13 +379,24 @@
   flex-shrink: 0;
 }
 
-.chat_detail_input {
+.chat_detail_input_field {
   flex: 1;
-  min-height: 32px;
-  max-height: 108px;
-  padding: 8px 12px;
+  min-height: 36px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
   background: white;
   border-radius: 16px;
+  padding: 7px 12px;
+}
+
+.chat_detail_input {
+  flex: 1;
+  min-height: 22px;
+  max-height: 88px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
   border: none;
   outline: none;
   color: var(--color-text-secondary);
@@ -394,6 +406,20 @@
   line-height: 1.4;
   resize: none;
   overflow-y: auto;
+}
+
+.chat_detail_emoji_btn {
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  align-self: flex-end;
 }
 
 .chat_detail_input::placeholder {
@@ -407,7 +433,7 @@
 }
 
 .chat_detail_send_btn {
-  height: 32px;
+  height: 36px;
   padding: 0 16px;
   background-color: #ABABAB;
   border: none;
@@ -836,12 +862,11 @@
 
 /* Character Count */
 .chat_detail_char_count {
-  position: absolute;
-  right: 65px;
-  top: 50%;
-  transform: translateY(-50%);
   font-size: 10px;
   color: #999;
+  flex-shrink: 0;
+  align-self: center;
+  white-space: nowrap;
 }
 
 /* Image Preview Modal */
@@ -913,11 +938,72 @@
   text-decoration: underline;
 }
 
+/* Emoticon Preview Overlay */
+.chat_detail_emoticon_preview_overlay {
+  width: 100%;
+  background: rgba(58, 45, 22, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  flex-shrink: 0;
+}
+
+.chat_detail_emoticon_preview_content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  width: 100%;
+}
+
+.chat_detail_emoticon_preview_content img {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+}
+
+.chat_detail_emoticon_preview_close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Emoticon Picker */
 .chat_detail_emoticon_picker {
   background: #EFE1C4;
-  padding: 24px;
   padding-bottom: 40px;
+  flex-shrink: 0;
+}
+
+.chat_detail_emoticon_scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.chat_detail_emoticon_scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chat_detail_emoticon_page {
+  min-width: 100%;
+  scroll-snap-align: start;
+  padding: 24px;
+  padding-bottom: 0;
+  box-sizing: border-box;
 }
 
 .chat_detail_emoticon_grid {
