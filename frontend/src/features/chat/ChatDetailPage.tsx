@@ -477,11 +477,6 @@ const ChatDetailPage = () => {
         });
     };
 
-    const handleInvite = () => {
-        setShowHeaderMenu(false);
-        setShowInviteModal(true);
-    };
-
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         // 한글 IME 조합 중이면 무시 (마지막 글자 중복 방지)
         if (e.nativeEvent.isComposing) return;

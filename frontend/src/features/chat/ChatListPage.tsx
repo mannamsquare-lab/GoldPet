@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { chatService, ChatRequestItem } from '../../services/chatService';
+import { chatService } from '../../services/chatService';
+import type { ChatRequestItem } from '../../services/chatService';
 import { useAuthStore } from '../../stores/authStore';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { useChatListWebSocket } from '../../hooks/useChatListWebSocket';
