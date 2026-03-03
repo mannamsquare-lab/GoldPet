@@ -84,8 +84,6 @@ export const LoginPage = () => {
   };
 
   const handleSnsLogin = async (provider: 'naver' | 'kakao' | 'apple' | 'google', email?: string) => {
-    localStorage.setItem('lastSnsProvider', provider);
-    setLastSnsProvider(provider);
     const executeLogin = async (loginEmail?: string) => {
         try {
             const result = await authService.openLoginPopup(provider, loginEmail);
@@ -99,6 +97,8 @@ export const LoginPage = () => {
 
             // AuthResponse type - login succeeded
             if (result.accessToken) {
+              localStorage.setItem('lastSnsProvider', provider);
+              setLastSnsProvider(provider);
               login(result.accessToken, result.refreshToken, result.user);
               // 전체 프로필 조회하여 위치 등 누락 필드 보충
               try {
