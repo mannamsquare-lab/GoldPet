@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { chatService } from '../../services/chatService';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { chatService, ChatRequestItem } from '../../services/chatService';
 import { useAuthStore } from '../../stores/authStore';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { useChatListWebSocket } from '../../hooks/useChatListWebSocket';
 import '../../styles/chat.css';
 import { Loading } from '../../components/common/Loading';
+import CreateGroupChatModal from './CreateGroupChatModal';
 
 // Empty state component
 const ChatEmptyState = () => {
@@ -29,9 +30,11 @@ const ChatEmptyState = () => {
 const ChatListPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const queryClient = useQueryClient();
     const { user } = useAuthStore();
     const currentUserId = user?.id;
     const [activeTab, setActiveTab] = useState('one'); // 'one', 'group', 'request'
+    const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 
     // WebSocket subscription for real-time chat list updates
     useChatListWebSocket();
@@ -50,12 +53,48 @@ const ChatListPage = () => {
         ...CACHE_TIME.REAL_TIME,
     });
 
+    // Fetch chat requests when on request tab
+    const { data: chatRequests, isLoading: isRequestsLoading } = useQuery({
+        queryKey: ['chatRequests'],
+        queryFn: chatService.getChatRequests,
+        enabled: activeTab === 'request',
+        ...CACHE_TIME.REAL_TIME,
+    });
+
+    const handleAcceptRequest = async (req: ChatRequestItem) => {
+        try {
+            const chatRoom = await chatService.acceptChatRequest(req.id);
+            queryClient.invalidateQueries({ queryKey: ['chatRequests'] });
+            queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+            navigate(`/chat/${chatRoom.id}`);
+        } catch {
+            // ignore
+        }
+    };
+
+    const handleRejectRequest = async (req: ChatRequestItem) => {
+        try {
+            await chatService.rejectChatRequest(req.id);
+            queryClient.invalidateQueries({ queryKey: ['chatRequests'] });
+        } catch {
+            // ignore
+        }
+    };
+
+    const handleDeleteRequest = async (req: ChatRequestItem) => {
+        try {
+            await chatService.deleteChatRequest(req.id);
+            queryClient.invalidateQueries({ queryKey: ['chatRequests'] });
+        } catch {
+            // ignore
+        }
+    };
+
     if (isLoading) return <Loading description="채팅 목록을 불러오고 있어요" />;
 
     // Filter chats based on tab
     const oneOnOneChats = chatRooms?.filter(room => !room.isGroup) || [];
     const groupChats = chatRooms?.filter(room => room.isGroup) || [];
-    const requestChats: any[] = []; // Not implemented in service yet, keeping empty or mock locally if needed
 
     return (
         <div id="chatOne">
@@ -166,11 +205,63 @@ const ChatListPage = () => {
             {/* Contact Request List */}
             {activeTab === 'request' && (
                 <>
-                    {requestChats.length === 0 ? (
-                        <ChatEmptyState />
+                    {isRequestsLoading ? (
+                        <Loading description="대화 요청을 불러오고 있어요" />
+                    ) : !chatRequests || chatRequests.length === 0 ? (
+                        <div className="chat_empty_state">
+                            <div className="chat_empty_content">
+                                <div className="chat_empty_text">
+                                    <div className="chat_empty_title">대화 요청이 없습니다</div>
+                                </div>
+                            </div>
+                        </div>
                     ) : (
                         <ul className="contact_list">
-                            {/* Rendering logic for requests if we had them */}
+                            {chatRequests.map((req) => (
+                                <li key={req.id}>
+                                    <div className="profile_img">
+                                        <img
+                                            src={req.requesterProfileImage || '/assets/images/temp/temp_dog_profile.png'}
+                                            alt={req.requesterNickname}
+                                        />
+                                    </div>
+                                    <div className="txt_wrap">
+                                        <strong>{req.requesterNickname}</strong>
+                                        <p>
+                                            {req.status === 'REJECTED'
+                                                ? '채팅 요청을 거절했어요.'
+                                                : '채팅을 요청했어요.'}
+                                        </p>
+                                    </div>
+                                    <div className="contact_btn_wrap">
+                                        {req.status === 'PENDING' && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRejectRequest(req)}
+                                                >
+                                                    거절
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAcceptRequest(req)}
+                                                >
+                                                    수락
+                                                </button>
+                                            </>
+                                        )}
+                                        {req.status === 'REJECTED' && (
+                                            <button
+                                                type="button"
+                                                style={{ color: '#FF5005', backgroundColor: 'transparent', border: '1px solid #FF5005' }}
+                                                onClick={() => handleDeleteRequest(req)}
+                                            >
+                                                삭제
+                                            </button>
+                                        )}
+                                    </div>
+                                </li>
+                            ))}
                         </ul>
                     )}
                 </>
@@ -178,18 +269,25 @@ const ChatListPage = () => {
 
             {/* Create Group Chat Button - only show on group tab */}
             {activeTab === 'group' && (
-                <button
-                    type="button"
-                    className="create_group_btn btn-effect"
-                    onClick={() => navigate('/chat/group/create')}
-                    aria-label="그룹 채팅 만들기"
-                >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                </button>
+                <div className="create_group_btn_wrap">
+                    <button
+                        type="button"
+                        className="create_group_btn btn-effect"
+                        onClick={() => setShowCreateGroupModal(true)}
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        그룹 채팅 만들기
+                    </button>
+                </div>
             )}
+
+            <CreateGroupChatModal
+                isOpen={showCreateGroupModal}
+                onClose={() => setShowCreateGroupModal(false)}
+            />
         </div>
     );
 };

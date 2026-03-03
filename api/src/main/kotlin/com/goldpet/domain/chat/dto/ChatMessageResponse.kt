@@ -31,7 +31,10 @@ data class ChatMessageResponse(
     val emoticonName: String?,
     val emojiCode: String?,
     val createdAt: LocalDateTime,
-    val readCount: Int
+    val readCount: Int,
+    val replyToId: Long? = null,
+    val replyToSenderNickname: String? = null,
+    val replyToTextContent: String? = null
 ) {
     companion object {
         fun from(chatMessage: ChatMessage, fileAttachment: FileAttachment? = null, emoticon: Emoticon? = null): ChatMessageResponse {
@@ -60,7 +63,10 @@ data class ChatMessageResponse(
                 emoticonName = emoticon?.name,
                 emojiCode = chatMessage.emojiCode,
                 createdAt = chatMessage.createdAt,
-                readCount = chatMessage.readCount
+                readCount = chatMessage.readCount,
+                replyToId = chatMessage.replyTo?.id,
+                replyToSenderNickname = chatMessage.replyTo?.sender?.nickname,
+                replyToTextContent = chatMessage.replyTo?.textContent
             )
         }
     }

@@ -3,6 +3,7 @@ package com.goldpet.domain.chat.controller
 import com.goldpet.domain.chat.dto.ChatRoomCreateRequest
 import com.goldpet.domain.chat.dto.ChatRoomResponse
 import com.goldpet.domain.chat.dto.ChatMessageResponse
+import com.goldpet.domain.chat.dto.ChatRequestResponse
 import com.goldpet.domain.chat.dto.SendMessageRequest
 import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
@@ -95,7 +96,8 @@ class ChatRoomController(
             messageType = request.messageType,
             textContent = request.content,
             fileId = request.fileId,
-            emoticonId = request.emoticonId
+            emoticonId = request.emoticonId,
+            replyToId = request.replyToId
         )
         val message = chatService.saveChatMessage(messageRequest)
 
@@ -131,6 +133,17 @@ class ChatRoomController(
         return ResponseEntity.ok().build()
     }
 
+    @PostMapping("/{roomId}/invite")
+    fun inviteToRoom(
+        @PathVariable roomId: Long,
+        @RequestBody body: Map<String, Long>,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<Void> {
+        val userId = body["userId"] ?: throw IllegalArgumentException("userId is required")
+        chatService.inviteParticipant(roomId, userDetails.id, userId)
+        return ResponseEntity.ok().build()
+    }
+
     @DeleteMapping("/{roomId}/leave")
     fun leaveRoom(
         @PathVariable roomId: Long,
@@ -151,5 +164,40 @@ class ChatRoomController(
     ): ResponseEntity<ChatRoomResponse> {
         val chatRoom = chatService.getOrCreateDirectRoom(userDetails.id, targetUserId)
         return ResponseEntity.ok(ChatRoomResponse.from(chatRoom, userDetails.id))
+    }
+
+    @GetMapping("/requests")
+    fun getChatRequests(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<List<ChatRequestResponse>> {
+        val requests = chatService.getPendingRequests(userDetails.id)
+        return ResponseEntity.ok(requests.map { ChatRequestResponse.from(it) })
+    }
+
+    @PostMapping("/requests/{requestId}/accept")
+    fun acceptChatRequest(
+        @PathVariable requestId: Long,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<ChatRoomResponse> {
+        val chatRoom = chatService.acceptRequest(requestId, userDetails.id)
+        return ResponseEntity.ok(ChatRoomResponse.from(chatRoom, userDetails.id))
+    }
+
+    @PostMapping("/requests/{requestId}/reject")
+    fun rejectChatRequest(
+        @PathVariable requestId: Long,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<Void> {
+        chatService.rejectRequest(requestId, userDetails.id)
+        return ResponseEntity.ok().build()
+    }
+
+    @DeleteMapping("/requests/{requestId}")
+    fun deleteChatRequest(
+        @PathVariable requestId: Long,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<Void> {
+        chatService.deleteRequest(requestId, userDetails.id)
+        return ResponseEntity.ok().build()
     }
 }

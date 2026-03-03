@@ -166,18 +166,22 @@ class ChatWebSocketService {
     }
   }
 
-  sendMessage(roomId: string, senderId: number, content: string): void {
+  sendMessage(roomId: string, senderId: number, content: string, replyToId?: number): void {
     if (!this.client || !this.isConnected) {
       console.error('[WebSocket] Not connected. Cannot send message.');
       return;
     }
 
-    const message = {
+    const message: Record<string, unknown> = {
       roomId: parseInt(roomId, 10),
       senderId,
       messageType: 'TEXT',
       textContent: content,
     };
+
+    if (replyToId != null) {
+      message.replyToId = replyToId;
+    }
 
     this.client.publish({
       destination: '/app/chat.sendMessage',
@@ -260,6 +264,9 @@ class ChatWebSocketService {
       emoticonId: data.emoticonId,
       emoticonImageUrl: data.emoticonImageUrl,
       emoticonName: data.emoticonName,
+      replyToId: data.replyToId,
+      replyToSenderNickname: data.replyToSenderNickname,
+      replyToTextContent: data.replyToTextContent,
     };
   }
 

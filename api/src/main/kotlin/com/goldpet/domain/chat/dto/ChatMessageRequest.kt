@@ -11,5 +11,6 @@ data class ChatMessageRequest(
     val textContent: String? = null,
     val fileId: Long? = null,
     val emoticonId: Long? = null,
-    val emojiCode: String? = null
+    val emojiCode: String? = null,
+    val replyToId: Long? = null
 )

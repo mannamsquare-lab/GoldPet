@@ -27,7 +27,6 @@ import { FriendFindPage } from './features/friend/FriendFindPage';
 import { FriendsListPage } from './features/friend/FriendsListPage';
 import ChatListPage from './features/chat/ChatListPage';
 import ChatDetailPage from './features/chat/ChatDetailPage';
-import CreateGroupChatPage from './features/chat/CreateGroupChatPage';
 import WalkPage from './features/walk/WalkPage';
 import WalkMapPage from './features/walk/WalkMapPage';
 import WalkDetailPage from './features/walk/WalkDetailPage';
@@ -181,7 +180,6 @@ function App() {
 
               {/* Chat - No Layout */}
               <Route path="/chat/:chatId" element={<ChatDetailPage />} />
-              <Route path="/chat/group/create" element={<CreateGroupChatPage />} />
               <Route path="/chat/group/:chatId" element={<ChatDetailPage />} />
 
               {/* Settings etc */}

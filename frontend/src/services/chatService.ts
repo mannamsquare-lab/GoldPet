@@ -44,6 +44,18 @@ export interface ChatMessage {
   emoticonId?: number;
   emoticonImageUrl?: string;
   emoticonName?: string;
+  // Reply fields
+  replyToId?: number;
+  replyToSenderNickname?: string;
+  replyToTextContent?: string;
+}
+
+export interface ChatRequestItem {
+  id: number;
+  requesterNickname: string;
+  requesterProfileImage?: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  createdAt: string;
 }
 
 export const chatService = {
@@ -60,7 +72,7 @@ export const chatService = {
   sendMessage: async (
     roomId: string,
     content: string | null,
-    options?: { messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number }
+    options?: { messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number; replyToId?: number }
   ): Promise<ChatMessage> => {
     try {
       const response = await apiClient.post(`/chat/rooms/${roomId}/messages`, {
@@ -68,6 +80,7 @@ export const chatService = {
         messageType: options?.messageType || 'TEXT',
         fileId: options?.fileId || null,
         emoticonId: options?.emoticonId || null,
+        replyToId: options?.replyToId || null,
       });
       return response.data;
     } catch {
@@ -122,6 +135,14 @@ export const chatService = {
     }
   },
 
+  inviteToRoom: async (roomId: number, userId: number): Promise<void> => {
+    try {
+      await apiClient.post(`/chat/rooms/${roomId}/invite`, { userId });
+    } catch {
+      throw new Error('초대에 실패했습니다.');
+    }
+  },
+
   /**
    * Get or create a direct chat room with a matched user.
    * Returns the chat room (existing or newly created).
@@ -138,4 +159,16 @@ export const chatService = {
       throw new Error('채팅방 생성에 실패했습니다.');
     }
   },
+
+  getChatRequests: async (): Promise<ChatRequestItem[]> =>
+    apiClient.get('/chat/rooms/requests').then(r => r.data),
+
+  acceptChatRequest: async (requestId: number): Promise<ChatRoom> =>
+    apiClient.post(`/chat/rooms/requests/${requestId}/accept`).then(r => r.data),
+
+  rejectChatRequest: async (requestId: number): Promise<void> =>
+    apiClient.post(`/chat/rooms/requests/${requestId}/reject`).then(r => r.data),
+
+  deleteChatRequest: async (requestId: number): Promise<void> =>
+    apiClient.delete(`/chat/rooms/requests/${requestId}`).then(r => r.data),
 };

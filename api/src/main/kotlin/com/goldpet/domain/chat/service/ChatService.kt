@@ -4,6 +4,7 @@ import com.goldpet.domain.chat.dto.ChatRoomCreateRequest
 import com.goldpet.domain.chat.dto.ChatMessageRequest
 import com.goldpet.domain.chat.entity.*
 import com.goldpet.domain.chat.repository.ChatMessageRepository
+import com.goldpet.domain.chat.repository.ChatRequestRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.repository.ChatRoomRepository
 import com.goldpet.domain.common.exception.*
@@ -14,6 +15,7 @@ import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Service
 class ChatService(
@@ -23,7 +25,8 @@ class ChatService(
     private val userRepository: UserRepository,
     private val matchRepository: MatchRepository,
     private val notificationService: NotificationService,
-    private val userBlockRepository: UserBlockRepository
+    private val userBlockRepository: UserBlockRepository,
+    private val chatRequestRepository: ChatRequestRepository
 ) {
 
     @Transactional
@@ -94,6 +97,14 @@ class ChatService(
     }
 
     @Transactional
+    fun inviteParticipant(roomId: Long, requesterId: Long, inviteeId: Long) {
+        // Verify requester is an active participant
+        chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, requesterId)
+            .orElseThrow { ForbiddenException("User $requesterId is not a participant of chat room $roomId") }
+        addParticipant(roomId, inviteeId)
+    }
+
+    @Transactional
     fun removeParticipant(roomId: Long, userId: Long) {
         val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId)
             .orElseThrow { NotFoundException("Participant not found in chat room $roomId for user $userId") }
@@ -121,6 +132,15 @@ class ChatService(
             }
         }
 
+        val replyToMessage = request.replyToId?.let { replyToId ->
+            val replyMsg = chatMessageRepository.findById(replyToId)
+                .orElseThrow { NotFoundException("Reply target message not found: $replyToId") }
+            if (replyMsg.chatRoom.id != chatRoom.id) {
+                throw com.goldpet.domain.common.exception.BadRequestException("Reply target message is not in the same chat room")
+            }
+            replyMsg
+        }
+
         val chatMessage = ChatMessage(
             chatRoom = chatRoom,
             sender = sender,
@@ -128,7 +148,8 @@ class ChatService(
             textContent = request.textContent,
             fileId = request.fileId,
             emoticonId = request.emoticonId,
-            emojiCode = request.emojiCode
+            emojiCode = request.emojiCode,
+            replyTo = replyToMessage
         )
         val savedMessage = chatMessageRepository.save(chatMessage)
 
@@ -249,5 +270,85 @@ class ChatService(
     fun getParticipants(roomId: Long): List<ChatRoomParticipant> {
         return chatRoomParticipantRepository.findAllByChatRoomId(roomId)
             .filter { it.leftAt == null }
+    }
+
+    /**
+     * Get pending and rejected chat requests for the current user (as target).
+     */
+    @Transactional(readOnly = true)
+    fun getPendingRequests(userId: Long): List<ChatRequest> {
+        val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found: $userId") }
+        return chatRequestRepository.findByTargetUser(user)
+            .filter { it.status == ChatRequestStatus.PENDING || it.status == ChatRequestStatus.REJECTED }
+    }
+
+    /**
+     * Accept a chat request — creates a DIRECT chat room and links both users.
+     */
+    @Transactional
+    fun acceptRequest(requestId: Long, userId: Long): ChatRoom {
+        val request = chatRequestRepository.findById(requestId)
+            .orElseThrow { NotFoundException("Chat request not found: $requestId") }
+
+        if (request.targetUser.id != userId) {
+            throw ForbiddenException("Not authorized to accept this chat request")
+        }
+        if (request.status != ChatRequestStatus.PENDING) {
+            throw BadRequestException("Chat request is not in PENDING status")
+        }
+
+        val chatRoom = ChatRoom(
+            roomType = ChatRoomType.DIRECT,
+            ownerUser = request.requester
+        )
+        chatRoomRepository.save(chatRoom)
+
+        chatRoomParticipantRepository.save(ChatRoomParticipant(chatRoom = chatRoom, user = request.requester, role = ChatRoomRole.MEMBER))
+        chatRoomParticipantRepository.save(ChatRoomParticipant(chatRoom = chatRoom, user = request.targetUser, role = ChatRoomRole.MEMBER))
+
+        request.status = ChatRequestStatus.ACCEPTED
+        request.chatRoom = chatRoom
+        request.respondedAt = LocalDateTime.now()
+        chatRequestRepository.save(request)
+
+        return chatRoom
+    }
+
+    /**
+     * Reject a chat request.
+     */
+    @Transactional
+    fun rejectRequest(requestId: Long, userId: Long) {
+        val request = chatRequestRepository.findById(requestId)
+            .orElseThrow { NotFoundException("Chat request not found: $requestId") }
+
+        if (request.targetUser.id != userId) {
+            throw ForbiddenException("Not authorized to reject this chat request")
+        }
+        if (request.status != ChatRequestStatus.PENDING) {
+            throw BadRequestException("Chat request is not in PENDING status")
+        }
+
+        request.status = ChatRequestStatus.REJECTED
+        request.respondedAt = LocalDateTime.now()
+        chatRequestRepository.save(request)
+    }
+
+    /**
+     * Delete a rejected chat request.
+     */
+    @Transactional
+    fun deleteRequest(requestId: Long, userId: Long) {
+        val request = chatRequestRepository.findById(requestId)
+            .orElseThrow { NotFoundException("Chat request not found: $requestId") }
+
+        if (request.targetUser.id != userId) {
+            throw ForbiddenException("Not authorized to delete this chat request")
+        }
+        if (request.status != ChatRequestStatus.REJECTED) {
+            throw BadRequestException("Only rejected chat requests can be deleted")
+        }
+
+        chatRequestRepository.delete(request)
     }
 }

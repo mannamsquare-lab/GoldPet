@@ -15,6 +15,7 @@ import { nativeBridge } from '../../bridge/nativeBridge';
 import { blockService } from '../../services/blockService';
 import { CACHE_TIME } from '../../config/queryConfig';
 import EmoticonPicker from './EmoticonPicker';
+import InviteGroupChatModal from './InviteGroupChatModal';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -157,6 +158,7 @@ const ChatDetailPage = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+    const [replyingTo, setReplyingTo] = useState<{ messageId: number; senderNickname: string; textContent: string } | null>(null);
 
     useOverlayColor(!!previewImageUrl);
 
@@ -169,6 +171,7 @@ const ChatDetailPage = () => {
     const { showToast } = useToast();
     const { showAlert, showConfirm } = useAlert();
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
 
     // Get current user ID from auth store (needed for WebSocket)
     const { user } = useAuthStore();
@@ -235,8 +238,8 @@ const ChatDetailPage = () => {
 
     // Send Message Mutation
     const sendMutation = useMutation({
-        mutationFn: async ({ content, messageType, fileId, emoticonId }: { content: string | null; messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number }) => {
-            return chatService.sendMessage(chatId!, content, { messageType, fileId, emoticonId });
+        mutationFn: async ({ content, messageType, fileId, emoticonId, replyToId }: { content: string | null; messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number; replyToId?: number }) => {
+            return chatService.sendMessage(chatId!, content, { messageType, fileId, emoticonId, replyToId });
         },
         onError: () => showToast('메시지 전송에 실패했습니다.', 'error'),
         onSuccess: (newMessage) => {
@@ -247,6 +250,7 @@ const ChatDetailPage = () => {
                 }
                 return [...oldMessages, newMessage];
             });
+            setReplyingTo(null);
         },
     });
 
@@ -382,7 +386,8 @@ const ChatDetailPage = () => {
             return;
         }
         if (message.trim()) {
-            sendMutation.mutate({ content: message });
+            const replyToId = replyingTo?.messageId;
+            sendMutation.mutate({ content: message, replyToId });
             setMessage('');
         }
     };
@@ -462,9 +467,19 @@ const ChatDetailPage = () => {
 
     const handleLeaveRoom = () => {
         setShowHeaderMenu(false);
-        showConfirm('채팅방을 나가시겠습니까?', () => {
+        showConfirm('채팅방을 나가시겠습니까?', async () => {
+            try {
+                await chatService.leaveRoom(chatId!);
+            } catch {
+                // ignore — still navigate away
+            }
             navigate('/chat', { state: { activeTab: isGroupChat ? 'group' : 'one' } });
         });
+    };
+
+    const handleInvite = () => {
+        setShowHeaderMenu(false);
+        setShowInviteModal(true);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -675,13 +690,23 @@ const ChatDetailPage = () => {
                                     <img src={'profileImg' in chatUser ? chatUser.profileImg : ''} alt={chatUser.name} />
                                 </div>
                             )}
-                            <div className="chat_detail_user_name">{chatUser.name}</div>
+                            <div className="chat_detail_user_name">
+                                {chatUser.name}
+                                {isGroupChat && currentRoom && (
+                                    <span className="chat_detail_member_count">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#A58A54" strokeWidth="2" strokeLinecap="round"/>
+                                            <circle cx="9" cy="7" r="4" stroke="#A58A54" strokeWidth="2"/>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#A58A54" strokeWidth="2" strokeLinecap="round"/>
+                                        </svg>
+                                        {currentRoom.participants?.length || 0}
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                        {!isGroupChat && (
-                            <button className="chat_detail_menu_btn" onClick={() => setShowHeaderMenu(!showHeaderMenu)}>
-                                <img src="/assets/images/common/option_icon.svg" alt="메뉴" />
-                            </button>
-                        )}
+                        <button className="chat_detail_menu_btn" onClick={() => setShowHeaderMenu(!showHeaderMenu)}>
+                            <img src="/assets/images/common/option_icon.svg" alt="메뉴" />
+                        </button>
                     </div>
                     <div className="chat_detail_header_divider"></div>
                 </div>
@@ -691,8 +716,17 @@ const ChatDetailPage = () => {
             {showHeaderMenu && (
                 <div className="chat_detail_menu_overlay" onClick={() => setShowHeaderMenu(false)}>
                     <div className="chat_detail_menu_dropdown" onClick={(e) => e.stopPropagation()}>
-                        <button type="button" onClick={handleBlockUser}>차단하기</button>
-                        <button type="button" onClick={handleLeaveRoom}>나가기</button>
+                        {isGroupChat ? (
+                            <>
+                                <button type="button" onClick={() => { setShowHeaderMenu(false); setShowInviteModal(true); }}>대화상대 초대하기</button>
+                                <button type="button" onClick={handleLeaveRoom}>채팅방 나가기</button>
+                            </>
+                        ) : (
+                            <>
+                                <button type="button" onClick={handleBlockUser}>차단하기</button>
+                                <button type="button" onClick={handleLeaveRoom}>나가기</button>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -704,6 +738,8 @@ const ChatDetailPage = () => {
                     // Compare as numbers (both should be numbers, but ensure type consistency)
                     const isMine = Number(msg.senderId) === currentUserId;
                     const time = timestamp ? new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+                    const isEmoticon = msg.type === 'emoticon' || msg.messageType === 'EMOTICON';
+                    const hasReply = !!msg.replyToId;
 
                     return (
                     <div
@@ -723,15 +759,30 @@ const ChatDetailPage = () => {
                             </div>
                         )}
                         <div className="chat_detail_message_content">
-                            {(() => {
-                                const isEmoticon = msg.type === 'emoticon' || msg.messageType === 'EMOTICON';
-                                return (
-                                    <div className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}`}>
-                                        {renderMessageContent(msg)}
+                            <div className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}`}>
+                                {hasReply && (
+                                    <div className="chat_detail_reply_quote">
+                                        <span className="chat_detail_reply_quote_name">{msg.replyToSenderNickname}에게 답장</span>
+                                        <div className="chat_detail_reply_quote_divider" />
+                                        <span className="chat_detail_reply_quote_text">{msg.replyToTextContent}</span>
                                     </div>
-                                );
-                            })()}
-                            <div className="chat_detail_message_time">{time}</div>
+                                )}
+                                {renderMessageContent(msg)}
+                            </div>
+                            <div className="chat_detail_message_time_row">
+                                <button
+                                    type="button"
+                                    className="chat_detail_reply_btn"
+                                    onClick={() => setReplyingTo({
+                                        messageId: msg.id,
+                                        senderNickname: msg.senderNickname || '',
+                                        textContent: msg.textContent || '',
+                                    })}
+                                >
+                                    답장
+                                </button>
+                                <span className="chat_detail_message_time">{time}</span>
+                            </div>
                         </div>
                     </div>
                 )})}
@@ -817,6 +868,26 @@ const ChatDetailPage = () => {
                             </div>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* Reply Preview */}
+            {replyingTo && (
+                <div className="chat_detail_reply_preview">
+                    <div className="chat_detail_reply_preview_body">
+                        <span className="chat_detail_reply_preview_name">{replyingTo.senderNickname}에게 답장</span>
+                        <div className="chat_detail_reply_preview_divider" />
+                        <span className="chat_detail_reply_preview_text">{replyingTo.textContent}</span>
+                    </div>
+                    <button
+                        type="button"
+                        className="chat_detail_reply_preview_cancel"
+                        onClick={() => setReplyingTo(null)}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M12 4L4 12M4 4L12 12" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </button>
                 </div>
             )}
 
@@ -965,6 +1036,13 @@ const ChatDetailPage = () => {
                     />
                 </div>
             )}
+
+            <InviteGroupChatModal
+                isOpen={showInviteModal}
+                onClose={() => setShowInviteModal(false)}
+                roomId={chatId!}
+                existingParticipantIds={currentRoom?.participants?.map(p => p.id) || []}
+            />
         </div>
     );
 };

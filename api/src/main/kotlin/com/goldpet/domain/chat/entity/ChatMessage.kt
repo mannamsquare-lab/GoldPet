@@ -40,6 +40,10 @@ class ChatMessage(
     var emojiCode: String? = null,
 
     @Column(nullable = false)
-    var readCount: Int = 0
+    var readCount: Int = 0,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_id")
+    val replyTo: ChatMessage? = null
 
 ) : BaseTimeEntity()

@@ -136,6 +136,17 @@
   background: var(--color-border);
 }
 
+/* Member count badge in group chat header */
+.chat_detail_member_count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #A58A54;
+  margin-top: 2px;
+}
+
 /* Header Menu Button */
 .chat_detail_menu_btn {
   width: 40px;
@@ -1100,5 +1111,120 @@
   border: none !important;
   padding: 0 !important;
   box-shadow: none !important;
+}
+
+/* Reply Quote (inside message bubble) */
+.chat_detail_reply_quote {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+}
+
+.chat_detail_reply_quote_name {
+  font-size: 14px;
+  font-family: Pretendard, sans-serif;
+  font-weight: 600;
+  color: #A58A54;
+  line-height: 20px;
+}
+
+.chat_detail_reply_quote_divider {
+  width: 100%;
+  height: 1px;
+  background: #EFE1C4;
+}
+
+.chat_detail_reply_quote_text {
+  font-size: 14px;
+  font-family: Pretendard, sans-serif;
+  font-weight: 400;
+  color: #614108;
+  line-height: 20px;
+  opacity: 0.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Reply button next to message time */
+.chat_detail_message_time_row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat_detail_reply_btn {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #A58A54;
+  background: transparent;
+  color: #A58A54;
+  font-size: 11px;
+  font-family: Pretendard, sans-serif;
+  font-weight: 500;
+  line-height: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Reply Preview (above input) */
+.chat_detail_reply_preview {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--color-bg);
+  border-top: 1px solid #F9ECD2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat_detail_reply_preview_body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chat_detail_reply_preview_name {
+  font-size: 14px;
+  font-family: Pretendard, sans-serif;
+  font-weight: 600;
+  color: #A58A54;
+  line-height: 20px;
+}
+
+.chat_detail_reply_preview_divider {
+  width: 100%;
+  height: 1px;
+  background: #F9ECD2;
+}
+
+.chat_detail_reply_preview_text {
+  font-size: 14px;
+  font-family: Pretendard, sans-serif;
+  font-weight: 400;
+  color: #614108;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat_detail_reply_preview_cancel {
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 

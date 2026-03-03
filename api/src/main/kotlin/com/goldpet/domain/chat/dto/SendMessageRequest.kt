@@ -8,5 +8,6 @@ data class SendMessageRequest(
     val content: String? = null,
     val messageType: MessageType = MessageType.TEXT,
     val fileId: Long? = null,
-    val emoticonId: Long? = null
+    val emoticonId: Long? = null,
+    val replyToId: Long? = null
 )

@@ -113,11 +113,11 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
 
   // Send message via WebSocket
   const sendMessage = useCallback(
-    (senderId: number, content: string) => {
+    (senderId: number, content: string, replyToId?: number) => {
       if (!roomId) return;
 
       if (chatWebSocket.connected) {
-        chatWebSocket.sendMessage(roomId, senderId, content);
+        chatWebSocket.sendMessage(roomId, senderId, content, replyToId);
       } else {
         console.warn('[useChatWebSocket] Not connected, message not sent via WebSocket');
       }
