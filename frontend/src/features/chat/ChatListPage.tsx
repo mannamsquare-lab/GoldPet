@@ -165,6 +165,23 @@ const ChatListPage = () => {
             {/* Group Chat List */}
             {activeTab === 'group' && (
                 <>
+                    {/* Create Group Chat Button - right-aligned below tabs */}
+                    <div className="create_group_btn_wrap">
+                        <button
+                            type="button"
+                            className="create_group_btn btn-effect"
+                            onClick={() => setShowCreateGroupModal(true)}
+                        >
+                            <svg className="create_group_btn_vector left" width="8" height="36" viewBox="0 0 8 36" fill="none">
+                                <path d="M8 0H2C0.895 0 0 0.895 0 2V34C0 35.105 0.895 36 2 36H8L4 18L8 0Z" fill="currentColor"/>
+                            </svg>
+                            <span className="create_group_btn_text">그룹 채팅 만들기</span>
+                            <svg className="create_group_btn_vector right" width="8" height="36" viewBox="0 0 8 36" fill="none">
+                                <path d="M0 0H6C7.105 0 8 0.895 8 2V34C8 35.105 7.105 36 6 36H0L4 18L0 0Z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+
                     {groupChats.length === 0 ? (
                         <ChatEmptyState />
                     ) : (
@@ -266,23 +283,6 @@ const ChatListPage = () => {
                         </ul>
                     )}
                 </>
-            )}
-
-            {/* Create Group Chat Button - only show on group tab */}
-            {activeTab === 'group' && (
-                <div className="create_group_btn_wrap">
-                    <button
-                        type="button"
-                        className="create_group_btn btn-effect"
-                        onClick={() => setShowCreateGroupModal(true)}
-                    >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        그룹 채팅 만들기
-                    </button>
-                </div>
             )}
 
             <CreateGroupChatModal

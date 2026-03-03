@@ -754,7 +754,7 @@ const ChatDetailPage = () => {
                             </div>
                         )}
                         <div className="chat_detail_message_content">
-                            <div className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}`}>
+                            <div className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}${hasReply ? ' has_reply' : ''}`}>
                                 {hasReply && (
                                     <div className="chat_detail_reply_quote">
                                         <span className="chat_detail_reply_quote_name">{msg.replyToSenderNickname}에게 답장</span>
@@ -764,7 +764,7 @@ const ChatDetailPage = () => {
                                 )}
                                 {renderMessageContent(msg)}
                             </div>
-                            <div className="chat_detail_message_time_row">
+                            <div className="chat_detail_message_actions">
                                 <button
                                     type="button"
                                     className="chat_detail_reply_btn"
@@ -866,25 +866,6 @@ const ChatDetailPage = () => {
                 </div>
             )}
 
-            {/* Reply Preview */}
-            {replyingTo && (
-                <div className="chat_detail_reply_preview">
-                    <div className="chat_detail_reply_preview_body">
-                        <span className="chat_detail_reply_preview_name">{replyingTo.senderNickname}에게 답장</span>
-                        <div className="chat_detail_reply_preview_divider" />
-                        <span className="chat_detail_reply_preview_text">{replyingTo.textContent}</span>
-                    </div>
-                    <button
-                        type="button"
-                        className="chat_detail_reply_preview_cancel"
-                        onClick={() => setReplyingTo(null)}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M12 4L4 12M4 4L12 12" stroke="#614108" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                    </button>
-                </div>
-            )}
 
             {/* Click outside to close attach menu */}
             {showAttachMenu && (
@@ -953,6 +934,25 @@ const ChatDetailPage = () => {
                             </svg>
                         </button>
                         <div className="chat_detail_input_field">
+                            {replyingTo && (
+                                <div className="chat_detail_reply_inline">
+                                    <div className="chat_detail_reply_inline_header">
+                                        <span className="chat_detail_reply_inline_name">{replyingTo.senderNickname}에게 답장</span>
+                                        <button
+                                            type="button"
+                                            className="chat_detail_reply_inline_cancel"
+                                            onClick={() => setReplyingTo(null)}
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                                <path d="M9 3L3 9M3 3L9 9" stroke="#A58A54" strokeWidth="1.5" strokeLinecap="round"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <span className="chat_detail_reply_inline_text">{replyingTo.textContent}</span>
+                                    <div className="chat_detail_reply_inline_divider" />
+                                </div>
+                            )}
+                            <div className="chat_detail_input_row">
                             <textarea
                                 ref={textareaRef}
                                 className="chat_detail_input"
@@ -990,6 +990,7 @@ const ChatDetailPage = () => {
                                     <circle cx="15" cy="10" r="1" fill="var(--color-primary)"/>
                                 </svg>
                             </button>
+                            </div>
                         </div>
                         <button
                             type="button"

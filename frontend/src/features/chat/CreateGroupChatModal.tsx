@@ -141,10 +141,11 @@ const CreateGroupChatModal = ({ isOpen, onClose }: CreateGroupChatModalProps) =>
 
                             {/* Group name input */}
                             <div className="group_modal_input_wrap">
+                                <label className="group_modal_input_label">그룹 이름을 입력해 주세요.</label>
                                 <input
                                     type="text"
                                     className="group_modal_input"
-                                    placeholder="그룹 이름을 입력하세요"
+                                    placeholder="최대 20자"
                                     value={groupName}
                                     onChange={(e) => setGroupName(e.target.value)}
                                     maxLength={20}

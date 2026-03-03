@@ -352,7 +352,7 @@
   word-wrap: break-word;
 }
 
-/* Create Group Chat Button */
+/* Create Group Chat Button - below tabs, right-aligned */
 .create_group_btn_wrap {
   display: flex;
   justify-content: flex-end;
@@ -362,19 +362,33 @@
 .create_group_btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border-radius: 1000px;
-  background-color: var(--color-primary);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
+  gap: 0;
+  padding: 0;
+  height: 36px;
+  border-radius: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-primary);
 }
 
-.create_group_btn svg {
-  width: 18px;
-  height: 18px;
+.create_group_btn_text {
+  height: 36px;
+  padding: 0 12px;
+  background-color: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: Pretendard, sans-serif;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.create_group_btn_vector {
+  height: 36px;
   flex-shrink: 0;
+  display: block;
 }
 
 /* ===== Create Group Chat Page ===== */
@@ -648,14 +662,15 @@
   background-color: rgba(0, 0, 0, 0.7);
   z-index: 200;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
 }
 
 .group_modal_panel {
-  width: 100%;
-  max-height: 80vh;
-  background-color: #fff;
-  border-radius: 16px 16px 0 0;
+  width: 320px;
+  max-height: 70vh;
+  background-color: var(--color-bg);
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -717,10 +732,10 @@
 
 /* Radio button */
 .group_modal_radio {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 2px solid #D5BE8F;
+  border: 2px solid #505050;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -768,7 +783,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
 }
 
 /* 2x2 avatar grid */
@@ -806,25 +821,35 @@
   width: 100%;
 }
 
+.group_modal_input_label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #505050;
+  font-family: Pretendard, sans-serif;
+  align-self: flex-start;
+  display: block;
+  margin-bottom: 4px;
+}
+
 .group_modal_input {
   width: 100%;
-  padding: 16px;
-  border: 1px solid var(--color-secondary);
+  padding: 14px 16px;
+  border: none;
   border-radius: 16px;
   font-size: 16px;
   color: var(--color-primary);
   background-color: #fff;
   box-sizing: border-box;
   font-family: Pretendard, sans-serif;
+  height: 48px;
 }
 
 .group_modal_input:focus {
   outline: none;
-  border-color: var(--color-primary);
 }
 
 .group_modal_input::placeholder {
-  color: #BFBFBF;
+  color: #AAA;
 }
 
 /* Modal footer buttons */
@@ -837,7 +862,7 @@
 
 .group_modal_btn {
   flex: 1;
-  height: 52px;
+  height: 48px;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
@@ -847,7 +872,8 @@
 }
 
 .group_modal_btn_cancel {
-  background-color: var(--color-border);
+  background-color: transparent;
+  border: 1px solid var(--color-primary);
   color: var(--color-primary);
 }
 

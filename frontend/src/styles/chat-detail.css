@@ -354,7 +354,7 @@
   padding: 6px 12px;
   border-radius: 999px;
   border: 1.5px solid #A58A54;
-  background: transparent;
+  background: var(--color-bg);
   color: var(--color-primary);
   font-size: 12px;
   font-family: Pretendard, sans-serif;
@@ -396,11 +396,16 @@
   min-width: 0;
   min-height: 36px;
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
+  flex-direction: column;
   background: white;
   border-radius: 16px;
   padding: 7px 12px;
+}
+
+.chat_detail_input_row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .chat_detail_input {
@@ -1113,6 +1118,11 @@
   box-shadow: none !important;
 }
 
+/* Reply bubble background override -- scoped to OTHER's bubbles only */
+.chat_detail_message_bubble_other.has_reply {
+  background: var(--color-bg-warm);
+}
+
 /* Reply Quote (inside message bubble) */
 .chat_detail_reply_quote {
   width: 100%;
@@ -1126,7 +1136,7 @@
   font-size: 14px;
   font-family: Pretendard, sans-serif;
   font-weight: 600;
-  color: #A58A54;
+  color: var(--color-primary);
   line-height: 20px;
 }
 
@@ -1137,11 +1147,11 @@
 }
 
 .chat_detail_reply_quote_text {
-  font-size: 14px;
+  font-size: 16px;
   font-family: Pretendard, sans-serif;
   font-weight: 400;
-  color: #614108;
-  line-height: 20px;
+  color: var(--color-primary);
+  line-height: 22px;
   opacity: 0.7;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1150,22 +1160,26 @@
 }
 
 /* Reply button next to message time */
-.chat_detail_message_time_row {
+.chat_detail_message_actions {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
+.chat_detail_message_mine .chat_detail_message_actions {
+  align-self: flex-end;
+}
+
 .chat_detail_reply_btn {
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 4px 8px;
+  border-radius: 6px;
   border: 1px solid #A58A54;
-  background: transparent;
+  background: var(--color-bg);
   color: #A58A54;
-  font-size: 11px;
+  font-size: 10px;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
-  line-height: 16px;
+  line-height: 14px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
@@ -1226,5 +1240,58 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+/* Reply inline (inside input field) */
+.chat_detail_reply_inline {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 4px;
+}
+
+.chat_detail_reply_inline_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat_detail_reply_inline_name {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: Pretendard, sans-serif;
+  color: #A58A54;
+  line-height: 20px;
+}
+
+.chat_detail_reply_inline_cancel {
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.chat_detail_reply_inline_text {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: Pretendard, sans-serif;
+  color: var(--color-primary);
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat_detail_reply_inline_divider {
+  width: 100%;
+  height: 1px;
+  background: #F9ECD2;
 }
 
