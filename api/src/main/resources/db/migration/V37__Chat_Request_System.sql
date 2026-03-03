@@ -5,6 +5,7 @@ CREATE TABLE chat_requests (
     chat_room_id BIGINT REFERENCES chat_rooms(id),
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     responded_at TIMESTAMP,
     UNIQUE(requester_id, target_user_id)
 );
