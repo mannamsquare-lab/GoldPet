@@ -6,19 +6,10 @@
     android:padding="16dp"
     android:background="@drawable/notification_walk_bg">
 
-    <!-- GoldPet Logo -->
-    <ImageView
-        android:layout_width="45dp"
-        android:layout_height="12dp"
-        android:src="@drawable/ic_notif_logo"
-        android:scaleType="fitStart"
-        android:importantForAccessibility="no" />
-
     <!-- Stats: 거리 | 시간 | 칼로리 (no dividers) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
@@ -35,7 +26,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0.00"
-                android:textSize="22sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/notif_stat_value"
                 android:fontFamily="sans-serif-medium" />
@@ -63,7 +54,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="00:00"
-                android:textSize="22sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/notif_stat_value"
                 android:fontFamily="sans-serif-medium" />
@@ -91,7 +82,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textSize="22sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/notif_stat_value"
                 android:fontFamily="sans-serif-medium" />
@@ -134,7 +125,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="8dp"
                 android:text="응가"
                 android:textSize="10sp"
                 android:textColor="@color/notif_btn_label"
@@ -161,7 +152,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="8dp"
                 android:text="쉬"
                 android:textSize="10sp"
                 android:textColor="@color/notif_btn_label"
@@ -200,7 +191,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="8dp"
                 android:text="사진"
                 android:textSize="10sp"
                 android:textColor="@color/notif_btn_label"

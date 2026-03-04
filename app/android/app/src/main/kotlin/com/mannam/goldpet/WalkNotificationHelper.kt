@@ -24,8 +24,9 @@ class WalkNotificationHelper(private val context: Context) {
     private val photoPendingIntent: PendingIntent
     private val stopPendingIntent: PendingIntent
 
-    // Cached builder + layout to prevent flickering on every-second updates
-    private val cachedLayout: RemoteViews
+    // Cached builder + layouts to prevent flickering on every-second updates
+    private val cachedCollapsedLayout: RemoteViews  // contentView (collapsed)
+    private val cachedLayout: RemoteViews            // bigContentView (expanded)
     private val cachedBuilder: NotificationCompat.Builder
 
     init {
@@ -77,7 +78,10 @@ class WalkNotificationHelper(private val context: Context) {
             piFlags
         )
 
-        // Build layout and notification once
+        // Build collapsed layout (metrics only, no action buttons)
+        cachedCollapsedLayout = RemoteViews(context.packageName, R.layout.notification_walk_collapsed)
+
+        // Build expanded layout (full widget with action buttons)
         cachedLayout = RemoteViews(context.packageName, R.layout.notification_walk).apply {
             setOnClickPendingIntent(R.id.btn_pee, peePendingIntent)
             setOnClickPendingIntent(R.id.btn_poop, poopPendingIntent)
@@ -86,7 +90,7 @@ class WalkNotificationHelper(private val context: Context) {
 
         cachedBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setCustomContentView(cachedLayout)
+            .setCustomContentView(cachedCollapsedLayout)
             .setCustomBigContentView(cachedLayout)
             .setContentIntent(contentIntent)
             .setOngoing(true)
@@ -120,10 +124,17 @@ class WalkNotificationHelper(private val context: Context) {
     }
 
     fun show(time: String, distance: String, duration: String, calories: String) {
+        // Update expanded layout
         cachedLayout.setTextViewText(R.id.walk_time, time)
         cachedLayout.setTextViewText(R.id.walk_distance, distance)
         cachedLayout.setTextViewText(R.id.walk_duration, duration)
         cachedLayout.setTextViewText(R.id.walk_calories, calories)
+
+        // Update collapsed layout
+        cachedCollapsedLayout.setTextViewText(R.id.walk_time, time)
+        cachedCollapsedLayout.setTextViewText(R.id.walk_distance, distance)
+        cachedCollapsedLayout.setTextViewText(R.id.walk_duration, duration)
+        cachedCollapsedLayout.setTextViewText(R.id.walk_calories, calories)
 
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.notify(NOTIFICATION_ID, cachedBuilder.build())
