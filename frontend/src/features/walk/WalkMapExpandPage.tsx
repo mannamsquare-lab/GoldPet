@@ -165,22 +165,19 @@ export const WalkMapExpandPage = () => {
 
     return (
         <div className="walk_map_expand_page">
-            {/* Header: back + date */}
+            {/* Header: back (left) + date (center) + share (right) */}
             <div className="walk_map_expand_header">
                 <button type="button" className="walk_map_expand_back_btn" onClick={() => navigate(-1)}>
                     <img src="/assets/images/layout/header_icon_back.svg" alt="뒤로가기" />
                 </button>
-                {walk && (
-                    <div className="walk_map_expand_header_date">
-                        <span>{formatDate(walk.startTime)}</span>
-                        <button type="button" className="walk_map_expand_share_btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 2L12 14M12 2L8 6M12 2L16 6" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M4 12V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V12" stroke="#614108" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                        </button>
-                    </div>
-                )}
+                {walk && <span className="walk_map_expand_header_date">{formatDate(walk.startTime)}</span>}
+                <button type="button" className="walk_map_expand_share_btn" aria-label="공유">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
+                        <path d="M6 13.5V16C6 17.1046 6.89543 18 8 18H16C17.1046 18 18 17.1046 18 16V13.5" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M12 15V6M12 6L8.625 9.375M12 6L15.375 9.375" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                </button>
             </div>
 
             {/* Map */}
@@ -193,6 +190,19 @@ export const WalkMapExpandPage = () => {
                 ) : (
                     <div ref={mapRef} className="walk_map_expand_map" />
                 )}
+
+                {/* Reduction (collapse) button */}
+                <button
+                    type="button"
+                    className="walk_map_expand_reduce_btn"
+                    aria-label="지도 축소"
+                    onClick={() => navigate(-1)}
+                >
+                    <svg width="40" height="40" viewBox="16 8 40 40" fill="none">
+                        <rect x="16" y="8" width="40" height="40" rx="8" fill="white"/>
+                        <path d="M46 18L39 25M26 38L33 31M39 18V25M33 38V31M26 31H33M46 25H39" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </button>
 
                 {/* Location label overlay */}
                 <div className="walk_map_expand_location_chip">

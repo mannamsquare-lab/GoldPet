@@ -22,7 +22,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 0 16px 12px;
+  padding: 0 16px 16px;
   background: #FFF7E6;
 }
 
@@ -36,6 +36,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .walk_map_expand_back_btn img {
@@ -44,25 +45,20 @@
 }
 
 .walk_map_expand_header_date {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  padding-left: 12px;
-}
-
-.walk_map_expand_header_date span {
   font-family: Pretendard, sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: #505050;
   letter-spacing: -0.36px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .walk_map_expand_share_btn {
   width: 24px;
   height: 24px;
-  background: #FFE5FA;
+  background: transparent;
   border: none;
   border-radius: 100px;
   cursor: pointer;
@@ -70,7 +66,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  margin-left: auto;
+  flex-shrink: 0;
 }
 
 /* Map */
@@ -113,6 +109,24 @@
   font-size: 13px;
   cursor: pointer;
   font-family: Pretendard, sans-serif;
+}
+
+/* Reduction (collapse) button */
+.walk_map_expand_reduce_btn {
+  position: absolute;
+  right: 8px;
+  bottom: 40px;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Location chip overlay */

@@ -70,6 +70,7 @@ export const WalkDetailPage = () => {
         zoom: 15,
         withMarker: false,
         withAddressLookup: false,
+        skipGeolocation: true,
     });
 
     // Draw polyline when walk detail + map ready

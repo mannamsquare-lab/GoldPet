@@ -11,6 +11,7 @@ interface UseNaverMapOptions {
     zoom?: number;
     withMarker?: boolean;
     withAddressLookup?: boolean;
+    skipGeolocation?: boolean;
 }
 
 interface UseNaverMapResult {
@@ -29,6 +30,7 @@ export function useNaverMap(options: UseNaverMapOptions = {}): UseNaverMapResult
         zoom = 16,
         withMarker = true,
         withAddressLookup = false,
+        skipGeolocation = false,
     } = options;
 
     const mapRef = useRef<HTMLDivElement>(null);
@@ -119,7 +121,9 @@ export function useNaverMap(options: UseNaverMapOptions = {}): UseNaverMapResult
                     );
                 }
             };
-            getLocation();
+            if (!skipGeolocation) {
+                getLocation();
+            }
         };
 
         console.log('[useNaverMap] naver available:', !!window.naver, 'maps:', !!window.naver?.maps);
