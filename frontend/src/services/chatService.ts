@@ -48,6 +48,10 @@ export interface ChatMessage {
   replyToId?: number;
   replyToSenderNickname?: string;
   replyToTextContent?: string;
+  replyToMessageType?: string;
+  replyToFileUrl?: string;
+  replyToFileName?: string;
+  replyToEmoticonImageUrl?: string;
   // Soft delete
   deletedAt?: string;
 }

@@ -75,11 +75,27 @@ class ChatRoomController(
         val emoticonIds = messages.mapNotNull { it.emoticonId }
         val emoticons = emoticonService.getByIds(emoticonIds)
 
+        // Batch-fetch replyTo file attachments and emoticons for reply previews
+        val replyToFileIds = messages.mapNotNull { it.replyTo?.fileId }
+        val replyToFileAttachments = if (replyToFileIds.isNotEmpty()) {
+            fileAttachmentRepository.findAllById(replyToFileIds).associateBy { it.id }
+        } else {
+            emptyMap()
+        }
+        val replyToEmoticonIds = messages.mapNotNull { it.replyTo?.emoticonId }
+        val replyToEmoticons = if (replyToEmoticonIds.isNotEmpty()) {
+            emoticonService.getByIds(replyToEmoticonIds)
+        } else {
+            emptyMap()
+        }
+
         return ResponseEntity.ok(messages.map { msg ->
             ChatMessageResponse.from(
                 msg,
                 msg.fileId?.let { fileAttachments[it] },
-                msg.emoticonId?.let { emoticons[it] }
+                msg.emoticonId?.let { emoticons[it] },
+                msg.replyTo?.fileId?.let { replyToFileAttachments[it] },
+                msg.replyTo?.emoticonId?.let { replyToEmoticons[it] }
             )
         })
     }
@@ -107,7 +123,11 @@ class ChatRoomController(
         // Fetch emoticon if present
         val emoticon = request.emoticonId?.let { emoticonService.getById(it) }
 
-        val chatMessageResponse = ChatMessageResponse.from(message, fileAttachment, emoticon)
+        // Fetch replyTo's file/emoticon for reply preview
+        val replyToFileAttachment = message.replyTo?.fileId?.let { fileAttachmentRepository.findById(it).orElse(null) }
+        val replyToEmoticon = message.replyTo?.emoticonId?.let { emoticonService.getById(it) }
+
+        val chatMessageResponse = ChatMessageResponse.from(message, fileAttachment, emoticon, replyToFileAttachment, replyToEmoticon)
 
         // Broadcast to WebSocket subscribers for real-time updates (chat detail page)
         simpMessageSendingOperations.convertAndSend("/topic/chat/$roomId", chatMessageResponse)

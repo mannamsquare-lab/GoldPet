@@ -188,9 +188,23 @@ const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLo
                 >
                     {hasReply && (
                         <div className="chat_detail_reply_quote">
-                            <span className="chat_detail_reply_quote_name">{(msg as any).replyToSenderNickname}에게 답장</span>
+                            <div className="chat_detail_reply_quote_header">
+                                <span className="chat_detail_reply_quote_name">{(msg as any).replyToSenderNickname}에게 답장</span>
+                                {((msg as any).replyToMessageType === 'IMAGE' || (msg as any).replyToMessageType === 'VIDEO') && (msg as any).replyToFileUrl && (
+                                    <img className="chat_detail_reply_quote_thumb" src={(msg as any).replyToFileUrl} alt="사진" />
+                                )}
+                                {(msg as any).replyToMessageType === 'EMOTICON' && (msg as any).replyToEmoticonImageUrl && (
+                                    <img className="chat_detail_reply_quote_thumb" src={(msg as any).replyToEmoticonImageUrl} alt="이모티콘" />
+                                )}
+                            </div>
                             <div className="chat_detail_reply_quote_divider" />
-                            <span className="chat_detail_reply_quote_text">{(msg as any).replyToTextContent}</span>
+                            <span className="chat_detail_reply_quote_text">
+                                {(msg as any).replyToMessageType === 'FILE' ? `파일: ${(msg as any).replyToFileName || '파일'}` :
+                                 (msg as any).replyToMessageType === 'IMAGE' ? '사진' :
+                                 (msg as any).replyToMessageType === 'VIDEO' ? '동영상' :
+                                 (msg as any).replyToMessageType === 'EMOTICON' ? '이모티콘' :
+                                 (msg as any).replyToTextContent}
+                            </span>
                         </div>
                     )}
                     {isDeleted ? (
@@ -220,7 +234,15 @@ const ChatDetailPage = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-    const [replyingTo, setReplyingTo] = useState<{ messageId: number; senderNickname: string; textContent: string } | null>(null);
+    const [replyingTo, setReplyingTo] = useState<{
+        messageId: number;
+        senderNickname: string;
+        textContent: string;
+        messageType: string;
+        fileUrl?: string;
+        fileName?: string;
+        emoticonImageUrl?: string;
+    } | null>(null);
     const [contextMenu, setContextMenu] = useState<{
         messageId: number;
         isMine: boolean;
@@ -229,6 +251,9 @@ const ChatDetailPage = () => {
         textContent: string;
         senderNickname: string;
         messageType: string;
+        fileUrl?: string;
+        fileName?: string;
+        emoticonImageUrl?: string;
     } | null>(null);
 
     useOverlayColor(!!previewImageUrl);
@@ -563,6 +588,9 @@ const ChatDetailPage = () => {
             textContent: msg.textContent || '',
             senderNickname: msg.senderNickname || '',
             messageType: msg.messageType || 'TEXT',
+            fileUrl: msg.file?.url,
+            fileName: msg.file?.originalFileName,
+            emoticonImageUrl: msg.emoticonImageUrl,
         });
     }, []);
 
@@ -591,6 +619,10 @@ const ChatDetailPage = () => {
             messageId: contextMenu.messageId,
             senderNickname: contextMenu.senderNickname,
             textContent: contextMenu.textContent,
+            messageType: contextMenu.messageType,
+            fileUrl: contextMenu.fileUrl,
+            fileName: contextMenu.fileName,
+            emoticonImageUrl: contextMenu.emoticonImageUrl,
         });
         setContextMenu(null);
         setTimeout(() => textareaRef.current?.focus(), 100);
@@ -1072,18 +1104,37 @@ const ChatDetailPage = () => {
                             {replyingTo && (
                                 <div className="chat_detail_reply_inline">
                                     <div className="chat_detail_reply_inline_header">
-                                        <span className="chat_detail_reply_inline_name">{replyingTo.senderNickname}에게 답장</span>
-                                        <button
-                                            type="button"
-                                            className="chat_detail_reply_inline_cancel"
-                                            onClick={() => setReplyingTo(null)}
-                                        >
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                                <path d="M9 3L3 9M3 3L9 9" stroke="#A58A54" strokeWidth="1.5" strokeLinecap="round"/>
+                                        <div className="chat_detail_reply_inline_left">
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                <path d="M14 10L8 4L2 10" stroke="#A58A54" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" transform="rotate(180 8 7) translate(0 -2)"/>
                                             </svg>
-                                        </button>
+                                            <span className="chat_detail_reply_inline_name">{replyingTo.senderNickname}에게 답장</span>
+                                        </div>
+                                        <div className="chat_detail_reply_inline_right">
+                                            {(replyingTo.messageType === 'IMAGE' || replyingTo.messageType === 'VIDEO') && replyingTo.fileUrl && (
+                                                <img className="chat_detail_reply_inline_thumb" src={replyingTo.fileUrl} alt="사진" />
+                                            )}
+                                            {replyingTo.messageType === 'EMOTICON' && replyingTo.emoticonImageUrl && (
+                                                <img className="chat_detail_reply_inline_thumb" src={replyingTo.emoticonImageUrl} alt="이모티콘" />
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="chat_detail_reply_inline_cancel"
+                                                onClick={() => setReplyingTo(null)}
+                                            >
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                                    <path d="M9 3L3 9M3 3L9 9" stroke="#A58A54" strokeWidth="1.5" strokeLinecap="round"/>
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <span className="chat_detail_reply_inline_text">{replyingTo.textContent}</span>
+                                    <span className="chat_detail_reply_inline_text">
+                                        {replyingTo.messageType === 'FILE' ? `파일: ${replyingTo.fileName || '파일'}` :
+                                         replyingTo.messageType === 'IMAGE' ? '사진' :
+                                         replyingTo.messageType === 'VIDEO' ? '동영상' :
+                                         replyingTo.messageType === 'EMOTICON' ? '이모티콘' :
+                                         replyingTo.textContent}
+                                    </span>
                                     <div className="chat_detail_reply_inline_divider" />
                                 </div>
                             )}
