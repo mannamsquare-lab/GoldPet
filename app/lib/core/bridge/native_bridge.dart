@@ -285,14 +285,22 @@ class NativeBridge {
 
         // 로그아웃 시 Flutter 토큰 삭제
         case 'clearAuthToken':
-          // Deactivate device BEFORE clearing token (needs auth header)
-          final currentToken = await const FlutterSecureStorage().read(key: StorageKeys.accessToken);
-          if (currentToken != null) {
-            await pushNotificationService.deactivateDevice(currentToken);
+          debugPrint('[NativeBridge] clearAuthToken started');
+          // 현재 토큰 캡처 후 디바이스 비활성화 (네트워크 호출)
+          final tokenBeforeDeactivation = await const FlutterSecureStorage().read(key: StorageKeys.accessToken);
+          if (tokenBeforeDeactivation != null) {
+            await pushNotificationService.deactivateDevice(tokenBeforeDeactivation);
           }
-          await ApiClient().clearToken();
+          // Race condition guard: deactivateDevice 대기 중 새 로그인이 발생했는지 확인
+          // 새 토큰이 저장되었으면 clearToken을 건너뛰어 새 세션을 보호
+          final tokenAfterDeactivation = await const FlutterSecureStorage().read(key: StorageKeys.accessToken);
+          if (tokenAfterDeactivation == tokenBeforeDeactivation) {
+            await ApiClient().clearToken();
+            debugPrint('[NativeBridge] Auth tokens cleared + device deactivated');
+          } else {
+            debugPrint('[NativeBridge] Skipping clearToken - new login detected during deactivation');
+          }
           pushNotificationService.setCurrentChatRoom(null);
-          debugPrint('[NativeBridge] Auth tokens cleared + device deactivated');
           return {'success': true};
 
         // 현재 채팅방 설정 (푸시 알림 필터링용)

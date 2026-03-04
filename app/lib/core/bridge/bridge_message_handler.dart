@@ -14,6 +14,9 @@ class BridgeMessageHandler {
     // React에서 호출하는 JavaScript Channel 등록
     await webViewController.addJavaScriptChannel(
       'NativeBridge',
+      // TODO: onMessageReceived는 async 콜백이므로 여러 브릿지 호출이 동시에 실행됨.
+      // 토큰 변경 등 공유 상태를 수정하는 메서드(clearAuthToken, login, syncAuthToken)는
+      // 레이스 컨디션 위험이 있으므로, 향후 auth 관련 메서드 직렬화 큐 도입을 검토할 것.
       onMessageReceived: (JavaScriptMessage message) async {
         debugPrint('Bridge message received: ${message.message}');
 

@@ -21,6 +21,10 @@ class ApiClient {
   /// Auth expiry dedup guard -- prevents multiple dialogs on concurrent 401s
   static bool _isAuthExpired = false;
 
+  /// Prevents concurrent _recoverPendingWalk executions
+  /// (setToken is called multiple times during login: login handler + syncAuthToken)
+  static bool _isRecoveringWalk = false;
+
   /// Callback invoked once when auth expires (refresh fails).
   /// Set by HybridWebView to show dialog + redirect to login.
   static VoidCallback? onAuthExpired;
@@ -176,6 +180,13 @@ class ApiClient {
   /// 산책 화면이 활성 중이면 복구를 건너뜀 (새 산책과의 충돌 방지).
   /// 인터셉터가 없는 별도 Dio를 사용하여 401 재진입 루프를 방지.
   Future<void> _recoverPendingWalk() async {
+    // 동시 실행 방지: setToken이 login + syncAuthToken에서 2회 호출되므로
+    // 첫 번째 호출만 실행하고 두 번째는 건너뜀
+    if (_isRecoveringWalk) {
+      debugPrint('[WalkRecovery] Already recovering, skipping duplicate');
+      return;
+    }
+    _isRecoveringWalk = true;
     try {
       // 산책 화면이 활성 중이면 복구 건너뜀
       if (WalkScreen.isOnStack) return;
@@ -201,6 +212,8 @@ class ApiClient {
     } catch (e) {
       debugPrint('[WalkRecovery] Failed to recover pending walk: $e');
       // 실패 시 로컬 데이터 유지 — 다음 setToken() 호출 시 재시도
+    } finally {
+      _isRecoveringWalk = false;
     }
   }
 
