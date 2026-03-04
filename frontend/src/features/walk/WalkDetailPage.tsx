@@ -11,6 +11,16 @@ import './WalkDetail.css';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 
+function spotLabel(type: string): string {
+    switch (type) {
+        case 'PEE': return '쉬';
+        case 'POOP': return '응가';
+        case 'PHOTO': return '📷';
+        case 'PROBLEM': return '⚠';
+        default: return '📍';
+    }
+}
+
 function getMonday(date: Date): Date {
     const d = new Date(date);
     const day = d.getDay();
@@ -92,9 +102,26 @@ export const WalkDetailPage = () => {
             strokeOpacity: 0.9,
             map: mapInstanceRef.current,
         });
-        // Fit bounds
+        // Fit bounds (include path + spots)
         const bounds = new naver.maps.LatLngBounds(points[0], points[0]);
         for (const pt of points) bounds.extend(pt);
+
+        // Draw spot markers
+        if (walkDetail.spots?.length) {
+            walkDetail.spots.forEach(spot => {
+                const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
+                bounds.extend(pos);
+                const typeClass = `walk_spot_marker--${spot.type.toLowerCase()}`;
+                const label = spotLabel(spot.type);
+                new naver.maps.CustomOverlay({
+                    map: mapInstanceRef.current!,
+                    position: pos,
+                    content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
+                    anchor: new naver.maps.Point(16, 40),
+                });
+            });
+        }
+
         mapInstanceRef.current.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
         polylineDrawn.current = true;
     }, [mapInstanceRef, walkDetail]);
@@ -173,12 +200,9 @@ export const WalkDetailPage = () => {
     const distanceKm = walkDetail?.distance ?? 0;
     const calories = walkDetail?.calories ?? 0;
     const gold = Math.round(distanceKm * 10);
-    // durationSeconds comes from raw API but is not in WalkSession type — derive from endTime if available
-    const durationMin = (() => {
-        if (!walkDetail?.startTime || !walkDetail?.endTime) return 0;
-        const ms = new Date(walkDetail.endTime).getTime() - new Date(walkDetail.startTime).getTime();
-        return Math.round(ms / 60000);
-    })();
+    const durationMin = walkDetail?.durationSeconds
+        ? Math.round(walkDetail.durationSeconds / 60)
+        : 0;
 
     const detailDate = walkDetail?.startTime
         ? formatDate(new Date(walkDetail.startTime))

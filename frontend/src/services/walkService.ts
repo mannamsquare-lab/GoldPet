@@ -26,13 +26,24 @@ export interface WalkStats {
   totalWalks?: number;
 }
 
+export interface WalkSpot {
+  latitude: number;
+  longitude: number;
+  type: 'PEE' | 'POOP' | 'PHOTO' | 'PROBLEM' | 'OTHER';
+  timestamp: string;
+  imageUrl?: string;
+  note?: string;
+}
+
 export interface WalkSession {
   id: number;
   startTime: string;
   endTime?: string;
   distance: number;
   calories: number;
+  durationSeconds?: number;
   pathPoints?: { lat: number; lng: number }[];
+  spots?: WalkSpot[];
   startAddress?: string;
   startLatitude?: number;
   startLongitude?: number;
@@ -129,7 +140,24 @@ export const walkService = {
   getWalkDetail: async (walkId: number): Promise<WalkSession> => {
     try {
       const response = await apiClient.get(`/walks/${walkId}`);
-      return response.data;
+      const data = response.data;
+      return {
+        id: data.id,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        distance: data.distanceKm ?? 0,
+        calories: data.caloriesBurned ?? 0,
+        durationSeconds: data.durationSeconds,
+        pathPoints: data.path ? pathToCoords(data.path) : undefined,
+        spots: data.spots ?? [],
+        startAddress: data.startAddress,
+        startLatitude: data.startLatitude,
+        startLongitude: data.startLongitude,
+        endLatitude: data.endLatitude,
+        endLongitude: data.endLongitude,
+        petNames: data.petNames,
+        petIds: data.petIds,
+      };
     } catch {
       throw new Error('산책 기록을 불러올 수 없습니다.');
     }

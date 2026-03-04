@@ -9,6 +9,16 @@ import './WalkMapExpand.css';
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.9780;
 
+function spotLabel(type: string): string {
+    switch (type) {
+        case 'PEE': return '쉬';
+        case 'POOP': return '응가';
+        case 'PHOTO': return '📷';
+        case 'PROBLEM': return '⚠';
+        default: return '📍';
+    }
+}
+
 export const WalkMapExpandPage = () => {
     const navigate = useNavigate();
     const { walkId } = useParams<{ walkId: string }>();
@@ -124,12 +134,12 @@ export const WalkMapExpandPage = () => {
             strokeWeight: 4,
             strokeOpacity: 1,
         });
-        // Fit map to route bounds
-        if (path.length > 1) {
-            const bounds = new naver.maps.LatLngBounds(path[0], path[0]);
-            path.forEach(p => bounds.extend(p));
-            mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 20, bottom: 80, left: 20 });
-        }
+        // Build bounds from path + spots
+        const bounds = path.length > 1
+            ? new naver.maps.LatLngBounds(path[0], path[0])
+            : null;
+        if (bounds) path.forEach(p => bounds.extend(p));
+
         // Pet markers at start and end
         if (path.length > 0) {
             new naver.maps.CustomOverlay({
@@ -144,6 +154,26 @@ export const WalkMapExpandPage = () => {
                 content: '<div class="walk_map_expand_marker walk_map_expand_marker--end"><span>도착</span></div>',
                 anchor: new naver.maps.Point(18, 54),
             });
+        }
+
+        // Spot markers (PEE, POOP, PHOTO, PROBLEM, OTHER)
+        if (walk.spots?.length) {
+            walk.spots.forEach(spot => {
+                const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
+                if (bounds) bounds.extend(pos);
+                const typeClass = `walk_spot_marker--${spot.type.toLowerCase()}`;
+                const label = spotLabel(spot.type);
+                new naver.maps.CustomOverlay({
+                    map: mapInstanceRef.current!,
+                    position: pos,
+                    content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
+                    anchor: new naver.maps.Point(16, 40),
+                });
+            });
+        }
+
+        if (bounds) {
+            mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 20, bottom: 80, left: 20 });
         }
     }, [mapReady, walk]);
 
@@ -223,7 +253,7 @@ export const WalkMapExpandPage = () => {
                     <div className="walk_map_expand_stat_divider" />
                     <div className="walk_map_expand_stat_item">
                         <span className="walk_map_expand_stat_label">시간</span>
-                        <span className="walk_map_expand_stat_value">{formatDuration(walk.endTime && walk.startTime ? Math.round((new Date(walk.endTime).getTime() - new Date(walk.startTime).getTime()) / 1000) : undefined)}</span>
+                        <span className="walk_map_expand_stat_value">{formatDuration(walk.durationSeconds)}</span>
                     </div>
                     <div className="walk_map_expand_stat_divider" />
                     <div className="walk_map_expand_stat_item">

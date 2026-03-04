@@ -245,3 +245,68 @@
   font-family: Pretendard, sans-serif;
   cursor: pointer;
 }
+
+/* Spot markers (PEE, POOP, PHOTO, PROBLEM, OTHER) */
+.walk_spot_marker {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  position: relative;
+}
+
+.walk_spot_marker::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid;
+}
+
+.walk_spot_marker span {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: Pretendard, sans-serif;
+}
+
+.walk_spot_marker--pee {
+  border-color: #4A90D9;
+  background: #E8F4FD;
+}
+.walk_spot_marker--pee::after { border-top-color: #4A90D9; }
+.walk_spot_marker--pee span { color: #4A90D9; }
+
+.walk_spot_marker--poop {
+  border-color: #8B6914;
+  background: #FFF3D6;
+}
+.walk_spot_marker--poop::after { border-top-color: #8B6914; }
+.walk_spot_marker--poop span { color: #8B6914; }
+
+.walk_spot_marker--photo {
+  border-color: #8A497D;
+  background: #FFE5FA;
+}
+.walk_spot_marker--photo::after { border-top-color: #8A497D; }
+.walk_spot_marker--photo span { color: #8A497D; }
+
+.walk_spot_marker--problem {
+  border-color: #D94A4A;
+  background: #FFE5E5;
+}
+.walk_spot_marker--problem::after { border-top-color: #D94A4A; }
+.walk_spot_marker--problem span { color: #D94A4A; }
+
+.walk_spot_marker--other {
+  border-color: #8B8B8B;
+  background: #F5F5F5;
+}
+.walk_spot_marker--other::after { border-top-color: #8B8B8B; }
+.walk_spot_marker--other span { color: #8B8B8B; }
