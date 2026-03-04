@@ -157,5 +157,5 @@ export function useNaverMap(options: UseNaverMapOptions = {}): UseNaverMapResult
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    return { mapRef, mapInstanceRef, markerRef, address, mapLoadFailed, moveToLocation };
+    return { mapRef: mapRef as React.RefObject<HTMLDivElement>, mapInstanceRef, markerRef, address, mapLoadFailed, moveToLocation };
 }

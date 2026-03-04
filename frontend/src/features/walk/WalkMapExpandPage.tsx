@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { walkService } from '../../services/walkService';
 import type { WalkSession } from '../../services/walkService';
-import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import './WalkMapExpand.css';
 

@@ -46,7 +46,7 @@ const commonOptions = {
         legend: { display: false },
         tooltip: {
             callbacks: {
-                label: (ctx: { parsed: { y: number } }) => `${ctx.parsed.y.toFixed(2)} km`,
+                label: (ctx: { parsed: { y: number | null } }) => `${(ctx.parsed.y ?? 0).toFixed(2)} km`,
             },
         },
     },
@@ -95,8 +95,8 @@ export function WalkChart({ period, data }: WalkChartProps) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (ctx: { parsed: { x: number; y: number } }) =>
-                            `${ctx.parsed.x}일: ${ctx.parsed.y.toFixed(2)} km`,
+                        label: (ctx: { parsed: { x: number | null; y: number | null } }) =>
+                            `${ctx.parsed.x ?? 0}일: ${(ctx.parsed.y ?? 0).toFixed(2)} km`,
                     },
                 },
             },

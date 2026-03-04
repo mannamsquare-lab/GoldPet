@@ -4,7 +4,14 @@ declare namespace naver.maps {
         setCenter(latlng: LatLng): void;
         setZoom(zoom: number): void;
         getCenter(): LatLng;
+        fitBounds(bounds: LatLngBounds, padding?: { top?: number; right?: number; bottom?: number; left?: number }): void;
         destroy(): void;
+    }
+
+    class LatLngBounds {
+        constructor(sw: LatLng, ne: LatLng);
+        extend(latlng: LatLng): LatLngBounds;
+        getCenter(): LatLng;
     }
 
     interface MapOptions {
@@ -75,7 +82,7 @@ declare namespace naver.maps {
         map?: Map;
         position?: LatLng;
         content?: string | HTMLElement;
-        anchor?: string;
+        anchor?: Point | string;
     }
 }
 
