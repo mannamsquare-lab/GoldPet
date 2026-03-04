@@ -6,12 +6,6 @@
   background: var(--color-bg, #FFF7E6);
 }
 
-.walk_detail_page #header {
-  position: relative;
-  height: 56px;
-  background-image: none;
-  background-color: var(--color-bg, #FFF7E6);
-}
 
 .walk_detail_container {
   width: 100%;

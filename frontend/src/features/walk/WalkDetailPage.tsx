@@ -185,7 +185,7 @@ export const WalkDetailPage = () => {
 
     return (
         <div className="walk_detail_page">
-            <MainHeader variant="back-only" />
+            <MainHeader variant="back-only" className="intro_header" />
 
             <div className="walk_detail_container">
                 <div className="walk_detail_body">

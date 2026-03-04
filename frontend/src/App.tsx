@@ -158,10 +158,8 @@ function App() {
               {/* No Layout: Walk Map (uses MainHeader back-only + BottomNav) */}
               <Route path="/walk/map" element={<WalkMapPage />} />
 
-              {/* Walk Detail - back-only header */}
-              <Route element={<TypeALayout variant="back-only" />}>
-                <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
-              </Route>
+              {/* Walk Detail - uses own header + BottomNav */}
+              <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
 
               {/* Walk Map Expand - full screen, no layout wrapper */}
               <Route path="/walk/map-expand/:walkId" element={<WalkMapExpandPage />} />
