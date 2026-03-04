@@ -184,7 +184,7 @@ export const WalkDetailPage = () => {
         : '';
 
     return (
-        <div id="wrap" className="gp-layout-page">
+        <div className="walk_detail_page">
             <MainHeader variant="back-only" />
 
             <div className="walk_detail_container">
@@ -194,9 +194,10 @@ export const WalkDetailPage = () => {
                         <div className="walk_detail_map_header">
                             <span className="walk_detail_date">{detailDate}</span>
                             <button type="button" className="walk_detail_share_btn" aria-label="공유">
-                                <svg viewBox="0 0 12 12" fill="none" stroke="#8A497D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M9 1L11 3L9 5" />
-                                    <path d="M11 3H4.5C3.1 3 2 4.1 2 5.5V11" />
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
+                                    <path d="M6 13.5V16C6 17.1046 6.89543 18 8 18H16C17.1046 18 18 17.1046 18 16V13.5" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
+                                    <path d="M12 15V6M12 6L8.625 9.375M12 6L15.375 9.375" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
                                 </svg>
                             </button>
                         </div>

@@ -1,5 +1,18 @@
 /* WalkDetailPage styles */
 
+.walk_detail_page {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--color-bg, #FFF7E6);
+}
+
+.walk_detail_page #header {
+  position: relative;
+  height: 56px;
+  background-image: none;
+  background-color: var(--color-bg, #FFF7E6);
+}
+
 .walk_detail_container {
   width: 100%;
   min-height: 100vh;
@@ -35,7 +48,7 @@
 .walk_detail_share_btn {
   width: 24px;
   height: 24px;
-  background: #FFE5FA;
+  background: transparent;
   border-radius: 100px;
   border: none;
   display: flex;
@@ -46,8 +59,8 @@
 }
 
 .walk_detail_share_btn svg {
-  width: 12px;
-  height: 12px;
+  width: 24px;
+  height: 24px;
 }
 
 /* Map box */
