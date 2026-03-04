@@ -89,41 +89,47 @@ export const WalkDetailPage = () => {
 
     const drawRoute = useCallback(() => {
         if (!mapInstanceRef.current || !walkDetail?.pathPoints?.length || polylineDrawn.current) return;
-        const points = walkDetail.pathPoints.map(
-            (p: { lat: number; lng: number }) => new naver.maps.LatLng(p.lat, p.lng),
-        );
-        if (polylineRef.current) {
-            polylineRef.current.setMap(null);
-        }
-        polylineRef.current = new naver.maps.Polyline({
-            path: points,
-            strokeColor: '#6B9A2B',
-            strokeWeight: 4,
-            strokeOpacity: 0.9,
-            map: mapInstanceRef.current,
-        });
-        // Fit bounds (include path + spots)
-        const bounds = new naver.maps.LatLngBounds(points[0], points[0]);
-        for (const pt of points) bounds.extend(pt);
-
-        // Draw spot markers
-        if (walkDetail.spots?.length) {
-            walkDetail.spots.forEach(spot => {
-                const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
-                bounds.extend(pos);
-                const typeClass = `walk_spot_marker--${spot.type.toLowerCase()}`;
-                const label = spotLabel(spot.type);
-                new naver.maps.CustomOverlay({
-                    map: mapInstanceRef.current!,
-                    position: pos,
-                    content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
-                    anchor: new naver.maps.Point(16, 40),
-                });
+        try {
+            const points = walkDetail.pathPoints
+                .filter((p: { lat: number; lng: number }) => p.lat != null && p.lng != null)
+                .map((p: { lat: number; lng: number }) => new naver.maps.LatLng(p.lat, p.lng));
+            if (points.length === 0) return;
+            if (polylineRef.current) {
+                polylineRef.current.setMap(null);
+            }
+            polylineRef.current = new naver.maps.Polyline({
+                path: points,
+                strokeColor: '#6B9A2B',
+                strokeWeight: 4,
+                strokeOpacity: 0.9,
+                map: mapInstanceRef.current,
             });
-        }
+            // Fit bounds (include path + spots)
+            const bounds = new naver.maps.LatLngBounds(points[0], points[0]);
+            for (const pt of points) bounds.extend(pt);
 
-        mapInstanceRef.current.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
-        polylineDrawn.current = true;
+            // Draw spot markers
+            if (walkDetail.spots?.length) {
+                walkDetail.spots.forEach(spot => {
+                    if (spot.latitude == null || spot.longitude == null) return;
+                    const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
+                    bounds.extend(pos);
+                    const typeClass = `walk_spot_marker--${(spot.type ?? 'OTHER').toLowerCase()}`;
+                    const label = spotLabel(spot.type ?? 'OTHER');
+                    new naver.maps.CustomOverlay({
+                        map: mapInstanceRef.current!,
+                        position: pos,
+                        content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
+                        anchor: new naver.maps.Point(16, 40),
+                    });
+                });
+            }
+
+            mapInstanceRef.current.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
+            polylineDrawn.current = true;
+        } catch (err) {
+            console.error('WalkDetail: route drawing failed', err);
+        }
     }, [mapInstanceRef, walkDetail]);
 
     useEffect(() => {

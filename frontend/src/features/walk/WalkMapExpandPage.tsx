@@ -45,7 +45,7 @@ export const WalkMapExpandPage = () => {
             apiClient.get(`/maps/reverse-geocode?lat=${walk.startLatitude}&lng=${walk.startLongitude}`)
                 .then(res => setAddress(res.data.address))
                 .catch(() => {});
-        });
+        }).catch(() => {});
     }, [walk]);
 
     // Init map
@@ -123,57 +123,65 @@ export const WalkMapExpandPage = () => {
     // Draw route polyline once map is ready and walk data loaded
     useEffect(() => {
         if (!mapReady || !mapInstanceRef.current || !walk?.pathPoints?.length) return;
-        if (polylineRef.current) {
-            polylineRef.current.setMap(null);
-        }
-        const path = walk.pathPoints.map(p => new naver.maps.LatLng(p.lat, p.lng));
-        polylineRef.current = new naver.maps.Polyline({
-            map: mapInstanceRef.current,
-            path,
-            strokeColor: '#614108',
-            strokeWeight: 4,
-            strokeOpacity: 1,
-        });
-        // Build bounds from path + spots
-        const bounds = path.length > 1
-            ? new naver.maps.LatLngBounds(path[0], path[0])
-            : null;
-        if (bounds) path.forEach(p => bounds.extend(p));
-
-        // Pet markers at start and end
-        if (path.length > 0) {
-            new naver.maps.CustomOverlay({
+        try {
+            if (polylineRef.current) {
+                polylineRef.current.setMap(null);
+            }
+            const path = walk.pathPoints
+                .filter(p => p.lat != null && p.lng != null)
+                .map(p => new naver.maps.LatLng(p.lat, p.lng));
+            if (path.length === 0) return;
+            polylineRef.current = new naver.maps.Polyline({
                 map: mapInstanceRef.current,
-                position: path[0],
-                content: '<div class="walk_map_expand_marker walk_map_expand_marker--start"><span>출발</span></div>',
-                anchor: new naver.maps.Point(18, 54),
+                path,
+                strokeColor: '#614108',
+                strokeWeight: 4,
+                strokeOpacity: 1,
             });
-            new naver.maps.CustomOverlay({
-                map: mapInstanceRef.current,
-                position: path[path.length - 1],
-                content: '<div class="walk_map_expand_marker walk_map_expand_marker--end"><span>도착</span></div>',
-                anchor: new naver.maps.Point(18, 54),
-            });
-        }
+            // Build bounds from path + spots
+            const bounds = path.length > 1
+                ? new naver.maps.LatLngBounds(path[0], path[0])
+                : null;
+            if (bounds) path.forEach(p => bounds.extend(p));
 
-        // Spot markers (PEE, POOP, PHOTO, PROBLEM, OTHER)
-        if (walk.spots?.length) {
-            walk.spots.forEach(spot => {
-                const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
-                if (bounds) bounds.extend(pos);
-                const typeClass = `walk_spot_marker--${spot.type.toLowerCase()}`;
-                const label = spotLabel(spot.type);
+            // Pet markers at start and end
+            if (path.length > 0) {
                 new naver.maps.CustomOverlay({
-                    map: mapInstanceRef.current!,
-                    position: pos,
-                    content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
-                    anchor: new naver.maps.Point(16, 40),
+                    map: mapInstanceRef.current,
+                    position: path[0],
+                    content: '<div class="walk_map_expand_marker walk_map_expand_marker--start"><span>출발</span></div>',
+                    anchor: new naver.maps.Point(18, 54),
                 });
-            });
-        }
+                new naver.maps.CustomOverlay({
+                    map: mapInstanceRef.current,
+                    position: path[path.length - 1],
+                    content: '<div class="walk_map_expand_marker walk_map_expand_marker--end"><span>도착</span></div>',
+                    anchor: new naver.maps.Point(18, 54),
+                });
+            }
 
-        if (bounds) {
-            mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 20, bottom: 80, left: 20 });
+            // Spot markers (PEE, POOP, PHOTO, PROBLEM, OTHER)
+            if (walk.spots?.length) {
+                walk.spots.forEach(spot => {
+                    if (spot.latitude == null || spot.longitude == null) return;
+                    const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
+                    if (bounds) bounds.extend(pos);
+                    const typeClass = `walk_spot_marker--${(spot.type ?? 'OTHER').toLowerCase()}`;
+                    const label = spotLabel(spot.type ?? 'OTHER');
+                    new naver.maps.CustomOverlay({
+                        map: mapInstanceRef.current!,
+                        position: pos,
+                        content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
+                        anchor: new naver.maps.Point(16, 40),
+                    });
+                });
+            }
+
+            if (bounds) {
+                mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 20, bottom: 80, left: 20 });
+            }
+        } catch (err) {
+            console.error('WalkMapExpand: route drawing failed', err);
         }
     }, [mapReady, walk]);
 
