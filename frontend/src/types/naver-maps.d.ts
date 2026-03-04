@@ -47,6 +47,36 @@ declare namespace naver.maps {
     class Point {
         constructor(x: number, y: number);
     }
+
+    class Polyline {
+        constructor(options?: PolylineOptions);
+        setMap(map: Map | null): void;
+        setPath(path: LatLng[]): void;
+        getPath(): LatLng[];
+    }
+
+    interface PolylineOptions {
+        map?: Map;
+        path?: LatLng[];
+        strokeColor?: string;
+        strokeOpacity?: number;
+        strokeWeight?: number;
+        strokeStyle?: string;
+    }
+
+    class CustomOverlay {
+        constructor(options?: CustomOverlayOptions);
+        setMap(map: Map | null): void;
+        setPosition(latlng: LatLng): void;
+        setContent(content: string | HTMLElement): void;
+    }
+
+    interface CustomOverlayOptions {
+        map?: Map;
+        position?: LatLng;
+        content?: string | HTMLElement;
+        anchor?: string;
+    }
 }
 
 interface Window {

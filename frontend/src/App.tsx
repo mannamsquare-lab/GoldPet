@@ -31,6 +31,7 @@ import WalkPage from './features/walk/WalkPage';
 import WalkMapPage from './features/walk/WalkMapPage';
 import WalkDetailPage from './features/walk/WalkDetailPage';
 import WalkRankingPage from './features/walk/WalkRankingPage';
+import WalkMapExpandPage from './features/walk/WalkMapExpandPage';
 import CommunityListPage from './features/community/CommunityListPage';
 import CommunityDetailPage from './features/community/CommunityDetailPage';
 import CommunityWritePage from './features/community/CommunityWritePage';
@@ -142,7 +143,6 @@ function App() {
                 <Route path="/chat" element={<ChatListPage />} />
                 <Route path="/walk" element={<WalkPage />} />
                 <Route path="/walk/ranking" element={<WalkRankingPage />} />
-                <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
                 <Route path="/community" element={<CommunityListPage />} />
                 <Route path="/places" element={<PlaceListPage />} />
                 <Route path="/places/:placeId" element={<PlaceDetailPage />} />
@@ -157,6 +157,14 @@ function App() {
 
               {/* No Layout: Walk Map (uses MainHeader back-only + BottomNav) */}
               <Route path="/walk/map" element={<WalkMapPage />} />
+
+              {/* Walk Detail - back-only header */}
+              <Route element={<TypeALayout variant="back-only" />}>
+                <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
+              </Route>
+
+              {/* Walk Map Expand - full screen, no layout wrapper */}
+              <Route path="/walk/map-expand/:walkId" element={<WalkMapExpandPage />} />
 
               {/* Layout B pages using SubPageLayout internally */}
               <Route path="/mypage" element={<MyPage />} />

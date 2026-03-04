@@ -8,6 +8,12 @@ export interface WalkRecord {
   distance: string;
   duration: string;
   points: string;
+  // raw values for computation/display
+  distanceKm?: number;
+  durationSeconds?: number;
+  caloriesBurned?: number;
+  startTime?: string;
+  path?: { lat: number; lng: number }[];
 }
 
 export interface WalkStats {
@@ -51,6 +57,7 @@ function toWalkRecord(walk: {
   distanceKm: number;
   durationSeconds: number;
   caloriesBurned?: number;
+  path?: number[][];
 }): WalkRecord {
   const date = new Date(walk.startTime);
   const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
@@ -62,6 +69,27 @@ function toWalkRecord(walk: {
     distance: `${walk.distanceKm.toFixed(1)} Km`,
     duration: `총 ${minutes}분`,
     points: `${gold}G 적립`,
+    distanceKm: walk.distanceKm,
+    durationSeconds: walk.durationSeconds,
+    caloriesBurned: walk.caloriesBurned,
+    startTime: walk.startTime,
+    path: walk.path ? pathToCoords(walk.path) : undefined,
+  };
+}
+
+// Transform backend [[lat,lng],...] array to {lat, lng}[] objects
+export function pathToCoords(path: number[][]): { lat: number; lng: number }[] {
+  return path.map(([lat, lng]) => ({ lat, lng }));
+}
+
+// Filter walk records by today and compute totals
+export function getTodayStats(records: WalkRecord[]): { distance: number; calories: number } {
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+  const todayRecords = records.filter(r => r.date === todayStr);
+  return {
+    distance: todayRecords.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0),
+    calories: todayRecords.reduce((sum, r) => sum + (r.caloriesBurned ?? 0), 0),
   };
 }
 
