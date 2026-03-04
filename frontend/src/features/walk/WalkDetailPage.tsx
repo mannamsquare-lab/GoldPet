@@ -223,11 +223,9 @@ export const WalkDetailPage = () => {
                                 aria-label="지도 확대"
                                 onClick={() => navigate(`/walk/map-expand/${walkId}`)}
                             >
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M10 2H14V6" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M6 14H2V10" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M14 2L9 7" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M2 14L7 9" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <svg width="40" height="40" viewBox="16 8 40 40" fill="none">
+                                    <rect x="16" y="8" width="40" height="40" rx="8" fill="white"/>
+                                    <path d="M46 18H39M46 18V25M46 18L39 25M26 38H33M26 38V31M26 38L33 31" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                             </button>
                         </div>
