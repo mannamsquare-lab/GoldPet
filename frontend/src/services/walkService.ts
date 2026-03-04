@@ -51,6 +51,7 @@ export interface WalkSession {
   endLongitude?: number;
   petNames?: string[];
   petIds?: number[];
+  petProfileImageUrls?: (string | null)[];
 }
 
 export interface WalkRankingEntry {
@@ -182,6 +183,7 @@ export const walkService = {
         endLongitude: data.endLongitude,
         petNames: data.petNames,
         petIds: data.petIds,
+        petProfileImageUrls: data.petProfileImageUrls,
       };
     } catch {
       throw new Error('산책 기록을 불러올 수 없습니다.');

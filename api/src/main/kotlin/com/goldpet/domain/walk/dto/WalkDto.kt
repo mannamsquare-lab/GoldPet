@@ -59,6 +59,7 @@ data class WalkResponse(
     val endLongitude: Double? = null,
     val petNames: List<String> = emptyList(),
     val petIds: List<Long> = emptyList(),
+    val petProfileImageUrls: List<String?> = emptyList(),
 ) {
     companion object {
         fun from(walk: Walk): WalkResponse {
@@ -91,6 +92,7 @@ data class WalkResponse(
                 endLongitude = walk.endLocation?.x,
                 petNames = walk.walkPets.map { it.pet.name },
                 petIds = walk.walkPets.map { it.pet.id },
+                petProfileImageUrls = walk.walkPets.map { it.pet.profileImageUrl },
             )
         }
 
@@ -110,6 +112,7 @@ data class WalkResponse(
                 endAddress = walk.endAddress,
                 petNames = walk.walkPets.map { it.pet.name },
                 petIds = walk.walkPets.map { it.pet.id },
+                petProfileImageUrls = walk.walkPets.map { it.pet.profileImageUrl },
             )
         }
     }

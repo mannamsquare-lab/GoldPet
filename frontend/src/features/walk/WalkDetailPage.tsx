@@ -20,6 +20,11 @@ function spotMarkerImage(type: string): string {
     }
 }
 
+function petCircleMarkerHtml(variant: 'start' | 'end', imageUrl?: string | null): string {
+    const imgSrc = imageUrl || '/assets/images/common/pet_none_img.svg';
+    return `<div class="walk_pet_circle walk_pet_circle--${variant}"><img src="${imgSrc}" alt="" /></div>`;
+}
+
 function getMonday(date: Date): Date {
     const d = new Date(date);
     const day = d.getDay();
@@ -107,6 +112,27 @@ export const WalkDetailPage = () => {
             // Fit bounds (include path + spots)
             const bounds = new naver.maps.LatLngBounds(points[0], points[0]);
             for (const pt of points) bounds.extend(pt);
+
+            // Pet profile markers at start and end
+            const petImg = walkDetail.petProfileImageUrls?.[0];
+            new naver.maps.Marker({
+                map: mapInstanceRef.current,
+                position: points[0],
+                icon: {
+                    content: petCircleMarkerHtml('start', petImg),
+                    size: new naver.maps.Size(52, 52),
+                    anchor: new naver.maps.Point(26, 26),
+                } as unknown as naver.maps.MarkerIcon,
+            });
+            new naver.maps.Marker({
+                map: mapInstanceRef.current,
+                position: points[points.length - 1],
+                icon: {
+                    content: petCircleMarkerHtml('end', petImg),
+                    size: new naver.maps.Size(52, 52),
+                    anchor: new naver.maps.Point(26, 26),
+                } as unknown as naver.maps.MarkerIcon,
+            });
 
             // Draw spot markers
             if (walkDetail.spots?.length) {

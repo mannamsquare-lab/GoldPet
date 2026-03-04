@@ -18,6 +18,11 @@ function spotMarkerImage(type: string): string {
     }
 }
 
+function petCircleMarkerHtml(variant: 'start' | 'end', imageUrl?: string | null): string {
+    const imgSrc = imageUrl || '/assets/images/common/pet_none_img.svg';
+    return `<div class="walk_pet_circle walk_pet_circle--${variant}"><img src="${imgSrc}" alt="" /></div>`;
+}
+
 export const WalkMapExpandPage = () => {
     const navigate = useNavigate();
     const { walkId } = useParams<{ walkId: string }>();
@@ -145,22 +150,23 @@ export const WalkMapExpandPage = () => {
 
             // Pet markers at start and end
             if (path.length > 0) {
+                const petImg = walk.petProfileImageUrls?.[0];
                 new naver.maps.Marker({
                     map: mapInstanceRef.current,
                     position: path[0],
                     icon: {
-                        content: '<div class="walk_map_expand_marker walk_map_expand_marker--start"><span>출발</span></div>',
-                        size: new naver.maps.Size(36, 48),
-                        anchor: new naver.maps.Point(18, 48),
+                        content: petCircleMarkerHtml('start', petImg),
+                        size: new naver.maps.Size(52, 52),
+                        anchor: new naver.maps.Point(26, 26),
                     } as unknown as naver.maps.MarkerIcon,
                 });
                 new naver.maps.Marker({
                     map: mapInstanceRef.current,
                     position: path[path.length - 1],
                     icon: {
-                        content: '<div class="walk_map_expand_marker walk_map_expand_marker--end"><span>도착</span></div>',
-                        size: new naver.maps.Size(36, 48),
-                        anchor: new naver.maps.Point(18, 48),
+                        content: petCircleMarkerHtml('end', petImg),
+                        size: new naver.maps.Size(52, 52),
+                        anchor: new naver.maps.Point(26, 26),
                     } as unknown as naver.maps.MarkerIcon,
                 });
             }
