@@ -138,4 +138,15 @@ export const walkService = {
       throw error;
     }
   },
+
+  getStaticMapImage: async (walkId: number, width: number, height: number): Promise<string | null> => {
+    try {
+      const response = await apiClient.get(`/maps/static/${walkId}?w=${width}&h=${height}`, {
+        responseType: 'blob',
+      });
+      return URL.createObjectURL(response.data);
+    } catch {
+      return null;
+    }
+  },
 };

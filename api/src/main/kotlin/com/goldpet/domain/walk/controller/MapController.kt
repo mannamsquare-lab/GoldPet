@@ -1,13 +1,22 @@
 package com.goldpet.domain.walk.controller
 
+import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.walk.repository.WalkRepository
 import com.goldpet.domain.walk.service.NaverGeocodingService
+import com.goldpet.domain.walk.service.NaverStaticMapService
+import org.springframework.http.CacheControl
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import java.util.concurrent.TimeUnit
 
 @RestController
 @RequestMapping("/api/v1/maps")
 class MapController(
-    private val naverGeocodingService: NaverGeocodingService
+    private val naverGeocodingService: NaverGeocodingService,
+    private val naverStaticMapService: NaverStaticMapService,
+    private val walkRepository: WalkRepository
 ) {
     @GetMapping("/reverse-geocode")
     fun reverseGeocode(
@@ -24,5 +33,42 @@ class MapController(
     ): ResponseEntity<Map<String, List<NaverGeocodingService.GeocodeResult>>> {
         val results = naverGeocodingService.geocode(address)
         return ResponseEntity.ok(mapOf("results" to results))
+    }
+
+    @GetMapping("/static/{walkId}")
+    fun getStaticMap(
+        @AuthenticationPrincipal userDetails: UserPrincipal?,
+        @PathVariable walkId: Long,
+        @RequestParam(defaultValue = "120") w: Int,
+        @RequestParam(defaultValue = "120") h: Int
+    ): ResponseEntity<ByteArray> {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build()
+        }
+
+        val walk = walkRepository.findById(walkId).orElse(null)
+            ?: return ResponseEntity.notFound().build()
+
+        // Ownership check: only the walk owner can view the route map
+        if (walk.user.id != userDetails.id) {
+            return ResponseEntity.status(403).build()
+        }
+
+        val coordinates = walk.path.coordinates
+        if (coordinates.size < 2) {
+            return ResponseEntity.noContent().build()
+        }
+
+        // Clamp dimensions to reasonable range
+        val width = w.coerceIn(60, 600)
+        val height = h.coerceIn(60, 600)
+
+        val imageBytes = naverStaticMapService.getStaticMapImage(coordinates, width, height)
+            ?: return ResponseEntity.status(502).build()
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.IMAGE_PNG)
+            .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePrivate())
+            .body(imageBytes)
     }
 }

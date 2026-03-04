@@ -225,7 +225,7 @@ function WalkRecordItem({ record, onClick }: WalkRecordItemProps) {
         <div className="walk_record_item" onClick={onClick} style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 {/* Route thumbnail */}
-                <WalkRouteThumbnail coords={record.path} size={60} />
+                <WalkRouteThumbnail walkId={record.id} hasPath={!!record.path?.length} size={60} />
 
                 {/* Info */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
