@@ -117,11 +117,14 @@ export const WalkDetailPage = () => {
                     bounds.extend(pos);
                     const typeClass = `walk_spot_marker--${(spot.type ?? 'OTHER').toLowerCase()}`;
                     const label = spotLabel(spot.type ?? 'OTHER');
-                    new naver.maps.CustomOverlay({
+                    new naver.maps.Marker({
                         map: mapInstanceRef.current!,
                         position: pos,
-                        content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
-                        anchor: new naver.maps.Point(16, 40),
+                        icon: {
+                            content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
+                            size: new naver.maps.Size(32, 38),
+                            anchor: new naver.maps.Point(16, 38),
+                        } as unknown as naver.maps.MarkerIcon,
                     });
                 });
             }

@@ -146,17 +146,23 @@ export const WalkMapExpandPage = () => {
 
             // Pet markers at start and end
             if (path.length > 0) {
-                new naver.maps.CustomOverlay({
+                new naver.maps.Marker({
                     map: mapInstanceRef.current,
                     position: path[0],
-                    content: '<div class="walk_map_expand_marker walk_map_expand_marker--start"><span>출발</span></div>',
-                    anchor: new naver.maps.Point(18, 54),
+                    icon: {
+                        content: '<div class="walk_map_expand_marker walk_map_expand_marker--start"><span>출발</span></div>',
+                        size: new naver.maps.Size(36, 48),
+                        anchor: new naver.maps.Point(18, 48),
+                    } as unknown as naver.maps.MarkerIcon,
                 });
-                new naver.maps.CustomOverlay({
+                new naver.maps.Marker({
                     map: mapInstanceRef.current,
                     position: path[path.length - 1],
-                    content: '<div class="walk_map_expand_marker walk_map_expand_marker--end"><span>도착</span></div>',
-                    anchor: new naver.maps.Point(18, 54),
+                    icon: {
+                        content: '<div class="walk_map_expand_marker walk_map_expand_marker--end"><span>도착</span></div>',
+                        size: new naver.maps.Size(36, 48),
+                        anchor: new naver.maps.Point(18, 48),
+                    } as unknown as naver.maps.MarkerIcon,
                 });
             }
 
@@ -168,11 +174,14 @@ export const WalkMapExpandPage = () => {
                     if (bounds) bounds.extend(pos);
                     const typeClass = `walk_spot_marker--${(spot.type ?? 'OTHER').toLowerCase()}`;
                     const label = spotLabel(spot.type ?? 'OTHER');
-                    new naver.maps.CustomOverlay({
+                    new naver.maps.Marker({
                         map: mapInstanceRef.current!,
                         position: pos,
-                        content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
-                        anchor: new naver.maps.Point(16, 40),
+                        icon: {
+                            content: `<div class="walk_spot_marker ${typeClass}"><span>${label}</span></div>`,
+                            size: new naver.maps.Size(32, 38),
+                            anchor: new naver.maps.Point(16, 38),
+                        } as unknown as naver.maps.MarkerIcon,
                     });
                 });
             }
