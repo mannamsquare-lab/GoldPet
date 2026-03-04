@@ -12,6 +12,7 @@ import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.gold.dto.SpendRequest
+import com.goldpet.domain.pet.entity.PetProfileImage
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.data.domain.Page
@@ -153,12 +154,35 @@ class AIProfileService(
             throw ForbiddenException("Not your pet")
         }
 
+        val maxProfileImages = 10
+        val isDuplicate = pet.profileImages.any { it.imageUrl == resultUrl }
+
         when (applyAs.uppercase()) {
             "MAIN" -> {
+                if (isDuplicate) {
+                    val existing = pet.profileImages.find { it.imageUrl == resultUrl }
+                    if (existing != null) {
+                        pet.profileImages.remove(existing)
+                    }
+                } else if (pet.profileImages.size >= maxProfileImages) {
+                    throw BadRequestException("이미지는 최대 ${maxProfileImages}장까지 등록할 수 있습니다.")
+                }
+                pet.profileImages.forEach { it.orderIndex += 1 }
+                pet.profileImages.add(PetProfileImage(pet = pet, imageUrl = resultUrl, orderIndex = 0))
                 pet.profileImageUrl = resultUrl
             }
             "ADDITIONAL" -> {
-                pet.profileImageUrl = resultUrl
+                if (pet.profileImages.isEmpty()) {
+                    pet.profileImages.add(PetProfileImage(pet = pet, imageUrl = resultUrl, orderIndex = 0))
+                    pet.profileImageUrl = resultUrl
+                } else if (isDuplicate) {
+                    throw BadRequestException("이미 등록된 이미지입니다.")
+                } else if (pet.profileImages.size >= maxProfileImages) {
+                    throw BadRequestException("이미지는 최대 ${maxProfileImages}장까지 등록할 수 있습니다.")
+                } else {
+                    val nextIndex = pet.profileImages.maxOf { it.orderIndex } + 1
+                    pet.profileImages.add(PetProfileImage(pet = pet, imageUrl = resultUrl, orderIndex = nextIndex))
+                }
             }
             else -> throw BadRequestException("applyAs must be MAIN or ADDITIONAL")
         }

@@ -170,6 +170,7 @@ class AIPromptBuilder(
                 parts.add(translateKorean(stylePrompt))
             }
 
+            parts.add("Pixar style")
             parts.add("high quality")
             parts.add("detailed")
             parts.add("professional pet photography")
@@ -187,6 +188,7 @@ class AIPromptBuilder(
                 parts.add("A cute $animalType portrait")
             }
 
+            parts.add("Pixar style")
             parts.add("high quality")
             parts.add("detailed")
             parts.add("adorable")

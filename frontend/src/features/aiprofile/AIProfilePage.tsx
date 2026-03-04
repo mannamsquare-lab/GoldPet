@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import './AIProfilePage.css';
 
 function BtnBlobBg() {
@@ -14,47 +13,45 @@ export default function AIProfilePage() {
   const navigate = useNavigate();
 
   return (
-    <SubPageLayout title="AI 프로필 만들기">
-      <div className="ai-intro-container">
-        <div className="ai-intro-txt-wrap">
-          <strong className="ai-intro-title">나의 AI 반려동물을<br />만나보세요</strong>
-          <p className="ai-intro-desc">
-            평소에 상상했던 반려동물의 다양한 모습을<br />
-            프로필로 만들어 보세요.<br /><br />
-            반려동물이 없어도 걱정마세요.<br />
-            당신이 원하는 AI 펫을 만들 수 있습니다.
-          </p>
-        </div>
-
-        <div className="ai-intro-img-wrap">
-          <img
-            src="/assets/images/ai_make/intro_sample_3.png"
-            alt="AI 프로필 예시"
-            className="ai-intro-main-img"
-          />
-          <span className="ai-intro-bubble ai-intro-bubble--left">예쁘게 만들어달라멍</span>
-          <span className="ai-intro-bubble ai-intro-bubble--right">빨리 만들어달라냥</span>
-        </div>
-
-        <div className="ai-intro-btn-wrap">
-          <button
-            type="button"
-            className="ai-intro-btn"
-            onClick={() => navigate('/ai-profile/simple')}
-          >
-            <BtnBlobBg />
-            <span className="ai-intro-btn-text">간단하게 만들기</span>
-          </button>
-          <button
-            type="button"
-            className="ai-intro-btn"
-            onClick={() => navigate('/ai-profile/custom')}
-          >
-            <BtnBlobBg />
-            <span className="ai-intro-btn-text">원하는 대로 만들기</span>
-          </button>
-        </div>
+    <div className="ai-intro-container">
+      <div className="ai-intro-txt-wrap">
+        <strong className="ai-intro-title">나의 AI 반려동물을<br />만나보세요</strong>
+        <p className="ai-intro-desc">
+          평소에 상상했던 반려동물의 다양한 모습을<br />
+          프로필로 만들어 보세요.<br /><br />
+          반려동물이 없어도 걱정마세요.<br />
+          당신이 원하는 AI 펫을 만들 수 있습니다.
+        </p>
       </div>
-    </SubPageLayout>
+
+      <div className="ai-intro-img-wrap">
+        <img
+          src="/assets/images/ai_make/intro_sample_3.png"
+          alt="AI 프로필 예시"
+          className="ai-intro-main-img"
+        />
+        <span className="ai-intro-bubble ai-intro-bubble--left">예쁘게 만들어달라멍</span>
+        <span className="ai-intro-bubble ai-intro-bubble--right">빨리 만들어달라냥</span>
+      </div>
+
+      <div className="ai-intro-btn-wrap">
+        <button
+          type="button"
+          className="ai-intro-btn"
+          onClick={() => navigate('/ai-profile/simple')}
+        >
+          <BtnBlobBg />
+          <span className="ai-intro-btn-text">간단하게 만들기</span>
+        </button>
+        <button
+          type="button"
+          className="ai-intro-btn"
+          onClick={() => navigate('/ai-profile/custom')}
+        >
+          <BtnBlobBg />
+          <span className="ai-intro-btn-text">원하는 대로 만들기</span>
+        </button>
+      </div>
+    </div>
   );
 }

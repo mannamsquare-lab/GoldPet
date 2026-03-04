@@ -97,11 +97,9 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
             } else if (pet.profileImageUrl) {
                 loadedImages = [pet.profileImageUrl];
             }
-            // Pad to 5 slots
+            // Pad to minimum 5 slots (for create mode UX), never truncate
             if (loadedImages.length < 5) {
                 loadedImages = [...loadedImages, ...Array(5 - loadedImages.length).fill(null)];
-            } else if (loadedImages.length > 5) {
-                loadedImages = loadedImages.slice(0, 5);
             }
             setProfileImageUrls(loadedImages);
 
@@ -231,7 +229,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
                 }
 
                 // Then fill subsequent empty slots
-                for (let i = 0; i < maxCount; i++) {
+                for (let i = 0; i < prev.length; i++) {
                     if (urlIndex >= newUrls.length) break;
                     if (!newSlots[i]) {
                         newSlots[i] = newUrls[urlIndex++];
@@ -370,7 +368,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
                     images={profileImageUrls}
                     onUpload={handleImageUpload}
                     onDelete={handleImageDelete}
-                    maxCount={5}
+                    maxCount={Math.max(5, profileImageUrls.filter(Boolean).length)}
                 />
 
                 <div className="guide_box">

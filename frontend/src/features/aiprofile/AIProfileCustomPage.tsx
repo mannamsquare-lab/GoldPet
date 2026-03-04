@@ -1,10 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { petService } from '../../services/petService';
 import { goldService } from '../../services/goldService';
 import { aiProfileService } from '../../services/aiProfileService';
 import { useAlert } from '../../contexts/AlertContext';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
+import CustomSelect from '../../components/common/CustomSelect';
+import { AIProfileTabMenu } from './components/AIProfileTabMenu';
 import apiClient from '../../services/api/client';
 import './AIProfilePage.css';
 
@@ -13,18 +16,40 @@ const MAX_CHARS = 500;
 
 type PetType = 'dog' | 'cat' | 'other';
 
-const CAMERA_ICON = '/assets/images/common/camera_icon.svg';
-const PLUS_ICON = '/assets/images/common/plus_icon.svg';
-
 export default function AIProfileCustomPage() {
   const navigate = useNavigate();
   const { showAlert } = useAlert();
 
+  const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
+  const [petName, setPetName] = useState('');
   const [petType, setPetType] = useState<PetType>('dog');
   const [uploadedImages, setUploadedImages] = useState<(string | null)[]>([null, null, null, null]);
   const [uploading, setUploading] = useState<boolean[]>([false, false, false, false]);
   const [prompt, setPrompt] = useState('');
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null]);
+
+  const { data: pets = [] } = useQuery({
+    queryKey: ['pets', 'my'],
+    queryFn: () => petService.getMyPets(),
+  });
+
+  const selectedPet = pets.find((p) => p.id === selectedPetId);
+
+  // Auto-populate when pet is selected
+  useEffect(() => {
+    if (!selectedPet) return;
+    if (selectedPet.speciesId === 1) setPetType('dog');
+    else if (selectedPet.speciesId === 2) setPetType('cat');
+    else if (selectedPet.speciesId != null) setPetType('other');
+
+    const petImages = selectedPet.profileImageUrls ? [...selectedPet.profileImageUrls] : [];
+    if (selectedPet.profileImageUrl && !petImages.includes(selectedPet.profileImageUrl)) {
+      petImages.unshift(selectedPet.profileImageUrl);
+    }
+    const newImages: (string | null)[] = [null, null, null, null];
+    petImages.slice(0, 4).forEach((url, i) => { newImages[i] = url; });
+    setUploadedImages(newImages);
+  }, [selectedPetId]);
 
   const { data: goldBalance } = useQuery({
     queryKey: ['gold', 'balance'],
@@ -41,12 +66,6 @@ export default function AIProfileCustomPage() {
       showAlert(message);
     },
   });
-
-  const petTypeLabel = (type: PetType) => {
-    if (type === 'dog') return '강아지';
-    if (type === 'cat') return '고양이';
-    return '기타';
-  };
 
   const handleSlotClick = (index: number) => {
     fileInputRefs.current[index]?.click();
@@ -98,16 +117,13 @@ export default function AIProfileCustomPage() {
       showAlert('원하는 스타일을 설명해주세요.');
       return;
     }
-
     if (goldBalance && goldBalance.balance < CUSTOM_GOLD_COST) {
       showAlert('골드가 부족합니다. 골드를 충전해주세요.');
       return;
     }
-
     const sourceImageUrl = filledImages[0] || null;
-
     createMutation.mutate({
-      petId: null,
+      petId: selectedPetId,
       type: 'IMAGE',
       sourceImageUrl: sourceImageUrl ?? '/assets/images/common/pet_none_img.svg',
       stylePrompt: prompt.trim(),
@@ -118,80 +134,128 @@ export default function AIProfileCustomPage() {
 
   return (
     <SubPageLayout title="">
-      <div className="ai-custom-container">
-        {/* Title area */}
-        <div className="ai-custom-header">
-          <strong className="ai-custom-title">원하는 대로 만들기</strong>
-          <p className="ai-custom-subtitle">옵션 선택과 프롬프트를 입력하여 만들기</p>
+      <AIProfileTabMenu activeTab="custom" />
+      <div className="ai-form-section">
+        <div>
+          <h2 className="ai-page-title">원하는 대로 만들기</h2>
+          <p className="ai-page-subtitle">옵션 선택과 프롬프트를 입력하여 만들기</p>
         </div>
 
-        {/* Image upload: 4 inline slots */}
-        <div className="ai-custom-upload-row">
-          {uploadedImages.map((img, index) => (
-            <div
-              key={index}
-              className="ai-custom-upload-slot"
-              onClick={() => !uploading[index] && handleSlotClick(index)}
-            >
-              {img ? (
+        {/* A. 반려동물 이름 - input or dropdown */}
+        <div className="ai-form-field">
+          <label className="ai-form-label">반려동물 이름</label>
+          {pets.length > 0 ? (
+            <CustomSelect
+              value={selectedPetId ? String(selectedPetId) : ''}
+              options={pets.map(p => ({ label: p.name, value: String(p.id) }))}
+              placeholder="반려동물을 선택해 주세요"
+              onChange={(v) => setSelectedPetId(Number(v))}
+            />
+          ) : (
+            <input
+              type="text"
+              className="ai-form-input"
+              placeholder="반려동물 이름을 입력해 주세요"
+              value={petName}
+              onChange={(e) => setPetName(e.target.value)}
+            />
+          )}
+        </div>
+
+        {/* B. 종류 */}
+        <div className="ai-form-field">
+          <label className="ai-form-label">종류</label>
+          <div className="ai-type-btns">
+            {(['dog', 'cat', 'other'] as const).map(type => (
+              <button key={type} type="button"
+                className={`ai-type-btn${petType === type ? ' ai-type-btn--active' : ''}`}
+                onClick={() => setPetType(type)}>
+                {type === 'dog' ? '강아지' : type === 'cat' ? '고양이' : '기타'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* C. 사진 - 1장만 사용 */}
+        <div className="ai-form-field">
+          <label className="ai-form-label">사진</label>
+          <div className="ai-photo-grid ai-photo-grid--single">
+            <div className="ai-photo-slot" onClick={() => !uploading[0] && handleSlotClick(0)}>
+              {uploadedImages[0] ? (
                 <>
-                  <img src={img} alt={`업로드 ${index + 1}`} className="ai-custom-upload-preview" />
-                  <button
-                    type="button"
-                    className="ai-custom-upload-remove"
-                    onClick={(e) => handleRemoveImage(e, index)}
-                  >
-                    ✕
-                  </button>
+                  <img src={uploadedImages[0]} alt="사진 1" />
+                  <button type="button" className="ai-photo-delete" onClick={(e) => handleRemoveImage(e, 0)}>✕</button>
                 </>
               ) : (
-                <div className="ai-custom-upload-icon">
-                  {uploading[index] ? '⏳' : index < 3 ? <img src={CAMERA_ICON} alt="" width={32} height={32} /> : <img src={PLUS_ICON} alt="" width={24} height={24} />}
+                <div className="ai-photo-slot-icon">
+                  {uploading[0] ? '⏳' : (
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="5.33333" y="7.99935" width="21.3333" height="16" rx="2.66667" stroke="#614108" strokeWidth="2.66667"/>
+                      <rect x="16" y="5.33301" width="8" height="4" rx="2" fill="#614108"/>
+                      <circle cx="15.9998" cy="15.9993" r="4" stroke="#614108" strokeWidth="2.66667"/>
+                      <circle cx="9.33333" cy="11.9993" r="1.33333" fill="#614108"/>
+                    </svg>
+                  )}
                 </div>
               )}
               <input
-                ref={(el) => { fileInputRefs.current[index] = el; }}
+                ref={el => { fileInputRefs.current[0] = el; }}
                 type="file"
                 accept="image/*"
                 style={{ display: 'none' }}
-                onChange={(e) => handleFileChange(index, e.target.files?.[0])}
+                onChange={e => handleFileChange(0, e.target.files?.[0])}
               />
             </div>
-          ))}
+            {/* TODO: 추후 다중 사진 필요 시 아래 주석 해제
+            {uploadedImages.slice(1).map((img, idx) => {
+              const index = idx + 1;
+              return (
+                <div key={index} className="ai-photo-slot"
+                  onClick={() => !uploading[index] && handleSlotClick(index)}>
+                  {img ? (
+                    <>
+                      <img src={img} alt={`사진 ${index + 1}`} />
+                      <button type="button" className="ai-photo-delete"
+                        onClick={(e) => handleRemoveImage(e, index)}>✕</button>
+                    </>
+                  ) : (
+                    <div className="ai-photo-slot-icon">
+                      {uploading[index] ? '⏳' : index < 3 ? (
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="5.33333" y="7.99935" width="21.3333" height="16" rx="2.66667" stroke="#614108" strokeWidth="2.66667"/>
+                          <rect x="16" y="5.33301" width="8" height="4" rx="2" fill="#614108"/>
+                          <circle cx="15.9998" cy="15.9993" r="4" stroke="#614108" strokeWidth="2.66667"/>
+                          <circle cx="9.33333" cy="11.9993" r="1.33333" fill="#614108"/>
+                        </svg>
+                      ) : '+'}
+                    </div>
+                  )}
+                  <input ref={el => { fileInputRefs.current[index] = el; }}
+                    type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={e => handleFileChange(index, e.target.files?.[0])} />
+                </div>
+              );
+            })}
+            */}
+          </div>
         </div>
 
-        {/* Pet type tabs */}
-        <div className="ai-custom-pet-tabs">
-          {(['dog', 'cat', 'other'] as PetType[]).map((type) => (
-            <button
-              key={type}
-              type="button"
-              className={`ai-custom-tab-btn${petType === type ? ' active' : ''}`}
-              onClick={() => setPetType(type)}
-            >
-              {petTypeLabel(type)}
-            </button>
-          ))}
+        {/* D. 프롬프트 */}
+        <div className="ai-form-field">
+          <label className="ai-form-label">프롬프트</label>
+          <textarea
+            className="ai-prompt-textarea"
+            placeholder={"원하는 스타일을 자유롭게 설명해 주세요\n\n예) 꽃밭에서 뛰어노는 귀여운 모습\n예) 우주복을 입고 달 위에 서 있는 멋진 모습\n예) 지브리 애니메이션 스타일의 따뜻한 그림"}
+            value={prompt}
+            maxLength={MAX_CHARS}
+            onChange={(e) => setPrompt(e.target.value)}
+          />
         </div>
-
-        {/* Prompt textarea */}
-        <textarea
-          className="ai-custom-prompt-txt"
-          placeholder={"원하는 스타일을 자유롭게 설명해 주세요\n\n예) 꽃밭에서 뛰어노는 귀여운 모습\n예) 우주복을 입고 달 위에 서 있는 멋진 모습\n예) 지브리 애니메이션 스타일의 따뜻한 그림"}
-          value={prompt}
-          maxLength={MAX_CHARS}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
       </div>
 
-      {/* Fixed bottom button */}
-      <div className="ai-custom-bottom-btn">
-        <button
-          type="button"
-          className="ai-custom-submit-btn"
-          onClick={handleSubmit}
-          disabled={!prompt.trim() || createMutation.isPending}
-        >
+      <div className="ai-submit-btn-wrap">
+        <button type="button" className="ai-submit-btn" onClick={handleSubmit}
+          disabled={!prompt.trim() || createMutation.isPending}>
           {createMutation.isPending ? '프로필 생성 중...' : '프로필 생성하기'}
         </button>
       </div>

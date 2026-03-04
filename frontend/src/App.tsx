@@ -149,6 +149,7 @@ function App() {
                 <Route path="/gold" element={<GoldMainPage />} />
                 <Route path="/gold/purchase" element={<GoldPurchasePage />} />
                 <Route path="/gold/history" element={<GoldHistoryPage />} />
+                <Route path="/ai-profile" element={<AIProfilePage />} />
               </Route>
 
               {/* No Layout: Community Detail (uses own history_util header) */}
@@ -172,7 +173,6 @@ function App() {
               <Route path="/profile/terms" element={<ProfileTermsPage />} />
 
               {/* AI Profile Routes */}
-              <Route path="/ai-profile" element={<AIProfilePage />} />
               <Route path="/ai-profile/styles" element={<AIProfileStyleSelectPage />} />
               <Route path="/ai-profile/simple" element={<Suspense fallback={null}><AIProfileSimplePage /></Suspense>} />
               <Route path="/ai-profile/custom" element={<Suspense fallback={null}><AIProfileCustomPage /></Suspense>} />
