@@ -2,12 +2,13 @@
 
 .walk_map_expand_page {
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: #FFF7E6;
   position: relative;
+  overflow: hidden;
 }
 
 /* Date + share row (matches WalkDetailPage style) */
