@@ -52,6 +52,10 @@ ncp:
 leonardo:
   api-key: 0bb324bf-388a-4a27-87b2-15773c3a8573
 
+# DeepL Translation
+deepl:
+  api-key: c1f2b682-3e90-4b90-b821-d17044c4aafc:fx
+
 # AI Profile settings (stored in system_settings table, these are fallback defaults)
 ai:
   profile:
