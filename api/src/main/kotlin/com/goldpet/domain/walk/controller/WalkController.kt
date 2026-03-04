@@ -45,10 +45,11 @@ class WalkController(
 
     @GetMapping("/my")
     fun getMyWalks(
-        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?
-    ): ResponseEntity<List<WalkResponse>> {
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
+        @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable
+    ): ResponseEntity<org.springframework.data.domain.Page<WalkResponse>> {
         if (userDetails == null) return ResponseEntity.status(401).build()
-        val walkResponses = walkService.getWalksByUser(userDetails.id)
+        val walkResponses = walkService.getWalksByUser(userDetails.id, pageable)
         return ResponseEntity.ok(walkResponses)
     }
 

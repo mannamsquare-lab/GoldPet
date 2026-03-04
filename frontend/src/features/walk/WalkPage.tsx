@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walkService, getTodayStats } from '../../services/walkService';
 import type { WalkRecord } from '../../services/walkService';
@@ -10,12 +10,39 @@ export const WalkPage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'records' | 'ranking'>('records');
 
-    const { data: walkRecords = [] } = useQuery({
-        queryKey: ['walk', 'records'],
-        queryFn: () => walkService.getWalkRecords(),
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useInfiniteQuery({
+        queryKey: ['walk', 'records', 'paged'],
+        queryFn: ({ pageParam = 0 }) => walkService.getWalkRecordsPaged(pageParam, 10),
+        getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.number + 1,
+        initialPageParam: 0,
     });
 
+    const walkRecords = data?.pages.flatMap(p => p.content) ?? [];
     const todayStats = getTodayStats(walkRecords);
+
+    // IntersectionObserver for infinite scroll
+    const sentinelRef = useRef<HTMLDivElement>(null);
+    const handleIntersect = useCallback(
+        (entries: IntersectionObserverEntry[]) => {
+            if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+                fetchNextPage();
+            }
+        },
+        [hasNextPage, isFetchingNextPage, fetchNextPage]
+    );
+
+    useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(handleIntersect, { rootMargin: '200px' });
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [handleIntersect]);
 
     return (
         <div id="walkContainer">
@@ -97,6 +124,12 @@ export const WalkPage = () => {
                                     </p>
                                 )}
                             </div>
+                            {isFetchingNextPage && (
+                                <p style={{ color: '#727272', fontSize: 14, textAlign: 'center', padding: '16px 0' }}>
+                                    불러오는 중...
+                                </p>
+                            )}
+                            <div ref={sentinelRef} style={{ height: 1 }} />
                         </div>
                     )}
 

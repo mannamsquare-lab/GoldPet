@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param
 
 interface WalkRepository : JpaRepository<Walk, Long> {
     fun findByUserIdOrderByStartTimeDesc(userId: Long): List<Walk>
+    fun findByUserIdOrderByStartTimeDesc(userId: Long, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<Walk>
 
     @Query(value = "SELECT * FROM walks w WHERE ST_Intersects(w.path, ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326))", nativeQuery = true)
     fun findWalksWithinBoundingBox(

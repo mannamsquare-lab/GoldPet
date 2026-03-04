@@ -110,6 +110,16 @@ export function getTodayStats(records: WalkRecord[]): { distance: number; calori
   };
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+  last: boolean;
+  first: boolean;
+}
+
 export const walkService = {
   getWalkStats: async (): Promise<WalkStats> => {
     try {
@@ -128,9 +138,24 @@ export const walkService = {
 
   getWalkRecords: async (): Promise<WalkRecord[]> => {
     try {
-      const response = await apiClient.get('/walks/my');
-      const walks = Array.isArray(response.data) ? response.data : [];
+      const response = await apiClient.get('/walks/my', { params: { size: 2000 } });
+      const data = response.data;
+      const walks = Array.isArray(data) ? data : (data.content ?? []);
       return walks.map(toWalkRecord);
+    } catch (error: unknown) {
+      console.error('Failed to fetch walk records:', error);
+      throw error;
+    }
+  },
+
+  getWalkRecordsPaged: async (page: number, size = 10): Promise<PageResponse<WalkRecord>> => {
+    try {
+      const response = await apiClient.get('/walks/my', { params: { page, size } });
+      const data = response.data;
+      return {
+        ...data,
+        content: data.content.map(toWalkRecord),
+      };
     } catch (error: unknown) {
       console.error('Failed to fetch walk records:', error);
       throw error;

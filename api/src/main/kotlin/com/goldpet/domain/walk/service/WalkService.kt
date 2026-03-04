@@ -117,6 +117,11 @@ class WalkService(
         return walks.map { WalkResponse.from(it) }
     }
 
+    fun getWalksByUser(userId: Long, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<WalkResponse> {
+        return walkRepository.findByUserIdOrderByStartTimeDesc(userId, pageable)
+            .map { WalkResponse.from(it) }
+    }
+
     fun findWalksInArea(request: BoundingBoxRequest): List<WalkResponse> {
         val walks = walkRepository.findWalksWithinBoundingBox(
             request.minLat,

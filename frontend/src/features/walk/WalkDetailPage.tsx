@@ -70,8 +70,9 @@ export const WalkDetailPage = () => {
         queryKey: ['walk', 'records', 'raw'],
         queryFn: async () => {
             const { default: apiClient } = await import('../../services/api/client');
-            const res = await apiClient.get('/walks/my');
-            return Array.isArray(res.data) ? res.data : [];
+            const res = await apiClient.get('/walks/my', { params: { size: 2000 } });
+            const data = res.data;
+            return Array.isArray(data) ? data : (data.content ?? []);
         },
     });
 
