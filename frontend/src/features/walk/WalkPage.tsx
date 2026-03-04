@@ -255,8 +255,12 @@ function WalkRecordItem({ record, onClick }: WalkRecordItemProps) {
                     </div>
 
                     {/* Location */}
-                    {record.startAddress && (
-                        <span className="walk_record_location">{record.startAddress}</span>
+                    {(record.startAddress || record.endAddress) && (
+                        <span className="walk_record_location">
+                            {record.startAddress && record.endAddress
+                                ? `${record.startAddress} ~ ${record.endAddress}`
+                                : record.startAddress || record.endAddress}
+                        </span>
                     )}
                 </div>
             </div>

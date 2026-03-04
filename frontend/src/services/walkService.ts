@@ -15,6 +15,7 @@ export interface WalkRecord {
   startTime?: string;
   path?: { lat: number; lng: number }[];
   startAddress?: string;
+  endAddress?: string;
 }
 
 export interface WalkStats {
@@ -60,6 +61,7 @@ function toWalkRecord(walk: {
   caloriesBurned?: number;
   path?: number[][];
   startAddress?: string;
+  endAddress?: string;
 }): WalkRecord {
   const date = new Date(walk.startTime);
   const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
@@ -77,6 +79,7 @@ function toWalkRecord(walk: {
     startTime: walk.startTime,
     path: walk.path ? pathToCoords(walk.path) : undefined,
     startAddress: walk.startAddress ?? undefined,
+    endAddress: walk.endAddress ?? undefined,
   };
 }
 

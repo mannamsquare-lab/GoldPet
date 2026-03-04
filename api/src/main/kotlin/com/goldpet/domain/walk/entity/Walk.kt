@@ -42,6 +42,8 @@ class Walk(
 
     var startAddress: String? = null,
 
+    var endAddress: String? = null,
+
     @Column(columnDefinition = "geometry(Point, 4326)")
     var startLocation: Point? = null,
 

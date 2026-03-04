@@ -52,6 +52,7 @@ data class WalkResponse(
     val caloriesBurned: Double?,
     val notes: String?,
     val startAddress: String? = null,
+    val endAddress: String? = null,
     val startLatitude: Double? = null,
     val startLongitude: Double? = null,
     val endLatitude: Double? = null,
@@ -83,6 +84,7 @@ data class WalkResponse(
                 caloriesBurned = walk.caloriesBurned,
                 notes = walk.notes,
                 startAddress = walk.startAddress,
+                endAddress = walk.endAddress,
                 startLatitude = walk.startLocation?.y,
                 startLongitude = walk.startLocation?.x,
                 endLatitude = walk.endLocation?.y,
@@ -105,6 +107,7 @@ data class WalkResponse(
                 caloriesBurned = walk.caloriesBurned,
                 notes = null, // Hide notes for non-owner views
                 startAddress = walk.startAddress,
+                endAddress = walk.endAddress,
                 petNames = walk.walkPets.map { it.pet.name },
                 petIds = walk.walkPets.map { it.pet.id },
             )

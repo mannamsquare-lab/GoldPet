@@ -75,6 +75,11 @@ class WalkService(
         }
         if (endCoord != null) {
             walk.endLocation = geometryFactory.createPoint(Coordinate(endCoord[1], endCoord[0])) // [lon, lat]
+            try {
+                walk.endAddress = naverGeocodingService.reverseGeocode(endCoord[0], endCoord[1])
+            } catch (e: Exception) {
+                log.warn("Reverse geocoding failed for walk end: {}", e.message)
+            }
         }
 
         // Resolve pet ownership and create WalkPet associations
