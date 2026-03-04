@@ -157,7 +157,7 @@
 
 /* Start Walk Button */
 .walk_start_btn {
-  width: 100%;
+  width: 242px;
   height: 48px;
   padding: 0 20px;
   background: var(--color-primary);
@@ -340,7 +340,7 @@
 .walk_record_action_btn {
   width: 24px;
   height: 24px;
-  background: #FFE5FA;
+  background: transparent;
   border-radius: 100px;
   border: none;
   display: flex;

@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walkService, getTodayStats } from '../../services/walkService';
 import type { WalkRecord } from '../../services/walkService';
-import { LocationStatus } from '../../components/common/LocationStatus';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
 import './WalkPage.css';
 
@@ -20,11 +19,6 @@ export const WalkPage = () => {
 
     return (
         <div id="walkContainer">
-            <LocationStatus>
-                골드펫과 함께 <br />
-                즐거운 산책을 즐겨보세요.
-            </LocationStatus>
-
             <div className="walk_content">
                 {/* Today Stats Section */}
                 <div className="walk_today_section">
@@ -235,7 +229,9 @@ function WalkRecordItem({ record, onClick }: WalkRecordItemProps) {
                         <div className="walk_record_actions" onClick={e => e.stopPropagation()}>
                             <button type="button" className="walk_record_action_btn" title="공유">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" stroke="#8A497D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
+                                    <path d="M6 13.5V16C6 17.1046 6.89543 18 8 18H16C17.1046 18 18 17.1046 18 16V13.5" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
+                                    <path d="M12 15V6M12 6L8.625 9.375M12 6L15.375 9.375" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
                                 </svg>
                             </button>
                         </div>
