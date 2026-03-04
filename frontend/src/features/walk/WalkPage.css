@@ -248,7 +248,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 8px;
 }
 
@@ -280,10 +280,10 @@
   justify-content: center;
   flex-direction: column;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: 14px;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
-  line-height: 12px;
+  line-height: 14px;
 }
 
 .walk_record_info {
@@ -295,7 +295,6 @@
 }
 
 .walk_record_stats {
-  padding-left: 24px;
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -317,6 +316,18 @@
   width: 3px;
   height: 3px;
   flex-shrink: 0;
+}
+
+.walk_record_location {
+  display: block;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-family: Pretendard, sans-serif;
+  font-weight: 500;
+  line-height: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .walk_record_actions {

@@ -228,7 +228,7 @@ function WalkRecordItem({ record, onClick }: WalkRecordItemProps) {
                 <WalkRouteThumbnail walkId={record.id} hasPath={!!record.path?.length} size={60} />
 
                 {/* Info */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {/* Date row + share button */}
                     <div className="walk_record_header" style={{ justifyContent: 'space-between' }}>
                         <span className="walk_record_date">{record.date}</span>
@@ -253,6 +253,11 @@ function WalkRecordItem({ record, onClick }: WalkRecordItemProps) {
                         </svg>
                         <span>{record.points}</span>
                     </div>
+
+                    {/* Location */}
+                    {record.startAddress && (
+                        <span className="walk_record_location">{record.startAddress}</span>
+                    )}
                 </div>
             </div>
         </div>
