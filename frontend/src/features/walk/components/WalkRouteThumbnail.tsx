@@ -3,15 +3,59 @@ interface WalkRouteThumbnailProps {
   size?: number;
 }
 
+// Convert lat/lng to tile coordinates at given zoom level
+function latLngToTile(lat: number, lng: number, zoom: number) {
+  const n = Math.pow(2, zoom);
+  const x = Math.floor(((lng + 180) / 360) * n);
+  const latRad = (lat * Math.PI) / 180;
+  const y = Math.floor(
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n
+  );
+  return { x, y };
+}
+
+// Convert lat/lng to pixel position within a tile
+function latLngToPixelInTile(
+  lat: number,
+  lng: number,
+  zoom: number,
+  tileX: number,
+  tileY: number,
+  tileSize: number
+) {
+  const n = Math.pow(2, zoom);
+  const px = (((lng + 180) / 360) * n - tileX) * tileSize;
+  const latRad = (lat * Math.PI) / 180;
+  const py =
+    (((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n - tileY) *
+    tileSize;
+  return { px, py };
+}
+
+// Calculate zoom level to fit route in tile
+function calcZoom(minLat: number, maxLat: number, minLng: number, maxLng: number): number {
+  const latSpread = maxLat - minLat;
+  const lngSpread = maxLng - minLng;
+  const maxSpread = Math.max(latSpread, lngSpread);
+  if (maxSpread > 0.05) return 14;
+  if (maxSpread > 0.02) return 15;
+  if (maxSpread > 0.005) return 16;
+  return 17;
+}
+
+const TILE_URL = 'https://map.pstatic.net/nrb/styles/basic/1735880669';
+
 export function WalkRouteThumbnail({ coords, size = 60 }: WalkRouteThumbnailProps) {
-  // Check if coords have meaningful spread (not all same point)
-  const hasRoute = coords && coords.length >= 2 && (() => {
-    const lats = coords.map(c => c.lat);
-    const lngs = coords.map(c => c.lng);
-    const latSpread = Math.max(...lats) - Math.min(...lats);
-    const lngSpread = Math.max(...lngs) - Math.min(...lngs);
-    return latSpread > 0.00001 || lngSpread > 0.00001;
-  })();
+  const hasRoute =
+    coords &&
+    coords.length >= 2 &&
+    (() => {
+      const lats = coords.map((c) => c.lat);
+      const lngs = coords.map((c) => c.lng);
+      const latSpread = Math.max(...lats) - Math.min(...lats);
+      const lngSpread = Math.max(...lngs) - Math.min(...lngs);
+      return latSpread > 0.00001 || lngSpread > 0.00001;
+    })();
 
   if (!hasRoute) {
     return (
@@ -20,7 +64,7 @@ export function WalkRouteThumbnail({ coords, size = 60 }: WalkRouteThumbnailProp
           width: size,
           height: size,
           borderRadius: 8,
-          background: '#EFE1C4',
+          background: '#EDE8DF',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -38,31 +82,32 @@ export function WalkRouteThumbnail({ coords, size = 60 }: WalkRouteThumbnailProp
     );
   }
 
-  // Normalize lat/lng to 0-100 SVG coordinate range
-  const lats = coords.map(c => c.lat);
-  const lngs = coords.map(c => c.lng);
+  const lats = coords.map((c) => c.lat);
+  const lngs = coords.map((c) => c.lng);
   const minLat = Math.min(...lats);
   const maxLat = Math.max(...lats);
   const minLng = Math.min(...lngs);
   const maxLng = Math.max(...lngs);
 
-  const latRange = maxLat - minLat || 0.001;
-  const lngRange = maxLng - minLng || 0.001;
+  const centerLat = (minLat + maxLat) / 2;
+  const centerLng = (minLng + maxLng) / 2;
+  const zoom = calcZoom(minLat, maxLat, minLng, maxLng);
+  const tile = latLngToTile(centerLat, centerLng, zoom);
+  const tileUrl = `${TILE_URL}/${zoom}/${tile.x}/${tile.y}.png`;
 
-  const padding = 8;
-  const viewSize = 100;
-  const usableSize = viewSize - padding * 2;
+  // Map coords to pixel positions within the tile, then scale to our display size
+  const tileSize = 256;
+  const points = coords.map((c) => {
+    const { px, py } = latLngToPixelInTile(c.lat, c.lng, zoom, tile.x, tile.y, tileSize);
+    return { x: (px / tileSize) * size, y: (py / tileSize) * size };
+  });
 
-  const toSvgX = (lng: number) => padding + ((lng - minLng) / lngRange) * usableSize;
-  // SVG y-axis is inverted: higher lat = lower y
-  const toSvgY = (lat: number) => padding + ((maxLat - lat) / latRange) * usableSize;
-
-  const pathData = coords
-    .map((c, i) => `${i === 0 ? 'M' : 'L'} ${toSvgX(c.lng).toFixed(1)} ${toSvgY(c.lat).toFixed(1)}`)
+  const pathData = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
     .join(' ');
 
-  const startPoint = coords[0];
-  const endPoint = coords[coords.length - 1];
+  const startPt = points[0];
+  const endPt = points[points.length - 1];
 
   return (
     <div
@@ -70,41 +115,53 @@ export function WalkRouteThumbnail({ coords, size = 60 }: WalkRouteThumbnailProp
         width: size,
         height: size,
         borderRadius: 8,
-        background: '#D9FFA7',
         overflow: 'hidden',
         flexShrink: 0,
-        border: '1px solid #EFE1C4',
+        position: 'relative',
+        background: '#EDE8DF',
       }}
     >
+      <img
+        src={tileUrl}
+        alt=""
+        style={{
+          width: size,
+          height: size,
+          objectFit: 'cover',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }}
+        loading="lazy"
+      />
       <svg
         width={size}
         height={size}
-        viewBox={`0 0 ${viewSize} ${viewSize}`}
-        preserveAspectRatio="xMidYMid meet"
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ position: 'absolute', top: 0, left: 0 }}
       >
+        {/* Route shadow */}
+        <path
+          d={pathData}
+          fill="none"
+          stroke="rgba(0,0,0,0.15)"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
         {/* Route path */}
         <path
           d={pathData}
           fill="none"
-          stroke="#6B9A2B"
-          strokeWidth="3"
+          stroke="#FF5A5F"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         {/* Start dot */}
-        <circle
-          cx={toSvgX(startPoint.lng)}
-          cy={toSvgY(startPoint.lat)}
-          r="4"
-          fill="#614108"
-        />
+        <circle cx={startPt.x} cy={startPt.y} r="3.5" fill="#FF5A5F" stroke="#fff" strokeWidth="1.5" />
         {/* End dot */}
-        <circle
-          cx={toSvgX(endPoint.lng)}
-          cy={toSvgY(endPoint.lat)}
-          r="4"
-          fill="#FF5005"
-        />
+        <circle cx={endPt.x} cy={endPt.y} r="3.5" fill="#FF5A5F" stroke="#fff" strokeWidth="1.5" />
       </svg>
     </div>
   );
