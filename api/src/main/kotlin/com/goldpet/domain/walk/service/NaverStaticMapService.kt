@@ -22,7 +22,7 @@ class NaverStaticMapService(
     })
 
     companion object {
-        private const val STATIC_MAP_URL = "https://naveropenapi.apigw.ntruss.com/map-static/v2/raster"
+        private const val STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster"
         private const val MAX_PATH_POINTS = 50
     }
 
