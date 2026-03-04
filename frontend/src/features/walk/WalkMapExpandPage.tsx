@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { walkService } from '../../services/walkService';
 import type { WalkSession } from '../../services/walkService';
+import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import './WalkMapExpand.css';
 
@@ -165,20 +166,21 @@ export const WalkMapExpandPage = () => {
 
     return (
         <div className="walk_map_expand_page">
-            {/* Header: back (left) + date (center) + share (right) */}
-            <div className="walk_map_expand_header">
-                <button type="button" className="walk_map_expand_back_btn" onClick={() => navigate(-1)}>
-                    <img src="/assets/images/layout/header_icon_back.svg" alt="뒤로가기" />
-                </button>
-                {walk && <span className="walk_map_expand_header_date">{formatDate(walk.startTime)}</span>}
-                <button type="button" className="walk_map_expand_share_btn" aria-label="공유">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
-                        <path d="M6 13.5V16C6 17.1046 6.89543 18 8 18H16C17.1046 18 18 17.1046 18 16V13.5" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
-                        <path d="M12 15V6M12 6L8.625 9.375M12 6L15.375 9.375" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                </button>
-            </div>
+            <MainHeader variant="back-only" className="intro_header" />
+
+            {/* Date + share row (same as WalkDetailPage) */}
+            {walk && (
+                <div className="walk_map_expand_date_row">
+                    <span className="walk_detail_date">{formatDate(walk.startTime)}</span>
+                    <button type="button" className="walk_detail_share_btn" aria-label="공유">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
+                            <path d="M6 13.5V16C6 17.1046 6.89543 18 8 18H16C17.1046 18 18 17.1046 18 16V13.5" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M12 15V6M12 6L8.625 9.375M12 6L15.375 9.375" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            )}
 
             {/* Map */}
             <div className="walk_map_expand_map_container">
