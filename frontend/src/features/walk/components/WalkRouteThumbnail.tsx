@@ -4,7 +4,16 @@ interface WalkRouteThumbnailProps {
 }
 
 export function WalkRouteThumbnail({ coords, size = 60 }: WalkRouteThumbnailProps) {
-  if (!coords || coords.length < 2) {
+  // Check if coords have meaningful spread (not all same point)
+  const hasRoute = coords && coords.length >= 2 && (() => {
+    const lats = coords.map(c => c.lat);
+    const lngs = coords.map(c => c.lng);
+    const latSpread = Math.max(...lats) - Math.min(...lats);
+    const lngSpread = Math.max(...lngs) - Math.min(...lngs);
+    return latSpread > 0.00001 || lngSpread > 0.00001;
+  })();
+
+  if (!hasRoute) {
     return (
       <div
         style={{
