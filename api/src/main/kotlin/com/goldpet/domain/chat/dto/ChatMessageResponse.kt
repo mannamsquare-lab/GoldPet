@@ -47,7 +47,9 @@ data class ChatMessageResponse(
             fileAttachment: FileAttachment? = null,
             emoticon: Emoticon? = null,
             replyToFileAttachment: FileAttachment? = null,
-            replyToEmoticon: Emoticon? = null
+            replyToEmoticon: Emoticon? = null,
+            resolvedFileUrl: String? = null,
+            resolvedReplyToFileUrl: String? = null
         ): ChatMessageResponse {
             val isDeleted = chatMessage.deletedAt != null
             return ChatMessageResponse(
@@ -61,7 +63,7 @@ data class ChatMessageResponse(
                 file = fileAttachment?.let {
                     FileInfo(
                         id = it.id,
-                        url = it.url,
+                        url = resolvedFileUrl ?: it.url,
                         fileType = it.fileType,
                         mimeType = it.mimeType,
                         originalFileName = it.originalFileName,
@@ -80,7 +82,7 @@ data class ChatMessageResponse(
                 replyToSenderNickname = chatMessage.replyTo?.sender?.nickname,
                 replyToTextContent = chatMessage.replyTo?.textContent,
                 replyToMessageType = chatMessage.replyTo?.messageType,
-                replyToFileUrl = replyToFileAttachment?.url,
+                replyToFileUrl = resolvedReplyToFileUrl ?: replyToFileAttachment?.url,
                 replyToFileName = replyToFileAttachment?.originalFileName,
                 replyToEmoticonImageUrl = replyToEmoticon?.imageUrl,
                 deletedAt = chatMessage.deletedAt

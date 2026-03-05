@@ -8,6 +8,7 @@ import com.goldpet.domain.chat.dto.SendMessageRequest
 import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.emoticon.service.EmoticonService
+import com.goldpet.domain.file.service.FileService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -21,8 +22,12 @@ class ChatRoomController(
     private val chatService: ChatService,
     private val fileAttachmentRepository: FileAttachmentRepository,
     private val emoticonService: EmoticonService,
-    private val simpMessageSendingOperations: SimpMessageSendingOperations
+    private val simpMessageSendingOperations: SimpMessageSendingOperations,
+    private val fileService: FileService
 ) {
+    private fun resolveFileUrl(url: String): String =
+        if (url.startsWith("http")) url else fileService.getPresignedUrl(url)
+
     @PostMapping
     fun createChatRoom(
         @RequestBody request: ChatRoomCreateRequest,
@@ -90,12 +95,16 @@ class ChatRoomController(
         }
 
         return ResponseEntity.ok(messages.map { msg ->
+            val resolvedUrl = msg.fileId?.let { fileAttachments[it] }?.url?.let { resolveFileUrl(it) }
+            val resolvedReplyUrl = msg.replyTo?.fileId?.let { replyToFileAttachments[it] }?.url?.let { resolveFileUrl(it) }
             ChatMessageResponse.from(
                 msg,
                 msg.fileId?.let { fileAttachments[it] },
                 msg.emoticonId?.let { emoticons[it] },
                 msg.replyTo?.fileId?.let { replyToFileAttachments[it] },
-                msg.replyTo?.emoticonId?.let { replyToEmoticons[it] }
+                msg.replyTo?.emoticonId?.let { replyToEmoticons[it] },
+                resolvedFileUrl = resolvedUrl,
+                resolvedReplyToFileUrl = resolvedReplyUrl
             )
         })
     }
@@ -127,7 +136,13 @@ class ChatRoomController(
         val replyToFileAttachment = message.replyTo?.fileId?.let { fileAttachmentRepository.findById(it).orElse(null) }
         val replyToEmoticon = message.replyTo?.emoticonId?.let { emoticonService.getById(it) }
 
-        val chatMessageResponse = ChatMessageResponse.from(message, fileAttachment, emoticon, replyToFileAttachment, replyToEmoticon)
+        val resolvedUrl = fileAttachment?.url?.let { resolveFileUrl(it) }
+        val resolvedReplyUrl = replyToFileAttachment?.url?.let { resolveFileUrl(it) }
+        val chatMessageResponse = ChatMessageResponse.from(
+            message, fileAttachment, emoticon, replyToFileAttachment, replyToEmoticon,
+            resolvedFileUrl = resolvedUrl,
+            resolvedReplyToFileUrl = resolvedReplyUrl
+        )
 
         // Broadcast to WebSocket subscribers for real-time updates (chat detail page)
         simpMessageSendingOperations.convertAndSend("/topic/chat/$roomId", chatMessageResponse)

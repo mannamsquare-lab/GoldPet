@@ -240,12 +240,12 @@
 }
 
 .chat_detail_message_mine {
-  padding-left: 80px;
+  padding-left: 60px;
   justify-content: flex-end;
 }
 
 .chat_detail_message_other {
-  padding-right: 40px;
+  padding-right: 60px;
   justify-content: flex-start;
 }
 
@@ -265,17 +265,21 @@
 }
 
 .chat_detail_message_content {
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
   gap: 4px;
+  max-width: 100%;
+}
+
+.chat_detail_message_mine .chat_detail_message_content {
+  align-items: flex-end;
 }
 
 .chat_detail_message_bubble {
-  width: 100%;
   max-width: 100%;
+  width: fit-content;
   padding: 8px 12px;
   border-radius: 16px;
   display: flex;

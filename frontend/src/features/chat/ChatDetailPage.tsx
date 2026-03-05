@@ -537,6 +537,7 @@ const ChatDetailPage = () => {
     };
 
     const handleQuickReply = (text: string) => {
+        if (sendMutation.isPending || isUploading) return;
         sendTypingEvent(false);
         sendMutation.mutate({ content: text });
     };
@@ -1075,6 +1076,7 @@ const ChatDetailPage = () => {
                                 type="button"
                                 className="chat_detail_quick_reply_btn btn-effect"
                                 onClick={() => handleQuickReply(reply)}
+                                disabled={sendMutation.isPending || isUploading}
                             >
                                 {reply}
                             </button>
