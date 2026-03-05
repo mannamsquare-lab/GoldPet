@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiProfileService } from '../../services/aiProfileService';
 import { useToast } from '../../contexts/ToastContext';
+import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import pawIcon from './assets/paw-loading.svg';
 import './AIProfilePage.css';
@@ -14,6 +15,7 @@ export default function AIProfileResultPage() {
   const queryClient = useQueryClient();
 
   const [showApplySheet, setShowApplySheet] = useState(false);
+  useOverlayColor(showApplySheet, '#000000', '#EFE1C4');
   const [elapsed, setElapsed] = useState(0);
   const [tipIndex, setTipIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
