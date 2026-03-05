@@ -121,21 +121,30 @@ class AIPromptBuilder(
     )
 
     /**
-     * Build a detailed English prompt for Leonardo AI based on pet info and style.
+     * Build a detailed English prompt for Google Imagen based on pet info and style.
      */
     fun buildPrompt(pet: Pet?, stylePrompt: String?, presetId: String?, petType: String? = null): String {
         val parts = mutableListOf<String>()
 
+        // Style mapping for Imagen
+        val styleDescription = when (presetId) {
+            "ILLUSTRATION" -> "warm cute storybook illustration style"
+            "ANIME_GENERAL" -> "bright vivid anime style"
+            "PHOTOGRAPHY" -> "professional studio pet photography, natural lighting"
+            "CINEMATIC" -> "cinematic dramatic lighting, movie poster style"
+            "WATERCOLOR" -> "soft delicate watercolor painting style"
+            "OIL_PAINTING" -> "classical elegant oil painting style"
+            else -> "Pixar 3D animation style"
+        }
+
         if (pet != null) {
-            // Build subject from species + breed (translated to English)
             val speciesEn = speciesEnglish[pet.species.name]
                 ?: speciesEnglish[pet.species.code]
                 ?: translateKorean(pet.species.name)
             val breedEn = pet.breed?.name?.let { breedEnglish[it] ?: translateKorean(it) }
             val subject = if (breedEn != null) "$breedEn $speciesEn" else speciesEn
-            parts.add("A cute $subject portrait")
+            parts.add("A beautiful portrait of a cute $subject")
 
-            // Gender
             pet.gender?.let { gender ->
                 val genderStr = when (gender.uppercase()) {
                     "MALE", "M" -> "male"
@@ -145,7 +154,6 @@ class AIPromptBuilder(
                 genderStr?.let { parts.add(it) }
             }
 
-            // Parse temperamentTags (format: "Activity:ACTIVE,Friendliness:SOCIAL")
             pet.temperamentTags?.takeIf { it.isNotBlank() }?.let { tags ->
                 val descriptors = tags.split(",")
                     .map { it.trim() }
@@ -155,27 +163,20 @@ class AIPromptBuilder(
                         if (colonParts.size == 2) {
                             val value = colonParts[1].trim()
                             temperamentEnglish[value] ?: value.lowercase().replace("_", " ")
-                        } else {
-                            // Legacy format (plain tag) - skip Korean tags
-                            null
-                        }
+                        } else null
                     }
                 if (descriptors.isNotEmpty()) {
-                    parts.add("personality: ${descriptors.joinToString(", ")}")
+                    parts.add("with a ${descriptors.joinToString(" and ")} personality")
                 }
             }
 
-            // Style prompt (for custom mode with pet selected, or style description)
             if (!stylePrompt.isNullOrBlank()) {
                 parts.add(translateKorean(stylePrompt))
             }
 
-            parts.add("Pixar style")
-            parts.add("high quality")
-            parts.add("detailed")
-            parts.add("professional pet photography")
+            parts.add(styleDescription)
+            parts.add("high quality, detailed, adorable expression")
         } else {
-            // Custom mode without pet: user's prompt is the primary input
             val animalType = when (petType?.lowercase()) {
                 "dog" -> "dog"
                 "cat" -> "cat"
@@ -183,24 +184,15 @@ class AIPromptBuilder(
             }
 
             if (!stylePrompt.isNullOrBlank()) {
-                parts.add("A cute $animalType, ${translateKorean(stylePrompt)}")
+                parts.add("A beautiful portrait of a cute $animalType, ${translateKorean(stylePrompt)}")
             } else {
-                parts.add("A cute $animalType portrait")
+                parts.add("A beautiful portrait of a cute $animalType")
             }
 
-            parts.add("Pixar style")
-            parts.add("high quality")
-            parts.add("detailed")
-            parts.add("adorable")
+            parts.add(styleDescription)
+            parts.add("high quality, detailed, adorable expression")
         }
 
         return parts.joinToString(", ")
-    }
-
-    /**
-     * Build a negative prompt to avoid common generation artifacts.
-     */
-    fun buildNegativePrompt(): String {
-        return "ugly, deformed, blurry, low quality, text, watermark, human hands, extra limbs, missing limbs"
     }
 }

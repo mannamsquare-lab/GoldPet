@@ -2,6 +2,7 @@ package com.goldpet.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.web.client.RestTemplate
@@ -23,5 +24,11 @@ class AsyncConfig {
     }
 
     @Bean
-    fun restTemplate(): RestTemplate = RestTemplate()
+    fun restTemplate(): RestTemplate {
+        val factory = SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(30_000)
+            setReadTimeout(180_000)  // 3분 - 이미지 생성은 시간이 오래 걸림
+        }
+        return RestTemplate(factory)
+    }
 }

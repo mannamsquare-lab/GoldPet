@@ -25,9 +25,7 @@ data class AIProfileRequestResponse(
     val resultUrl: String?,
     val errorMessage: String?,
     val goldCost: Int,
-    val createdAt: LocalDateTime?,
-    val leonardoGenerationId: String? = null,
-    val leonardoImageId: String? = null
+    val createdAt: LocalDateTime?
 ) {
     companion object {
         fun from(request: AIProfileRequest) = AIProfileRequestResponse(
@@ -41,9 +39,7 @@ data class AIProfileRequestResponse(
             resultUrl = request.resultUrl,
             errorMessage = request.errorMessage,
             goldCost = request.goldCost,
-            createdAt = request.createdAt,
-            leonardoGenerationId = request.leonardoGenerationId,
-            leonardoImageId = request.leonardoImageId
+            createdAt = request.createdAt
         )
     }
 }

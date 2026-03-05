@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiProfileService } from '../../services/aiProfileService';
@@ -14,6 +14,19 @@ export default function AIProfileResultPage() {
   const queryClient = useQueryClient();
 
   const [showApplySheet, setShowApplySheet] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [tipIndex, setTipIndex] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const tips = [
+    '강아지는 사람의 감정을 읽을 수 있어요 🐶',
+    '고양이는 하루 16시간 이상 잠을 자요 😸',
+    '반려동물과 산책하면 스트레스가 줄어들어요 🌿',
+    'AI가 최고의 결과를 만들고 있어요 ✨',
+    '강아지의 코 무늬는 사람의 지문처럼 고유해요 🐾',
+    '고양이는 약 100가지 소리를 낼 수 있어요 🎵',
+    '반려동물은 주인의 목소리를 기억해요 💕',
+  ];
 
   const { data: request } = useQuery({
     queryKey: ['ai-profile', 'request', requestId],
@@ -67,6 +80,40 @@ export default function AIProfileResultPage() {
     applyMutation.mutate(applyAs);
   };
 
+  const isProcessing = request?.status === 'PENDING' || request?.status === 'PROCESSING';
+
+  useEffect(() => {
+    if (isProcessing) {
+      setElapsed(0);
+      timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
+      const tipTimer = setInterval(() => setTipIndex((i) => (i + 1) % tips.length), 4000);
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        clearInterval(tipTimer);
+      };
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  }, [isProcessing]);
+
+  const getProgressStep = () => {
+    if (elapsed < 10) return 0;
+    if (elapsed < 40) return 1;
+    return 2;
+  };
+
+  const progressSteps = ['프롬프트 분석 중', '이미지 생성 중', '마무리 중'];
+  const progressStep = getProgressStep();
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m > 0 ? `${m}분 ${s.toString().padStart(2, '0')}초` : `${s}초`;
+  };
+
   if (!request) {
     return (
       <SubPageLayout title="">
@@ -80,7 +127,6 @@ export default function AIProfileResultPage() {
     );
   }
 
-  const isProcessing = request.status === 'PENDING' || request.status === 'PROCESSING';
   const isCompleted = request.status === 'COMPLETED';
   const isFailed = request.status === 'FAILED';
   const isRefunded = request.status === 'REFUNDED';
@@ -95,9 +141,26 @@ export default function AIProfileResultPage() {
             <div className="ai-result-processing-subtitle">
               잠시만 기다려 주세요.<br />완료되면 자동으로 결과가 표시됩니다.
             </div>
+
             <div className="ai-result-paw-icon">
               <img src={pawIcon} alt="" />
             </div>
+
+            <div className="ai-result-timer">{formatTime(elapsed)}</div>
+
+            <div className="ai-result-steps">
+              {progressSteps.map((label, i) => (
+                <div key={label} className={`ai-result-step ${i <= progressStep ? 'active' : ''} ${i === progressStep ? 'current' : ''}`}>
+                  <div className="ai-result-step-dot" />
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="ai-result-tip" key={tipIndex}>
+              {tips[tipIndex]}
+            </div>
+
             <button
               type="button"
               className="ai-result-cancel-full-btn"

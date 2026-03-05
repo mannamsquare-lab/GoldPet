@@ -13,18 +13,19 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
-import org.springframework.web.client.RestTemplate
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 
 @Component
 @Profile("local", "dev", "prod")
 class AIGenerationEventListener(
     private val aiProfileRequestRepository: AIProfileRequestRepository,
     private val aiStyleRepository: AIStyleRepository,
-    private val leonardoApiClient: LeonardoApiClient,
+    private val googleImagenApiClient: GoogleImagenApiClient,
     private val promptBuilder: AIPromptBuilder,
     private val goldService: GoldService,
-    private val restTemplate: RestTemplate,
     private val amazonS3: AmazonS3,
     @Value("\${S3_PUBLIC_ENDPOINT:http://localhost:9100}") private val s3PublicEndpoint: String,
     @Value("\${S3_PUBLIC_BUCKET_NAME:goldpet-public}") private val publicBucketName: String
@@ -42,78 +43,36 @@ class AIGenerationEventListener(
             return
         }
 
-        // a. Mark PROCESSING
+        // Mark PROCESSING
         request.status = AIRequestStatus.PROCESSING
         aiProfileRequestRepository.save(request)
 
         try {
-            // b. Upload source image to Leonardo as init image
-            val initImageId = if (request.sourceImageUrl.isNotBlank()) {
-                try {
-                    leonardoApiClient.uploadInitImage(request.sourceImageUrl)
-                } catch (e: Exception) {
-                    log.warn("Failed to upload init image, proceeding without it: {}", e.message)
-                    null
-                }
-            } else null
-
-            // Build prompt using pet info
+            // Build prompt
             val style = request.stylePrompt?.let { aiStyleRepository.findById(it).orElse(null) }
             val presetId = style?.presetId
             val prompt = promptBuilder.buildPrompt(request.pet, request.stylePrompt, presetId, request.petType)
-            val negativePrompt = promptBuilder.buildNegativePrompt()
 
-            // c. Create generation → save generationId
-            val generationId = leonardoApiClient.createGeneration(
-                prompt = prompt,
-                initImageId = initImageId,
-                presetStyle = presetId,
-                negativePrompt = negativePrompt
-            )
+            log.info("Generating image with Google Imagen for requestId={}", event.requestId)
 
-            request.leonardoGenerationId = generationId
-            aiProfileRequestRepository.save(request)
+            // Generate image (synchronous - returns result directly)
+            val rawImageBytes = googleImagenApiClient.generateImage(prompt)
 
-            log.info("Leonardo generation submitted for requestId={}, generationId={}", event.requestId, generationId)
+            // Resize to 512x512 and compress as JPEG
+            val jpegBytes = resizeAndCompress(rawImageBytes, 512, 0.85f)
+            log.info("Image resized: {}KB -> {}KB for requestId={}", rawImageBytes.size / 1024, jpegBytes.size / 1024, event.requestId)
 
-            // d. Poll for completion (max 40 times, 3s interval = 120s)
-            var resultImageUrl: String? = null
-            repeat(40) { attempt ->
-                if (resultImageUrl != null) return@repeat
-                Thread.sleep(3000)
-
-                val result = try {
-                    leonardoApiClient.getGeneration(generationId)
-                } catch (e: Exception) {
-                    log.warn("Poll attempt {} failed for generationId={}: {}", attempt + 1, generationId, e.message)
-                    return@repeat
-                }
-
-                when (result.status) {
-                    "COMPLETE" -> {
-                        resultImageUrl = result.imageUrl
-                        log.info("Generation COMPLETE for generationId={}, imageUrl={}", generationId, result.imageUrl)
-                    }
-                    "FAILED" -> {
-                        log.warn("Generation FAILED for generationId={}", generationId)
-                        throw IllegalStateException("Leonardo generation failed")
-                    }
-                    else -> log.debug("Generation status={} for generationId={} (attempt {})", result.status, generationId, attempt + 1)
-                }
+            // Upload to S3
+            val s3Key = "ai-profiles/${event.requestId}.jpg"
+            val metadata = ObjectMetadata().apply {
+                contentType = "image/jpeg"
+                contentLength = jpegBytes.size.toLong()
             }
+            amazonS3.putObject(publicBucketName, s3Key, ByteArrayInputStream(jpegBytes), metadata)
 
-            val leonardoImageUrl = resultImageUrl
-                ?: throw IllegalStateException("Generation timed out after 120s for generationId=$generationId")
+            val finalUrl = "$s3PublicEndpoint/$publicBucketName/$s3Key"
 
-            // e. Re-host result image to S3
-            val finalUrl = try {
-                reHostToS3(leonardoImageUrl, event.requestId)
-            } catch (e: Exception) {
-                log.warn("S3 re-hosting failed, using Leonardo URL directly: {}", e.message)
-                leonardoImageUrl
-            }
-
-            // f. COMPLETED + resultUrl
+            // Mark COMPLETED
             val completed = aiProfileRequestRepository.findById(event.requestId).orElse(null) ?: return
             completed.status = AIRequestStatus.COMPLETED
             completed.resultUrl = finalUrl
@@ -130,20 +89,23 @@ class AIGenerationEventListener(
         }
     }
 
-    private fun reHostToS3(imageUrl: String, requestId: Long): String {
-        val imageBytes = restTemplate.getForObject(imageUrl, ByteArray::class.java)
-            ?: throw IllegalStateException("Failed to download image from $imageUrl")
+    private fun resizeAndCompress(imageBytes: ByteArray, targetSize: Int, quality: Float): ByteArray {
+        val original = ImageIO.read(ByteArrayInputStream(imageBytes))
+        val resized = BufferedImage(targetSize, targetSize, BufferedImage.TYPE_INT_RGB)
+        val g = resized.createGraphics()
+        g.drawImage(original.getScaledInstance(targetSize, targetSize, java.awt.Image.SCALE_SMOOTH), 0, 0, null)
+        g.dispose()
 
-        val key = "ai-profiles/$requestId.jpg"
-        val metadata = ObjectMetadata().apply {
-            contentType = "image/jpeg"
-            contentLength = imageBytes.size.toLong()
+        val out = ByteArrayOutputStream()
+        val writer = ImageIO.getImageWritersByFormatName("jpg").next()
+        val param = writer.defaultWriteParam.apply {
+            compressionMode = javax.imageio.ImageWriteParam.MODE_EXPLICIT
+            compressionQuality = quality
         }
-        amazonS3.putObject(publicBucketName, key, ByteArrayInputStream(imageBytes), metadata)
-
-        val s3Url = "$s3PublicEndpoint/$publicBucketName/$key"
-        log.info("Re-hosted AI result to S3 for requestId={}, url={}", requestId, s3Url)
-        return s3Url
+        writer.output = ImageIO.createImageOutputStream(out)
+        writer.write(null, javax.imageio.IIOImage(resized, null, null), param)
+        writer.dispose()
+        return out.toByteArray()
     }
 
     private fun failAndRefund(requestId: Long, userId: Long, goldCost: Int, reason: String) {

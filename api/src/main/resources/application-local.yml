@@ -48,9 +48,10 @@ ncp:
     client-id: ex0an0bs06
     client-secret: QA9LJNOB6JI7R7e4QN86Cm6oJCBr653o0tEFe5uA
 
-# Leonardo AI
-leonardo:
-  api-key: 0bb324bf-388a-4a27-87b2-15773c3a8573
+# Google AI (Imagen)
+google:
+  ai:
+    api-key: AIzaSyBRpIPAYmGHogqxpGjmLspslPhaEKUZuPQ
 
 # DeepL Translation
 deepl:

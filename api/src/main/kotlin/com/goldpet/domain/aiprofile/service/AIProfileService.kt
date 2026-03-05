@@ -200,8 +200,8 @@ class AIProfileService(
             throw ForbiddenException("Not authorized")
         }
 
-        if (request.status != AIRequestStatus.PENDING) {
-            throw BadRequestException("Cannot cancel non-pending request")
+        if (request.status != AIRequestStatus.PENDING && request.status != AIRequestStatus.PROCESSING) {
+            throw BadRequestException("Cannot cancel completed or failed request")
         }
         
         // 골드 환불
