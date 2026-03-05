@@ -15,11 +15,13 @@ export const WalkPage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'records' | 'ranking'>('records');
     const [yearMonth, setYearMonth] = useState<string>(getCurrentYearMonth());
+    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+    const [rankingSize, setRankingSize] = useState<number>(10);
     const currentYearMonth = getCurrentYearMonth();
 
     const { data: rankingData, isLoading: rankingLoading } = useQuery({
-        queryKey: ['walk', 'monthlyRanking', yearMonth],
-        queryFn: () => walkService.getMonthlyRanking(yearMonth),
+        queryKey: ['walk', 'monthlyRanking', yearMonth, rankingSize],
+        queryFn: () => walkService.getMonthlyRanking(yearMonth, rankingSize),
         enabled: activeTab === 'ranking',
     });
 
@@ -27,12 +29,16 @@ export const WalkPage = () => {
         const [y, m] = yearMonth.split('-').map(Number);
         const d = new Date(y, m - 2, 1);
         setYearMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+        setSelectedUserId(null);
+        setRankingSize(10);
     }
 
     function nextMonth() {
         const [y, m] = yearMonth.split('-').map(Number);
         const d = new Date(y, m, 1);
         setYearMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+        setSelectedUserId(null);
+        setRankingSize(10);
     }
 
     const {
@@ -194,22 +200,29 @@ export const WalkPage = () => {
                                 </p>
                             ) : (
                                 <div className="walk_ranking_list">
-                                    {rankingData.rankings.map((entry, index) => (
-                                        <RankingCard key={entry.userId} entry={entry} isHighlighted={index === 1} />
+                                    {rankingData.rankings.map((entry) => (
+                                        <RankingCard
+                                            key={entry.userId}
+                                            entry={entry}
+                                            isHighlighted={entry.userId === selectedUserId}
+                                            onSelect={() => setSelectedUserId(prev => prev === entry.userId ? null : entry.userId)}
+                                        />
                                     ))}
                                 </div>
                             )}
 
-                            <button
-                                type="button"
-                                className="walk_ranking_more_btn"
-                                onClick={() => navigate(`/walk/ranking?yearMonth=${yearMonth}`)}
-                            >
-                                더보기
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M4 6L8 10L12 6" stroke="#505050" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                            </button>
+                            {rankingData && rankingData.rankings && rankingData.rankings.length >= rankingSize && rankingSize < 50 && (
+                                <button
+                                    type="button"
+                                    className="walk_ranking_more_btn"
+                                    onClick={() => setRankingSize(50)}
+                                >
+                                    더보기
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M4 6L8 10L12 6" stroke="#505050" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -218,9 +231,13 @@ export const WalkPage = () => {
     );
 };
 
-function RankingCard({ entry, isHighlighted }: { entry: WalkRankingEntry; isHighlighted: boolean }) {
+function RankingCard({ entry, isHighlighted, onSelect }: { entry: WalkRankingEntry; isHighlighted: boolean; onSelect: () => void }) {
     return (
-        <div className={`walk_ranking_card${isHighlighted ? ' walk_ranking_card--highlighted' : ''}`}>
+        <div
+            className={`walk_ranking_card${isHighlighted ? ' walk_ranking_card--highlighted' : ''}`}
+            onClick={onSelect}
+            style={{ cursor: 'pointer' }}
+        >
             <span className="walk_ranking_badge">{entry.rank}</span>
             <div className="walk_ranking_profiles">
                 <div className="walk_ranking_profile_img">

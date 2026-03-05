@@ -210,9 +210,9 @@ export const walkService = {
     }
   },
 
-  getMonthlyRanking: async (yearMonth: string): Promise<WalkCoupleRanking> => {
+  getMonthlyRanking: async (yearMonth: string, size: number = 10): Promise<WalkCoupleRanking> => {
     const response = await apiClient.get('/walks/ranking', {
-      params: { mode: 'calendar', yearMonth, size: 10 },
+      params: { mode: 'calendar', yearMonth, size },
     });
     return response.data;
   },
