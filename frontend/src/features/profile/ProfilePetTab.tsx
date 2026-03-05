@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
@@ -7,11 +7,13 @@ import { userService } from '../../services/userService';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { Loading } from '../../components/common/Loading';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
+import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import { ProfileSettingsSection } from './components/ProfileSettingsSection';
 
 const ProfilePetTab: React.FC = () => {
     const navigate = useNavigate();
     const { user, updateUser } = useAuthStore();
+    const [galleryState, setGalleryState] = useState<{ open: boolean; images: string[]; index: number }>({ open: false, images: [], index: 0 });
     
     // Fetch my pets list (uses default staleTime, invalidated after pet updates)
     const { data: myPets, isLoading: isPetsLoading } = useQuery({
@@ -185,18 +187,34 @@ const ProfilePetTab: React.FC = () => {
         );
     }
 
+    const petImages = pet?.profileImageUrls && pet.profileImageUrls.length > 0
+        ? pet.profileImageUrls
+        : [pet?.profileImageUrl || "/assets/images/common/pet_none_img.svg"];
+
+    const ownerGalleryImages = (currentUser?.profileImageUrls && currentUser.profileImageUrls.length > 0)
+        ? currentUser.profileImageUrls
+        : currentUser?.profileImageUrl ? [currentUser.profileImageUrl] : [];
+
     // HAS PET STATE (Matches profile_pet_info.html)
     return (
         <div className="profile_info_wrap">
+            <ImageGalleryModal
+                isOpen={galleryState.open}
+                images={galleryState.images}
+                initialIndex={galleryState.index}
+                onClose={() => setGalleryState(s => ({ ...s, open: false }))}
+            />
              <div className="profile_name_info">
-                <ProfileImageSlider 
+                <ProfileImageSlider
                     className="couple_img"
                     swiperWrapperClass="profile_img_wrap"
-                    images={pet?.profileImageUrls && pet.profileImageUrls.length > 0 
-                        ? pet.profileImageUrls 
-                        : [pet?.profileImageUrl || "/assets/images/common/pet_none_img.svg"]}
+                    images={petImages}
                     secondaryImage={ownerProfileImage}
                     secondaryImageClass="butler_img pet_img"
+                    onMainImageClick={(index) => setGalleryState({ open: true, images: petImages, index })}
+                    onSecondaryImageClick={() => {
+                        if (ownerGalleryImages.length > 0) setGalleryState({ open: true, images: ownerGalleryImages, index: 0 });
+                    }}
                     innerChildren={
                         <>
                             <div className="swiper-pet-prev"></div>

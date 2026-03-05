@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -7,11 +7,13 @@ import { userService } from '../../services/userService';
 import { goldService } from '../../services/goldService';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
+import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import { ProfileSettingsSection } from './components/ProfileSettingsSection';
 
 const ProfileOwnerTab: React.FC = () => {
     const { user: authUser, updateUser } = useAuthStore();
     const navigate = useNavigate();
+    const [galleryState, setGalleryState] = useState<{ open: boolean; images: string[]; index: number }>({ open: false, images: [], index: 0 });
 
     // Fetch user data from API (uses default staleTime, invalidated after profile update)
     const { data: apiUser, isLoading: isUserLoading } = useQuery({
@@ -69,17 +71,32 @@ const ProfileOwnerTab: React.FC = () => {
         navigate('/profile/owner/edit');
     };
 
+    const ownerImages = user.profileImageUrls && user.profileImageUrls.length > 0
+        ? user.profileImageUrls
+        : [user.profileImageUrl || "/assets/images/common/profile_none_img.svg"];
+
     return (
         <div className="profile_info_wrap">
+            <ImageGalleryModal
+                isOpen={galleryState.open}
+                images={galleryState.images}
+                initialIndex={galleryState.index}
+                onClose={() => setGalleryState(s => ({ ...s, open: false }))}
+            />
             <div className="profile_name_info">
                 <ProfileImageSlider
                     className="couple_img"
                     swiperWrapperClass="profile_img_wrap"
-                    images={user.profileImageUrls && user.profileImageUrls.length > 0 
-                        ? user.profileImageUrls 
-                        : [user.profileImageUrl || "/assets/images/common/profile_none_img.svg"]}
+                    images={ownerImages}
                     secondaryImage={representativePet?.profileImageUrl || "/assets/images/common/pet_none_img.svg"}
                     secondaryImageClass="butler_img pet_img"
+                    onMainImageClick={(index) => setGalleryState({ open: true, images: ownerImages, index })}
+                    onSecondaryImageClick={() => {
+                        const petImages = representativePet?.profileImageUrls && representativePet.profileImageUrls.length > 0
+                            ? representativePet.profileImageUrls
+                            : representativePet?.profileImageUrl ? [representativePet.profileImageUrl] : [];
+                        if (petImages.length > 0) setGalleryState({ open: true, images: petImages, index: 0 });
+                    }}
                     navigation={true}
                     innerChildren={
                         <>
