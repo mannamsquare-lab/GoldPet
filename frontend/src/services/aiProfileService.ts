@@ -71,6 +71,11 @@ class AIProfileService {
   async applyToProfile(requestId: number, data: ApplyToProfileRequest): Promise<void> {
     await apiClient.post(`/ai-profile/requests/${requestId}/apply`, data);
   }
+
+  async getLoadingTips(): Promise<string[]> {
+    const response = await apiClient.get<{ id: number; content: string; displayOrder: number; isActive: boolean }[]>('/ai-profile/loading-tips');
+    return response.data.map(tip => tip.content);
+  }
 }
 
 export const aiProfileService = new AIProfileService();

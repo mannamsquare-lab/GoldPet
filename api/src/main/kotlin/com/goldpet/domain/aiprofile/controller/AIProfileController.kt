@@ -1,6 +1,8 @@
 package com.goldpet.domain.aiprofile.controller
 
 import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.admin.service.LoadingTipAdminService
+import com.goldpet.domain.aiprofile.dto.AILoadingTipResponse
 import com.goldpet.domain.aiprofile.dto.AIProfileRequestResponse
 import com.goldpet.domain.aiprofile.dto.AIStyleOption
 import com.goldpet.domain.aiprofile.dto.ApplyProfileRequest
@@ -20,8 +22,15 @@ import java.net.URI
 @RestController
 @RequestMapping("/api/v1/ai-profile")
 class AIProfileController(
-    private val aiProfileService: AIProfileService
+    private val aiProfileService: AIProfileService,
+    private val loadingTipAdminService: LoadingTipAdminService
 ) {
+    @Operation(summary = "AI 생성 대기 로딩 팁 목록")
+    @GetMapping("/loading-tips")
+    fun getLoadingTips(): ResponseEntity<List<AILoadingTipResponse>> {
+        return ResponseEntity.ok(loadingTipAdminService.getActiveTips())
+    }
+
     @Operation(summary = "스타일 옵션 목록")
     @GetMapping("/styles")
     fun getStyles(): ResponseEntity<List<AIStyleOption>> {

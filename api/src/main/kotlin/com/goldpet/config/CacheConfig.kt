@@ -57,6 +57,7 @@ class CacheConfig {
             .withCacheConfiguration("gold:products", staticDataConfig)
             .withCacheConfiguration("user:stats", postFeedConfig)
             .withCacheConfiguration("emoticons", staticDataConfig)
+            .withCacheConfiguration("ai:loading-tips", staticDataConfig)
             .build()
     }
 

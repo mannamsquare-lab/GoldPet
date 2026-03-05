@@ -15,10 +15,12 @@ import { Tabs } from '../../components/common/Tabs';
 import { StatCard } from '../../components/common/StatCard';
 import { Button } from '../../components/common/Button';
 import type { AIRequestAdminResponse } from '../../services/aiProfileAdminService';
+import AIProfileLoadingTipsPage from './AIProfileLoadingTipsPage';
 
 const AI_PROFILE_TABS = [
   { key: 'requests', label: '요청 관리' },
   { key: 'styles', label: '스타일 관리' },
+  { key: 'loading-tips', label: '로딩 팁 관리' },
 ];
 
 const getStatusBadge = (status: string) => {
@@ -368,6 +370,11 @@ export default function AIProfilePage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Loading Tips Tab */}
+      {activeTab === 'loading-tips' && (
+        <AIProfileLoadingTipsPage />
       )}
 
       {/* Style Create/Edit Modal */}

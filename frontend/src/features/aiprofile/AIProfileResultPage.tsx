@@ -8,6 +8,16 @@ import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import pawIcon from './assets/paw-loading.svg';
 import './AIProfilePage.css';
 
+const DEFAULT_TIPS = [
+  '강아지는 사람의 감정을 읽을 수 있어요 🐶',
+  '고양이는 하루 16시간 이상 잠을 자요 😸',
+  '반려동물과 산책하면 스트레스가 줄어들어요 🌿',
+  'AI가 최고의 결과를 만들고 있어요 ✨',
+  '강아지의 코 무늬는 사람의 지문처럼 고유해요 🐾',
+  '고양이는 약 100가지 소리를 낼 수 있어요 🎵',
+  '반려동물은 주인의 목소리를 기억해요 💕',
+];
+
 export default function AIProfileResultPage() {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
@@ -20,15 +30,13 @@ export default function AIProfileResultPage() {
   const [tipIndex, setTipIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const tips = [
-    '강아지는 사람의 감정을 읽을 수 있어요 🐶',
-    '고양이는 하루 16시간 이상 잠을 자요 😸',
-    '반려동물과 산책하면 스트레스가 줄어들어요 🌿',
-    'AI가 최고의 결과를 만들고 있어요 ✨',
-    '강아지의 코 무늬는 사람의 지문처럼 고유해요 🐾',
-    '고양이는 약 100가지 소리를 낼 수 있어요 🎵',
-    '반려동물은 주인의 목소리를 기억해요 💕',
-  ];
+  const { data: serverTips } = useQuery({
+    queryKey: ['ai-loading-tips'],
+    queryFn: () => aiProfileService.getLoadingTips(),
+    staleTime: 1000 * 60 * 60, // 1시간
+  });
+
+  const tips = serverTips && serverTips.length > 0 ? serverTips : DEFAULT_TIPS;
 
   const { data: request } = useQuery({
     queryKey: ['ai-profile', 'request', requestId],
