@@ -3,6 +3,9 @@ package com.goldpet.domain.admin.service
 import com.goldpet.domain.admin.dto.*
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.pet.repository.PetRepository
+import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.walk.entity.BestWalkCouple
+import com.goldpet.domain.walk.repository.BestWalkCoupleRepository
 import com.goldpet.domain.walk.repository.WalkRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -12,12 +15,16 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.YearMonth
+import java.time.format.DateTimeParseException
 
 @Service
 @Transactional(readOnly = true)
 class AdminWalkService(
     private val walkRepository: WalkRepository,
-    private val petRepository: PetRepository
+    private val petRepository: PetRepository,
+    private val userRepository: UserRepository,
+    private val bestWalkCoupleRepository: BestWalkCoupleRepository
 ) {
     fun getWalks(
         page: Int,
@@ -116,5 +123,85 @@ class AdminWalkService(
             averageDurationMinutes = avgDuration,
             dailyBreakdown = dailyBreakdown
         )
+    }
+
+    fun getAdminRanking(yearMonth: String, size: Int): List<WalkRankingAdminResponse> {
+        val ym = parseYearMonth(yearMonth)
+        val startOfMonth = ym.atDay(1).atStartOfDay()
+        val startOfNextMonth = ym.plusMonths(1).atDay(1).atStartOfDay()
+        val pageable = PageRequest.of(0, size)
+        val rows = walkRepository.findCalendarRankings(startOfMonth, startOfNextMonth, pageable)
+        return rows.mapIndexed { index, row ->
+            WalkRankingAdminResponse(
+                rank = index + 1,
+                userId = (row[0] as Number).toLong(),
+                nickname = row[1] as? String,
+                profileImageUrl = row[2] as? String,
+                petId = (row[3] as? Number)?.toLong(),
+                petName = row[4] as? String,
+                petProfileImageUrl = row[5] as? String,
+                totalDistanceKm = (row[6] as Number).toDouble(),
+                totalMinutes = (row[7] as Number).toLong(),
+                totalGold = (row[8] as Number).toInt(),
+                walkCount = (row[9] as Number).toInt()
+            )
+        }
+    }
+
+    fun getBestCouple(yearMonth: String): BestWalkCoupleResponse {
+        parseYearMonth(yearMonth)
+        return bestWalkCoupleRepository.findByYearMonth(yearMonth)?.let { BestWalkCoupleResponse.from(it) }
+            ?: throw NotFoundException("No best couple selected for $yearMonth")
+    }
+
+    @Transactional
+    fun setBestCouple(request: BestWalkCoupleRequest): BestWalkCoupleResponse {
+        val ym = parseYearMonth(request.yearMonth)
+
+        val user = userRepository.findById(request.userId)
+            .orElseThrow { NotFoundException("User not found: ${request.userId}") }
+
+        val pet = petRepository.findById(request.petId)
+            .orElseThrow { NotFoundException("Pet not found: ${request.petId}") }
+
+        if (pet.owner.id != user.id) {
+            throw BadRequestException("Pet ${request.petId} does not belong to user ${request.userId}")
+        }
+
+        val startOfMonth = ym.atDay(1).atStartOfDay()
+        val startOfNextMonth = ym.plusMonths(1).atDay(1).atStartOfDay()
+        if (!walkRepository.existsByUserIdAndStartTimeBetween(user.id, startOfMonth, startOfNextMonth)) {
+            throw BadRequestException("User ${request.userId} has no walks in ${request.yearMonth}")
+        }
+
+        // Upsert: delete existing entry if present
+        bestWalkCoupleRepository.findByYearMonth(request.yearMonth)?.let {
+            bestWalkCoupleRepository.delete(it)
+            bestWalkCoupleRepository.flush()
+        }
+
+        val saved = bestWalkCoupleRepository.save(
+            BestWalkCouple(
+                yearMonth = request.yearMonth,
+                user = user,
+                pet = pet,
+                selectedBy = null // admin_users is a separate table from users
+            )
+        )
+        return BestWalkCoupleResponse.from(saved)
+    }
+
+    @Transactional
+    fun deleteBestCouple(yearMonth: String) {
+        parseYearMonth(yearMonth)
+        bestWalkCoupleRepository.deleteByYearMonth(yearMonth)
+    }
+
+    private fun parseYearMonth(yearMonth: String): YearMonth {
+        return try {
+            YearMonth.parse(yearMonth)
+        } catch (e: DateTimeParseException) {
+            throw BadRequestException("Invalid yearMonth format: $yearMonth (expected YYYY-MM)")
+        }
     }
 }

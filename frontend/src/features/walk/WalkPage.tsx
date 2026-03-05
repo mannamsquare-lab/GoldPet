@@ -1,14 +1,39 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walkService, getTodayStats } from '../../services/walkService';
-import type { WalkRecord } from '../../services/walkService';
+import type { WalkRecord, WalkRankingEntry } from '../../services/walkService';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
 import './WalkPage.css';
+
+function getCurrentYearMonth(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
 
 export const WalkPage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'records' | 'ranking'>('records');
+    const [yearMonth, setYearMonth] = useState<string>(getCurrentYearMonth());
+    const currentYearMonth = getCurrentYearMonth();
+
+    const { data: rankingData, isLoading: rankingLoading } = useQuery({
+        queryKey: ['walk', 'monthlyRanking', yearMonth],
+        queryFn: () => walkService.getMonthlyRanking(yearMonth),
+        enabled: activeTab === 'ranking',
+    });
+
+    function prevMonth() {
+        const [y, m] = yearMonth.split('-').map(Number);
+        const d = new Date(y, m - 2, 1);
+        setYearMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    function nextMonth() {
+        const [y, m] = yearMonth.split('-').map(Number);
+        const d = new Date(y, m, 1);
+        setYearMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
 
     const {
         data,
@@ -135,112 +160,98 @@ export const WalkPage = () => {
 
                     {/* Ranking Tab */}
                     {activeTab === 'ranking' && (
-                        <>
-                            <div className="best_rank">
-                                <div className="best_couple">
-                                    <p className="tit">
-                                        <img src="/assets/images/walk/best_icon.svg" alt="" />
-                                        BEST 산책 커플
-                                    </p>
-                                    <div className="couple_img">
-                                        <div className="profile_img profile_img01">
-                                            <img src="/assets/images/main/main_slide_butler01.jpg" alt="" />
-                                        </div>
-                                        <div className="profile_img profile_img02">
-                                            <img src="/assets/images/main/main_slide_butler02.png" alt="" />
-                                        </div>
-                                    </div>
-                                    <button type="button" className="couple_btn">
-                                        망고
-                                        <img src="/assets/images/walk/best_icon02.svg" alt="" />
-                                        난완전멋쟁이
-                                    </button>
-                                    <div className="couple_detail">
-                                        <dl>
-                                            <dt>총 거리(km)</dt>
-                                            <dd>1.0</dd>
-                                        </dl>
-                                        <dl>
-                                            <dt>총 시간(분)</dt>
-                                            <dd>1,680</dd>
-                                        </dl>
-                                        <dl>
-                                            <dt>총 적립(Gold)</dt>
-                                            <dd>10</dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <ul className="ranking_list">
-                                <li>
-                                    <div className="ranking_img">
-                                        <div className="profile_img profile_img01">
-                                            <img src="/assets/images/main/main_slide_butler01.jpg" alt="" />
-                                        </div>
-                                        <div className="profile_img profile_img02">
-                                            <img src="/assets/images/main/main_slide_butler02.png" alt="" />
-                                        </div>
-                                        <p className="count_txt">2</p>
-                                    </div>
-                                    <div className="ranking_txt">
-                                        <strong>개똥이와 똥개</strong>
-                                        <div className="txt_wrap">
-                                            <div className="txt01">
-                                                <p>1.0 Km</p>
-                                                <p>총 30분</p>
-                                            </div>
-                                            <p>10G 적립</p>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="ranking_img">
-                                        <div className="profile_img profile_img01">
-                                            <img src="/assets/images/main/main_slide_butler01.jpg" alt="" />
-                                        </div>
-                                        <div className="profile_img profile_img02">
-                                            <img src="/assets/images/main/main_slide_butler02.png" alt="" />
-                                        </div>
-                                        <p className="count_txt">2</p>
-                                    </div>
-                                    <div className="ranking_txt">
-                                        <strong>개똥이와 똥개</strong>
-                                        <div className="txt_wrap">
-                                            <div className="txt01">
-                                                <p>1.0 Km</p>
-                                                <p>총 30분</p>
-                                            </div>
-                                            <p>10G 적립</p>
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-
-                            <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                        <div className="walk_ranking_wrap">
+                            {/* Month Selector */}
+                            <div className="walk_month_selector">
+                                <button type="button" className="walk_month_arrow" onClick={prevMonth}>
+                                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+                                        <path d="M7 1L1 7L7 13" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
+                                <span className="walk_month_label">
+                                    {yearMonth.replace('-', '.')}
+                                </span>
                                 <button
                                     type="button"
-                                    onClick={() => navigate('/walk/ranking')}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: 'var(--color-primary)',
-                                        fontSize: '14px',
-                                        fontWeight: 600,
-                                        textDecoration: 'underline',
-                                        cursor: 'pointer',
-                                    }}
+                                    className="walk_month_arrow"
+                                    onClick={nextMonth}
+                                    disabled={yearMonth >= currentYearMonth}
+                                    style={{ opacity: yearMonth >= currentYearMonth ? 0.3 : 1 }}
                                 >
-                                    전체 랭킹 보기 →
+                                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+                                        <path d="M1 1L7 7L1 13" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
                                 </button>
                             </div>
-                        </>
+
+                            {rankingLoading ? (
+                                <p style={{ color: '#727272', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>
+                                    불러오는 중...
+                                </p>
+                            ) : !rankingData || !rankingData.rankings || rankingData.rankings.length === 0 ? (
+                                <p style={{ color: '#727272', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>
+                                    이 달의 산책 기록이 없습니다.
+                                </p>
+                            ) : (
+                                <div className="walk_ranking_list">
+                                    {rankingData.rankings.map((entry, index) => (
+                                        <RankingCard key={entry.userId} entry={entry} isHighlighted={index === 1} />
+                                    ))}
+                                </div>
+                            )}
+
+                            <button
+                                type="button"
+                                className="walk_ranking_more_btn"
+                                onClick={() => navigate(`/walk/ranking?yearMonth=${yearMonth}`)}
+                            >
+                                더보기
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M4 6L8 10L12 6" stroke="#505050" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
         </div>
     );
 };
+
+function RankingCard({ entry, isHighlighted }: { entry: WalkRankingEntry; isHighlighted: boolean }) {
+    return (
+        <div className={`walk_ranking_card${isHighlighted ? ' walk_ranking_card--highlighted' : ''}`}>
+            <span className="walk_ranking_badge">{entry.rank}</span>
+            <div className="walk_ranking_profiles">
+                <div className="walk_ranking_profile_img">
+                    <img
+                        src={entry.petProfileImageUrl || '/assets/images/common/pet_none_img.svg'}
+                        alt={entry.petName || ''}
+                    />
+                </div>
+                <div className="walk_ranking_profile_img">
+                    <img
+                        src={entry.profileImageUrl || '/assets/images/common/profile_none_img.svg'}
+                        alt={entry.nickname}
+                    />
+                </div>
+            </div>
+            <div className="walk_ranking_info">
+                <strong className="walk_ranking_name">
+                    {entry.petName ? `${entry.petName}와 ${entry.nickname}` : entry.nickname}
+                </strong>
+                <div className="walk_ranking_stats_row">
+                    <span>{entry.totalDistanceKm.toFixed(1)} Km</span>
+                    <svg width="3" height="3" viewBox="0 0 3 3"><circle cx="1.5" cy="1.5" r="1.5" fill="#614108"/></svg>
+                    <span>총 {entry.totalMinutes.toLocaleString()}분</span>
+                </div>
+                <div className="walk_ranking_gold_row">
+                    <span>{entry.totalGold.toLocaleString()}G 적립</span>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 interface WalkRecordItemProps {
     record: WalkRecord;

@@ -59,8 +59,18 @@ export interface WalkRankingEntry {
   userId: number;
   nickname: string;
   profileImageUrl: string | null;
+  petName: string | null;
+  petProfileImageUrl: string | null;
   totalDistanceKm: number;
+  totalMinutes: number;
+  totalGold: number;
   walkCount: number;
+}
+
+export interface WalkCoupleRanking {
+  yearMonth: string;
+  bestCouple: WalkRankingEntry | null;
+  rankings: WalkRankingEntry[];
 }
 
 // Backend WalkResponse -> Frontend WalkRecord 변환
@@ -198,6 +208,13 @@ export const walkService = {
       console.error('Failed to fetch walk ranking:', error);
       throw error;
     }
+  },
+
+  getMonthlyRanking: async (yearMonth: string): Promise<WalkCoupleRanking> => {
+    const response = await apiClient.get('/walks/ranking', {
+      params: { mode: 'calendar', yearMonth, size: 10 },
+    });
+    return response.data;
   },
 
   getStaticMapImage: async (walkId: number, width: number, height: number): Promise<string | null> => {

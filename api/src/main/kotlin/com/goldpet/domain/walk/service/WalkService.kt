@@ -10,9 +10,11 @@ import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.walk.dto.WalkRankingResponse
+import com.goldpet.domain.walk.dto.WalkCoupleRankingResponse
 import com.goldpet.domain.walk.entity.Walk
 import com.goldpet.domain.walk.entity.WalkPet
 import com.goldpet.domain.walk.repository.WalkRepository
+import com.goldpet.domain.walk.repository.BestWalkCoupleRepository
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class WalkService(
     private val walkRepository: WalkRepository,
+    private val bestWalkCoupleRepository: BestWalkCoupleRepository,
     private val userRepository: UserRepository,
     private val petRepository: PetRepository,
     private val goldService: GoldService,
@@ -145,10 +148,48 @@ class WalkService(
                 userId = (row[0] as Number).toLong(),
                 nickname = row[1] as String,
                 profileImageUrl = row[2] as? String,
+                petName = null,
+                petProfileImageUrl = null,
                 totalDistanceKm = (row[3] as Number).toDouble(),
+                totalMinutes = 0L,
+                totalGold = 0,
                 walkCount = (row[4] as Number).toInt()
             )
         }
+    }
+
+    fun getCalendarRanking(yearMonth: String, pageable: org.springframework.data.domain.Pageable): WalkCoupleRankingResponse {
+        val (year, month) = yearMonth.split("-").map { it.toInt() }
+        val startOfMonth = java.time.LocalDateTime.of(year, month, 1, 0, 0, 0)
+        val startOfNextMonth = startOfMonth.plusMonths(1)
+
+        val results = walkRepository.findCalendarRankings(startOfMonth, startOfNextMonth, pageable)
+        val rankings = results.mapIndexed { index, row ->
+            WalkRankingResponse(
+                rank = index + 1,
+                userId = (row[0] as Number).toLong(),
+                nickname = row[1] as String,
+                profileImageUrl = row[2] as? String,
+                // row[3] is petId (skip for public ranking response)
+                petName = row[4] as? String,
+                petProfileImageUrl = row[5] as? String,
+                totalDistanceKm = (row[6] as Number).toDouble(),
+                totalMinutes = (row[7] as Number).toLong(),
+                totalGold = (row[8] as Number).toInt(),
+                walkCount = (row[9] as Number).toInt()
+            )
+        }
+
+        val bestCoupleEntity = bestWalkCoupleRepository.findByYearMonth(yearMonth)
+        val bestCouple = bestCoupleEntity?.let { couple ->
+            rankings.find { it.userId == couple.user.id }
+        }
+
+        return WalkCoupleRankingResponse(
+            yearMonth = yearMonth,
+            bestCouple = bestCouple,
+            rankings = rankings
+        )
     }
 
     fun getMyStats(userId: Long): com.goldpet.domain.walk.dto.WalkStatsResponse {

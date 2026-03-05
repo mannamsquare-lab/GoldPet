@@ -4,6 +4,7 @@ import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.walk.dto.WalkRankingResponse
+import com.goldpet.domain.walk.dto.WalkCoupleRankingResponse
 import com.goldpet.domain.walk.dto.WalkStatsResponse
 import com.goldpet.domain.walk.service.WalkService
 import jakarta.validation.Valid
@@ -80,10 +81,23 @@ class WalkController(
 
     @GetMapping("/ranking")
     fun getWalkRanking(
-        @RequestParam(defaultValue = "weekly") period: String,
+        @RequestParam(required = false) mode: String?,
+        @RequestParam(required = false) period: String?,
+        @RequestParam(required = false) yearMonth: String?,
         @org.springframework.data.web.PageableDefault(size = 50) pageable: org.springframework.data.domain.Pageable
-    ): ResponseEntity<List<WalkRankingResponse>> {
-        val rankings = walkService.getWalkRanking(period, pageable)
-        return ResponseEntity.ok(rankings)
+    ): ResponseEntity<Any> {
+        // `mode` takes precedence; `period` is backward-compat alias
+        val effectiveMode = mode ?: period ?: "weekly"
+
+        return if (effectiveMode == "calendar") {
+            if (yearMonth.isNullOrBlank()) {
+                return ResponseEntity.badRequest().body(mapOf("error" to "yearMonth is required for mode=calendar (format: YYYY-MM)"))
+            }
+            val result = walkService.getCalendarRanking(yearMonth, pageable)
+            ResponseEntity.ok(result)
+        } else {
+            val rankings = walkService.getWalkRanking(effectiveMode, pageable)
+            ResponseEntity.ok(rankings)
+        }
     }
 }

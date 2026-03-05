@@ -1,8 +1,11 @@
 package com.goldpet.domain.admin.controller
 
+import com.goldpet.domain.admin.dto.BestWalkCoupleRequest
+import com.goldpet.domain.admin.dto.BestWalkCoupleResponse
 import com.goldpet.domain.admin.dto.WalkAdminResponse
 import com.goldpet.domain.admin.dto.WalkDeleteRequest
 import com.goldpet.domain.admin.dto.WalkDetailResponse
+import com.goldpet.domain.admin.dto.WalkRankingAdminResponse
 import com.goldpet.domain.admin.dto.WalkStatsDetailResponse
 import com.goldpet.domain.admin.service.AdminWalkService
 import io.swagger.v3.oas.annotations.Operation
@@ -57,5 +60,39 @@ class AdminWalkController(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) endDate: LocalDate?
     ): ResponseEntity<WalkStatsDetailResponse> {
         return ResponseEntity.ok(adminWalkService.getDetailedStats(period, startDate, endDate))
+    }
+
+    @Operation(summary = "월별 산책 랭킹 조회 (베스트 커플 선정용)")
+    @GetMapping("/ranking")
+    fun getAdminRanking(
+        @RequestParam yearMonth: String,
+        @RequestParam(defaultValue = "50") size: Int
+    ): ResponseEntity<List<WalkRankingAdminResponse>> {
+        return ResponseEntity.ok(adminWalkService.getAdminRanking(yearMonth, size))
+    }
+
+    @Operation(summary = "베스트 산책 커플 조회")
+    @GetMapping("/best-couple")
+    fun getBestCouple(
+        @RequestParam yearMonth: String
+    ): ResponseEntity<BestWalkCoupleResponse> {
+        return ResponseEntity.ok(adminWalkService.getBestCouple(yearMonth))
+    }
+
+    @Operation(summary = "베스트 산책 커플 선정 (upsert)")
+    @PostMapping("/best-couple")
+    fun setBestCouple(
+        @RequestBody request: BestWalkCoupleRequest
+    ): ResponseEntity<BestWalkCoupleResponse> {
+        return ResponseEntity.ok(adminWalkService.setBestCouple(request))
+    }
+
+    @Operation(summary = "베스트 산책 커플 해제")
+    @DeleteMapping("/best-couple/{yearMonth}")
+    fun deleteBestCouple(
+        @PathVariable yearMonth: String
+    ): ResponseEntity<Void> {
+        adminWalkService.deleteBestCouple(yearMonth)
+        return ResponseEntity.noContent().build()
     }
 }
