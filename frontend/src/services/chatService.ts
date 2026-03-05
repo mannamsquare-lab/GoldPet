@@ -136,6 +136,7 @@ export const chatService = {
       }
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('category', 'chat');
 
       const response = await apiClient.post('/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
