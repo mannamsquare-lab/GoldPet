@@ -26,7 +26,7 @@ class ChatRoomParticipant(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val role: ChatRoomRole,
+    var role: ChatRoomRole,
 
     @Column(nullable = false)
     val joinedAt: LocalDateTime = LocalDateTime.now(),

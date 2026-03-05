@@ -141,9 +141,10 @@ export const chatService = {
     }
   },
 
-  inviteToRoom: async (roomId: number, userId: number): Promise<void> => {
+  inviteToRoom: async (roomId: number, userId: number): Promise<{ roomType: string }> => {
     try {
-      await apiClient.post(`/chat/rooms/${roomId}/invite`, { userId });
+      const response = await apiClient.post(`/chat/rooms/${roomId}/invite`, { userId });
+      return response.data;
     } catch {
       throw new Error('초대에 실패했습니다.');
     }

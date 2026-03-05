@@ -882,19 +882,15 @@ const ChatDetailPage = () => {
             {showHeaderMenu && (
                 <div className="chat_detail_menu_overlay" onClick={() => setShowHeaderMenu(false)}>
                     <div className="chat_detail_menu_sheet" onClick={(e) => e.stopPropagation()}>
-                        {isGroupChat ? (
+                        <button type="button" onClick={() => { setShowHeaderMenu(false); setShowInviteModal(true); }}>대화상대 초대하기</button>
+                        {!isGroupChat && (
                             <>
-                                <button type="button" onClick={() => { setShowHeaderMenu(false); setShowInviteModal(true); }}>대화상대 초대하기</button>
                                 <div className="divider" />
-                                <button type="button" onClick={handleLeaveRoom}>채팅방 나가기</button>
-                            </>
-                        ) : (
-                            <>
                                 <button type="button" onClick={handleBlockUser}>차단하기</button>
-                                <div className="divider" />
-                                <button type="button" onClick={handleLeaveRoom}>채팅방 나가기</button>
                             </>
                         )}
+                        <div className="divider" />
+                        <button type="button" onClick={handleLeaveRoom}>채팅방 나가기</button>
                         <div className="divider" />
                         <button type="button" onClick={() => setShowHeaderMenu(false)}>취소</button>
                     </div>
@@ -1250,6 +1246,11 @@ const ChatDetailPage = () => {
                 onClose={() => setShowInviteModal(false)}
                 roomId={chatId!}
                 existingParticipantIds={currentRoom?.participants?.map(p => p.id) || []}
+                onInviteSuccess={(roomType) => {
+                    if (roomType === 'GROUP' && !isGroupChat) {
+                        navigate(`/chat/group/${chatId}`, { replace: true });
+                    }
+                }}
             />
 
             <ReportModal

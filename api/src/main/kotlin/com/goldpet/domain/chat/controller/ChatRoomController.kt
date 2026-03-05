@@ -172,10 +172,20 @@ class ChatRoomController(
         @PathVariable roomId: Long,
         @RequestBody body: Map<String, Long>,
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
-    ): ResponseEntity<Void> {
+    ): ResponseEntity<Map<String, String>> {
         val userId = body["userId"] ?: throw IllegalArgumentException("userId is required")
-        chatService.inviteParticipant(roomId, userDetails.id, userId)
-        return ResponseEntity.ok().build()
+        val chatRoom = chatService.inviteParticipant(roomId, userDetails.id, userId)
+
+        // Broadcast system message if room was converted to GROUP
+        val lastMessage = chatRoom.messages.lastOrNull()
+        if (lastMessage != null && lastMessage.messageType == com.goldpet.domain.chat.entity.MessageType.SYSTEM) {
+            simpMessageSendingOperations.convertAndSend(
+                "/topic/chat/$roomId",
+                ChatMessageResponse.from(lastMessage)
+            )
+        }
+
+        return ResponseEntity.ok(mapOf("roomType" to chatRoom.roomType.name))
     }
 
     @DeleteMapping("/{roomId}/leave")

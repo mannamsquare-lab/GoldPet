@@ -18,14 +18,14 @@ class ChatRoom(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val roomType: ChatRoomType,
+    var roomType: ChatRoomType,
 
     @Column
     var title: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_user_id")
-    val ownerUser: User? = null,
+    var ownerUser: User? = null,
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "match_id")

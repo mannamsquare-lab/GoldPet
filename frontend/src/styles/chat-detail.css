@@ -188,7 +188,7 @@
   z-index: 101;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   animation: chat_detail_sheet_slide_up 0.25s ease-out;
 }
 
@@ -203,7 +203,7 @@
   color: #614108;
   letter-spacing: -0.32px;
   cursor: pointer;
-  text-align: center;
+  text-align: left;
 }
 
 .chat_detail_menu_sheet .divider {

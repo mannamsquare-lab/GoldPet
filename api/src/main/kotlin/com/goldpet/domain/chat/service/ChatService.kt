@@ -97,11 +97,48 @@ class ChatService(
     }
 
     @Transactional
-    fun inviteParticipant(roomId: Long, requesterId: Long, inviteeId: Long) {
+    fun inviteParticipant(roomId: Long, requesterId: Long, inviteeId: Long): ChatRoom {
+        val chatRoom = chatRoomRepository.findById(roomId)
+            .orElseThrow { NotFoundException("Chat room not found with id: $roomId") }
+
+        // AI_PET rooms cannot have invited participants
+        if (chatRoom.roomType == ChatRoomType.AI_PET) {
+            throw BadRequestException("Cannot invite to AI pet chat")
+        }
+
         // Verify requester is an active participant
-        chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, requesterId)
+        val requesterParticipant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, requesterId)
             .orElseThrow { ForbiddenException("User $requesterId is not a participant of chat room $roomId") }
+
+        // Convert DIRECT to GROUP if needed
+        if (chatRoom.roomType == ChatRoomType.DIRECT) {
+            convertDirectToGroup(chatRoom, requesterParticipant)
+        }
+
         addParticipant(roomId, inviteeId)
+        return chatRoom
+    }
+
+    private fun convertDirectToGroup(chatRoom: ChatRoom, requesterParticipant: ChatRoomParticipant) {
+        val requester = requesterParticipant.user
+
+        // Convert room type
+        chatRoom.roomType = ChatRoomType.GROUP
+        chatRoom.ownerUser = requester
+        chatRoomRepository.save(chatRoom)
+
+        // Promote requester to OWNER
+        requesterParticipant.role = ChatRoomRole.OWNER
+        chatRoomParticipantRepository.save(requesterParticipant)
+
+        // Create system message
+        val systemMessage = ChatMessage(
+            chatRoom = chatRoom,
+            sender = null,
+            messageType = MessageType.SYSTEM,
+            textContent = "그룹 채팅으로 전환되었습니다"
+        )
+        chatMessageRepository.save(systemMessage)
     }
 
     @Transactional

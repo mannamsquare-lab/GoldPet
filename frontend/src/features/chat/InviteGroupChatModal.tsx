@@ -9,9 +9,10 @@ interface InviteGroupChatModalProps {
     onClose: () => void;
     roomId: string;
     existingParticipantIds: number[];
+    onInviteSuccess?: (roomType: string) => void;
 }
 
-const InviteGroupChatModal = ({ isOpen, onClose, roomId, existingParticipantIds }: InviteGroupChatModalProps) => {
+const InviteGroupChatModal = ({ isOpen, onClose, roomId, existingParticipantIds, onInviteSuccess }: InviteGroupChatModalProps) => {
     const { showAlert } = useAlert();
     const queryClient = useQueryClient();
     const [selectedFriends, setSelectedFriends] = useState<Set<number>>(new Set());
@@ -30,10 +31,20 @@ const InviteGroupChatModal = ({ isOpen, onClose, roomId, existingParticipantIds 
     const inviteMutation = useMutation({
         mutationFn: async () => {
             const ids = Array.from(selectedFriends);
-            await Promise.all(ids.map(userId => chatService.inviteToRoom(Number(roomId), userId)));
+            let resultRoomType = '';
+            for (const userId of ids) {
+                const result = await chatService.inviteToRoom(Number(roomId), userId);
+                if (!resultRoomType && result?.roomType) {
+                    resultRoomType = result.roomType;
+                }
+            }
+            return resultRoomType;
         },
-        onSuccess: () => {
+        onSuccess: (roomType) => {
             queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+            if (onInviteSuccess && roomType) {
+                onInviteSuccess(roomType);
+            }
             handleClose();
         },
         onError: () => {
