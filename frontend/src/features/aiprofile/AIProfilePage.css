@@ -906,7 +906,7 @@
   background-color: #EFE1C4;
   border-radius: 16px 16px 0 0;
   padding: 24px;
-  padding-bottom: 40px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 16px));
 }
 
 .ai-apply-sheet-menu {
