@@ -81,7 +81,7 @@ function MyWalkRecordItem({ record, onClick }: { record: WalkRecord; onClick: ()
     return (
         <div className="walk_record_item" onClick={onClick} style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                <WalkRouteThumbnail walkId={record.id} hasPath={!!record.path?.length} size={60} />
+                <WalkRouteThumbnail walkId={record.id} hasPath={record.hasPath ?? !!record.path?.length} size={60} />
 
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div className="walk_record_header" style={{ justifyContent: 'space-between' }}>

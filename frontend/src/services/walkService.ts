@@ -19,6 +19,7 @@ export interface WalkRecord {
   isPublic?: boolean;
   userNickname?: string;
   userProfileImageUrl?: string;
+  hasPath?: boolean;
 }
 
 export interface WalkStats {
@@ -90,6 +91,7 @@ function toWalkRecord(walk: {
   isPublic?: boolean;
   userNickname?: string;
   userProfileImageUrl?: string;
+  hasPath?: boolean;
 }): WalkRecord {
   const date = new Date(walk.startTime);
   const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
@@ -111,6 +113,7 @@ function toWalkRecord(walk: {
     isPublic: walk.isPublic ?? true,
     userNickname: walk.userNickname ?? undefined,
     userProfileImageUrl: walk.userProfileImageUrl ?? undefined,
+    hasPath: walk.hasPath,
   };
 }
 

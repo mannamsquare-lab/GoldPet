@@ -85,7 +85,8 @@ class WalkController(
                 path = emptyList(),
                 spots = emptyList(),
                 caloriesBurned = response.caloriesBurned,
-                notes = null
+                notes = null,
+                hasPath = response.hasPath,
             )
         })
     }

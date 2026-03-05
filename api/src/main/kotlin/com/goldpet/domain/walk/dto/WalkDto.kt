@@ -64,6 +64,7 @@ data class WalkResponse(
     val isPublic: Boolean = true,
     val userNickname: String? = null,
     val userProfileImageUrl: String? = null,
+    val hasPath: Boolean = false,
 ) {
     companion object {
         fun from(walk: Walk): WalkResponse {
@@ -100,6 +101,7 @@ data class WalkResponse(
                 isPublic = walk.isPublic,
                 userNickname = walk.user.nickname,
                 userProfileImageUrl = walk.user.profileImageUrl,
+                hasPath = walk.path.coordinates.size >= 2,
             )
         }
 
@@ -123,6 +125,7 @@ data class WalkResponse(
                 isPublic = walk.isPublic,
                 userNickname = walk.user.nickname,
                 userProfileImageUrl = walk.user.profileImageUrl,
+                hasPath = walk.path.coordinates.size >= 2,
             )
         }
     }
