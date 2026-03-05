@@ -106,15 +106,15 @@ class FriendService(
 
         val distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x)
 
-        // Get pet images: first from profileImages relation, fallback to profileImageUrl
-        val petImages = mainPet?.let { pet ->
-            val images = pet.profileImages.map { it.imageUrl }.toMutableList()
-            // If profileImages is empty but profileImageUrl exists, use that
+        // Get pet images from ALL pets: profileImages relation first, fallback to profileImageUrl
+        val petImages = pets.flatMap { pet ->
+            val images = pet.profileImages.map { it.imageUrl }
             if (images.isEmpty() && !pet.profileImageUrl.isNullOrBlank()) {
-                images.add(pet.profileImageUrl!!)
+                listOf(pet.profileImageUrl!!)
+            } else {
+                images
             }
-            images
-        } ?: emptyList()
+        }
 
         // Get owner profile images: from profileImages relation, fallback to profileImageUrl
         val ownerImages = user.profileImages.map { it.imageUrl }.toMutableList()

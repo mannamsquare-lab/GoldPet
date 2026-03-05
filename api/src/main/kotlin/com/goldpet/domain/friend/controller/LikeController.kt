@@ -68,6 +68,10 @@ class LikeController(
             val parsed1 = parseTemperamentTags(mainPet?.temperamentTags)
             val ownerImages1 = user.profileImages.map { it.imageUrl }.toMutableList()
             if (ownerImages1.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages1.add(user.profileImageUrl!!)
+            val petImages1 = pets.flatMap { pet ->
+                val imgs = pet.profileImages.map { it.imageUrl }
+                if (imgs.isEmpty() && !pet.profileImageUrl.isNullOrBlank()) listOf(pet.profileImageUrl!!) else imgs
+            }
 
             FriendResponse(
                 id = user.id,
@@ -88,7 +92,7 @@ class LikeController(
                 onWalking = false,
                 description = parsed1.note,
                 tags = parsed1.tags,
-                images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
+                images = petImages1,
                 distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
                 status = "offline",
                 location = null,
@@ -114,6 +118,10 @@ class LikeController(
             val parsed2 = parseTemperamentTags(mainPet?.temperamentTags)
             val ownerImages2 = user.profileImages.map { it.imageUrl }.toMutableList()
             if (ownerImages2.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages2.add(user.profileImageUrl!!)
+            val petImages2 = pets.flatMap { pet ->
+                val imgs = pet.profileImages.map { it.imageUrl }
+                if (imgs.isEmpty() && !pet.profileImageUrl.isNullOrBlank()) listOf(pet.profileImageUrl!!) else imgs
+            }
 
             FriendResponse(
                 id = user.id,
@@ -134,7 +142,7 @@ class LikeController(
                 onWalking = false,
                 description = parsed2.note,
                 tags = parsed2.tags,
-                images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
+                images = petImages2,
                 distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
                 status = "offline",
                 location = null,
@@ -160,6 +168,10 @@ class LikeController(
             val parsed3 = parseTemperamentTags(mainPet?.temperamentTags)
             val ownerImages3 = user.profileImages.map { it.imageUrl }.toMutableList()
             if (ownerImages3.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages3.add(user.profileImageUrl!!)
+            val petImages3 = pets.flatMap { pet ->
+                val imgs = pet.profileImages.map { it.imageUrl }
+                if (imgs.isEmpty() && !pet.profileImageUrl.isNullOrBlank()) listOf(pet.profileImageUrl!!) else imgs
+            }
 
             FriendResponse(
                 id = user.id,
@@ -180,7 +192,7 @@ class LikeController(
                 onWalking = false,
                 description = parsed3.note,
                 tags = parsed3.tags,
-                images = mainPet?.profileImageUrl?.let { listOf(it) } ?: (user.profileImageUrl?.let { listOf(it) } ?: emptyList()),
+                images = petImages3,
                 distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
                 status = "offline",
                 location = null,
