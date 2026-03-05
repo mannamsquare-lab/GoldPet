@@ -13,6 +13,8 @@ import { useToast } from '../../contexts/ToastContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import { blockService } from '../../services/blockService';
+import { reportService } from '../../services/reportService';
+import { ReportModal } from '../../components/common/ReportModal';
 import { CACHE_TIME } from '../../config/queryConfig';
 import EmoticonPicker from './EmoticonPicker';
 import InviteGroupChatModal from './InviteGroupChatModal';
@@ -269,6 +271,9 @@ const ChatDetailPage = () => {
     const { showAlert, showConfirm } = useAlert();
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportTargetMessageId, setReportTargetMessageId] = useState<number | null>(null);
+    const [isReportSubmitting, setIsReportSubmitting] = useState(false);
 
     // Get current user ID from auth store (needed for WebSocket)
     const { user } = useAuthStore();
@@ -873,32 +878,39 @@ const ChatDetailPage = () => {
                 </div>
             </div>
 
-            {/* Header Menu Dropdown */}
+            {/* Header Menu Bottom Sheet */}
             {showHeaderMenu && (
                 <div className="chat_detail_menu_overlay" onClick={() => setShowHeaderMenu(false)}>
-                    <div className="chat_detail_menu_dropdown" onClick={(e) => e.stopPropagation()}>
+                    <div className="chat_detail_menu_sheet" onClick={(e) => e.stopPropagation()}>
                         {isGroupChat ? (
                             <>
                                 <button type="button" onClick={() => { setShowHeaderMenu(false); setShowInviteModal(true); }}>대화상대 초대하기</button>
+                                <div className="divider" />
                                 <button type="button" onClick={handleLeaveRoom}>채팅방 나가기</button>
                             </>
                         ) : (
                             <>
                                 <button type="button" onClick={handleBlockUser}>차단하기</button>
-                                <button type="button" onClick={handleLeaveRoom}>나가기</button>
+                                <div className="divider" />
+                                <button type="button" onClick={handleLeaveRoom}>채팅방 나가기</button>
                             </>
                         )}
+                        <div className="divider" />
+                        <button type="button" onClick={() => setShowHeaderMenu(false)}>취소</button>
                     </div>
                 </div>
             )}
 
             {/* Context Menu Overlay */}
-            {contextMenu && (
+            {contextMenu && (() => {
+                const menuButtonCount = (contextMenu.messageType === 'TEXT' ? 1 : 0) + 1 + 1;
+                const menuHeight = menuButtonCount * 48;
+                return (
                 <div className="chat_detail_context_overlay" onClick={() => setContextMenu(null)}>
                     <div
                         className="chat_detail_context_menu"
                         style={{
-                            top: Math.min(contextMenu.y, window.innerHeight - (contextMenu.isMine ? 144 : 96) - 8),
+                            top: Math.min(contextMenu.y, window.innerHeight - menuHeight - 8),
                             left: Math.min(Math.max(contextMenu.x - 70, 8), window.innerWidth - 148),
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -919,7 +931,7 @@ const ChatDetailPage = () => {
                             </svg>
                             답장
                         </button>
-                        {contextMenu.isMine && (
+                        {contextMenu.isMine ? (
                             <button type="button" className="chat_detail_context_menu_delete" onClick={handleDeleteMessage}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="3 6 5 6 21 6"/>
@@ -927,10 +939,23 @@ const ChatDetailPage = () => {
                                 </svg>
                                 삭제
                             </button>
+                        ) : (
+                            <button type="button" onClick={() => {
+                                setReportTargetMessageId(contextMenu.messageId);
+                                setContextMenu(null);
+                                setShowReportModal(true);
+                            }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                                    <line x1="4" y1="22" x2="4" y2="15"/>
+                                </svg>
+                                신고하기
+                            </button>
                         )}
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
             {/* Messages */}
             <div className="chat_detail_messages" ref={messagesContainerRef}>
@@ -1225,6 +1250,26 @@ const ChatDetailPage = () => {
                 onClose={() => setShowInviteModal(false)}
                 roomId={chatId!}
                 existingParticipantIds={currentRoom?.participants?.map(p => p.id) || []}
+            />
+
+            <ReportModal
+                isOpen={showReportModal}
+                onClose={() => { setShowReportModal(false); setReportTargetMessageId(null); }}
+                onSubmit={async (reason: string) => {
+                    if (!reportTargetMessageId) return;
+                    setIsReportSubmitting(true);
+                    try {
+                        await reportService.createReport({ type: 'CHAT', targetId: reportTargetMessageId, reason });
+                        showToast('신고가 접수되었습니다.', 'success');
+                        setShowReportModal(false);
+                        setReportTargetMessageId(null);
+                    } catch {
+                        showToast('신고 접수에 실패했습니다.', 'error');
+                    } finally {
+                        setIsReportSubmitting(false);
+                    }
+                }}
+                isSubmitting={isReportSubmitting}
             />
         </div>
     );
