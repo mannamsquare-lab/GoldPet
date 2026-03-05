@@ -55,6 +55,7 @@ import MyPage from './features/mypage/MyPage';
 import MyPostsPage from './features/mypage/MyPostsPage';
 import BlockManagementPage from './features/mypage/BlockManagementPage';
 import MyPagePetEditPage from './features/mypage/MyPagePetEditPage';
+import MyWalkPage from './features/mypage/MyWalkPage';
 import DormantAccountPage from './features/auth/DormantAccountPage';
 import WithdrawnAccountPage from './features/auth/WithdrawnAccountPage';
 import SuspendedAccountPage from './features/auth/SuspendedAccountPage';
@@ -172,6 +173,7 @@ function App() {
               <Route path="/mypage" element={<MyPage />} />
               <Route path="/mypage/pet/edit" element={<MyPagePetEditPage />} />
               <Route path="/mypage/posts" element={<MyPostsPage />} />
+              <Route path="/my-walks" element={<MyWalkPage />} />
               <Route path="/block-management" element={<BlockManagementPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/settings" element={<SettingsPage />} />

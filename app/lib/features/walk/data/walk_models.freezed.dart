@@ -847,6 +847,7 @@ mixin _$CreateWalkRequest {
   double? get caloriesBurned => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
   List<int> get petIds => throw _privateConstructorUsedError;
+  bool get isPublic => throw _privateConstructorUsedError;
 
   /// Serializes this CreateWalkRequest to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -875,6 +876,7 @@ abstract class $CreateWalkRequestCopyWith<$Res> {
     double? caloriesBurned,
     String? notes,
     List<int> petIds,
+    bool isPublic,
   });
 }
 
@@ -902,6 +904,7 @@ class _$CreateWalkRequestCopyWithImpl<$Res, $Val extends CreateWalkRequest>
     Object? caloriesBurned = freezed,
     Object? notes = freezed,
     Object? petIds = null,
+    Object? isPublic = null,
   }) {
     return _then(
       _value.copyWith(
@@ -941,6 +944,10 @@ class _$CreateWalkRequestCopyWithImpl<$Res, $Val extends CreateWalkRequest>
                 ? _value.petIds
                 : petIds // ignore: cast_nullable_to_non_nullable
                       as List<int>,
+            isPublic: null == isPublic
+                ? _value.isPublic
+                : isPublic // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -966,6 +973,7 @@ abstract class _$$CreateWalkRequestImplCopyWith<$Res>
     double? caloriesBurned,
     String? notes,
     List<int> petIds,
+    bool isPublic,
   });
 }
 
@@ -992,6 +1000,7 @@ class __$$CreateWalkRequestImplCopyWithImpl<$Res>
     Object? caloriesBurned = freezed,
     Object? notes = freezed,
     Object? petIds = null,
+    Object? isPublic = null,
   }) {
     return _then(
       _$CreateWalkRequestImpl(
@@ -1031,6 +1040,10 @@ class __$$CreateWalkRequestImplCopyWithImpl<$Res>
             ? _value._petIds
             : petIds // ignore: cast_nullable_to_non_nullable
                   as List<int>,
+        isPublic: null == isPublic
+            ? _value.isPublic
+            : isPublic // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -1049,6 +1062,7 @@ class _$CreateWalkRequestImpl implements _CreateWalkRequest {
     this.caloriesBurned,
     this.notes,
     final List<int> petIds = const [],
+    this.isPublic = true,
   }) : _path = path,
        _spots = spots,
        _petIds = petIds;
@@ -1097,8 +1111,12 @@ class _$CreateWalkRequestImpl implements _CreateWalkRequest {
   }
 
   @override
+  @JsonKey()
+  final bool isPublic;
+
+  @override
   String toString() {
-    return 'CreateWalkRequest(startTime: $startTime, endTime: $endTime, distanceKm: $distanceKm, durationSeconds: $durationSeconds, path: $path, spots: $spots, caloriesBurned: $caloriesBurned, notes: $notes, petIds: $petIds)';
+    return 'CreateWalkRequest(startTime: $startTime, endTime: $endTime, distanceKm: $distanceKm, durationSeconds: $durationSeconds, path: $path, spots: $spots, caloriesBurned: $caloriesBurned, notes: $notes, petIds: $petIds, isPublic: $isPublic)';
   }
 
   @override
@@ -1118,7 +1136,9 @@ class _$CreateWalkRequestImpl implements _CreateWalkRequest {
             (identical(other.caloriesBurned, caloriesBurned) ||
                 other.caloriesBurned == caloriesBurned) &&
             (identical(other.notes, notes) || other.notes == notes) &&
-            const DeepCollectionEquality().equals(other._petIds, _petIds));
+            const DeepCollectionEquality().equals(other._petIds, _petIds) &&
+            (identical(other.isPublic, isPublic) ||
+                other.isPublic == isPublic));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1134,6 +1154,7 @@ class _$CreateWalkRequestImpl implements _CreateWalkRequest {
     caloriesBurned,
     notes,
     const DeepCollectionEquality().hash(_petIds),
+    isPublic,
   );
 
   /// Create a copy of CreateWalkRequest
@@ -1164,6 +1185,7 @@ abstract class _CreateWalkRequest implements CreateWalkRequest {
     final double? caloriesBurned,
     final String? notes,
     final List<int> petIds,
+    final bool isPublic,
   }) = _$CreateWalkRequestImpl;
 
   factory _CreateWalkRequest.fromJson(Map<String, dynamic> json) =
@@ -1187,6 +1209,8 @@ abstract class _CreateWalkRequest implements CreateWalkRequest {
   String? get notes;
   @override
   List<int> get petIds;
+  @override
+  bool get isPublic;
 
   /// Create a copy of CreateWalkRequest
   /// with the given fields replaced by the non-null parameter values.

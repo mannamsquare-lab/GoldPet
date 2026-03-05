@@ -16,6 +16,9 @@ export interface WalkRecord {
   path?: { lat: number; lng: number }[];
   startAddress?: string;
   endAddress?: string;
+  isPublic?: boolean;
+  userNickname?: string;
+  userProfileImageUrl?: string;
 }
 
 export interface WalkStats {
@@ -84,6 +87,9 @@ function toWalkRecord(walk: {
   path?: number[][];
   startAddress?: string;
   endAddress?: string;
+  isPublic?: boolean;
+  userNickname?: string;
+  userProfileImageUrl?: string;
 }): WalkRecord {
   const date = new Date(walk.startTime);
   const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
@@ -102,6 +108,9 @@ function toWalkRecord(walk: {
     path: walk.path ? pathToCoords(walk.path) : undefined,
     startAddress: walk.startAddress ?? undefined,
     endAddress: walk.endAddress ?? undefined,
+    isPublic: walk.isPublic ?? true,
+    userNickname: walk.userNickname ?? undefined,
+    userProfileImageUrl: walk.userProfileImageUrl ?? undefined,
   };
 }
 
@@ -169,6 +178,20 @@ export const walkService = {
       };
     } catch (error: unknown) {
       console.error('Failed to fetch walk records:', error);
+      throw error;
+    }
+  },
+
+  getPublicWalksPaged: async (page: number, size = 10): Promise<PageResponse<WalkRecord>> => {
+    try {
+      const response = await apiClient.get('/walks/public', { params: { page, size } });
+      const data = response.data;
+      return {
+        ...data,
+        content: data.content.map(toWalkRecord),
+      };
+    } catch (error: unknown) {
+      console.error('Failed to fetch public walk records:', error);
       throw error;
     }
   },

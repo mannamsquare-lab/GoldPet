@@ -30,9 +30,20 @@ class WalkController(
     }
 
     @GetMapping("/{walkId}")
-    fun getWalk(@PathVariable walkId: Long): ResponseEntity<WalkResponse> {
-        val walkResponse = walkService.getWalk(walkId)
+    fun getWalk(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
+        @PathVariable walkId: Long
+    ): ResponseEntity<WalkResponse> {
+        val walkResponse = walkService.getWalk(walkId, userDetails?.id)
         return ResponseEntity.ok(walkResponse)
+    }
+
+    @GetMapping("/public")
+    fun getPublicWalks(
+        @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable
+    ): ResponseEntity<org.springframework.data.domain.Page<WalkResponse>> {
+        val walkResponses = walkService.getPublicWalks(pageable)
+        return ResponseEntity.ok(walkResponses)
     }
 
     @GetMapping("/my/stats")

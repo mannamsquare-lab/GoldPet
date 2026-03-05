@@ -51,6 +51,9 @@ class Walk(
     var endLocation: Point? = null,
 
     @OneToMany(mappedBy = "walk", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var walkPets: MutableList<WalkPet> = mutableListOf()
+    var walkPets: MutableList<WalkPet> = mutableListOf(),
+
+    @Column(nullable = false)
+    var isPublic: Boolean = true
 
 ) : BaseTimeEntity()

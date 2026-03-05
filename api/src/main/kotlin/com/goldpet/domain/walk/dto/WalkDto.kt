@@ -23,6 +23,7 @@ data class CreateWalkRequest(
     val caloriesBurned: Double?,
     val notes: String?,
     val petIds: List<Long> = emptyList(),
+    val isPublic: Boolean = true,
 ) {
     fun toLineString(): LineString {
         val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
@@ -60,6 +61,9 @@ data class WalkResponse(
     val petNames: List<String> = emptyList(),
     val petIds: List<Long> = emptyList(),
     val petProfileImageUrls: List<String?> = emptyList(),
+    val isPublic: Boolean = true,
+    val userNickname: String? = null,
+    val userProfileImageUrl: String? = null,
 ) {
     companion object {
         fun from(walk: Walk): WalkResponse {
@@ -93,6 +97,9 @@ data class WalkResponse(
                 petNames = walk.walkPets.map { it.pet.name },
                 petIds = walk.walkPets.map { it.pet.id },
                 petProfileImageUrls = walk.walkPets.map { it.pet.profileImageUrl },
+                isPublic = walk.isPublic,
+                userNickname = walk.user.nickname,
+                userProfileImageUrl = walk.user.profileImageUrl,
             )
         }
 
@@ -104,15 +111,18 @@ data class WalkResponse(
                 endTime = walk.endTime,
                 distanceKm = walk.distanceKm,
                 durationSeconds = walk.durationSeconds,
-                path = emptyList(), // Hide detailed route for non-owner views
-                spots = emptyList(), // Hide spots for non-owner views
+                path = emptyList(),
+                spots = emptyList(),
                 caloriesBurned = walk.caloriesBurned,
-                notes = null, // Hide notes for non-owner views
-                startAddress = walk.startAddress,
-                endAddress = walk.endAddress,
+                notes = null,
+                startAddress = null,
+                endAddress = null,
                 petNames = walk.walkPets.map { it.pet.name },
                 petIds = walk.walkPets.map { it.pet.id },
                 petProfileImageUrls = walk.walkPets.map { it.pet.profileImageUrl },
+                isPublic = walk.isPublic,
+                userNickname = walk.user.nickname,
+                userProfileImageUrl = walk.user.profileImageUrl,
             )
         }
     }

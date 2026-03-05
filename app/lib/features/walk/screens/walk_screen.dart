@@ -43,6 +43,7 @@ class WalkScreen extends ConsumerStatefulWidget {
 
 class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObserver {
   bool _isWalking = false;
+  bool _isPublic = true;
   bool _isSaving = false;
   NaverMapController? _mapController;
   bool _isInitializing = true;
@@ -363,12 +364,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   Future<void> _handleBackNavigation() async {
     if (_isSaving) return; // 저장 중 네비게이션 차단
     if (_isWalking) {
-      final confirmed = await showGoldPetConfirm(
-        context,
-        message: '산책을 종료하시겠습니까?',
-        confirmText: '종료',
-        cancelText: '취소',
-      );
+      final confirmed = await _showStopWalkDialog();
       if (confirmed) {
         await _stopWalk();
       }
@@ -948,6 +944,69 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
     }
   }
 
+  Future<bool> _showStopWalkDialog() async {
+    bool tempIsPublic = _isPublic;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text(
+                '산책 종료',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '산책을 종료하고 기록을 저장하시겠습니까?',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF505050)),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '산책 기록 공개',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                      ),
+                      Switch(
+                        value: tempIsPublic,
+                        activeTrackColor: const Color(0xFF614108),
+                        onChanged: (value) {
+                          setDialogState(() => tempIsPublic = value);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('취소', style: TextStyle(color: Color(0xFF999999))),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('종료', style: TextStyle(color: Color(0xFF614108), fontWeight: FontWeight.w600)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (confirmed == true) {
+      setState(() => _isPublic = tempIsPublic);
+    }
+    return confirmed ?? false;
+  }
+
   Future<void> _stopWalk() async {
     if (!_isWalking) return;
 
@@ -1029,6 +1088,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
       spots: _spots,
       caloriesBurned: caloriesBurned,
       petIds: _petIds,
+      isPublic: _isPublic,
     );
 
     setState(() {
@@ -1470,12 +1530,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
           // Stop button
           GestureDetector(
             onTap: () async {
-              final confirmed = await showGoldPetConfirm(
-                context,
-                message: '산책을 종료하고 기록을 저장하시겠습니까?',
-                confirmText: '종료',
-                cancelText: '취소',
-              );
+              final confirmed = await _showStopWalkDialog();
               if (confirmed) await _stopWalk();
             },
             child: Container(

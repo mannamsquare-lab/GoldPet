@@ -48,7 +48,8 @@ class WalkService(
             durationSeconds = request.durationSeconds,
             path = request.toLineString(),
             caloriesBurned = request.caloriesBurned,
-            notes = request.notes
+            notes = request.notes,
+            isPublic = request.isPublic
         )
         
         // Add spots
@@ -111,9 +112,21 @@ class WalkService(
         return WalkResponse.from(savedWalk)
     }
 
-    fun getWalk(walkId: Long): WalkResponse {
+    fun getWalk(walkId: Long, currentUserId: Long?): WalkResponse {
         val walk = walkRepository.findById(walkId).orElseThrow { NotFoundException("Walk not found") }
-        return WalkResponse.from(walk)
+        val isOwner = currentUserId != null && walk.user.id == currentUserId
+        if (isOwner) {
+            return WalkResponse.from(walk)
+        }
+        if (!walk.isPublic) {
+            throw ForbiddenException("This walk is private")
+        }
+        return WalkResponse.publicFrom(walk)
+    }
+
+    fun getPublicWalks(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<WalkResponse> {
+        return walkRepository.findPublicWalks(pageable)
+            .map { WalkResponse.publicFrom(it) }
     }
 
     fun getWalksByUser(userId: Long): List<WalkResponse> {

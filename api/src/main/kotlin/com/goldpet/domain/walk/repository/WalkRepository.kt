@@ -9,7 +9,11 @@ interface WalkRepository : JpaRepository<Walk, Long> {
     fun findByUserIdOrderByStartTimeDesc(userId: Long): List<Walk>
     fun findByUserIdOrderByStartTimeDesc(userId: Long, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<Walk>
 
-    @Query(value = "SELECT * FROM walks w WHERE ST_Intersects(w.path, ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326))", nativeQuery = true)
+    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true ORDER BY w.startTime DESC",
+        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true")
+    fun findPublicWalks(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<Walk>
+
+    @Query(value = "SELECT * FROM walks w WHERE ST_Intersects(w.path, ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326)) AND w.is_public = true", nativeQuery = true)
     fun findWalksWithinBoundingBox(
         @Param("minLat") minLat: Double,
         @Param("minLon") minLon: Double,
@@ -21,7 +25,7 @@ interface WalkRepository : JpaRepository<Walk, Long> {
         SELECT w.user.id, w.user.nickname, MAX(w.user.profileImageUrl),
                SUM(w.distanceKm), COUNT(w)
         FROM Walk w
-        WHERE w.startTime >= :since
+        WHERE w.startTime >= :since AND w.isPublic = true
         GROUP BY w.user.id, w.user.nickname
         ORDER BY SUM(w.distanceKm) DESC
     """)
@@ -108,6 +112,7 @@ interface WalkRepository : JpaRepository<Walk, Long> {
             WHERE w2.user_id = u.id
               AND w2.start_time >= :startOfMonth
               AND w2.start_time < :startOfNextMonth
+              AND w2.is_public = true
             GROUP BY p.id, p.name, p.profile_image_url
             ORDER BY COUNT(*) DESC
             LIMIT 1
@@ -122,6 +127,7 @@ interface WalkRepository : JpaRepository<Walk, Long> {
         ) gold_sub ON TRUE
         WHERE w.start_time >= :startOfMonth
           AND w.start_time < :startOfNextMonth
+          AND w.is_public = true
         GROUP BY u.id, u.nickname, u.profile_image_url,
                  pet_sub.pet_id, pet_sub.pet_name, pet_sub.pet_profile_image_url, gold_sub.total_gold
         ORDER BY total_distance_km DESC

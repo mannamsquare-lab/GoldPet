@@ -47,8 +47,8 @@ export const WalkPage = () => {
         hasNextPage,
         isFetchingNextPage,
     } = useInfiniteQuery({
-        queryKey: ['walk', 'records', 'paged'],
-        queryFn: ({ pageParam = 0 }) => walkService.getWalkRecordsPaged(pageParam, 10),
+        queryKey: ['walk', 'public', 'paged'],
+        queryFn: ({ pageParam = 0 }) => walkService.getPublicWalksPaged(pageParam, 10),
         getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.number + 1,
         initialPageParam: 0,
     });
@@ -143,6 +143,7 @@ export const WalkPage = () => {
                                         <WalkRecordItem
                                             record={record}
                                             onClick={() => navigate(`/walk/detail/${record.id}`)}
+                                            showUser={true}
                                         />
                                         {index < walkRecords.length - 1 && (
                                             <div className="walk_record_divider" />
@@ -275,7 +276,7 @@ interface WalkRecordItemProps {
     onClick: () => void;
 }
 
-function WalkRecordItem({ record, onClick }: WalkRecordItemProps) {
+function WalkRecordItem({ record, onClick, showUser = false }: WalkRecordItemProps & { showUser?: boolean }) {
     return (
         <div className="walk_record_item" onClick={onClick} style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -284,6 +285,17 @@ function WalkRecordItem({ record, onClick }: WalkRecordItemProps) {
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {/* User info for community feed */}
+                    {showUser && record.userNickname && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <img
+                                src={record.userProfileImageUrl || '/assets/images/common/profile_none_img.svg'}
+                                alt={record.userNickname}
+                                style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                            <span style={{ fontSize: 12, color: '#505050', fontWeight: 500 }}>{record.userNickname}</span>
+                        </div>
+                    )}
                     {/* Date row + share button */}
                     <div className="walk_record_header" style={{ justifyContent: 'space-between' }}>
                         <span className="walk_record_date">{record.date}</span>

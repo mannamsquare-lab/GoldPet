@@ -49,8 +49,8 @@ class MapController(
         val walk = walkRepository.findById(walkId).orElse(null)
             ?: return ResponseEntity.notFound().build()
 
-        // Ownership check: only the walk owner can view the route map
-        if (walk.user.id != userDetails.id) {
+        // Allow public walk maps for any authenticated user; private walks owner-only
+        if (walk.user.id != userDetails.id && !walk.isPublic) {
             return ResponseEntity.status(403).build()
         }
 

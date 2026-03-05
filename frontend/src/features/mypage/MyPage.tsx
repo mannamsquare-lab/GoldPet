@@ -109,7 +109,7 @@ const MyPage: React.FC = () => {
   );
 
   const menuItems = [
-    { label: '내 산책 기록', path: '/walk' },
+    { label: '내 산책 기록', path: '/my-walks' },
     { label: '뱃지 & 미션', path: '/my-badges' },
     { label: '내가 쓴 글', path: '/mypage/posts' },
     { label: '차단 관리', path: '/block-management' },

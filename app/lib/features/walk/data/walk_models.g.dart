@@ -107,6 +107,7 @@ _$CreateWalkRequestImpl _$$CreateWalkRequestImplFromJson(
           ?.map((e) => (e as num).toInt())
           .toList() ??
       const [],
+  isPublic: json['isPublic'] as bool? ?? true,
 );
 
 Map<String, dynamic> _$$CreateWalkRequestImplToJson(
@@ -121,4 +122,5 @@ Map<String, dynamic> _$$CreateWalkRequestImplToJson(
   'caloriesBurned': instance.caloriesBurned,
   'notes': instance.notes,
   'petIds': instance.petIds,
+  'isPublic': instance.isPublic,
 };
