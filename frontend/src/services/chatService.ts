@@ -72,7 +72,41 @@ export const chatService = {
 
   getMessages: async (roomId: string, page = 0): Promise<ChatMessage[]> => {
     const response = await apiClient.get(`/chat/rooms/${roomId}/messages?page=${page}`);
-    return response.data.content || response.data;
+    const messages: ChatMessage[] = response.data.content || response.data;
+
+    // Resolve presigned URLs for private bucket files
+    const fileKeysToResolve = new Set<string>();
+    for (const msg of messages) {
+      if (msg.file?.url && !msg.file.url.startsWith('http')) {
+        fileKeysToResolve.add(msg.file.url);
+      }
+      if (msg.replyToFileUrl && !msg.replyToFileUrl.startsWith('http')) {
+        fileKeysToResolve.add(msg.replyToFileUrl);
+      }
+    }
+
+    if (fileKeysToResolve.size > 0) {
+      const resolvedUrls = new Map<string, string>();
+      await Promise.all(
+        Array.from(fileKeysToResolve).map(async (fileKey) => {
+          try {
+            const res = await apiClient.get(`/files/${encodeURIComponent(fileKey)}/url`);
+            resolvedUrls.set(fileKey, res.data.url);
+          } catch { /* ignore resolution failures */ }
+        })
+      );
+
+      for (const msg of messages) {
+        if (msg.file?.url && resolvedUrls.has(msg.file.url)) {
+          msg.file.url = resolvedUrls.get(msg.file.url)!;
+        }
+        if (msg.replyToFileUrl && resolvedUrls.has(msg.replyToFileUrl)) {
+          msg.replyToFileUrl = resolvedUrls.get(msg.replyToFileUrl)!;
+        }
+      }
+    }
+
+    return messages;
   },
 
   sendMessage: async (
