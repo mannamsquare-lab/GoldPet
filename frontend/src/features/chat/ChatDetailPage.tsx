@@ -16,7 +16,6 @@ import { blockService } from '../../services/blockService';
 import { CACHE_TIME } from '../../config/queryConfig';
 import EmoticonPicker from './EmoticonPicker';
 import InviteGroupChatModal from './InviteGroupChatModal';
-import { useLongPress } from './hooks/useLongPress';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
