@@ -40,9 +40,10 @@ class WalkController(
 
     @GetMapping("/public")
     fun getPublicWalks(
-        @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable
+        @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable,
+        @RequestParam(required = false) yearMonth: String?
     ): ResponseEntity<org.springframework.data.domain.Page<WalkResponse>> {
-        val walkResponses = walkService.getPublicWalks(pageable)
+        val walkResponses = walkService.getPublicWalks(pageable, yearMonth)
         return ResponseEntity.ok(walkResponses)
     }
 
@@ -58,10 +59,11 @@ class WalkController(
     @GetMapping("/my")
     fun getMyWalks(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
-        @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable
+        @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable,
+        @RequestParam(required = false) yearMonth: String?
     ): ResponseEntity<org.springframework.data.domain.Page<WalkResponse>> {
         if (userDetails == null) return ResponseEntity.status(401).build()
-        val walkResponses = walkService.getWalksByUser(userDetails.id, pageable)
+        val walkResponses = walkService.getWalksByUser(userDetails.id, pageable, yearMonth)
         return ResponseEntity.ok(walkResponses)
     }
 

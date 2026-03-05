@@ -124,9 +124,14 @@ class WalkService(
         return WalkResponse.publicFrom(walk)
     }
 
-    fun getPublicWalks(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<WalkResponse> {
-        return walkRepository.findPublicWalks(pageable)
-            .map { WalkResponse.publicFrom(it) }
+    fun getPublicWalks(pageable: org.springframework.data.domain.Pageable, yearMonth: String? = null): org.springframework.data.domain.Page<WalkResponse> {
+        val walks = if (yearMonth != null) {
+            val (start, end) = parseYearMonth(yearMonth)
+            walkRepository.findPublicWalksByMonth(start, end, pageable)
+        } else {
+            walkRepository.findPublicWalks(pageable)
+        }
+        return walks.map { WalkResponse.publicFrom(it) }
     }
 
     fun getWalksByUser(userId: Long): List<WalkResponse> {
@@ -134,9 +139,14 @@ class WalkService(
         return walks.map { WalkResponse.from(it) }
     }
 
-    fun getWalksByUser(userId: Long, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<WalkResponse> {
-        return walkRepository.findByUserIdOrderByStartTimeDesc(userId, pageable)
-            .map { WalkResponse.from(it) }
+    fun getWalksByUser(userId: Long, pageable: org.springframework.data.domain.Pageable, yearMonth: String? = null): org.springframework.data.domain.Page<WalkResponse> {
+        val walks = if (yearMonth != null) {
+            val (start, end) = parseYearMonth(yearMonth)
+            walkRepository.findByUserIdAndMonth(userId, start, end, pageable)
+        } else {
+            walkRepository.findByUserIdOrderByStartTimeDesc(userId, pageable)
+        }
+        return walks.map { WalkResponse.from(it) }
     }
 
     fun findWalksInArea(request: BoundingBoxRequest): List<WalkResponse> {
@@ -220,6 +230,15 @@ class WalkService(
             totalGoldEarned = totalGold,
             totalWalks = totalWalks
         )
+    }
+
+    private fun parseYearMonth(yearMonth: String): Pair<java.time.LocalDateTime, java.time.LocalDateTime> {
+        val parts = yearMonth.split("-")
+        require(parts.size == 2) { "Invalid yearMonth format: $yearMonth" }
+        val year = parts[0].toInt()
+        val month = parts[1].toInt()
+        val startOfMonth = java.time.LocalDateTime.of(year, month, 1, 0, 0, 0)
+        return Pair(startOfMonth, startOfMonth.plusMonths(1))
     }
 
     private fun calculateWalkReward(distanceKm: Double): Int {

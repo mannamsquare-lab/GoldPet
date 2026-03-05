@@ -47,8 +47,8 @@ export const WalkPage = () => {
         hasNextPage,
         isFetchingNextPage,
     } = useInfiniteQuery({
-        queryKey: ['walk', 'public', 'paged'],
-        queryFn: ({ pageParam = 0 }) => walkService.getPublicWalksPaged(pageParam, 10),
+        queryKey: ['walk', 'public', 'paged', yearMonth],
+        queryFn: ({ pageParam = 0 }) => walkService.getPublicWalksPaged(pageParam, 10, yearMonth),
         getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.number + 1,
         initialPageParam: 0,
     });
@@ -137,6 +137,27 @@ export const WalkPage = () => {
                     {/* Records Tab */}
                     {activeTab === 'records' && (
                         <div className="walk_records_list">
+                            <div className="walk_month_selector">
+                                <button type="button" className="walk_month_arrow" onClick={prevMonth}>
+                                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+                                        <path d="M7 1L1 7L7 13" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
+                                <span className="walk_month_label">
+                                    {yearMonth.replace('-', '.')}
+                                </span>
+                                <button
+                                    type="button"
+                                    className="walk_month_arrow"
+                                    onClick={nextMonth}
+                                    disabled={yearMonth >= currentYearMonth}
+                                    style={{ opacity: yearMonth >= currentYearMonth ? 0.3 : 1 }}
+                                >
+                                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+                                        <path d="M1 1L7 7L1 13" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
+                            </div>
                             <div className="walk_records_card">
                                 {walkRecords.map((record: WalkRecord, index: number) => (
                                     <div key={record.id}>
