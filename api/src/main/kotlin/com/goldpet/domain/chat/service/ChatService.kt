@@ -226,7 +226,7 @@ class ChatService(
     @Transactional(readOnly = true)
     fun getUserChatRooms(userId: Long): List<ChatRoom> {
         userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
-        val myRooms = chatRoomParticipantRepository.findAllByUserId(userId).map { it.chatRoom }
+        val myRooms = chatRoomParticipantRepository.findAllByUserIdAndLeftAtIsNull(userId).map { it.chatRoom }
         return myRooms.filter { room ->
             val otherParticipant = room.participants.firstOrNull { it.user.id != userId }
             if (otherParticipant == null) true
@@ -282,7 +282,17 @@ class ChatService(
         // Check if chat room already exists for this match
         val existingRoom = chatRoomRepository.findByMatchId(match.id)
         if (existingRoom.isPresent) {
-            return existingRoom.get()
+            val room = existingRoom.get()
+            // Re-activate participants who previously left
+            listOf(userId, targetUserId).forEach { uid ->
+                chatRoomParticipantRepository.findByChatRoomIdAndUserId(room.id, uid).ifPresent { p ->
+                    if (p.leftAt != null) {
+                        p.leftAt = null
+                        chatRoomParticipantRepository.save(p)
+                    }
+                }
+            }
+            return room
         }
 
         // Create new chat room
@@ -332,6 +342,26 @@ class ChatService(
         }
         if (request.status != ChatRequestStatus.PENDING) {
             throw BadRequestException("Chat request is not in PENDING status")
+        }
+
+        // Check if a DIRECT room already exists between the two users
+        val existingRoom = chatRoomRepository.findDirectRoomBetweenUsers(request.requester.id, request.targetUser.id)
+        if (existingRoom.isPresent) {
+            val room = existingRoom.get()
+            // Re-activate participants who previously left
+            listOf(request.requester.id, request.targetUser.id).forEach { uid ->
+                chatRoomParticipantRepository.findByChatRoomIdAndUserId(room.id, uid).ifPresent { p ->
+                    if (p.leftAt != null) {
+                        p.leftAt = null
+                        chatRoomParticipantRepository.save(p)
+                    }
+                }
+            }
+            request.status = ChatRequestStatus.ACCEPTED
+            request.chatRoom = room
+            request.respondedAt = LocalDateTime.now()
+            chatRequestRepository.save(request)
+            return room
         }
 
         val chatRoom = ChatRoom(

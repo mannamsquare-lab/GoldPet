@@ -29,17 +29,22 @@ data class ChatRoomResponse(
 ) {
     companion object {
         fun from(chatRoom: ChatRoom, currentUserId: Long? = null): ChatRoomResponse {
-            val participants = chatRoom.participants
+            val activeParticipants = chatRoom.participants
                 .filter { it.leftAt == null }
                 .map { ParticipantInfo(it.user.id, it.user.nickname ?: "익명", it.user.profileImageUrl) }
 
-            // For direct chats, use the other participant's name
+            val allParticipants = chatRoom.participants
+                .map { ParticipantInfo(it.user.id, it.user.nickname ?: "익명", it.user.profileImageUrl) }
+
+            // For direct chats, use the other participant's name (fallback to left/withdrawn user's name)
             val displayName: String = when {
                 chatRoom.title != null -> chatRoom.title!!
                 chatRoom.roomType == ChatRoomType.DIRECT -> {
-                    participants.firstOrNull { it.id != currentUserId }?.nickname ?: "채팅"
+                    activeParticipants.firstOrNull { it.id != currentUserId }?.nickname
+                        ?: allParticipants.firstOrNull { it.id != currentUserId }?.nickname
+                        ?: "채팅"
                 }
-                else -> participants.joinToString(", ") { it.nickname }
+                else -> activeParticipants.joinToString(", ") { it.nickname }
             }
 
             val lastMessage = chatRoom.messages.maxByOrNull { it.createdAt }
@@ -66,7 +71,7 @@ data class ChatRoomResponse(
                 matchId = chatRoom.match?.id,
                 createdAt = chatRoom.createdAt,
                 updatedAt = chatRoom.updatedAt,
-                participants = participants,
+                participants = activeParticipants,
                 lastMessage = lastMessage?.textContent,
                 lastMessageTime = lastMessage?.createdAt,
                 unreadCount = unreadCount,

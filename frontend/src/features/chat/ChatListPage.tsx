@@ -132,7 +132,7 @@ const ChatListPage = () => {
                         <ul className="chat_list">
                             {oneOnOneChats.map((chat) => {
                                 // Find the other participant (not current user)
-                                const otherParticipant = chat.participants.find(p => p.id !== currentUserId) || chat.participants[0];
+                                const otherParticipant = chat.participants.find(p => p.id !== currentUserId) ?? null;
                                 return (
                                 <li key={chat.id}>
                                     <button

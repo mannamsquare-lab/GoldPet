@@ -57,7 +57,7 @@ class ChatRoomController(
              throw IllegalStateException("Unexpected principal type: ${principal::class.java}")
         }
         val chatRooms = chatService.getUserChatRooms(userId)
-        return ResponseEntity.ok(chatRooms.map { ChatRoomResponse.from(it) })
+        return ResponseEntity.ok(chatRooms.map { ChatRoomResponse.from(it, userId) })
     }
 
     @GetMapping("/{roomId}/messages")
