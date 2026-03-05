@@ -85,13 +85,13 @@ const WalkRankingPage = () => {
                   BEST 산책 커플
                 </p>
                 <div className="couple_img">
-                  <div className="profile_img profile_img01">
+                  <div className="blob_avatar">
                     <img
                       src={bestCouple.petProfileImageUrl || '/assets/images/common/pet_none_img.svg'}
                       alt={bestCouple.petName || ''}
                     />
                   </div>
-                  <div className="profile_img profile_img02">
+                  <div className="blob_avatar">
                     <img
                       src={bestCouple.profileImageUrl || '/assets/images/common/profile_none_img.svg'}
                       alt={bestCouple.nickname}
@@ -139,13 +139,13 @@ function RankingListItem({ entry }: { entry: WalkRankingEntry }) {
   return (
     <li>
       <div className="ranking_img">
-        <div className="profile_img profile_img01">
+        <div className="blob_avatar">
           <img
             src={entry.petProfileImageUrl || '/assets/images/common/pet_none_img.svg'}
             alt={entry.petName || ''}
           />
         </div>
-        <div className="profile_img profile_img02">
+        <div className="blob_avatar">
           <img
             src={entry.profileImageUrl || '/assets/images/common/profile_none_img.svg'}
             alt={entry.nickname}

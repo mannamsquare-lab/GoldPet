@@ -132,6 +132,9 @@ function App() {
                 <Route path="/terms/:type" element={<TermsDetailPage />} />
               </Route>
 
+              {/* No Layout: Walk Ranking (uses own header) */}
+              <Route path="/walk/ranking" element={<WalkRankingPage />} />
+
               {/* No Layout: Gold pages (uses SubPageLayout internally) */}
               <Route path="/gold" element={<GoldMainPage />} />
               <Route path="/gold/purchase" element={<GoldPurchasePage />} />
@@ -147,7 +150,6 @@ function App() {
                 <Route path="/friend-list" element={<FriendsListPage />} />
                 <Route path="/chat" element={<ChatListPage />} />
                 <Route path="/walk" element={<WalkPage />} />
-                <Route path="/walk/ranking" element={<WalkRankingPage />} />
                 <Route path="/community" element={<CommunityListPage />} />
                 <Route path="/places" element={<PlaceListPage />} />
                 <Route path="/places/:placeId" element={<PlaceDetailPage />} />
