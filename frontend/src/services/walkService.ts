@@ -108,13 +108,18 @@ function toWalkRecord(walk: {
     caloriesBurned: walk.caloriesBurned,
     startTime: walk.startTime,
     path: walk.path ? pathToCoords(walk.path) : undefined,
-    startAddress: walk.startAddress ?? undefined,
-    endAddress: walk.endAddress ?? undefined,
+    startAddress: shortenAddress(walk.startAddress) ?? undefined,
+    endAddress: shortenAddress(walk.endAddress) ?? undefined,
     isPublic: walk.isPublic ?? true,
     userNickname: walk.userNickname ?? undefined,
     userProfileImageUrl: walk.userProfileImageUrl ?? undefined,
     hasPath: walk.hasPath,
   };
+}
+
+function shortenAddress(address: string | null | undefined): string | undefined {
+  if (!address) return undefined;
+  return address.replace(/^(서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|경기도|강원특별자치도|충청북도|충청남도|전라북도|전라남도|경상북도|경상남도|제주특별자치도)\s*/, '');
 }
 
 // Transform backend [[lat,lng],...] array to {lat, lng}[] objects
