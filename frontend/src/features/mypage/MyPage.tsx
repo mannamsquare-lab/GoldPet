@@ -10,6 +10,7 @@ import { CACHE_TIME } from '../../config/queryConfig';
 import { TAB_DURATION, TAB_EASING } from '../../config/cardFlipAnimation';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
+import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import './MyPage.css';
 
 const ChevronRight = () => (
@@ -27,6 +28,7 @@ const MyPage: React.FC = () => {
   const { user: authUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'owner' | 'pet'>('owner');
   const isAnimatingRef = useRef(false);
+  const [galleryState, setGalleryState] = useState<{ open: boolean; images: string[]; index: number }>({ open: false, images: [], index: 0 });
 
   const { data: apiUser } = useQuery({
     queryKey: ['users', 'me'],
@@ -70,9 +72,11 @@ const MyPage: React.FC = () => {
     : [user?.profileImageUrl || '/assets/images/common/profile_none_img.svg'];
 
   const firstPet = myPets && myPets.length > 0 ? myPets[0] : null;
-  const petImages = firstPet?.profileImageUrl
-    ? [firstPet.profileImageUrl]
-    : ['/assets/images/common/pet_none_img.svg'];
+  const petImages = firstPet?.profileImageUrls?.length
+    ? firstPet.profileImageUrls
+    : firstPet?.profileImageUrl
+      ? [firstPet.profileImageUrl]
+      : ['/assets/images/common/pet_none_img.svg'];
 
   const ownerHasProfile = (user?.profileImageUrls?.length ?? 0) > 0;
   const petHasProfile = myPets != null && myPets.length > 0;
@@ -117,6 +121,12 @@ const MyPage: React.FC = () => {
 
   return (
     <SubPageLayout title="마이페이지" onBack={() => navigate('/home')} rightAction={settingsButton}>
+      <ImageGalleryModal
+        isOpen={galleryState.open}
+        images={galleryState.images}
+        initialIndex={galleryState.index}
+        onClose={() => setGalleryState(s => ({ ...s, open: false }))}
+      />
       <div id="mypageContainer" className="mypage-container">
         {/* Tab Menu */}
         <div className="group_tab">
@@ -153,6 +163,7 @@ const MyPage: React.FC = () => {
                   className="mypage-couple-img"
                   swiperWrapperClass="mypage-img-wrap"
                   images={profileImages}
+                  onMainImageClick={(index) => setGalleryState({ open: true, images: profileImages, index })}
                   navigation={true}
                   innerChildren={
                     <>
@@ -228,8 +239,14 @@ const MyPage: React.FC = () => {
                   className="mypage-couple-img"
                   swiperWrapperClass="mypage-img-wrap"
                   images={petImages}
-                  navigation={false}
-                  innerChildren={null}
+                  onMainImageClick={(index) => setGalleryState({ open: true, images: petImages, index })}
+                  navigation={petImages.length > 1}
+                  innerChildren={petImages.length > 1 ? (
+                    <>
+                      <div className="swiper-pet-prev"></div>
+                      <div className="swiper-pet-next"></div>
+                    </>
+                  ) : null}
                 />
               </div>
 
