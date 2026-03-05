@@ -29,5 +29,17 @@ class GoldProduct(
     var isActive: Boolean = true,
 
     @Column(name = "display_order", nullable = false)
-    var displayOrder: Int = 0
+    var displayOrder: Int = 0,
+
+    @Column(name = "product_type", nullable = false)
+    var productType: String = "ONE_TIME",
+
+    @Column(name = "duration_months")
+    var durationMonths: Int? = null,
+
+    @Column(name = "discount_percent", nullable = false)
+    var discountPercent: Int = 0,
+
+    @Column(name = "monthly_price")
+    var monthlyPrice: Int? = null
 ) : BaseTimeEntity()

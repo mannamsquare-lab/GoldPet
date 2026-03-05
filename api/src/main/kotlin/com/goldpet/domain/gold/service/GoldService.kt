@@ -46,7 +46,11 @@ class GoldService(
                 name = it.name,
                 goldAmount = it.goldAmount,
                 price = it.price,
-                bonus = it.bonus
+                bonus = it.bonus,
+                productType = it.productType,
+                durationMonths = it.durationMonths,
+                discountPercent = it.discountPercent,
+                monthlyPrice = it.monthlyPrice
             ) }
     }
 

@@ -53,7 +53,11 @@ data class GoldProductResponse(
     val name: String,
     val goldAmount: Int,
     val price: Int,
-    val bonus: Int = 0
+    val bonus: Int = 0,
+    val productType: String = "ONE_TIME",
+    val durationMonths: Int? = null,
+    val discountPercent: Int = 0,
+    val monthlyPrice: Int? = null
 )
 
 data class RefundRequest(

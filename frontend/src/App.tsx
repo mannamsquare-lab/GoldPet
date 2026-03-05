@@ -132,6 +132,11 @@ function App() {
                 <Route path="/terms/:type" element={<TermsDetailPage />} />
               </Route>
 
+              {/* No Layout: Gold pages (uses SubPageLayout internally) */}
+              <Route path="/gold" element={<GoldMainPage />} />
+              <Route path="/gold/purchase" element={<GoldPurchasePage />} />
+              <Route path="/gold/history" element={<GoldHistoryPage />} />
+
               {/* No Layout: Custom header pages */}
               <Route path="/location/setting" element={<LocationSettingPage />} />
 
@@ -146,9 +151,6 @@ function App() {
                 <Route path="/community" element={<CommunityListPage />} />
                 <Route path="/places" element={<PlaceListPage />} />
                 <Route path="/places/:placeId" element={<PlaceDetailPage />} />
-                <Route path="/gold" element={<GoldMainPage />} />
-                <Route path="/gold/purchase" element={<GoldPurchasePage />} />
-                <Route path="/gold/history" element={<GoldHistoryPage />} />
                 <Route path="/ai-profile" element={<AIProfilePage />} />
               </Route>
 

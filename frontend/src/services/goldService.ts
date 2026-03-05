@@ -8,11 +8,15 @@ export interface GoldBalance {
 }
 
 export interface GoldProduct {
-  id: string;           // productCode (string, not number)
+  id: string;
   name: string;
   goldAmount: number;
   price: number;
   bonus: number;
+  productType: 'SUBSCRIPTION' | 'ONE_TIME';
+  durationMonths: number | null;
+  discountPercent: number;
+  monthlyPrice: number | null;
 }
 
 export interface GoldTransaction {
