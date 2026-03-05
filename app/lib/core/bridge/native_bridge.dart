@@ -287,13 +287,16 @@ class NativeBridge {
         case 'clearAuthToken':
           debugPrint('[NativeBridge] clearAuthToken started');
           // 현재 토큰 캡처 후 디바이스 비활성화 (네트워크 호출)
-          final tokenBeforeDeactivation = await const FlutterSecureStorage().read(key: StorageKeys.accessToken);
+          const storage = FlutterSecureStorage(
+            iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+          );
+          final tokenBeforeDeactivation = await storage.read(key: StorageKeys.accessToken);
           if (tokenBeforeDeactivation != null) {
             await pushNotificationService.deactivateDevice(tokenBeforeDeactivation);
           }
           // Race condition guard: deactivateDevice 대기 중 새 로그인이 발생했는지 확인
           // 새 토큰이 저장되었으면 clearToken을 건너뛰어 새 세션을 보호
-          final tokenAfterDeactivation = await const FlutterSecureStorage().read(key: StorageKeys.accessToken);
+          final tokenAfterDeactivation = await storage.read(key: StorageKeys.accessToken);
           if (tokenAfterDeactivation == tokenBeforeDeactivation) {
             await ApiClient().clearToken();
             debugPrint('[NativeBridge] Auth tokens cleared + device deactivated');

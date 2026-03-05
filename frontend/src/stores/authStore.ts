@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthState>()(
         set({ token, refreshToken, user, isAuthenticated: true });
         if (nativeBridge.isAvailable()) {
           // Sync auth tokens to Flutter secure storage for native API calls
-          nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch(() => {});
+          nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch((e) => console.warn('[syncAuthToken] failed:', e));
           // Register FCM token with backend
           nativeBridge.callMethod('registerFcmToken', { accessToken: token }).catch(() => {});
         }
@@ -86,7 +86,7 @@ export const useAuthStore = create<AuthState>()(
       setTokens: (token, refreshToken) => {
         set({ token, refreshToken });
         if (nativeBridge.isAvailable()) {
-          nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch(() => {});
+          nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch((e) => console.warn('[syncAuthToken] failed:', e));
         }
       },
     }),

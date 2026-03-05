@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
@@ -16,10 +17,16 @@ class ApiClient {
   factory ApiClient() => _instance;
 
   late final Dio _dio;
-  final _storage = const FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage(
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
 
   /// Auth expiry dedup guard -- prevents multiple dialogs on concurrent 401s
   static bool _isAuthExpired = false;
+
+  /// Completer-based refresh mutex -- prevents concurrent token refresh races.
+  /// If not null, a refresh is in progress; callers wait for it to complete.
+  static Completer<void>? _refreshLock;
 
   /// Prevents concurrent _recoverPendingWalk executions
   /// (setToken is called multiple times during login: login handler + syncAuthToken)
@@ -58,34 +65,67 @@ class ApiClient {
             final refreshToken = await _storage.read(key: StorageKeys.refreshToken);
             if (refreshToken != null && refreshToken.isNotEmpty) {
               try {
-                // Use a separate Dio instance to avoid interceptor loops
-                final refreshDio = Dio(BaseOptions(
-                  baseUrl: ApiConstants.baseUrl,
-                  headers: {'Content-Type': 'application/json'},
-                ));
-                final response = await refreshDio.post(
-                  '/api/v1/auth/refresh',
-                  data: {'refreshToken': refreshToken},
-                );
-                if (response.statusCode == 200) {
-                  final newAccessToken = response.data['accessToken'] as String;
-                  final newRefreshToken = response.data['refreshToken'] as String;
-                  await setToken(newAccessToken, newRefreshToken);
-
-                  // Retry the original request with new token
-                  final opts = error.requestOptions;
-                  opts.headers['Authorization'] = 'Bearer $newAccessToken';
+                if (_refreshLock != null) {
+                  // Another refresh is in progress — wait for it, then retry with stored token
+                  debugPrint('[AuthExpiry] Waiting for in-progress token refresh...');
+                  await _refreshLock!.future.timeout(const Duration(seconds: 10));
+                  final newToken = await _storage.read(key: StorageKeys.accessToken);
+                  if (newToken != null) {
+                    final opts = error.requestOptions;
+                    opts.headers['Authorization'] = 'Bearer $newToken';
+                    final retryDio = Dio(BaseOptions(
+                      baseUrl: ApiConstants.baseUrl,
+                      headers: {'Content-Type': 'application/json'},
+                    ));
+                    try {
+                      final retryResponse = await retryDio.fetch(opts);
+                      return handler.resolve(retryResponse);
+                    } catch (_) {
+                      return handler.next(error);
+                    }
+                  }
+                } else {
+                  // No refresh in progress — acquire lock and refresh
+                  _refreshLock = Completer<void>();
                   try {
-                    final retryResponse = await refreshDio.fetch(opts);
-                    return handler.resolve(retryResponse);
-                  } catch (retryError) {
-                    debugPrint('[AuthExpiry] Retry after token refresh failed: $retryError');
-                    // 토큰 갱신은 성공했으나 원래 요청 재시도 실패 — 원본 에러 전파
-                    return handler.next(error);
+                    // Use a separate Dio instance to avoid interceptor loops
+                    final refreshDio = Dio(BaseOptions(
+                      baseUrl: ApiConstants.baseUrl,
+                      headers: {'Content-Type': 'application/json'},
+                    ));
+                    final response = await refreshDio.post(
+                      '/api/v1/auth/refresh',
+                      data: {'refreshToken': refreshToken},
+                    );
+                    if (response.statusCode == 200) {
+                      final newAccessToken = response.data['accessToken'] as String;
+                      final newRefreshToken = response.data['refreshToken'] as String;
+                      await setToken(newAccessToken, newRefreshToken);
+                      _refreshLock!.complete();
+                      _refreshLock = null;
+
+                      // Retry the original request with new token
+                      final opts = error.requestOptions;
+                      opts.headers['Authorization'] = 'Bearer $newAccessToken';
+                      try {
+                        final retryResponse = await refreshDio.fetch(opts);
+                        return handler.resolve(retryResponse);
+                      } catch (retryError) {
+                        debugPrint('[AuthExpiry] Retry after token refresh failed: $retryError');
+                        // 토큰 갱신은 성공했으나 원래 요청 재시도 실패 — 원본 에러 전파
+                        return handler.next(error);
+                      }
+                    }
+                  } catch (refreshError) {
+                    debugPrint('[AuthExpiry] Token refresh failed: $refreshError');
+                    _refreshLock?.completeError(refreshError);
+                    _refreshLock = null;
                   }
                 }
               } catch (refreshError) {
                 debugPrint('[AuthExpiry] Token refresh failed: $refreshError');
+                _refreshLock?.completeError(refreshError);
+                _refreshLock = null;
               }
             }
             // Trigger auth expiry callback (dedup: only once)
@@ -95,7 +135,7 @@ class ApiClient {
               debugPrint('[AuthExpiry] Token refresh failed, showing expiry dialog');
               onAuthExpired?.call();
             }
-            await clearToken();
+            if (!WalkScreen.isOnStack) { await clearToken(); }
           }
           return handler.next(error);
         },
@@ -233,18 +273,33 @@ class ApiClient {
 
   /// 토큰 갱신 공통 로직. 인터셉터와 refreshTokenIfNeeded()에서 공유.
   Future<void> _performTokenRefresh(String refreshToken) async {
-    final refreshDio = Dio(BaseOptions(
-      baseUrl: ApiConstants.baseUrl,
-      headers: {'Content-Type': 'application/json'},
-    ));
-    final response = await refreshDio.post(
-      '/api/v1/auth/refresh',
-      data: {'refreshToken': refreshToken},
-    );
-    if (response.statusCode == 200) {
-      final newAccessToken = response.data['accessToken'] as String;
-      final newRefreshToken = response.data['refreshToken'] as String;
-      await setToken(newAccessToken, newRefreshToken);
+    if (_refreshLock != null) {
+      // A refresh is already in progress — wait for it (10s timeout to prevent deadlock)
+      debugPrint('[TokenRefresh] Waiting for in-progress refresh...');
+      await _refreshLock!.future.timeout(const Duration(seconds: 10));
+      return;
+    }
+    _refreshLock = Completer<void>();
+    try {
+      final refreshDio = Dio(BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        headers: {'Content-Type': 'application/json'},
+      ));
+      final response = await refreshDio.post(
+        '/api/v1/auth/refresh',
+        data: {'refreshToken': refreshToken},
+      );
+      if (response.statusCode == 200) {
+        final newAccessToken = response.data['accessToken'] as String;
+        final newRefreshToken = response.data['refreshToken'] as String;
+        await setToken(newAccessToken, newRefreshToken);
+      }
+      _refreshLock!.complete();
+      _refreshLock = null;
+    } catch (e) {
+      _refreshLock?.completeError(e);
+      _refreshLock = null;
+      rethrow;
     }
   }
 }

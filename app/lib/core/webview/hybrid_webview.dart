@@ -307,7 +307,9 @@ class _HybridWebViewState extends State<HybridWebView> {
   /// React Zustand hydration 전에 토큰을 주입하여 401 방지.
   Future<void> _syncTokensToReact() async {
     try {
-      const storage = FlutterSecureStorage();
+      const storage = FlutterSecureStorage(
+        iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+      );
       final accessToken = await storage.read(key: StorageKeys.accessToken);
       final refreshToken = await storage.read(key: StorageKeys.refreshToken);
       if (accessToken != null && accessToken.isNotEmpty) {
