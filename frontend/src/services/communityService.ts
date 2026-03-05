@@ -2,10 +2,6 @@
 
 import apiClient from './api/client';
 
-/** http:// → https:// 치환 (카카오 등 OAuth 프로필 이미지 Android WebView mixed content 대응) */
-const toHttps = (url?: string | null): string | undefined =>
-  url ? url.replace(/^http:\/\//i, 'https://') : undefined;
-
 export interface CommunityPost {
   id: number;
   authorId: number;
@@ -95,7 +91,7 @@ export const communityService = {
         ...p,
         authorId: p.userId,
         authorNickname: p.userNickname ?? p.authorNickname ?? '',
-        authorProfileUrl: toHttps(p.userProfileImage ?? p.authorProfileUrl),
+        authorProfileUrl: p.userProfileImage ?? p.authorProfileUrl,
         isLiked: p.isLikedByMe ?? p.isLiked ?? false,
         isCommentedByMe: p.isCommentedByMe ?? false,
         isMine: p.isMine ?? false,
@@ -120,7 +116,7 @@ export const communityService = {
       const comments = data.comments?.map((c: any) => ({
           ...c,
           authorNickname: c.userNickname ?? c.authorNickname ?? '',
-          authorProfileUrl: toHttps(c.userProfileImage ?? c.authorProfileUrl),
+          authorProfileUrl: c.userProfileImage ?? c.authorProfileUrl,
           isLikedByMe: c.isLikedByMe ?? false,
           isRepliedByMe: c.isRepliedByMe ?? false,
           isMine: c.isMine ?? false,
@@ -131,7 +127,7 @@ export const communityService = {
         ...data,
         authorId: data.userId,
         authorNickname: data.userNickname ?? data.authorNickname ?? '',
-        authorProfileUrl: toHttps(data.userProfileImage ?? data.authorProfileUrl),
+        authorProfileUrl: data.userProfileImage ?? data.authorProfileUrl,
         isLiked: data.isLikedByMe ?? data.isLiked ?? false,
         isCommentedByMe: data.isCommentedByMe ?? false,
         isMine: data.isMine ?? false,
@@ -259,7 +255,7 @@ export const communityService = {
       const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
         ...p,
         authorNickname: p.userNickname ?? p.authorNickname ?? '',
-        authorProfileUrl: toHttps(p.userProfileImage ?? p.authorProfileUrl),
+        authorProfileUrl: p.userProfileImage ?? p.authorProfileUrl,
         isLiked: p.isLikedByMe ?? p.isLiked ?? false,
         isCommentedByMe: p.isCommentedByMe ?? false,
         isMine: true,

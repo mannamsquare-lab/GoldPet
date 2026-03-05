@@ -4,6 +4,7 @@ import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserProfileImage
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.common.util.toHttps
 import com.nimbusds.jwt.JWTParser
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
@@ -84,7 +85,7 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
                         Triple(
                                 resp?.get("email")?.toString(),
                                 resp?.get("name")?.toString(),
-                                resp?.get("profile_image")?.toString()
+                                resp?.get("profile_image")?.toString().toHttps()
                         )
                     }
                     "kakao" -> {
@@ -102,10 +103,10 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
                                 profile?.get("nickname")?.toString()
                                         ?: props?.get("nickname")?.toString()
                         val kakaoImage =
-                                profile?.get("profile_image_url")?.toString()
+                                (profile?.get("profile_image_url")?.toString()
                                         ?: props?.get("profile_image")?.toString()
                                                 ?: account?.get("profile_image_url")
-                                                ?.toString() // Fallback
+                                                ?.toString()).toHttps() // Fallback
 
                         Triple(kakaoEmail, kakaoNickname, kakaoImage)
                     }
@@ -113,7 +114,7 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
                         Triple(
                                 oAuth2User.attributes["email"]?.toString(),
                                 oAuth2User.attributes["name"]?.toString(),
-                                oAuth2User.attributes["picture"]?.toString()
+                                oAuth2User.attributes["picture"]?.toString().toHttps()
                         )
                     }
                     "apple" -> {

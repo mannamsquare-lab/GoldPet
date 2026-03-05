@@ -1,5 +1,6 @@
 package com.goldpet.domain.friend.service
 
+import com.goldpet.domain.common.util.toHttps
 import com.goldpet.domain.friend.dto.FriendResponse
 import com.goldpet.util.GeoUtils
 import com.goldpet.domain.friend.repository.FriendRepository
@@ -128,7 +129,7 @@ class FriendService(
         return FriendResponse(
             id = user.id,
             nickname = user.nickname ?: "Unknown",
-            profileImageUrl = user.profileImageUrl, // Owner's main profile image (small, secondary)
+            profileImageUrl = user.profileImageUrl.toHttps(), // Owner's main profile image (small, secondary)
             profileImages = ownerImages, // Owner's all profile images
             ownerGender = user.gender,
             ownerAge = ownerAge,

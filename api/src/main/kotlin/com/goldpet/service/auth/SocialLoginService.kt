@@ -29,6 +29,7 @@ import org.springframework.web.client.RestTemplate
 import java.math.BigInteger
 import java.security.KeyFactory
 import java.security.spec.RSAPublicKeySpec
+import com.goldpet.domain.common.util.toHttps
 import java.time.LocalDateTime
 import java.util.Base64
 import java.util.Date
@@ -76,9 +77,9 @@ class SocialLoginService(
         val email = account?.get("email")?.toString()
         val nickname = profile?.get("nickname")?.toString()
             ?: props?.get("nickname")?.toString()
-        val profileImage = profile?.get("profile_image_url")?.toString()
+        val profileImage = (profile?.get("profile_image_url")?.toString()
             ?: props?.get("profile_image")?.toString()
-            ?: account?.get("profile_image_url")?.toString()
+            ?: account?.get("profile_image_url")?.toString()).toHttps()
 
         return handleOAuthLogin(
             provider = "kakao",
@@ -114,7 +115,7 @@ class SocialLoginService(
         val naverId = resp["id"].toString()
         val email = resp["email"]?.toString()
         val nickname = resp["name"]?.toString()
-        val profileImage = resp["profile_image"]?.toString()
+        val profileImage = resp["profile_image"]?.toString().toHttps()
 
         return handleOAuthLogin(
             provider = "naver",
@@ -139,7 +140,7 @@ class SocialLoginService(
         val googleId = attributes["sub"].toString()
         val email = attributes["email"]?.toString()
         val nickname = attributes["name"]?.toString()
-        val profileImage = attributes["picture"]?.toString()
+        val profileImage = attributes["picture"]?.toString().toHttps()
 
         return handleOAuthLogin(
             provider = "google",

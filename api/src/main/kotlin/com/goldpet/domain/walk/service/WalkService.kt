@@ -9,6 +9,7 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
+import com.goldpet.domain.common.util.toHttps
 import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.dto.WalkCoupleRankingResponse
 import com.goldpet.domain.walk.entity.Walk
@@ -147,7 +148,7 @@ class WalkService(
                 rank = index + 1,
                 userId = (row[0] as Number).toLong(),
                 nickname = row[1] as String,
-                profileImageUrl = row[2] as? String,
+                profileImageUrl = (row[2] as? String).toHttps(),
                 petName = null,
                 petProfileImageUrl = null,
                 totalDistanceKm = (row[3] as Number).toDouble(),
@@ -169,10 +170,10 @@ class WalkService(
                 rank = index + 1,
                 userId = (row[0] as Number).toLong(),
                 nickname = row[1] as String,
-                profileImageUrl = row[2] as? String,
+                profileImageUrl = (row[2] as? String).toHttps(),
                 // row[3] is petId (skip for public ranking response)
                 petName = row[4] as? String,
-                petProfileImageUrl = row[5] as? String,
+                petProfileImageUrl = (row[5] as? String).toHttps(),
                 totalDistanceKm = (row[6] as Number).toDouble(),
                 totalMinutes = (row[7] as Number).toLong(),
                 totalGold = (row[8] as Number).toInt(),

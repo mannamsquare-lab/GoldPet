@@ -2,6 +2,7 @@ package com.goldpet.domain.chat.dto
 
 import com.goldpet.domain.chat.entity.ChatRequest
 import com.goldpet.domain.chat.entity.ChatRequestStatus
+import com.goldpet.domain.common.util.toHttps
 import java.time.LocalDateTime
 
 data class ChatRequestResponse(
@@ -16,7 +17,7 @@ data class ChatRequestResponse(
             return ChatRequestResponse(
                 id = chatRequest.id,
                 requesterNickname = chatRequest.requester.nickname ?: "익명",
-                requesterProfileImage = chatRequest.requester.profileImageUrl,
+                requesterProfileImage = chatRequest.requester.profileImageUrl.toHttps(),
                 status = chatRequest.status,
                 createdAt = chatRequest.createdAt
             )

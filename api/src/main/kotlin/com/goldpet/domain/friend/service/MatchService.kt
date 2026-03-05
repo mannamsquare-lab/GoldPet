@@ -1,6 +1,7 @@
 package com.goldpet.domain.friend.service
 
 import com.goldpet.domain.common.exception.*
+import com.goldpet.domain.common.util.toHttps
 import com.goldpet.domain.friend.dto.BlockedUserResponse
 import com.goldpet.domain.friend.dto.MatchResponse
 import com.goldpet.domain.friend.entity.Like
@@ -80,7 +81,7 @@ class MatchService(
                 matchId = match.id,
                 partnerId = partner.id,
                 partnerNickname = partner.nickname,
-                partnerProfileImage = partner.profileImageUrl,
+                partnerProfileImage = partner.profileImageUrl.toHttps(),
                 matchedAt = match.createdAt.format(formatter)
             )
         }
@@ -159,7 +160,7 @@ class MatchService(
                 blockId = block.id,
                 blockedUserId = blockedUser.id,
                 blockedNickname = blockedUser.nickname,
-                blockedProfileImageUrl = blockedUser.profileImageUrl,
+                blockedProfileImageUrl = blockedUser.profileImageUrl.toHttps(),
                 blockedPetName = petName,
                 blockedAt = block.createdAt.format(formatter)
             )

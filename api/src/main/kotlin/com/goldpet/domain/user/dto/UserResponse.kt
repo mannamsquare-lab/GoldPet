@@ -1,6 +1,7 @@
 package com.goldpet.domain.user.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.goldpet.domain.common.util.toHttps
 import com.goldpet.domain.user.entity.User
 import org.locationtech.jts.geom.Point
 
@@ -40,8 +41,8 @@ data class UserResponse(
                 mainLocationText = user.mainLocationText,
                 mainLocationLat = user.mainLocationGeom?.y, // Latitude
                 mainLocationLng = user.mainLocationGeom?.x, // Longitude
-                profileImageUrl = user.profileImageUrl,
-                profileImageUrls = user.profileImages.map { it.imageUrl },
+                profileImageUrl = user.profileImageUrl.toHttps(),
+                profileImageUrls = user.profileImages.map { it.imageUrl.toHttps() ?: it.imageUrl },
                 name = user.name,
                 birthDate = user.birthDate?.toString(),
                 phoneNumber = user.phoneNumber,
@@ -68,8 +69,8 @@ data class UserResponse(
                 mainLocationText = user.mainLocationText,
                 mainLocationLat = null,
                 mainLocationLng = null,
-                profileImageUrl = user.profileImageUrl,
-                profileImageUrls = user.profileImages.map { it.imageUrl },
+                profileImageUrl = user.profileImageUrl.toHttps(),
+                profileImageUrls = user.profileImages.map { it.imageUrl.toHttps() ?: it.imageUrl },
                 name = null,
                 birthDate = null,
                 phoneNumber = null,

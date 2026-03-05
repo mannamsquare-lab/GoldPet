@@ -3,6 +3,7 @@ package com.goldpet.domain.chat.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.goldpet.domain.chat.entity.ChatRoom
 import com.goldpet.domain.chat.entity.ChatRoomType
+import com.goldpet.domain.common.util.toHttps
 import java.time.LocalDateTime
 
 data class ParticipantInfo(
@@ -31,10 +32,10 @@ data class ChatRoomResponse(
         fun from(chatRoom: ChatRoom, currentUserId: Long? = null): ChatRoomResponse {
             val activeParticipants = chatRoom.participants
                 .filter { it.leftAt == null }
-                .map { ParticipantInfo(it.user.id, it.user.nickname ?: "익명", it.user.profileImageUrl) }
+                .map { ParticipantInfo(it.user.id, it.user.nickname ?: "익명", it.user.profileImageUrl.toHttps()) }
 
             val allParticipants = chatRoom.participants
-                .map { ParticipantInfo(it.user.id, it.user.nickname ?: "익명", it.user.profileImageUrl) }
+                .map { ParticipantInfo(it.user.id, it.user.nickname ?: "익명", it.user.profileImageUrl.toHttps()) }
 
             // For direct chats, use the other participant's name (fallback to left/withdrawn user's name)
             val displayName: String = when {
