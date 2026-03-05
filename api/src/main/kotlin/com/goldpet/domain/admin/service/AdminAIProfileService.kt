@@ -64,6 +64,19 @@ class AdminAIProfileService(
         goldService.systemRefund(request.user.id, request.goldCost, "AI 프로필 생성 실패 환불 (관리자)", "AI_PROFILE_FAIL", requestId)
     }
 
+    @Transactional
+    fun forceFailRequest(requestId: Long) {
+        val request = aiRequestRepository.findById(requestId)
+            .orElseThrow { NotFoundException("AI request not found: $requestId") }
+        if (request.status != AIRequestStatus.PENDING && request.status != AIRequestStatus.PROCESSING) {
+            throw BadRequestException("Only pending or processing requests can be force-failed")
+        }
+        request.status = AIRequestStatus.FAILED
+        request.errorMessage = "관리자에 의해 강제 실패 처리됨"
+        aiRequestRepository.save(request)
+        goldService.systemRefund(request.user.id, request.goldCost, "AI 프로필 생성 강제 실패 환불 (관리자)", "AI_PROFILE_FORCE_FAIL", requestId)
+    }
+
     // Style Management
     fun getStyles(): List<AIStyleAdminResponse> {
         return aiStyleRepository.findAllByOrderByDisplayOrderAsc()

@@ -49,6 +49,13 @@ class AdminAIProfileController(
         return ResponseEntity.noContent().build()
     }
 
+    @Operation(summary = "대기/처리중 요청 강제 실패 처리")
+    @PostMapping("/requests/{requestId}/force-fail")
+    fun forceFailRequest(@PathVariable requestId: Long): ResponseEntity<Void> {
+        adminAIProfileService.forceFailRequest(requestId)
+        return ResponseEntity.noContent().build()
+    }
+
     @Operation(summary = "스타일 목록 조회")
     @GetMapping("/styles")
     fun getStyles(): ResponseEntity<List<AIStyleAdminResponse>> {

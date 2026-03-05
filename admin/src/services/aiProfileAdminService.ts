@@ -76,6 +76,10 @@ export const aiProfileAdminService = {
     await apiClient.post(`/ai-profile/requests/${id}/refund`);
   },
 
+  async forceFailRequest(id: number): Promise<void> {
+    await apiClient.post(`/ai-profile/requests/${id}/force-fail`);
+  },
+
   async getStyles(): Promise<AIStyleAdminResponse[]> {
     const response = await apiClient.get('/ai-profile/styles');
     return response.data;

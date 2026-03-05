@@ -124,6 +124,18 @@ export default function AIProfilePage() {
     }
   };
 
+  const handleForceFail = async (id: number) => {
+    if (!confirm('이 요청을 강제 실패 처리하시겠습니까? 골드가 환불됩니다.')) return;
+    try {
+      await aiProfileAdminService.forceFailRequest(id);
+      queryClient.invalidateQueries({ queryKey: ['ai-profile-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-profile-stats'] });
+    } catch (error) {
+      console.error('Failed to force fail request:', error);
+      alert('강제 실패 처리에 실패했습니다.');
+    }
+  };
+
   const handleViewRequestDetail = async (id: number) => {
     try {
       const detail = await aiProfileAdminService.getRequestDetail(id);
@@ -226,6 +238,9 @@ export default function AIProfilePage() {
       render: (_value, row) => (
         <div className="flex items-center justify-center gap-2">
           <Button variant="link" size="sm" onClick={() => handleViewRequestDetail(row.id)}>상세</Button>
+          {(row.status === 'PENDING' || row.status === 'PROCESSING') && (
+            <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleForceFail(row.id)}>강제 실패</Button>
+          )}
           {row.status === 'FAILED' && (
             <>
               <Button variant="link" size="sm" onClick={() => handleRetry(row.id)}>재시도</Button>
