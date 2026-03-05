@@ -277,9 +277,10 @@ class NativeBridge {
           if (WalkScreen.isOnStack) {
             return {'success': true, 'alreadyActive': true};
           }
+          final isPublic = params?['isPublic'] as bool? ?? true;
           // Don't await - return immediately so bridge doesn't timeout
           rootNavigatorKey.currentState?.push(
-            MaterialPageRoute(builder: (_) => WalkScreen()),
+            MaterialPageRoute(builder: (_) => WalkScreen(isPublic: isPublic)),
           );
           return {'success': true};
 

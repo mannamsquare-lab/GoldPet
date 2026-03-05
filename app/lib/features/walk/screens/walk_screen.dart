@@ -25,6 +25,7 @@ final walkSpotActionController = StreamController<String>.broadcast();
 
 class WalkScreen extends ConsumerStatefulWidget {
   final String? initialSpotAction;
+  final bool isPublic;
 
   /// Singleton guard: true when a WalkScreen is on the Navigator stack.
   /// Set in initState(), cleared in dispose(). Used by hybrid_app and native_bridge
@@ -35,7 +36,7 @@ class WalkScreen extends ConsumerStatefulWidget {
   /// The auth expiry dialog is deferred until the walk ends naturally.
   static bool authExpiredDuringWalk = false;
 
-  const WalkScreen({super.key, this.initialSpotAction});
+  const WalkScreen({super.key, this.initialSpotAction, this.isPublic = true});
 
   @override
   ConsumerState<WalkScreen> createState() => _WalkScreenState();
@@ -43,7 +44,7 @@ class WalkScreen extends ConsumerStatefulWidget {
 
 class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObserver {
   bool _isWalking = false;
-  bool _isPublic = true;
+  late bool _isPublic;
   bool _isSaving = false;
   NaverMapController? _mapController;
   bool _isInitializing = true;
@@ -109,6 +110,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   @override
   void initState() {
     super.initState();
+    _isPublic = widget.isPublic;
     WalkScreen.isOnStack = true;
     WalkLocalStorage.initialize(); // Pre-cache SharedPreferences for dispose
     WidgetsBinding.instance.addObserver(this);
@@ -945,66 +947,12 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
   }
 
   Future<bool> _showStopWalkDialog() async {
-    bool tempIsPublic = _isPublic;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text(
-                '산책 종료',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center,
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    '산책을 종료하고 기록을 저장하시겠습니까?',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF505050)),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '산책 기록 공개',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                      Switch(
-                        value: tempIsPublic,
-                        activeTrackColor: const Color(0xFF614108),
-                        onChanged: (value) {
-                          setDialogState(() => tempIsPublic = value);
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('취소', style: TextStyle(color: Color(0xFF999999))),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('종료', style: TextStyle(color: Color(0xFF614108), fontWeight: FontWeight.w600)),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    return showGoldPetConfirm(
+      context,
+      message: '산책을 종료하고 기록을 저장하시겠습니까?',
+      confirmText: '종료',
+      cancelText: '취소',
     );
-    if (confirmed == true) {
-      setState(() => _isPublic = tempIsPublic);
-    }
-    return confirmed ?? false;
   }
 
   Future<void> _stopWalk() async {

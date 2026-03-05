@@ -19,6 +19,7 @@ export const WalkMapPage = () => {
     const [address, setAddress] = useState('위치 확인 중...');
     const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [stats, setStats] = useState({ totalDistanceKm: 0, totalDurationMinutes: 0, totalCalories: 0, totalGoldEarned: 0 });
+    const [isPublic, setIsPublic] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
@@ -217,7 +218,7 @@ export const WalkMapPage = () => {
 
                     {/* 공개 여부 */}
                     <div className="open_check">
-                        <input type="checkbox" id="open" />
+                        <input type="checkbox" id="open" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
                         <label htmlFor="open">다른 사용자들에게 공개할 지 선택해주세요.</label>
                     </div>
                 </div>
@@ -226,7 +227,7 @@ export const WalkMapPage = () => {
                 <button type="button" className="walk_start_fixed_btn" onClick={async () => {
                     if (nativeBridge.isAvailable()) {
                         try {
-                            await nativeBridge.callMethod('startWalk');
+                            await nativeBridge.callMethod('startWalk', { isPublic });
                         } catch (e) {
                             showAlert('산책 시작에 실패했습니다.');
                         }
