@@ -281,7 +281,7 @@ function WalkRecordItem({ record, onClick, showUser = false }: WalkRecordItemPro
         <div className="walk_record_item" onClick={onClick} style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 {/* Route thumbnail */}
-                <WalkRouteThumbnail walkId={record.id} hasPath={!!record.path?.length} size={60} />
+                <WalkRouteThumbnail walkId={record.id} hasPath={true} size={60} />
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
