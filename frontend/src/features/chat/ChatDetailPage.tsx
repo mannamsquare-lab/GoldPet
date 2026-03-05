@@ -157,9 +157,11 @@ interface ChatMessageItemProps {
 }
 
 const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLongPress, renderMessageContent }: ChatMessageItemProps) => {
-    const longPressHandlers = useLongPress(
-        useCallback((pos) => onLongPress(msg, isMine, pos), [msg, isMine, onLongPress])
-    );
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        if (msg.deletedAt) return;
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        onLongPress(msg, isMine, { x: rect.left + rect.width / 2, y: rect.top });
+    }, [msg, isMine, onLongPress]);
 
     const isDeleted = !!msg.deletedAt;
     const isEmoticon = msg.messageType === 'EMOTICON' || (msg as any).type === 'emoticon';
@@ -184,7 +186,7 @@ const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLo
             <div className="chat_detail_message_content">
                 <div
                     className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}${hasReply ? ' has_reply' : ''}`}
-                    {...(isDeleted ? {} : longPressHandlers)}
+                    {...(isDeleted ? {} : { onClick: handleClick })}
                 >
                     {hasReply && (
                         <div className="chat_detail_reply_quote">

@@ -397,8 +397,12 @@ class _HybridWebViewState extends State<HybridWebView> {
 
   // TypeBLayout 라우트 (헤더/하단네비 컬러가 #EFE1C4인 페이지들)
   // community, chat은 리스트만 TypeB, 상세/작성 페이지는 TypeA
-  static const _typeBExactRoutes = ['/home', '/friend-find', '/friend-list', '/chat', '/walk', '/community', '/places', '/gold'];
-  static const _typeBPrefixRoutes = ['/walk/', '/places/', '/gold/'];
+  static const _typeBExactRoutes = ['/home', '/friend-find', '/friend-list', '/chat', '/walk', '/community', '/places', '/ai-profile'];
+  static const _typeBPrefixRoutes = ['/walk/', '/places/'];
+  // TypeB prefix 매칭이지만 상단은 TypeA인 라우트 (투명 헤더 사용)
+  // 하단 BottomNav가 있는 경우 bottom SafeArea는 #EFE1C4 유지
+  static const _typeAOverridePrefixes = ['/walk/detail', '/walk/map-expand', '/walk/ranking'];
+  static const _hasBottomNavPrefixes = ['/walk/detail', '/walk/map-expand'];
   static const Color _colorEFE1C4 = Color(0xFFEFE1C4);
   static const Color _colorFFF7E6 = Color(0xFFFFF7E6);
   static const Color _colorF9ECD2 = Color(0xFFF9ECD2);
@@ -429,18 +433,22 @@ class _HybridWebViewState extends State<HybridWebView> {
     if (_typeBExactRoutes.contains(path)) {
       isTypeB = true;
     }
-    // Prefix match - sub-pages within TypeBLayout (/walk/*, /places/*, /gold/*)
-    else if (_typeBPrefixRoutes.any((p) => path.startsWith(p))) {
+    // Prefix match - sub-pages within TypeBLayout (/walk/*, /places/*)
+    // 단, TypeA 오버라이드 라우트는 제외 (투명 헤더 사용 페이지)
+    else if (_typeBPrefixRoutes.any((p) => path.startsWith(p)) &&
+             !_typeAOverridePrefixes.any((p) => path.startsWith(p))) {
       isTypeB = true;
     }
 
     final color = isTypeB ? _colorEFE1C4 : _colorFFF7E6;
 
-    // 하단 입력창이 있는 페이지: 입력창 배경색(#F9ECD2)에 맞춰 네비게이션 바 색상 변경
+    // 하단 입력창이 있는 페이지: 입력창 배경색에 맞춰 네비게이션 바 색상 변경
     final isCommunityDetail = path.startsWith('/community/') && path != '/community/write';
     final isChatDetail = path.startsWith('/chat/') && path != '/chat';
     final hasBottomInput = isCommunityDetail || isChatDetail;
-    final navBarColor = hasBottomInput ? _colorEFE1C4 : color;
+    // 투명 헤더 + BottomNav 페이지: 상단은 TypeA, 하단은 BottomNav 색상(#EFE1C4)
+    final hasBottomNav = _hasBottomNavPrefixes.any((p) => path.startsWith(p));
+    final navBarColor = (hasBottomInput || hasBottomNav) ? _colorEFE1C4 : color;
 
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: color,
