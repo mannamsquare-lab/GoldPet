@@ -53,10 +53,10 @@ class AIGenerationEventListener(
             val presetId = style?.presetId
             val prompt = promptBuilder.buildPrompt(request.pet, request.stylePrompt, presetId, request.petType)
 
-            log.info("Generating image with Google Imagen for requestId={}", event.requestId)
+            log.info("Generating image with Google Imagen for requestId={}, hasSourceImage={}", event.requestId, request.sourceImageUrl.isNotBlank())
 
-            // Generate image (synchronous - returns result directly)
-            val rawImageBytes = googleImagenApiClient.generateImage(prompt)
+            // Generate image (synchronous - returns result directly, with optional reference image)
+            val rawImageBytes = googleImagenApiClient.generateImage(prompt, request.sourceImageUrl)
 
             // Resize to 512x512 and compress as JPEG
             val jpegBytes = resizeAndCompress(rawImageBytes, 512, 0.85f)

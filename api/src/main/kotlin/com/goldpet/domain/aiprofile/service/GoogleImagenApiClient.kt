@@ -19,20 +19,73 @@ class GoogleImagenApiClient(
     private val log = LoggerFactory.getLogger(javaClass)
     private val baseUrl = "https://generativelanguage.googleapis.com/v1beta"
 
+    private val skipImagePatterns = listOf(".svg", "pet_none_img", "placehold.co", "placeholder")
+    private val maxImageBytes = 10 * 1024 * 1024 // 10MB
+
+    private val imageDownloadTemplate = RestTemplate(
+        org.springframework.http.client.SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(5_000)
+            setReadTimeout(15_000)
+        }
+    )
+
+    private fun shouldSkipImage(url: String): Boolean =
+        skipImagePatterns.any { url.contains(it, ignoreCase = true) }
+
+    private fun downloadImageAsBase64(imageUrl: String): Pair<String, String>? {
+        return try {
+            val response = imageDownloadTemplate.getForEntity(imageUrl, ByteArray::class.java)
+            val bytes = response.body ?: return null
+            if (bytes.size > maxImageBytes) {
+                log.warn("Reference image too large: {}MB, skipping", bytes.size / (1024 * 1024))
+                return null
+            }
+            val contentType = response.headers.contentType?.toString() ?: "image/jpeg"
+            val mimeType = if (contentType.startsWith("image/")) contentType else "image/jpeg"
+            val base64 = java.util.Base64.getEncoder().encodeToString(bytes)
+            log.info("Downloaded reference image: {}KB, mimeType={}", bytes.size / 1024, mimeType)
+            Pair(mimeType, base64)
+        } catch (e: Exception) {
+            log.warn("Failed to download reference image from {}: {}", imageUrl, e.message)
+            null
+        }
+    }
+
     /**
      * Gemini 이미지 생성 (generateContent 방식 - base64 이미지 반환)
+     * sourceImageUrl이 제공되면 참조 이미지로 함께 전송
      */
-    fun generateImage(prompt: String): ByteArray {
+    fun generateImage(prompt: String, sourceImageUrl: String? = null): ByteArray {
         val url = "$baseUrl/models/$model:generateContent?key=$apiKey"
+
+        val requestParts = mutableListOf<Map<String, Any>>()
+
+        // 참조 이미지가 있으면 inline_data로 추가
+        val imageIncluded = if (!sourceImageUrl.isNullOrBlank() && !shouldSkipImage(sourceImageUrl)) {
+            val imageData = downloadImageAsBase64(sourceImageUrl)
+            if (imageData != null) {
+                requestParts.add(mapOf(
+                    "inline_data" to mapOf(
+                        "mime_type" to imageData.first,
+                        "data" to imageData.second
+                    )
+                ))
+                true
+            } else false
+        } else false
+
+        // 텍스트 프롬프트 추가
+        val textPrompt = if (imageIncluded) {
+            "Generate a new artistic portrait based on this reference photo of the pet. Style: $prompt"
+        } else {
+            "Generate an image: $prompt"
+        }
+        requestParts.add(mapOf("text" to textPrompt))
 
         val body = objectMapper.writeValueAsString(
             mapOf(
                 "contents" to listOf(
-                    mapOf(
-                        "parts" to listOf(
-                            mapOf("text" to "Generate an image: $prompt")
-                        )
-                    )
+                    mapOf("parts" to requestParts)
                 ),
                 "generationConfig" to mapOf(
                     "responseModalities" to listOf("IMAGE"),
@@ -50,7 +103,7 @@ class GoogleImagenApiClient(
 
         val entity = HttpEntity(body, headers)
 
-        log.info("Requesting image generation with model={}, prompt length={}", model, prompt.length)
+        log.info("Requesting image generation with model={}, prompt length={}, imageIncluded={}", model, prompt.length, imageIncluded)
 
         val response = restTemplate.exchange(
             url,
