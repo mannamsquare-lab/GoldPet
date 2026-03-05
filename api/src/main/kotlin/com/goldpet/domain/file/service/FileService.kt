@@ -47,6 +47,7 @@ class FileService(
     @Value("\${S3_PUBLIC_BUCKET_NAME:goldpet-public}") private val publicBucketName: String,
     @Value("\${S3_PRIVATE_BUCKET_NAME:goldpet-private}") private val privateBucketName: String,
     @Value("\${S3_PUBLIC_ENDPOINT:http://localhost:9100}") private val publicEndpoint: String,
+    @Value("\${S3_ENDPOINT:http://localhost:9100}") private val s3Endpoint: String,
     private val fileAttachmentRepository: com.goldpet.domain.common.repository.FileAttachmentRepository
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -387,6 +388,11 @@ class FileService(
         val request = GeneratePresignedUrlRequest(privateBucketName, fileKey)
             .withMethod(HttpMethod.GET)
             .withExpiration(expiration)
-        return amazonS3.generatePresignedUrl(request).toString()
+        val presignedUrl = amazonS3.generatePresignedUrl(request).toString()
+
+        // Replace internal S3 endpoint with public endpoint so browsers/devices can access
+        val internalHost = try { java.net.URI(s3Endpoint).let { "${it.scheme}://${it.host}:${it.port}" } } catch (_: Exception) { s3Endpoint }
+        val publicHost = try { java.net.URI(publicEndpoint).let { "${it.scheme}://${it.host}:${it.port}" } } catch (_: Exception) { publicEndpoint }
+        return presignedUrl.replace(internalHost, publicHost)
     }
 }
