@@ -127,7 +127,13 @@ function MyWalkRecordItem({ record, onClick }: { record: WalkRecord; onClick: ()
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div className="walk_record_header" style={{ justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span className="walk_record_date">{record.date}</span>
+                            <span className="walk_record_date">
+                                {record.date}
+                                {record.startTime && (() => {
+                                    const d = new Date(record.startTime!);
+                                    return ` ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+                                })()}
+                            </span>
                             {record.isPublic === false && (
                                 <span style={{
                                     display: 'inline-flex',
