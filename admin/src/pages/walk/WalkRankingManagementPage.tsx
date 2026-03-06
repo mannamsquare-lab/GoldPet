@@ -80,8 +80,9 @@ export default function WalkRankingManagementPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'bestCouple', yearMonth] });
       setConfirmTarget(null);
-    } catch (err: any) {
-      alert(err.response?.data?.message || '선정에 실패했습니다.');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      alert(e.response?.data?.message || '선정에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
@@ -93,8 +94,9 @@ export default function WalkRankingManagementPage() {
     try {
       await walkRankingService.deleteBestCouple(yearMonth);
       queryClient.invalidateQueries({ queryKey: ['admin', 'bestCouple', yearMonth] });
-    } catch (err: any) {
-      alert(err.response?.data?.message || '해제에 실패했습니다.');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      alert(e.response?.data?.message || '해제에 실패했습니다.');
     } finally {
       setRemoving(false);
     }

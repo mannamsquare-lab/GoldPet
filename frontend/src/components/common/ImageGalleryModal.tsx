@@ -22,12 +22,7 @@ export const ImageGalleryModal = ({
 }: ImageGalleryModalProps) => {
     const [activeIndex, setActiveIndex] = useState(initialIndex);
 
-    // Reset index when modal opens with a new initialIndex
-    useEffect(() => {
-        if (isOpen) {
-            setActiveIndex(initialIndex);
-        }
-    }, [isOpen, initialIndex]);
+    // Reset index when modal opens - handled via Swiper key prop below
 
     // ESC key close
     useEffect(() => {
@@ -100,6 +95,7 @@ export const ImageGalleryModal = ({
                 style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}
             >
                 <Swiper
+                    key={`${initialIndex}-${isOpen}`}
                     modules={[Navigation]}
                     navigation={images.length > 1}
                     initialSlide={initialIndex}

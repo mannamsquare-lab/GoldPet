@@ -90,7 +90,7 @@ export default function EconomyPage() {
       setRefundTarget(null);
       setRefundReason('');
     },
-    onError: (e: any) => alert(e?.response?.data?.message || '환불 처리 실패'),
+    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '환불 처리 실패'),
   });
 
   const adjustMutation = useMutation({
@@ -104,7 +104,7 @@ export default function EconomyPage() {
       setAdjustReason('');
       alert('골드 조정이 완료되었습니다.');
     },
-    onError: (e: any) => alert(e?.response?.data?.message || '골드 조정 실패'),
+    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '골드 조정 실패'),
   });
 
   const createProductMutation = useMutation({
@@ -121,7 +121,7 @@ export default function EconomyPage() {
       queryClient.invalidateQueries({ queryKey: ['economy-products'] });
       resetProductForm();
     },
-    onError: (e: any) => alert(e?.response?.data?.message || '상품 처리 실패'),
+    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '상품 처리 실패'),
   });
 
   const updateProductMutation = useMutation({
@@ -131,13 +131,13 @@ export default function EconomyPage() {
       queryClient.invalidateQueries({ queryKey: ['economy-products'] });
       resetProductForm();
     },
-    onError: (e: any) => alert(e?.response?.data?.message || '상품 처리 실패'),
+    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '상품 처리 실패'),
   });
 
   const deleteProductMutation = useMutation({
     mutationFn: (id: number) => economyService.deleteProduct(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['economy-products'] }),
-    onError: (e: any) => alert(e?.response?.data?.message || '상품 삭제에 실패했습니다.'),
+    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '상품 삭제에 실패했습니다.'),
   });
 
   const handleDeleteProduct = (id: number) => {

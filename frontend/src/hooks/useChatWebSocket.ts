@@ -8,6 +8,8 @@ import { chatWebSocket } from '../services/websocket/chatWebSocket';
 import { chatService } from '../services/chatService';
 import type { ChatMessage } from '../services/chatService';
 
+type DeletedEvent = { type: 'MESSAGE_DELETED'; messageId: string | number };
+
 interface UseChatWebSocketOptions {
   roomId: string | undefined;
   currentUserId?: number;
@@ -22,10 +24,10 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
 
   // Handle incoming WebSocket messages
   const handleMessage = useCallback(
-    (message: ChatMessage) => {
+    (message: ChatMessage | DeletedEvent) => {
       // Handle MESSAGE_DELETED events from WebSocket
-      if ((message as any).type === 'MESSAGE_DELETED') {
-        const deletedId = (message as any).messageId;
+      if ((message as DeletedEvent).type === 'MESSAGE_DELETED') {
+        const deletedId = (message as DeletedEvent).messageId;
         queryClient.setQueryData(
           ['chatMessages', roomId],
           (oldMessages: ChatMessage[] | undefined) => {
@@ -40,15 +42,16 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
         return;
       }
 
+      const chatMessage = message as ChatMessage;
       queryClient.setQueryData(
         ['chatMessages', roomId],
         (oldMessages: ChatMessage[] | undefined) => {
-          if (!oldMessages) return [message];
+          if (!oldMessages) return [chatMessage];
           // Avoid duplicates by checking ID
-          if (oldMessages.some((m) => String(m.id) === String(message.id))) {
+          if (oldMessages.some((m) => String(m.id) === String(chatMessage.id))) {
             return oldMessages;
           }
-          return [...oldMessages, message];
+          return [...oldMessages, chatMessage];
         }
       );
 
@@ -117,13 +120,14 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
 
     connectAndSubscribe();
 
+    const timeouts = typingTimeoutRef.current;
     return () => {
       if (roomId) {
         chatWebSocket.unsubscribeFromRoom(roomId);
         chatWebSocket.unsubscribeFromTyping(roomId);
         // Clear all typing timeouts
-        typingTimeoutRef.current.forEach(timeout => clearTimeout(timeout));
-        typingTimeoutRef.current.clear();
+        timeouts.forEach(timeout => clearTimeout(timeout));
+        timeouts.clear();
       }
     };
   }, [roomId, enabled, handleMessage, handleTyping]);

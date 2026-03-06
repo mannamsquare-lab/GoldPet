@@ -257,12 +257,13 @@ export default function CommunityDetailPage() {
           setShowReportModal(false);
           setReportTarget(null);
           showAlert('신고가 접수되었습니다.');
-      } catch (error: any) {
+      } catch (error: unknown) {
+          const err = error as { response?: { status?: number; data?: { message?: string } } };
           setShowReportModal(false);
           setReportTarget(null);
-          if (error.response?.status === 400) {
-              showAlert(error.response?.data?.message || '이미 신고한 대상입니다.');
-          } else if (error.response?.status === 404) {
+          if (err.response?.status === 400) {
+              showAlert(err.response?.data?.message || '이미 신고한 대상입니다.');
+          } else if (err.response?.status === 404) {
               showAlert('신고 대상을 찾을 수 없습니다.');
           } else {
               showAlert('신고 접수에 실패했습니다.');

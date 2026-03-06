@@ -131,7 +131,7 @@ export const homeService = {
       const data = response.data;
 
       // Map backend FriendResponse to frontend HomeRecommendation
-      const recommendations: HomeRecommendation[] = (data.recommendations || []).map((r: any) => ({
+      const recommendations: HomeRecommendation[] = (data.recommendations || []).map((r: Record<string, unknown>) => ({
         id: r.id,
         name: r.petName,
         petAge: r.petAge,

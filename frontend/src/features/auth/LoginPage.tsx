@@ -75,9 +75,10 @@ export const LoginPage = () => {
       }
 
       navigate('/home', { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
-      showAlert(error.response?.data?.message || '로그인에 실패했습니다.');
+      const err = error as { response?: { data?: { message?: string } } };
+      showAlert(err.response?.data?.message || '로그인에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -109,17 +110,18 @@ export const LoginPage = () => {
               }
               navigate('/home', { replace: true });
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error('SNS Login failed:', error);
             // Check if signup is required (new user)
-            if (error.message?.includes('SIGNUP_REQUIRED') || error.signupRequired) {
+            const err = error as { message?: string; signupRequired?: boolean; accessToken?: string; refreshToken?: string; user?: { id: number; username: string; nickname: string; email: string }; provider?: string };
+            if (err.message?.includes('SIGNUP_REQUIRED') || err.signupRequired) {
               // SNS 회원가입 API 호출을 위해 토큰 저장 (snsSignup에 인증 필요)
-              if (error.accessToken) {
-                login(error.accessToken, error.refreshToken || '', error.user || { id: 0, username: '', nickname: '', email: '' });
+              if (err.accessToken) {
+                login(err.accessToken, err.refreshToken || '', err.user || { id: 0, username: '', nickname: '', email: '' });
               }
-              navigate('/signup/sns', { state: { provider: error.provider || provider } });
+              navigate('/signup/sns', { state: { provider: err.provider || provider } });
             } else {
-                showAlert(error.message || 'SNS 로그인에 실패했습니다.');
+                showAlert(err.message || 'SNS 로그인에 실패했습니다.');
             }
           }
     };
@@ -152,9 +154,10 @@ export const LoginPage = () => {
         console.warn('프로필 조회 실패:', e);
       }
       navigate('/home', { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Account link failed:', error);
-      showAlert(error.message || '계정 연동에 실패했습니다.');
+      const err = error as { message?: string };
+      showAlert(err.message || '계정 연동에 실패했습니다.');
     }
   };
 

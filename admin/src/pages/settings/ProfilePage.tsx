@@ -57,7 +57,7 @@ export default function ProfilePage() {
       setSecret('');
       setQrUrl('');
       alert('2단계 인증이 활성화되었습니다.');
-    } catch (err) {
+    } catch {
        setError('인증에 실패했습니다. 코드를 다시 확인해주세요.');
     } finally {
       setIsLoading(false);

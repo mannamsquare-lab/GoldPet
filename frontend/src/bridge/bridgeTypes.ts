@@ -6,14 +6,14 @@
 export interface BridgeMessage {
   id: string;
   method: string;
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
   timestamp: number;
 }
 
 export interface BridgeResponse {
   id: string;
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: {
     code: string;
     message: string;

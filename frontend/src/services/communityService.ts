@@ -87,7 +87,7 @@ export const communityService = {
        * - userProfileImage → authorProfileUrl
        * - isLikedByMe      → isLiked
        */
-      const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
+      const posts = Array.isArray(rawPosts) ? rawPosts.map((p: Record<string, unknown>) => ({
         ...p,
         authorId: p.userId,
         authorNickname: p.userNickname ?? p.authorNickname ?? '',
@@ -113,7 +113,7 @@ export const communityService = {
       const response = await apiClient.get(`/community/posts/${postId}`);
       const data = response.data;
 
-      const comments = data.comments?.map((c: any) => ({
+      const comments = data.comments?.map((c: Record<string, unknown>) => ({
           ...c,
           authorNickname: c.userNickname ?? c.authorNickname ?? '',
           authorProfileUrl: c.userProfileImage ?? c.authorProfileUrl,
@@ -252,7 +252,7 @@ export const communityService = {
       const response = await apiClient.get(`/community/posts/me?page=${page}&size=${size}`);
       const rawPosts = response.data.content || [];
 
-      const posts = Array.isArray(rawPosts) ? rawPosts.map((p: any) => ({
+      const posts = Array.isArray(rawPosts) ? rawPosts.map((p: Record<string, unknown>) => ({
         ...p,
         authorNickname: p.userNickname ?? p.authorNickname ?? '',
         authorProfileUrl: p.userProfileImage ?? p.authorProfileUrl,
@@ -277,7 +277,7 @@ export const communityService = {
       const response = await apiClient.get(`/community/comments/me?page=${page}&size=${size}`);
       const rawComments = response.data.content || [];
 
-      const comments = Array.isArray(rawComments) ? rawComments.map((c: any) => ({
+      const comments = Array.isArray(rawComments) ? rawComments.map((c: Record<string, unknown>) => ({
         ...c,
         authorNickname: c.userNickname ?? c.authorNickname ?? '',
         authorProfileUrl: c.userProfileImage ?? c.authorProfileUrl,

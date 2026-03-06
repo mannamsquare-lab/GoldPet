@@ -54,7 +54,7 @@ export const notificationService = {
     if (USE_MOCK) {
       // Mock filtering could be added here if needed, but we focus on API
       await new Promise((r) => setTimeout(r, 400));
-      return { notifications: mockNotifications as any, hasMore: false };
+      return { notifications: mockNotifications, hasMore: false };
     }
 
     try {

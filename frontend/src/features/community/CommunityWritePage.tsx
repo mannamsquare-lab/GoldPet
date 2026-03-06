@@ -41,24 +41,20 @@ export default function CommunityWritePage() {
               previewUrl: url
           }));
           // Pad to 10 slots
-          if (items.length < 10) {
-              const padding = Array(10 - items.length).fill(null);
-              setMediaSlots([...items, ...padding]);
-          } else {
-              setMediaSlots(items.slice(0, 10));
-          }
+          const padded = items.length < 10
+              ? [...items, ...Array(10 - items.length).fill(null)]
+              : items.slice(0, 10);
+          setTimeout(() => setMediaSlots(padded), 0);
       }
   }, [editMode, initialPost]);
 
   // Set default category when loaded
   useEffect(() => {
-    // ... (existing category logic)
     if (categories && categories.length > 0 && !editMode) {
        const currentId = formData.categoryId;
        const exists = categories.find(c => c.id === currentId);
-       
        if (!exists) {
-           setFormData(prev => ({ ...prev, categoryId: categories[0].id }));
+           setTimeout(() => setFormData(prev => ({ ...prev, categoryId: categories[0].id })), 0);
        }
     }
   }, [categories, editMode]);
@@ -80,7 +76,7 @@ export default function CommunityWritePage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: CreatePostRequest) => {
         // Filter out null slots
         const validItems = mediaSlots.filter((item): item is MediaItem => !!item);
 
@@ -161,8 +157,8 @@ export default function CommunityWritePage() {
       });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!formData.title.trim() || !formData.content.trim()) {
       showAlert('제목과 내용을 입력해주세요.');
       return;
@@ -240,7 +236,7 @@ export default function CommunityWritePage() {
         <button 
           type="button" 
           className={`submit_btn ${!formData.title || !formData.content ? 'disabled' : ''}`}
-          onClick={(e) => handleSubmit(e as any)}
+          onClick={() => handleSubmit()}
           disabled={!formData.title || !formData.content || createMutation.isPending || updateMutation.isPending}
         >
           {createMutation.isPending || updateMutation.isPending ? '처리 중...' : (editMode ? '수정하기' : '등록하기')}

@@ -43,12 +43,13 @@ export const FindUsernamePage = () => {
       } else {
         setResultState('not-found');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Find username error:', error);
-      if (error.response?.status === 404) {
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      if (err.response?.status === 404) {
         setResultState('not-found');
       } else {
-        showAlert(error.response?.data?.message || '아이디 찾기에 실패했습니다.');
+        showAlert(err.response?.data?.message || '아이디 찾기에 실패했습니다.');
       }
     } finally {
       setIsLoading(false);

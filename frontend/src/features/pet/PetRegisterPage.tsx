@@ -54,7 +54,7 @@ export default function PetRegisterPage() {
   // Populate form when editing
   useEffect(() => {
     if (existingPet) {
-      setFormData({
+      const newFormData = {
         name: existingPet.name,
         speciesId: existingPet.speciesId || 1,
         breedId: existingPet.breedId,
@@ -64,10 +64,12 @@ export default function PetRegisterPage() {
         isNeutered: existingPet.isNeutered,
         profileImageUrl: existingPet.profileImageUrl,
         temperamentTags: existingPet.temperamentTags?.join(',') || '',
-      });
-      if (existingPet.profileImageUrl) {
-        setImagePreview(existingPet.profileImageUrl);
-      }
+      };
+      const preview = existingPet.profileImageUrl;
+      setTimeout(() => {
+        setFormData(newFormData);
+        if (preview) setImagePreview(preview);
+      }, 0);
     }
   }, [existingPet]);
 

@@ -10,7 +10,9 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.WalkSpotDto
 import com.goldpet.domain.walk.entity.Walk
+import com.goldpet.domain.walk.repository.BestWalkCoupleRepository
 import com.goldpet.domain.walk.repository.WalkRepository
+import com.goldpet.domain.pet.repository.PetRepository
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -39,6 +41,15 @@ class WalkServiceTest {
     @Mock
     private lateinit var badgeAwardService: BadgeAwardService
 
+    @Mock
+    private lateinit var bestWalkCoupleRepository: BestWalkCoupleRepository
+
+    @Mock
+    private lateinit var petRepository: PetRepository
+
+    @Mock
+    private lateinit var naverGeocodingService: NaverGeocodingService
+
     private lateinit var walkService: WalkService
 
     private lateinit var testUser: User
@@ -47,7 +58,8 @@ class WalkServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        walkService = WalkService(walkRepository, userRepository, goldService, badgeAwardService)
+        walkService = WalkService(walkRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, naverGeocodingService)
+        whenever(naverGeocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
     }
@@ -199,7 +211,7 @@ class WalkServiceTest {
 
         whenever(walkRepository.findById(1L)).thenReturn(Optional.of(walk))
 
-        val result = walkService.getWalk(1L)
+        val result = walkService.getWalk(1L, 1L)
 
         assertNotNull(result)
         assertEquals(1L, result.id)
@@ -212,7 +224,7 @@ class WalkServiceTest {
         whenever(walkRepository.findById(999L)).thenReturn(Optional.empty())
 
         assertThrows<NotFoundException> {
-            walkService.getWalk(999L)
+            walkService.getWalk(999L, null)
         }
     }
 
@@ -253,7 +265,7 @@ class WalkServiceTest {
             updatedAt = LocalDateTime.now()
         }
 
-        whenever(walkRepository.findByUserId(1L)).thenReturn(listOf(walk1, walk2))
+        whenever(walkRepository.findByUserIdOrderByStartTimeDesc(1L)).thenReturn(listOf(walk1, walk2))
 
         val result = walkService.getWalksByUser(1L)
 

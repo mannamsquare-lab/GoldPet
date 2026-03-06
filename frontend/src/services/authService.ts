@@ -127,14 +127,15 @@ export const authService = {
       if (nativeBridge.isAvailable()) {
         nativeBridge
           .callMethod("login", { provider })
-          .then((result: any) => {
+          .then((result: Record<string, unknown>) => {
             if (result.type === 'SIGNUP_REQUIRED') {
-              const err = new Error('SIGNUP_REQUIRED');
-              (err as any).signupRequired = true;
-              (err as any).accessToken = result.accessToken;
-              (err as any).refreshToken = result.refreshToken;
-              (err as any).user = result.user;
-              (err as any).provider = result.provider;
+              const err = Object.assign(new Error('SIGNUP_REQUIRED'), {
+                signupRequired: true,
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                user: result.user,
+                provider: result.provider,
+              });
               reject(err);
             } else if (result.accessToken) {
               resolve(result);

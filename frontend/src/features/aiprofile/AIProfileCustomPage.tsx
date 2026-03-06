@@ -61,8 +61,9 @@ export default function AIProfileCustomPage() {
     onSuccess: (data) => {
       navigate(`/ai-profile/result/${data.id}`);
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || '프로필 생성에 실패했습니다. 다시 시도해주세요.';
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      const message = err?.response?.data?.message || '프로필 생성에 실패했습니다. 다시 시도해주세요.';
       showAlert(message);
     },
   });

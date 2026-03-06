@@ -64,6 +64,7 @@ const ProfileOwnerWritePage: React.FC = () => {
 
     const [availableInterests, setAvailableInterests] = useState<{id: number, name: string}[]>([]);
     const [availableHobbies, setAvailableHobbies] = useState<{id: number, name: string}[]>([]);
+    const [isNicknameChecked, setIsNicknameChecked] = useState(false);
 
     useEffect(() => {
         const fetchTags = async () => {
@@ -77,39 +78,41 @@ const ProfileOwnerWritePage: React.FC = () => {
         fetchTags();
     }, []);
 
-    useEffect(() => {
-        if (currentUser) {
-            // Fix: Check if profileImageUrls actually has content (not just empty array)
-            const hasCustomImages = currentUser.profileImageUrls && currentUser.profileImageUrls.length > 0;
-            let loadedImages: (string | null)[] = hasCustomImages 
-                ? currentUser.profileImageUrls! 
-                : (currentUser.profileImageUrl ? [currentUser.profileImageUrl] : []);
+    const initializedRef = useRef(false);
 
-            // Pad to 5 slots
-            if (loadedImages.length < 5) {
-                loadedImages = [...loadedImages, ...Array(5 - loadedImages.length).fill(null)];
-            } else if (loadedImages.length > 5) {
-                loadedImages = loadedImages.slice(0, 5);
-            }
+    useEffect(() => {
+        if (!currentUser || initializedRef.current) return;
+        initializedRef.current = true;
+
+        const hasCustomImages = currentUser.profileImageUrls && currentUser.profileImageUrls.length > 0;
+        let loadedImages: (string | null)[] = hasCustomImages
+            ? currentUser.profileImageUrls!
+            : (currentUser.profileImageUrl ? [currentUser.profileImageUrl] : []);
+
+        if (loadedImages.length < 5) {
+            loadedImages = [...loadedImages, ...Array(5 - loadedImages.length).fill(null)];
+        } else if (loadedImages.length > 5) {
+            loadedImages = loadedImages.slice(0, 5);
+        }
+
+        const initState = () => {
             setProfileImageUrls(loadedImages);
-            
             setName(currentUser.name || '');
             setNickname(currentUser.nickname || '');
-            // 서버에서 받은 데이터에서 '-' 제거 (YYYY-MM-DD -> YYYYMMDD)
             setBirthDate((currentUser.birthDate || '').replace(/-/g, ''));
-            // 서버에서 받은 데이터에서 '-' 제거 (010-1234-5678 -> 01012345678)
             setPhoneNumber((currentUser.phoneNumber || '').replace(/-/g, ''));
             setGender(currentUser.gender || 'MALE');
-            setHasPet(currentUser.hasPet ?? null); // Use nullish coalescing
+            setHasPet(currentUser.hasPet ?? null);
             setIntro(currentUser.intro || '');
             setMbti(currentUser.mbti || 'INTJ');
             setInterests(currentUser.interests || []);
             setHobbies(currentUser.hobbies || []);
-
-            // Initialize check/verify states based on existing data
             if (currentUser.nickname) setIsNicknameChecked(true);
             if (currentUser.phoneNumber) setIsPhoneVerified(true);
-        }
+        };
+
+        // Defer to next microtask to avoid synchronous setState-in-effect
+        Promise.resolve().then(initState);
     }, [currentUser]);
 
     const handleImageUpload = async (files: File[], targetIndex: number) => {
@@ -154,7 +157,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                 
                 return newSlots;
             });
-        } catch (error) {
+        } catch {
             showAlert('이미지 업로드에 실패했습니다.');
         }
     };
@@ -184,8 +187,6 @@ const ProfileOwnerWritePage: React.FC = () => {
         }
     };
 
-    const [isNicknameChecked, setIsNicknameChecked] = useState(false);
-
     const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setNickname(value);
@@ -212,7 +213,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                 showAlert('이미 사용 중인 닉네임입니다.', () => nicknameRef.current?.focus());
                 setIsNicknameChecked(false);
             }
-        } catch (error) {
+        } catch {
             showAlert('중복 확인에 실패했습니다.');
             setIsNicknameChecked(false);
         }
@@ -236,7 +237,7 @@ const ProfileOwnerWritePage: React.FC = () => {
             } else {
                 showAlert('인증번호가 발송되었습니다.');
             }
-        } catch (error) {
+        } catch {
              showAlert('인증번호 발송에 실패했습니다.');
         }
     };
@@ -254,7 +255,7 @@ const ProfileOwnerWritePage: React.FC = () => {
             } else {
                 showAlert('인증번호가 올바르지 않습니다.');
             }
-        } catch (error) {
+        } catch {
             showAlert('인증 확인에 실패했습니다.');
         }
     };
@@ -352,7 +353,7 @@ const ProfileOwnerWritePage: React.FC = () => {
             showAlert('프로필이 수정되었습니다.', () => navigate('/profile'));
         } catch (error: unknown) {
             console.error(error);
-            const err = error as any;
+            const err = error as { response?: { data?: { message?: string } }; message?: string };
             const message = err?.response?.data?.message || err?.message || '저장에 실패했습니다.';
             showAlert(message);
         }

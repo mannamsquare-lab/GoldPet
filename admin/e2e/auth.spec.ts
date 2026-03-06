@@ -66,7 +66,6 @@ test.describe('Admin Authentication', () => {
     // Should either see 2FA screen or be logged in
     // For users without 2FA, should redirect to dashboard
     const otpHeading = page.getByRole('heading', { name: '2단계 인증' });
-    const dashboardContent = page.locator('body');
 
     // Wait for navigation or 2FA screen
     await page.waitForURL((url) => !url.pathname.includes('login'), { timeout: 10000 }).catch(() => {

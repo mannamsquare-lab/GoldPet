@@ -141,12 +141,8 @@ export const petService = {
   getSpecies: async (): Promise<PetSpecies[]> => {
     if (USE_MOCK) return mockSpecies;
 
-    try {
-      const response = await apiClient.get('/pets/species');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await apiClient.get('/pets/species');
+    return response.data;
   },
 
   getBreeds: async (speciesId?: number): Promise<PetBreed[]> => {
@@ -157,35 +153,23 @@ export const petService = {
       return mockBreeds;
     }
 
-    try {
-      const url = speciesId ? `/pets/breeds?speciesId=${speciesId}` : '/pets/breeds';
-      const response = await apiClient.get(url);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const url = speciesId ? `/pets/breeds?speciesId=${speciesId}` : '/pets/breeds';
+    const response = await apiClient.get(url);
+    return response.data;
   },
 
   getMyPets: async (): Promise<Pet[]> => {
     if (USE_MOCK) return mockPets;
 
-    try {
-      const response = await apiClient.get('/pets/my');
-      return response.data;
-    } catch (error) {
-       throw error;
-    }
+    const response = await apiClient.get('/pets/my');
+    return response.data;
   },
 
   getPetAttributes: async (): Promise<PetAttribute[]> => {
       if (USE_MOCK) return []; // Or mock attributes if needed
 
-      try {
-          const response = await apiClient.get('/pets/attributes');
-          return response.data;
-      } catch (error) {
-          throw error;
-      }
+      const response = await apiClient.get('/pets/attributes');
+      return response.data;
   },
 
   getPet: async (petId: number): Promise<Pet> => {

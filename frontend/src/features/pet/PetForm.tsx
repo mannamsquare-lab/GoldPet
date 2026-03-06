@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
 import { petService, FALLBACK_ATTRIBUTES_SCHEMA } from '../../services/petService';
+import type { UpdatePetRequest } from '../../services/petService';
 import { Loading } from '../../components/common/Loading';
 import KoreanDatePicker from '../../components/common/KoreanDatePicker';
 import { useAlert } from '../../contexts/AlertContext';
@@ -80,6 +81,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
     useEffect(() => {
         if (petId && myPets && myPets.length > 0) {
             const pet = myPets.find(p => p.id === petId) || myPets[0];
+            setTimeout(() => {
             setId(pet.id);
             setIsEditMode(true);
             setName(pet.name);
@@ -185,6 +187,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
                 });
             }
             setAttributeValues(values);
+            }, 0);
         }
         // If no petId, stay in create mode (isEditMode=false)
     }, [myPets, petId]);
@@ -194,7 +197,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
         if (isEditMode && breedId && breedsList && !selectedCategory) {
             const currentBreed = breedsList.find(b => b.id === breedId);
             if (currentBreed && currentBreed.category) {
-                setSelectedCategory(currentBreed.category);
+                setTimeout(() => setSelectedCategory(currentBreed.category!), 0);
             }
         }
     }, [isEditMode, breedId, breedsList, selectedCategory]);
@@ -237,7 +240,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
                 }
                 return newSlots;
             });
-        } catch (error) {
+        } catch {
             showAlert('이미지 업로드에 실패했습니다.');
         }
     };
@@ -260,7 +263,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
     });
 
     const updateMutation = useMutation({
-        mutationFn: (data: any) => petService.updatePet(id!, data),
+        mutationFn: (data: UpdatePetRequest) => petService.updatePet(id!, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['pets', 'my'] });
             showAlert('반려동물 정보가 수정되었습니다.', () => onSuccess());
@@ -276,7 +279,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
 
         // Serialize attribute values to CSV
         const tags = Object.entries(attributeValues)
-            .filter(([_, value]) => value && value.trim() !== '')
+            .filter(([, value]) => value && value.trim() !== '')
             .map(([code, value]) => `${code}:${value}`);
 
         const data = {

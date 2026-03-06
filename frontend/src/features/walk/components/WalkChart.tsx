@@ -165,6 +165,7 @@ interface RawWalk {
 }
 
 /** Aggregate walks into daily chart data (x = hour 0-23) */
+// eslint-disable-next-line react-refresh/only-export-components
 export function aggregateDaily(walks: RawWalk[], targetDate: Date): WalkDataPoint[] {
     const hours: number[] = Array(24).fill(0);
     const dateStr = formatDateOnly(targetDate);
@@ -183,6 +184,7 @@ export function aggregateDaily(walks: RawWalk[], targetDate: Date): WalkDataPoin
 }
 
 /** Aggregate walks into weekly chart data (x = date label for 7 days of the week) */
+// eslint-disable-next-line react-refresh/only-export-components
 export function aggregateWeekly(walks: RawWalk[], weekStart: Date): WalkDataPoint[] {
     const days: { label: string; value: number }[] = [];
     for (let i = 0; i < 7; i++) {
@@ -199,6 +201,7 @@ export function aggregateWeekly(walks: RawWalk[], weekStart: Date): WalkDataPoin
 }
 
 /** Aggregate walks into monthly chart data (x = day 1-31) */
+// eslint-disable-next-line react-refresh/only-export-components
 export function aggregateMonthly(walks: RawWalk[], year: number, month: number): WalkDataPoint[] {
     const daysInMonth = new Date(year, month, 0).getDate();
     const days: number[] = Array(daysInMonth + 1).fill(0);

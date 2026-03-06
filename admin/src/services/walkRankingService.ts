@@ -42,8 +42,9 @@ export const walkRankingService = {
     try {
       const response = await apiClient.get('/walks/best-couple', { params: { yearMonth } });
       return response.data;
-    } catch (err: any) {
-      if (err.response?.status === 404) return null;
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number } };
+      if (e.response?.status === 404) return null;
       throw err;
     }
   },

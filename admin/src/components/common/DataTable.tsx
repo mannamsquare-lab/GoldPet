@@ -4,7 +4,7 @@ import clsx from 'clsx';
 export interface ColumnDef<T> {
   key: string;
   header: string;
-  render?: (value: any, row: T) => React.ReactNode;
+  render?: (value: unknown, row: T) => React.ReactNode;
   align?: 'left' | 'center' | 'right';
   width?: string;
   className?: string;
@@ -19,8 +19,8 @@ interface DataTableProps<T> {
   rowClassName?: (row: T) => string;
 }
 
-function getNestedValue(obj: any, path: string): any {
-  return path.split('.').reduce((acc, part) => acc?.[part], obj);
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce((acc: unknown, part) => (acc as Record<string, unknown>)?.[part], obj);
 }
 
 export function DataTable<T>({

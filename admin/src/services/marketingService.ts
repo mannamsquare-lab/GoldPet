@@ -67,12 +67,12 @@ export const marketingService = {
     return response.data;
   },
 
-  getBanners: async (): Promise<any[]> => {
+  getBanners: async (): Promise<Record<string, unknown>[]> => {
     const response = await apiClient.get('/marketing/banners');
     return response.data;
   },
 
-  createBanner: async (request: any): Promise<any> => {
+  createBanner: async (request: Record<string, unknown>): Promise<Record<string, unknown>> => {
     const response = await apiClient.post('/marketing/banners', request);
     return response.data;
   },
@@ -81,12 +81,12 @@ export const marketingService = {
     await apiClient.delete(`/marketing/banners/${id}`);
   },
 
-  getCampaigns: async (): Promise<any[]> => {
+  getCampaigns: async (): Promise<Record<string, unknown>[]> => {
     const response = await apiClient.get('/marketing/campaigns');
     return response.data;
   },
 
-  createCampaign: async (request: any): Promise<any> => {
+  createCampaign: async (request: Record<string, unknown>): Promise<Record<string, unknown>> => {
     const response = await apiClient.post('/marketing/campaigns', request);
     return response.data;
   }

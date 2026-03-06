@@ -70,8 +70,9 @@ export default function AIProfileResultPage() {
       setShowApplySheet(false);
       navigate('/profile?tab=pet');
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || '적용에 실패했습니다.';
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      const message = err?.response?.data?.message || '적용에 실패했습니다.';
       showToast(message, 'error');
     },
   });
@@ -94,12 +95,12 @@ export default function AIProfileResultPage() {
 
   useEffect(() => {
     if (isProcessing) {
-      setElapsed(0);
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
       const tipTimer = setInterval(() => setTipIndex((i) => (i + 1) % tips.length), 4000);
       return () => {
         if (timerRef.current) clearInterval(timerRef.current);
         clearInterval(tipTimer);
+        setElapsed(0);
       };
     } else {
       if (timerRef.current) {

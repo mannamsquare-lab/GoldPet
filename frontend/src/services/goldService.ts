@@ -60,7 +60,7 @@ export const goldService = {
     size = 20,
     type?: string
   ): Promise<{ content: GoldTransaction[]; totalPages: number; totalElements: number }> => {
-    const params: Record<string, any> = { page, size };
+    const params: Record<string, string | number> = { page, size };
     if (type && type !== 'ALL') params.type = type;
     const response = await apiClient.get('/gold/transactions', { params });
     return response.data;

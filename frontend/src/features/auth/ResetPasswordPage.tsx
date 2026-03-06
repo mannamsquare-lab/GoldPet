@@ -58,9 +58,10 @@ export const ResetPasswordPage = () => {
       });
       setResetToken(response.data.resetToken);
       setState('input-password');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Verify account error:', error);
-      showAlert(error.response?.data?.message || '계정 확인에 실패했습니다.');
+      const err = error as { response?: { data?: { message?: string } } };
+      showAlert(err.response?.data?.message || '계정 확인에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -119,9 +120,10 @@ export const ResetPasswordPage = () => {
         resetToken,
       });
       setState('complete');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Reset password error:', error);
-      showAlert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.');
+      const err = error as { response?: { data?: { message?: string } } };
+      showAlert(err.response?.data?.message || '비밀번호 변경에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

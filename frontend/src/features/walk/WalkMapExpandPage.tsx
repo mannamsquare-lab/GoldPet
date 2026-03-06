@@ -121,7 +121,6 @@ export const WalkMapExpandPage = () => {
                 mapInstanceRef.current = null;
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [walk?.startLatitude, walk?.startLongitude]);
 
     // Draw route polyline once map is ready and walk data loaded

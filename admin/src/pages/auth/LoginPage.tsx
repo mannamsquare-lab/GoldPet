@@ -35,7 +35,7 @@ export default function LoginPage() {
         login(response.token, response.user);
         navigate(from, { replace: true });
       }
-    } catch (err) {
+    } catch {
       setError('로그인 정보가 올바르지 않습니다.');
     } finally {
       setIsLoading(false);
@@ -54,7 +54,7 @@ export default function LoginPage() {
       const { token, user } = await authService.verifyOtp(tempUserId, otp);
       login(token, user);
       navigate(from, { replace: true });
-    } catch (err) {
+    } catch {
       setError('인증 코드가 올바르지 않습니다.');
     } finally {
       setIsLoading(false);

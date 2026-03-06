@@ -65,7 +65,7 @@ export const userService = {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             return response.data.url;
-        } catch (error: unknown) {
+        } catch {
              throw new Error('이미지 업로드에 실패했습니다.');
         }
     },

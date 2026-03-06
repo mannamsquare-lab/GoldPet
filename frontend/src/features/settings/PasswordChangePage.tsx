@@ -5,7 +5,7 @@ import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { userService } from '../../services/userService';
 import './SettingsPage.css';
 
-const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{}|;:',.<>?/~`]).{8,}$/;
+const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{}|;:',.<>?/~`]).{8,}$/;
 
 const PasswordChangePage: React.FC = () => {
   const navigate = useNavigate();
@@ -51,8 +51,9 @@ const PasswordChangePage: React.FC = () => {
       await userService.changePassword(currentPassword, newPassword);
       showToast('비밀번호가 변경되었습니다.', 'success');
       navigate('/settings');
-    } catch (error: any) {
-      const message = error.response?.data?.message || '비밀번호 변경에 실패했습니다.';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const message = err.response?.data?.message || '비밀번호 변경에 실패했습니다.';
       if (message.includes('현재 비밀번호')) {
         setErrors({ current: message });
       } else {

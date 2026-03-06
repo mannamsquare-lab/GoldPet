@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
@@ -34,18 +34,14 @@ const ChatListPage = () => {
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
     const currentUserId = user?.id;
-    const [activeTab, setActiveTab] = useState('one'); // 'one', 'group', 'request'
+    const locationActiveTab = (location.state && 'activeTab' in location.state)
+        ? location.state.activeTab as string
+        : null;
+    const [activeTab, setActiveTab] = useState<string>(locationActiveTab ?? 'one'); // 'one', 'group', 'request'
     const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 
     // WebSocket subscription for real-time chat list updates
     useChatListWebSocket();
-
-    // URL state에서 activeTab 정보 가져오기
-    useEffect(() => {
-        if (location.state && 'activeTab' in location.state) {
-            setActiveTab(location.state.activeTab as string);
-        }
-    }, [location.state]);
 
     // Fetch Chat Rooms (WebSocket handles real-time updates)
     const { data: chatRooms, isLoading } = useQuery({

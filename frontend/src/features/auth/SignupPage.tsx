@@ -119,10 +119,11 @@ export const SignupPage = () => {
           return newErrors;
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Username check error:', error);
+      const err = error as { response?: { data?: { message?: string } } };
       setIsUsernameAvailable(false);
-      setErrors(prev => ({ ...prev, username: error.response?.data?.message || '아이디 확인에 실패했습니다.' }));
+      setErrors(prev => ({ ...prev, username: err.response?.data?.message || '아이디 확인에 실패했습니다.' }));
     } finally {
       setIsCheckingUsername(false);
     }
@@ -147,10 +148,11 @@ export const SignupPage = () => {
           return newErrors;
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Nickname check error:', error);
+      const err = error as { response?: { data?: { message?: string } } };
       setIsNicknameAvailable(false);
-      setErrors(prev => ({ ...prev, nickname: error.response?.data?.message || '닉네임 확인에 실패했습니다.' }));
+      setErrors(prev => ({ ...prev, nickname: err.response?.data?.message || '닉네임 확인에 실패했습니다.' }));
     } finally {
       setIsCheckingNickname(false);
     }
@@ -268,9 +270,10 @@ export const SignupPage = () => {
       login(response.accessToken, response.refreshToken, response.user);
       // Navigate after successful signup
       navigate('/signup/complete');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Signup error:', error);
-      showAlert(error.response?.data?.message || '회원가입에 실패했습니다.');
+      const err = error as { response?: { data?: { message?: string } } };
+      showAlert(err.response?.data?.message || '회원가입에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

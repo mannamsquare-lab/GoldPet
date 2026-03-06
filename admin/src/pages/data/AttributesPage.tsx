@@ -54,7 +54,7 @@ const AttributesPage: React.FC = () => {
     });
 
     const updateMutation = useMutation({
-        mutationFn: (data: { id: number, req: any }) => updateAttribute(data.id, data.req),
+        mutationFn: (data: { id: number, req: CreateAttributeRequest }) => updateAttribute(data.id, data.req),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['attributes'] });
             closeModal();
@@ -84,7 +84,7 @@ const AttributesPage: React.FC = () => {
             } else {
                 createMutation.mutate(req);
             }
-        } catch (e) {
+        } catch {
             alert("잘못된 JSON 형식입니다");
         }
     };
@@ -146,7 +146,7 @@ const AttributesPage: React.FC = () => {
                             <label className="block text-gray-700 text-sm font-bold mb-2">카테고리</label>
                             <select
                                 value={category}
-                                onChange={e => setCategory(e.target.value as any)}
+                                onChange={e => setCategory(e.target.value as 'TRAIT' | 'INTEREST' | 'ALLERGY')}
                                 className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             >
                                 <option value="TRAIT">성향</option>
@@ -179,7 +179,7 @@ const AttributesPage: React.FC = () => {
                             <label className="block text-gray-700 text-sm font-bold mb-2">입력 유형</label>
                             <select
                                 value={inputType}
-                                onChange={e => setInputType(e.target.value as any)}
+                                onChange={e => setInputType(e.target.value as 'SELECT' | 'RADIO' | 'TEXT')}
                                 className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             >
                                 <option value="SELECT">선택형</option>

@@ -14,7 +14,7 @@ export default function EventBanner({ notices }: EventBannerProps) {
 
   const handleClick = (notice: AppNoticeResponse) => {
     if (notice.linkUrl) {
-      window.location.href = notice.linkUrl;
+      window.location.assign(notice.linkUrl);
     }
   };
 

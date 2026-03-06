@@ -80,29 +80,29 @@ const ProfilePetTab: React.FC = () => {
     };
     
     // Parse temperamentTags string (e.g., "TRAIT_ACTIVITY:HIGH, TRAIT_SPECIAL_NOTES:Cute")
-    const parsedAttributes = React.useMemo(() => {
-        if (!pet?.temperamentTags) return {};
-        
+    const parsedAttributes = (() => {
+        if (!pet?.temperamentTags) return {} as Record<string, string>;
+
         // Handle if it's an array (mock) or string (backend)
-        const tagsString = Array.isArray(pet.temperamentTags) 
-            ? pet.temperamentTags.join(',') 
+        const tagsString = Array.isArray(pet.temperamentTags)
+            ? pet.temperamentTags.join(',')
             : pet.temperamentTags; // It is String in backend entity now
 
-        if (!tagsString) return {};
+        if (!tagsString) return {} as Record<string, string>;
 
         const result: Record<string, string> = {};
         tagsString.split(',').forEach(tag => {
-           const parts = tag.trim().split(':');
-           if (parts.length === 2) {
-               const [code, value] = parts;
-               result[code] = value;
-           } else if (parts.length === 1 && parts[0]) {
+            const parts = tag.trim().split(':');
+            if (parts.length === 2) {
+                const [code, value] = parts;
+                result[code] = value;
+            } else if (parts.length === 1 && parts[0]) {
                 // If just code exists or legacy format
                 result[parts[0]] = parts[0];
-           }
+            }
         });
         return result;
-    }, [pet?.temperamentTags]);
+    })();
 
     // Helper to render sections
     const renderAttributeSection = (category: string, boxColorClass: string) => {

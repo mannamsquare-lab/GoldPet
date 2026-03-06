@@ -37,28 +37,27 @@ const SettingsPage: React.FC = () => {
   const [activityPublic, setActivityPublic] = useState(true);
 
   useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const [notifications, privacy] = await Promise.all([
+          settingsService.getNotificationSettings(),
+          settingsService.getPrivacySettings(),
+        ]);
+        setNotificationSettings(notifications);
+        setPrivacySettings(privacy);
+      } catch {
+        showToast('설정을 불러오는데 실패했습니다.', 'error');
+      }
+    };
     loadSettings();
   }, []);
-
-  const loadSettings = async () => {
-    try {
-      const [notifications, privacy] = await Promise.all([
-        settingsService.getNotificationSettings(),
-        settingsService.getPrivacySettings(),
-      ]);
-      setNotificationSettings(notifications);
-      setPrivacySettings(privacy);
-    } catch {
-      showToast('설정을 불러오는데 실패했습니다.', 'error');
-    }
-  };
 
   const handleNotificationToggle = async (key: keyof NotificationSettings) => {
     const newSettings = { ...notificationSettings, [key]: !notificationSettings[key] };
     setNotificationSettings(newSettings);
     try {
       await settingsService.updateNotificationSettings(newSettings);
-    } catch (error) {
+    } catch {
       setNotificationSettings(notificationSettings);
       showToast('알림 설정 변경에 실패했습니다.', 'error');
     }
@@ -69,7 +68,7 @@ const SettingsPage: React.FC = () => {
     setPrivacySettings(newSettings);
     try {
       await settingsService.updatePrivacySettings(newSettings);
-    } catch (error) {
+    } catch {
       setPrivacySettings(privacySettings);
       showToast('개인정보 설정 변경에 실패했습니다.', 'error');
     }

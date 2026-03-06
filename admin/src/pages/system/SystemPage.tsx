@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { systemService } from '../../services/systemService';
 import type { AdminUser } from '../../services/systemService';
@@ -9,7 +9,6 @@ import type { ColumnDef } from '../../components/common/DataTable';
 
 export default function SystemPage() {
   const queryClient = useQueryClient();
-  const [signupEnabled, setSignupEnabled] = useState(true);
 
   const { data: systemInfo, isLoading: loadingSystem } = useQuery({
     queryKey: ['systemInfo'],
@@ -64,12 +63,13 @@ export default function SystemPage() {
     },
   });
 
-  // configs에서 가입 상태 초기화
-  useEffect(() => {
+  // configs에서 가입 상태 파생
+  const signupEnabled = useMemo(() => {
     if (configs.length > 0) {
       const signupConfig = configs.find(c => c.key === 'allow_signups' || c.key === 'signup.enabled');
-      if (signupConfig) setSignupEnabled(signupConfig.value === 'true');
+      if (signupConfig) return signupConfig.value === 'true';
     }
+    return true;
   }, [configs]);
 
   const maintenanceMutation = useMutation({
@@ -88,7 +88,6 @@ export default function SystemPage() {
   const signupMutation = useMutation({
     mutationFn: (enabled: boolean) => systemService.updateConfig('allow_signups', String(enabled)),
     onSuccess: (_data, enabled) => {
-      setSignupEnabled(enabled);
       alert(enabled ? '신규 가입이 허용되었습니다.' : '신규 가입이 차단되었습니다.');
       queryClient.invalidateQueries({ queryKey: ['configs'] });
     },

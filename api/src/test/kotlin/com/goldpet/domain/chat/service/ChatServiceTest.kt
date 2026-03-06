@@ -4,6 +4,7 @@ import com.goldpet.domain.chat.dto.ChatMessageRequest
 import com.goldpet.domain.chat.dto.ChatRoomCreateRequest
 import com.goldpet.domain.chat.entity.*
 import com.goldpet.domain.chat.repository.ChatMessageRepository
+import com.goldpet.domain.chat.repository.ChatRequestRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.repository.ChatRoomRepository
 import com.goldpet.domain.friend.entity.Match
@@ -47,6 +48,9 @@ class ChatServiceTest {
     @Mock
     private lateinit var userBlockRepository: UserBlockRepository
 
+    @Mock
+    private lateinit var chatRequestRepository: ChatRequestRepository
+
     private lateinit var chatService: ChatService
 
     private lateinit var testUser: User
@@ -64,7 +68,8 @@ class ChatServiceTest {
             userRepository,
             matchRepository,
             notificationService,
-            userBlockRepository
+            userBlockRepository,
+            chatRequestRepository
         )
 
         testUser = createTestUser(1L, "testuser", "테스트유저")

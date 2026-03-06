@@ -37,7 +37,7 @@ export default function LBSPage() {
   const [placesLoading, setPlacesLoading] = useState(false);
 
   // Walk detail modal
-  const [selectedWalk, setSelectedWalk] = useState<any>(null);
+  const [selectedWalk, setSelectedWalk] = useState<WalkAdminResponse | null>(null);
 
   // Place add modal
   const [showPlaceForm, setShowPlaceForm] = useState(false);

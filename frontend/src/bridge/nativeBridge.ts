@@ -6,17 +6,17 @@
 import type { BridgeMessage, BridgeResponse, NativeEventType } from './bridgeTypes';
 
 interface PendingRequest {
-  resolve: (value: any) => void;
+  resolve: (value: unknown) => void;
   reject: (error: Error) => void;
   timeout: ReturnType<typeof setTimeout>;
 }
 
 class NativeBridge {
   private pendingRequests = new Map<string, PendingRequest>();
-  private eventListeners = new Map<string, Set<(data: any) => void>>();
+  private eventListeners = new Map<string, Set<(data: unknown) => void>>();
   private isInitialized = false;
   // Buffer for one-shot events fired before listeners are registered
-  private eventBuffer = new Map<string, { data: any; timestamp: number }[]>();
+  private eventBuffer = new Map<string, { data: unknown; timestamp: number }[]>();
   private static readonly BUFFERABLE_EVENTS: Set<string> = new Set([
     'pushNotificationClicked',
     'authExpired',
@@ -32,8 +32,8 @@ class NativeBridge {
     // Flutter WebView에서 호출할 수 있는 전역 함수 등록
     // Flutter WebView에서 호출할 수 있는 전역 함수 등록
     // 기존 window.nativeBridge가 있으면 handleResponse만 연결하고, 없으면 생성
-    const existingBridge = (window as any).nativeBridge || {};
-    (window as any).nativeBridge = {
+    const existingBridge = (window as Record<string, unknown>).nativeBridge || {};
+    (window as Record<string, unknown>).nativeBridge = {
       ...existingBridge,
       handleResponse: (response: BridgeResponse) => {
         this.handleResponse(response);
@@ -65,7 +65,7 @@ class NativeBridge {
     console.log('NativeBridge initialized');
   }
 
-  async callMethod(method: string, params?: Record<string, any>): Promise<any> {
+  async callMethod(method: string, params?: Record<string, unknown>): Promise<unknown> {
     if (!this.isInitialized) {
       throw new Error('NativeBridge not initialized');
     }
@@ -87,8 +87,8 @@ class NativeBridge {
       this.pendingRequests.set(id, { resolve, reject, timeout });
 
       // Flutter WebView의 JavaScript Channel 호출
-      if ((window as any).NativeBridge) {
-        (window as any).NativeBridge.postMessage(JSON.stringify(message));
+      if ((window as Record<string, unknown>).NativeBridge) {
+        ((window as Record<string, unknown>).NativeBridge as { postMessage: (msg: string) => void }).postMessage(JSON.stringify(message));
       } else {
         clearTimeout(timeout);
         reject(new Error('NativeBridge channel not available'));
@@ -113,7 +113,7 @@ class NativeBridge {
     }
   }
 
-  onEvent(eventType: NativeEventType, callback: (data: any) => void) {
+  onEvent(eventType: NativeEventType, callback: (data: unknown) => void) {
     if (!this.eventListeners.has(eventType)) {
       this.eventListeners.set(eventType, new Set());
     }
@@ -135,7 +135,7 @@ class NativeBridge {
     };
   }
 
-  private emitEvent(eventType: string, data: any) {
+  private emitEvent(eventType: string, data: unknown) {
     const listeners = this.eventListeners.get(eventType);
     if (listeners && listeners.size > 0) {
       listeners.forEach((callback) => callback(data));
@@ -153,7 +153,7 @@ class NativeBridge {
   }
 
   isAvailable(): boolean {
-    return this.isInitialized && !!(window as any).NativeBridge;
+    return this.isInitialized && !!(window as Record<string, unknown>).NativeBridge;
   }
 }
 

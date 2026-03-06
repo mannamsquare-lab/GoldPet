@@ -11,7 +11,8 @@ import { useAuthStore } from '../../stores/authStore';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 const WS_URL = `${API_BASE_URL}/ws`;
 
-type MessageHandler = (message: ChatMessage) => void;
+type DeletedEvent = { type: 'MESSAGE_DELETED'; messageId: string | number };
+type MessageHandler = (message: ChatMessage | DeletedEvent) => void;
 
 class ChatWebSocketService {
   private client: Client | null = null;
@@ -115,7 +116,7 @@ class ChatWebSocketService {
         const handlers = this.messageHandlers.get(roomId) || [];
         if (data.type === 'MESSAGE_DELETED') {
           handlers.forEach((handler) =>
-            handler({ type: 'MESSAGE_DELETED', messageId: data.messageId } as any)
+            handler({ type: 'MESSAGE_DELETED', messageId: data.messageId } as DeletedEvent)
           );
           return;
         }
@@ -142,7 +143,7 @@ class ChatWebSocketService {
   /**
    * Subscribe to a generic topic (e.g., user-specific notifications)
    */
-  subscribeToTopic(topic: string, onMessage: (data: any) => void): void {
+  subscribeToTopic(topic: string, onMessage: (data: unknown) => void): void {
     if (!this.client || !this.isConnected) {
       console.warn('[WebSocket] Not connected. Call connect() first.');
       return;

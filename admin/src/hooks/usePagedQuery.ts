@@ -12,10 +12,10 @@ import type { PageResponse } from '../types/api';
 
 interface UsePagedQueryOptions<T> {
   queryKey: string;
-  fetchFn: (params: { page: number; size: number; [key: string]: any }) => Promise<PageResponse<T>>;
+  fetchFn: (params: { page: number; size: number; [key: string]: unknown }) => Promise<PageResponse<T>>;
   page: number;
   size: number;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   enabled?: boolean;
 }
 

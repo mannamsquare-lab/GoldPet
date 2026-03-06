@@ -9,7 +9,7 @@ interface EmoticonPickerProps {
 
 const ITEMS_PER_PAGE = 12;
 
-const EmoticonPicker = ({ onSelect, onClose: _onClose }: EmoticonPickerProps) => {
+const EmoticonPicker = ({ onSelect }: EmoticonPickerProps) => {
   const [page, setPage] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 

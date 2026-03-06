@@ -52,8 +52,9 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
         try {
             const room = await chatService.getOrCreateDirectRoom(data.id);
             navigate(`/chat/${room.id}`);
-        } catch (error: any) {
-            showAlert(error.message || '채팅방을 열 수 없습니다.');
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            showAlert(err.message || '채팅방을 열 수 없습니다.');
         } finally {
             setIsLoading(false);
         }
@@ -133,11 +134,12 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
             await reportService.createReport({ type: 'USER', targetId: data.id, reason });
             setShowReportModal(false);
             showAlert('신고가 접수되었습니다.');
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const err = error as { response?: { status?: number; data?: { message?: string } } };
             setShowReportModal(false);
-            if (error.response?.status === 400) {
-                showAlert(error.response?.data?.message || '이미 신고한 대상입니다.');
-            } else if (error.response?.status === 404) {
+            if (err.response?.status === 400) {
+                showAlert(err.response?.data?.message || '이미 신고한 대상입니다.');
+            } else if (err.response?.status === 404) {
                 showAlert('신고 대상을 찾을 수 없습니다.');
             } else {
                 showAlert('신고 접수에 실패했습니다.');

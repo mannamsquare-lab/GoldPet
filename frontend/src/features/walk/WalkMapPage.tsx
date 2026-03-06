@@ -228,7 +228,7 @@ export const WalkMapPage = () => {
                     if (nativeBridge.isAvailable()) {
                         try {
                             await nativeBridge.callMethod('startWalk', { isPublic });
-                        } catch (e) {
+                        } catch {
                             showAlert('산책 시작에 실패했습니다.');
                         }
                     } else {

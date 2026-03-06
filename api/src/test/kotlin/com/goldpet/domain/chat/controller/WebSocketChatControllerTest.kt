@@ -7,6 +7,8 @@ import com.goldpet.domain.chat.entity.ChatRoom
 import com.goldpet.domain.chat.entity.ChatRoomType
 import com.goldpet.domain.chat.entity.MessageType
 import com.goldpet.domain.chat.service.ChatService
+import com.goldpet.domain.common.repository.FileAttachmentRepository
+import com.goldpet.domain.emoticon.service.EmoticonService
 import com.goldpet.domain.user.entity.User
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,6 +20,8 @@ class WebSocketChatControllerTest {
 
     private lateinit var simpMessageSendingOperations: SimpMessageSendingOperations
     private lateinit var chatService: ChatService
+    private lateinit var emoticonService: EmoticonService
+    private lateinit var fileAttachmentRepository: FileAttachmentRepository
     private lateinit var webSocketChatController: WebSocketChatController
 
     private lateinit var testUser: User
@@ -27,7 +31,9 @@ class WebSocketChatControllerTest {
     fun setUp() {
         simpMessageSendingOperations = mock(SimpMessageSendingOperations::class.java)
         chatService = mock(ChatService::class.java)
-        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService)
+        emoticonService = mock(EmoticonService::class.java)
+        fileAttachmentRepository = mock(FileAttachmentRepository::class.java)
+        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, emoticonService, fileAttachmentRepository)
 
         testUser = User(
             id = 1L,

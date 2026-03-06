@@ -165,9 +165,9 @@ const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLo
     }, [msg, isMine, onLongPress]);
 
     const isDeleted = !!msg.deletedAt;
-    const isEmoticon = msg.messageType === 'EMOTICON' || (msg as any).type === 'emoticon';
+    const isEmoticon = msg.messageType === 'EMOTICON' || msg.type === 'emoticon';
     const hasReply = !!msg.replyToId;
-    const timestamp = (msg as any).timestamp || msg.createdAt;
+    const timestamp = msg.timestamp || msg.createdAt;
     const time = timestamp ? new Date(timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
 
     return (
@@ -192,21 +192,21 @@ const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLo
                     {hasReply && (
                         <div className="chat_detail_reply_quote">
                             <div className="chat_detail_reply_quote_header">
-                                <span className="chat_detail_reply_quote_name">{(msg as any).replyToSenderNickname}에게 답장</span>
-                                {((msg as any).replyToMessageType === 'IMAGE' || (msg as any).replyToMessageType === 'VIDEO') && (msg as any).replyToFileUrl && (
-                                    <img className="chat_detail_reply_quote_thumb" src={(msg as any).replyToFileUrl} alt="사진" />
+                                <span className="chat_detail_reply_quote_name">{msg.replyToSenderNickname}에게 답장</span>
+                                {(msg.replyToMessageType === 'IMAGE' || msg.replyToMessageType === 'VIDEO') && msg.replyToFileUrl && (
+                                    <img className="chat_detail_reply_quote_thumb" src={msg.replyToFileUrl} alt="사진" />
                                 )}
-                                {(msg as any).replyToMessageType === 'EMOTICON' && (msg as any).replyToEmoticonImageUrl && (
-                                    <img className="chat_detail_reply_quote_thumb" src={(msg as any).replyToEmoticonImageUrl} alt="이모티콘" />
+                                {msg.replyToMessageType === 'EMOTICON' && msg.replyToEmoticonImageUrl && (
+                                    <img className="chat_detail_reply_quote_thumb" src={msg.replyToEmoticonImageUrl} alt="이모티콘" />
                                 )}
                             </div>
                             <div className="chat_detail_reply_quote_divider" />
                             <span className="chat_detail_reply_quote_text">
-                                {(msg as any).replyToMessageType === 'FILE' ? `파일: ${(msg as any).replyToFileName || '파일'}` :
-                                 (msg as any).replyToMessageType === 'IMAGE' ? '사진' :
-                                 (msg as any).replyToMessageType === 'VIDEO' ? '동영상' :
-                                 (msg as any).replyToMessageType === 'EMOTICON' ? '이모티콘' :
-                                 (msg as any).replyToTextContent}
+                                {msg.replyToMessageType === 'FILE' ? `파일: ${msg.replyToFileName || '파일'}` :
+                                 msg.replyToMessageType === 'IMAGE' ? '사진' :
+                                 msg.replyToMessageType === 'VIDEO' ? '동영상' :
+                                 msg.replyToMessageType === 'EMOTICON' ? '이모티콘' :
+                                 msg.replyToTextContent}
                             </span>
                         </div>
                     )}
@@ -345,9 +345,9 @@ const ChatDetailPage = () => {
         },
         onError: () => showToast('메시지 전송에 실패했습니다.', 'error'),
         onSuccess: (newMessage) => {
-            queryClient.setQueryData(['chatMessages', chatId], (old: any[]) => {
+            queryClient.setQueryData(['chatMessages', chatId], (old: ChatMessage[] | undefined) => {
                 const oldMessages = old || [];
-                if (oldMessages.some((m: any) => String(m.id) === String(newMessage.id))) {
+                if (oldMessages.some((m: ChatMessage) => String(m.id) === String(newMessage.id))) {
                     return oldMessages;
                 }
                 return [...oldMessages, newMessage];
@@ -745,7 +745,7 @@ const ChatDetailPage = () => {
         setSelectedFiles([]);
     };
 
-    const renderMessageContent = (msg: any) => {
+    const renderMessageContent = (msg: ChatMessage) => {
         const content = msg.textContent || '';
         const msgType = msg.messageType || msg.type || 'TEXT';
         const file: FileInfo | undefined = msg.file;
@@ -777,7 +777,7 @@ const ChatDetailPage = () => {
             const handleDownload = async () => {
                 try {
                     // Try native bridge (WebView) - download to device
-                    if ((window as any).NativeBridge) {
+                    if ((window as Record<string, unknown>).NativeBridge) {
                         const { nativeBridge } = await import('../../bridge/nativeBridge');
                         await nativeBridge.callMethod('downloadFile', { url: file.url, fileName });
                         return;
@@ -965,7 +965,7 @@ const ChatDetailPage = () => {
                             isMine={isMine}
                             isGroupChat={isGroupChat}
                             currentRoom={currentRoom}
-                            chatUser={'profileImg' in chatUser ? chatUser : { name: chatUser.name, profileImgs: (chatUser as any).profileImgs }}
+                            chatUser={'profileImg' in chatUser ? chatUser : { name: chatUser.name, profileImgs: chatUser.profileImgs }}
                             onLongPress={handleContextMenuOpen}
                             renderMessageContent={renderMessageContent}
                         />

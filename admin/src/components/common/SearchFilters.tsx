@@ -24,16 +24,13 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
   onSearch,
   debounceMs = 300,
 }) => {
-  const [localText, setLocalText] = useState<Record<string, string>>({});
-  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  // Sync local text state with external values
-  useEffect(() => {
+  const [localText, setLocalText] = useState<Record<string, string>>(() => {
     const textFields = fields.filter(f => f.type === 'text');
     const initial: Record<string, string> = {};
     textFields.forEach(f => { initial[f.key] = values[f.key] || ''; });
-    setLocalText(initial);
-  }, []);
+    return initial;
+  });
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const handleTextChange = (key: string, value: string) => {
     setLocalText(prev => ({ ...prev, [key]: value }));
