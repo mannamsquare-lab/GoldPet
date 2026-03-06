@@ -368,7 +368,7 @@ class ChatServiceTest {
         )
 
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(chatRoomParticipantRepository.findAllByUserId(1L)).thenReturn(listOf(participant))
+        whenever(chatRoomParticipantRepository.findAllByUserIdAndLeftAtIsNull(1L)).thenReturn(listOf(participant))
 
         // When
         val result = chatService.getUserChatRooms(1L)
