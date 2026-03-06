@@ -70,7 +70,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen> with WidgetsBindingObse
 
   // GPS filtering thresholds
   static const double _maxAccuracyMeters = 20.0;
-  static const double _maxWalkSpeedMps = 4.2; // ~15 km/h
+  static const double _maxWalkSpeedMps = 6.9; // ~25 km/h (자전거 산책 허용)
   static const double _minDistanceMeters = 5.0;
 
   // MethodChannel for platform-specific walk widget

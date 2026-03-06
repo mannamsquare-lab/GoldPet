@@ -73,24 +73,7 @@ class WalkController(
         @ModelAttribute @Valid request: BoundingBoxRequest
     ): ResponseEntity<List<WalkResponse>> {
         val walkResponses = walkService.findWalksInArea(request)
-        // Return public (route-stripped) view; owner detail available via GET /walks/{id}
-        val currentUserId = userDetails?.id
-        return ResponseEntity.ok(walkResponses.map { response ->
-            if (currentUserId != null && response.userId == currentUserId) response
-            else WalkResponse(
-                id = response.id,
-                userId = response.userId,
-                startTime = response.startTime,
-                endTime = response.endTime,
-                distanceKm = response.distanceKm,
-                durationSeconds = response.durationSeconds,
-                path = emptyList(),
-                spots = emptyList(),
-                caloriesBurned = response.caloriesBurned,
-                notes = null,
-                hasPath = response.hasPath,
-            )
-        })
+        return ResponseEntity.ok(walkResponses)
     }
 
     @GetMapping("/ranking")

@@ -106,6 +106,7 @@ data class WalkResponse(
         }
 
         fun publicFrom(walk: Walk): WalkResponse {
+            val pathCoordinates = walk.path.coordinates.map { listOf(it.y, it.x) }
             return WalkResponse(
                 id = walk.id,
                 userId = walk.user.id,
@@ -113,12 +114,25 @@ data class WalkResponse(
                 endTime = walk.endTime,
                 distanceKm = walk.distanceKm,
                 durationSeconds = walk.durationSeconds,
-                path = emptyList(),
-                spots = emptyList(),
+                path = pathCoordinates,
+                spots = walk.spots.map { spot ->
+                    WalkSpotDto(
+                        latitude = spot.location.y,
+                        longitude = spot.location.x,
+                        type = spot.type.name,
+                        timestamp = spot.timestamp,
+                        imageUrl = spot.imageUrl,
+                        note = spot.note
+                    )
+                },
                 caloriesBurned = walk.caloriesBurned,
                 notes = null,
-                startAddress = null,
-                endAddress = null,
+                startAddress = walk.startAddress,
+                endAddress = walk.endAddress,
+                startLatitude = walk.startLocation?.y,
+                startLongitude = walk.startLocation?.x,
+                endLatitude = walk.endLocation?.y,
+                endLongitude = walk.endLocation?.x,
                 petNames = walk.walkPets.map { it.pet.name },
                 petIds = walk.walkPets.map { it.pet.id },
                 petProfileImageUrls = walk.walkPets.map { it.pet.profileImageUrl },
