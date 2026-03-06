@@ -32,8 +32,8 @@ class NativeBridge {
     // Flutter WebView에서 호출할 수 있는 전역 함수 등록
     // Flutter WebView에서 호출할 수 있는 전역 함수 등록
     // 기존 window.nativeBridge가 있으면 handleResponse만 연결하고, 없으면 생성
-    const existingBridge = (window as Record<string, unknown>).nativeBridge || {};
-    (window as Record<string, unknown>).nativeBridge = {
+    const existingBridge = (window as unknown as Record<string, unknown>).nativeBridge || {};
+    (window as unknown as Record<string, unknown>).nativeBridge = {
       ...existingBridge,
       handleResponse: (response: BridgeResponse) => {
         this.handleResponse(response);
@@ -87,8 +87,8 @@ class NativeBridge {
       this.pendingRequests.set(id, { resolve, reject, timeout });
 
       // Flutter WebView의 JavaScript Channel 호출
-      if ((window as Record<string, unknown>).NativeBridge) {
-        ((window as Record<string, unknown>).NativeBridge as { postMessage: (msg: string) => void }).postMessage(JSON.stringify(message));
+      if ((window as unknown as Record<string, unknown>).NativeBridge) {
+        ((window as unknown as Record<string, unknown>).NativeBridge as { postMessage: (msg: string) => void }).postMessage(JSON.stringify(message));
       } else {
         clearTimeout(timeout);
         reject(new Error('NativeBridge channel not available'));
@@ -153,7 +153,7 @@ class NativeBridge {
   }
 
   isAvailable(): boolean {
-    return this.isInitialized && !!(window as Record<string, unknown>).NativeBridge;
+    return this.isInitialized && !!(window as unknown as Record<string, unknown>).NativeBridge;
   }
 }
 

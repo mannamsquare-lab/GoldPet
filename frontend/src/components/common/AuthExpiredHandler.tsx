@@ -16,7 +16,8 @@ export function AuthExpiredHandler() {
       window.location.href = '/login';
     });
 
-    const unsubTokenSync = nativeBridge.onEvent('tokenSync', (data: { accessToken: string; refreshToken: string }) => {
+    const unsubTokenSync = nativeBridge.onEvent('tokenSync', (raw) => {
+      const data = raw as { accessToken: string; refreshToken: string };
       const { accessToken, refreshToken } = data;
       if (!accessToken) return;
       const currentToken = useAuthStore.getState().token;

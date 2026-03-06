@@ -127,7 +127,8 @@ export const authService = {
       if (nativeBridge.isAvailable()) {
         nativeBridge
           .callMethod("login", { provider })
-          .then((result: Record<string, unknown>) => {
+          .then((raw) => {
+            const result = raw as Record<string, unknown>;
             if (result.type === 'SIGNUP_REQUIRED') {
               const err = Object.assign(new Error('SIGNUP_REQUIRED'), {
                 signupRequired: true,
@@ -138,11 +139,11 @@ export const authService = {
               });
               reject(err);
             } else if (result.accessToken) {
-              resolve(result);
+              resolve(result as unknown as AuthResponse);
             } else if (result.success === false) {
-              reject(new Error(result.message || "로그인에 실패했습니다."));
+              reject(new Error((result.message as string) || "로그인에 실패했습니다."));
             } else {
-              resolve(result);
+              resolve(result as unknown as AuthResponse);
             }
           })
           .catch((err: Error) => {

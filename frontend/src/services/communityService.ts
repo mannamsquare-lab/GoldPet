@@ -95,7 +95,7 @@ export const communityService = {
         isLiked: p.isLikedByMe ?? p.isLiked ?? false,
         isCommentedByMe: p.isCommentedByMe ?? false,
         isMine: p.isMine ?? false,
-      })) : [];
+      }) as unknown as CommunityPost) : [];
 
       return {
         posts,
@@ -259,7 +259,7 @@ export const communityService = {
         isLiked: p.isLikedByMe ?? p.isLiked ?? false,
         isCommentedByMe: p.isCommentedByMe ?? false,
         isMine: true,
-      })) : [];
+      }) as unknown as CommunityPost) : [];
 
       return {
         posts,
@@ -283,7 +283,7 @@ export const communityService = {
         authorProfileUrl: c.userProfileImage ?? c.authorProfileUrl,
         isMine: true,
         postTitle: c.postTitle ?? '',
-      })) : [];
+      }) as unknown as CommunityComment) : [];
 
       return {
         comments,

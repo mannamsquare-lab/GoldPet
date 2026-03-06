@@ -137,8 +137,8 @@ export const homeService = {
         petAge: r.petAge,
         petBreed: r.petBreed,
         description: r.description || '',
-        distance: formatDistanceKm(r.distance),
-        images: r.images.length > 0 ? r.images : ['/assets/images/common/pet_none_img02.svg'],
+        distance: formatDistanceKm(r.distance as number),
+        images: (r.images as string[])?.length > 0 ? r.images : ['/assets/images/common/pet_none_img02.svg'],
         isNeutered: r.isNeutered,
         gender: r.petGender,
         nickname: r.nickname,
@@ -150,7 +150,7 @@ export const homeService = {
         ownerMbti: r.ownerMbti,
         ownerInterests: r.ownerInterests || [],
         ownerHobbies: r.ownerHobbies || [],
-        locationText: truncateLocation(r.locationText),
+        locationText: truncateLocation(r.locationText as string | null | undefined),
         tags: r.tags || [],
       }));
 

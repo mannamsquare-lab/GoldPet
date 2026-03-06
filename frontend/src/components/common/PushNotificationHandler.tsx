@@ -7,7 +7,8 @@ export function PushNotificationHandler() {
 
     useEffect(() => {
         const unsubscribe = nativeBridge.onEvent('pushNotificationClicked', (eventData) => {
-            const data = eventData?.data || eventData;
+            const raw = eventData as Record<string, unknown> | undefined;
+            const data = (raw?.data as Record<string, unknown>) || raw;
             if (!data) return;
 
             const { targetType, targetId, type } = data;

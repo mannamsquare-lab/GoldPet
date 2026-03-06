@@ -11,7 +11,7 @@ export class LocationService {
 
   async requestPermission(): Promise<boolean> {
     try {
-      const result = await nativeBridge.callMethod('requestLocationPermission');
+      const result = await nativeBridge.callMethod('requestLocationPermission') as Record<string, unknown>;
       return result.granted === true;
     } catch (error) {
       console.error('Failed to request location permission:', error);
@@ -21,7 +21,7 @@ export class LocationService {
 
   async getCurrentLocation(): Promise<Location> {
     try {
-      const data = await nativeBridge.callMethod('getCurrentLocation');
+      const data = await nativeBridge.callMethod('getCurrentLocation') as Location;
       return {
         latitude: data.latitude,
         longitude: data.longitude,
@@ -38,7 +38,8 @@ export class LocationService {
 
   async startTracking(callback: (location: Location) => void): Promise<void> {
     // 이벤트 리스너 등록
-    this.unsubscribe = nativeBridge.onEvent('locationUpdated', (data) => {
+    this.unsubscribe = nativeBridge.onEvent('locationUpdated', (raw) => {
+      const data = raw as Location;
       callback({
         latitude: data.latitude,
         longitude: data.longitude,

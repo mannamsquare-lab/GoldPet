@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
-import type { Swiper as SwiperType, SwiperOptions } from 'swiper';
+import type { SwiperModule } from 'swiper/types';
+import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -17,7 +18,7 @@ interface ProfileImageSliderProps {
     swiperWrapperClass?: string;
     children?: React.ReactNode;
     innerChildren?: React.ReactNode;
-    swiperProps?: SwiperOptions & { onSlideChange?: (swiper: SwiperType) => void; modules?: unknown[] };
+    swiperProps?: Record<string, unknown> & { onSlideChange?: (swiper: SwiperType) => void; modules?: SwiperModule[]; navigation?: boolean | Record<string, string> };
     navigation?: boolean;
 }
 

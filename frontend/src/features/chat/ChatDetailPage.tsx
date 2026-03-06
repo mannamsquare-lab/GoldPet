@@ -777,7 +777,7 @@ const ChatDetailPage = () => {
             const handleDownload = async () => {
                 try {
                     // Try native bridge (WebView) - download to device
-                    if ((window as Record<string, unknown>).NativeBridge) {
+                    if ((window as unknown as Record<string, unknown>).NativeBridge) {
                         const { nativeBridge } = await import('../../bridge/nativeBridge');
                         await nativeBridge.callMethod('downloadFile', { url: file.url, fileName });
                         return;

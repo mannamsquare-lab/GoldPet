@@ -8,7 +8,7 @@ import type { ImageResult } from '../../bridge/bridgeTypes';
 export class CameraService {
   async requestCameraPermission(): Promise<boolean> {
     try {
-      const result = await nativeBridge.callMethod('requestCameraPermission');
+      const result = await nativeBridge.callMethod('requestCameraPermission') as Record<string, unknown>;
       return result.granted === true;
     } catch (error) {
       console.error('Failed to request camera permission:', error);
@@ -18,7 +18,7 @@ export class CameraService {
 
   async requestPhotoPermission(): Promise<boolean> {
     try {
-      const result = await nativeBridge.callMethod('requestPhotoPermission');
+      const result = await nativeBridge.callMethod('requestPhotoPermission') as Record<string, unknown>;
       return result.granted === true;
     } catch (error) {
       console.error('Failed to request photo permission:', error);
@@ -32,7 +32,7 @@ export class CameraService {
     quality?: number;
   }): Promise<ImageResult> {
     try {
-      const result = await nativeBridge.callMethod('openCamera', options);
+      const result = await nativeBridge.callMethod('openCamera', options) as ImageResult;
       return {
         path: result.path,
         name: result.name,
@@ -52,7 +52,7 @@ export class CameraService {
     quality?: number;
   }): Promise<ImageResult> {
     try {
-      const result = await nativeBridge.callMethod('openPhotoLibrary', options);
+      const result = await nativeBridge.callMethod('openPhotoLibrary', options) as ImageResult;
       return {
         path: result.path,
         name: result.name,
