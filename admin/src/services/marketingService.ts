@@ -67,7 +67,8 @@ export const marketingService = {
     return response.data;
   },
 
-  getBanners: async (): Promise<Record<string, unknown>[]> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getBanners: async (): Promise<any[]> => {
     const response = await apiClient.get('/marketing/banners');
     return response.data;
   },

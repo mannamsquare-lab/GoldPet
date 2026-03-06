@@ -33,6 +33,7 @@ export interface WalkDetailResponse {
   distanceKm: number;
   durationSeconds: number;
   caloriesBurned: number;
+  spotsCount: number;
   notes: string | null;
   pathCoordinates: { latitude: number; longitude: number }[];
   spots: WalkSpotDto[];

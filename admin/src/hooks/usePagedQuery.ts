@@ -12,10 +12,12 @@ import type { PageResponse } from '../types/api';
 
 interface UsePagedQueryOptions<T> {
   queryKey: string;
-  fetchFn: (params: { page: number; size: number; [key: string]: unknown }) => Promise<PageResponse<T>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fetchFn: (params: { page: number; size: number; [key: string]: any }) => Promise<PageResponse<T>>;
   page: number;
   size: number;
-  filters?: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  filters?: Record<string, any>;
   enabled?: boolean;
 }
 

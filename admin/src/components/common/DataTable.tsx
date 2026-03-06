@@ -4,7 +4,8 @@ import clsx from 'clsx';
 export interface ColumnDef<T> {
   key: string;
   header: string;
-  render?: (value: unknown, row: T) => React.ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  render?: (value: any, row: T) => React.ReactNode;
   align?: 'left' | 'center' | 'right';
   width?: string;
   className?: string;
@@ -19,8 +20,9 @@ interface DataTableProps<T> {
   rowClassName?: (row: T) => string;
 }
 
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  return path.split('.').reduce((acc: unknown, part) => (acc as Record<string, unknown>)?.[part], obj);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getNestedValue(obj: Record<string, any>, path: string): any {
+  return path.split('.').reduce((acc, part) => acc?.[part], obj);
 }
 
 export function DataTable<T>({
@@ -122,7 +124,7 @@ export function DataTable<T>({
               )}
             >
               {columns.map((col) => {
-                const value = getNestedValue(row, col.key);
+                const value = getNestedValue(row as Record<string, any>, col.key);
                 return (
                   <td
                     key={col.key}
