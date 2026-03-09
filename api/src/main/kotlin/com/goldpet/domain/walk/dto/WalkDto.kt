@@ -24,6 +24,7 @@ data class CreateWalkRequest(
     val notes: String?,
     val petIds: List<Long> = emptyList(),
     val isPublic: Boolean = true,
+    val followedCourseId: Long? = null,
 ) {
     fun toLineString(): LineString {
         val geometryFactory = GeometryFactory(PrecisionModel(), 4326)

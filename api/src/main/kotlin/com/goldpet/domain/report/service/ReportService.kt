@@ -4,6 +4,7 @@ import com.goldpet.domain.admin.service.AdminCommunityService
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
+import com.goldpet.domain.course.repository.WalkCourseRepository
 import com.goldpet.domain.report.dto.CreateReportRequest
 import com.goldpet.domain.report.dto.ReportResponse
 import com.goldpet.domain.report.entity.Report
@@ -24,6 +25,7 @@ class ReportService(
     private val userRepository: UserRepository,
     private val postRepository: CommunityPostRepository,
     private val commentRepository: CommunityCommentRepository,
+    private val walkCourseRepository: WalkCourseRepository,
     private val systemSettingService: SystemSettingService,
     private val adminCommunityService: AdminCommunityService
 ) {
@@ -54,6 +56,11 @@ class ReportService(
                 user.nickname ?: "Unknown User"
             }
             ReportType.CHAT -> "Chat Message #${request.targetId}"
+            ReportType.COURSE -> {
+                val course = walkCourseRepository.findById(request.targetId)
+                    .orElseThrow { NotFoundException("Course not found") }
+                course.title.take(50)
+            }
         }
 
         val report = Report(
@@ -105,6 +112,18 @@ class ReportService(
                     report.status = ReportStatus.RESOLVED
                     report.resolvedAt = LocalDateTime.now()
                     report.actionType = ReportActionType.HIDE_COMMENT
+                    report.adminNote = "자동 제재: 신고 ${totalCount}건 누적 (임계값: ${threshold})"
+                    reportRepository.save(report)
+                }
+            }
+            ReportType.COURSE -> {
+                val course = walkCourseRepository.findById(report.targetId).orElse(null) ?: return
+                if (course.isPublished) {
+                    course.isPublished = false
+                    walkCourseRepository.save(course)
+                    report.status = ReportStatus.RESOLVED
+                    report.resolvedAt = LocalDateTime.now()
+                    report.actionType = ReportActionType.HIDE_COURSE
                     report.adminNote = "자동 제재: 신고 ${totalCount}건 누적 (임계값: ${threshold})"
                     reportRepository.save(report)
                 }

@@ -7,5 +7,6 @@ enum class ReportActionType(val label: String) {
     SUSPEND_USER("계정 정지"),
     WARN_USER("경고 조치"),
     HIDE_POST("게시글 숨김"),
-    HIDE_COMMENT("댓글 숨김")
+    HIDE_COMMENT("댓글 숨김"),
+    HIDE_COURSE("코스 숨김")
 }

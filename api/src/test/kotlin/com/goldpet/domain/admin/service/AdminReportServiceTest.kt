@@ -6,6 +6,7 @@ import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.common.exception.BadRequestException
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
+import com.goldpet.domain.course.repository.WalkCourseRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.report.entity.Report
 import com.goldpet.domain.report.entity.ReportActionType
@@ -35,6 +36,7 @@ class AdminReportServiceTest {
     @Mock private lateinit var communityPostRepository: CommunityPostRepository
     @Mock private lateinit var communityCommentRepository: CommunityCommentRepository
     @Mock private lateinit var chatMessageRepository: ChatMessageRepository
+    @Mock private lateinit var walkCourseRepository: WalkCourseRepository
     @Mock private lateinit var notificationService: NotificationService
 
     private lateinit var service: AdminReportService
@@ -46,7 +48,7 @@ class AdminReportServiceTest {
         service = AdminReportService(
             reportRepository, adminCommunityService, adminUserManagementService,
             adminChatService, adminUserRepository, communityPostRepository,
-            communityCommentRepository, chatMessageRepository, notificationService
+            communityCommentRepository, chatMessageRepository, walkCourseRepository, notificationService
         )
 
         testUser = User(

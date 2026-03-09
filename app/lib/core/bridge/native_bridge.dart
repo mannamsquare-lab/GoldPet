@@ -19,6 +19,7 @@ import '../constants/keys.dart';
 import '../constants/app_constants.dart';
 import '../api/api_client.dart';
 import '../../features/walk/screens/walk_screen.dart';
+import '../../features/walk/screens/course_walk_screen.dart';
 
 /// JavaScript와 Flutter 간 통신을 담당하는 브릿지
 class NativeBridge {
@@ -281,6 +282,40 @@ class NativeBridge {
           // Don't await - return immediately so bridge doesn't timeout
           rootNavigatorKey.currentState?.push(
             MaterialPageRoute(builder: (_) => WalkScreen(isPublic: isPublic)),
+          );
+          return {'success': true};
+
+        // 코스 따라가기 (Course Walk Feature)
+        case 'startCourseWalk':
+          // Singleton guard
+          if (CourseWalkScreen.isOnStack || WalkScreen.isOnStack) {
+            return {'success': true, 'alreadyActive': true};
+          }
+          final courseId = params?['courseId'] as int?;
+          final pathRaw = params?['path'] as List?;
+          final spotsRaw = params?['spots'] as List?;
+          final courseTitle = params?['title'] as String?;
+
+          if (courseId == null || pathRaw == null || pathRaw.isEmpty) {
+            throw Exception('courseId and path are required');
+          }
+
+          final coursePath = pathRaw
+              .map((p) => [(p as List)[0] as double, p[1] as double])
+              .toList();
+          final courseSpots = (spotsRaw ?? [])
+              .map((s) => CourseSpotData.fromJson(s as Map<String, dynamic>))
+              .toList();
+
+          rootNavigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (_) => CourseWalkScreen(
+                courseId: courseId,
+                coursePath: coursePath,
+                courseSpots: courseSpots,
+                courseTitle: courseTitle,
+              ),
+            ),
           );
           return {'success': true};
 

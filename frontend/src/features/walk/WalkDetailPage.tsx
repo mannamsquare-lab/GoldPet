@@ -366,6 +366,37 @@ export const WalkDetailPage = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* Register as course button */}
+                    {(walkDetail?.pathPoints?.length ?? 0) > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => navigate(`/courses/create/from-walk/${walkId}`)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                width: '100%',
+                                padding: '14px 0',
+                                marginTop: '16px',
+                                background: '#fff',
+                                border: '1.5px solid #614108',
+                                borderRadius: '12px',
+                                color: '#614108',
+                                fontSize: '15px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M3 15C5 15 5 10 8 10C11 10 11 15 14 15C17 15 17 10 17 10" stroke="#614108" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="3" cy="15" r="1.5" fill="#614108"/>
+                                <circle cx="17" cy="10" r="1.5" fill="#614108"/>
+                            </svg>
+                            이 산책을 코스로 등록
+                        </button>
+                    )}
                 </div>
             </div>
 

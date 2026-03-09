@@ -2,8 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walkService, getTodayStats } from '../../services/walkService';
+import { courseService } from '../../services/courseService';
 import type { WalkRecord, WalkRankingEntry } from '../../services/walkService';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
+import { CourseCard } from '../course/components/CourseCard';
 import './WalkPage.css';
 
 function getCurrentYearMonth(): string {
@@ -11,9 +13,51 @@ function getCurrentYearMonth(): string {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function CoursesTabContent() {
+    const navigate = useNavigate();
+    const { data, isLoading } = useQuery({
+        queryKey: ['courses', 'popular', 'walkTab'],
+        queryFn: () => courseService.getPopularCourses({ page: 0, size: 5 }),
+    });
+
+    const courses = data?.content ?? [];
+
+    if (isLoading) {
+        return <p style={{ textAlign: 'center', padding: '24px 0', color: '#888', fontSize: 14 }}>불러오는 중...</p>;
+    }
+
+    if (courses.length === 0) {
+        return (
+            <div className="walk_empty_state">
+                <img src="/assets/images/common/comment_icon03.svg" alt="" />
+                등록된 코스가 없어요.
+            </div>
+        );
+    }
+
+    return (
+        <div className="walk_courses_list">
+            {courses.map((course) => (
+                <CourseCard
+                    key={course.id}
+                    course={course}
+                    onClick={() => navigate(`/courses/${course.id}`)}
+                />
+            ))}
+            <button
+                type="button"
+                className="walk_courses_more_btn"
+                onClick={() => navigate('/courses')}
+            >
+                더보기
+            </button>
+        </div>
+    );
+}
+
 export const WalkPage = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'records' | 'ranking'>('records');
+    const [activeTab, setActiveTab] = useState<'records' | 'courses' | 'ranking'>('records');
     const [yearMonth, setYearMonth] = useState<string>(getCurrentYearMonth());
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [rankingSize, setRankingSize] = useState<number>(10);
@@ -117,17 +161,24 @@ export const WalkPage = () => {
 
                 {/* Records / Ranking Tabs */}
                 <div className="walk_records_section">
-                    <div className="walk_tabs">
+                    <div className="walk_group_tab">
                         <button
                             type="button"
-                            className={`walk_tab${activeTab === 'records' ? ' active' : ''}`}
+                            className={activeTab === 'records' ? 'active' : ''}
                             onClick={() => setActiveTab('records')}
                         >
-                            우리의 산책 기록
+                            산책 기록
                         </button>
                         <button
                             type="button"
-                            className={`walk_tab${activeTab === 'ranking' ? ' active' : ''}`}
+                            className={activeTab === 'courses' ? 'active' : ''}
+                            onClick={() => setActiveTab('courses')}
+                        >
+                            인기 코스
+                        </button>
+                        <button
+                            type="button"
+                            className={activeTab === 'ranking' ? 'active' : ''}
                             onClick={() => setActiveTab('ranking')}
                         >
                             베스트 랭킹
@@ -183,6 +234,13 @@ export const WalkPage = () => {
                                 </p>
                             )}
                             <div ref={sentinelRef} style={{ height: 1 }} />
+                        </div>
+                    )}
+
+                    {/* Courses Tab */}
+                    {activeTab === 'courses' && (
+                        <div className="walk_courses_tab">
+                            <CoursesTabContent />
                         </div>
                     )}
 

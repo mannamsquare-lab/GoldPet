@@ -2,8 +2,8 @@ package com.goldpet.domain.walk.controller
 
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.walk.repository.WalkRepository
-import com.goldpet.domain.walk.service.NaverGeocodingService
-import com.goldpet.domain.walk.service.NaverStaticMapService
+import com.goldpet.infra.naver.NaverGeocodingService
+import com.goldpet.infra.naver.NaverStaticMapService
 import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity

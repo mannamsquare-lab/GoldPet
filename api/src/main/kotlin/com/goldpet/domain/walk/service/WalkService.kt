@@ -19,7 +19,10 @@ import com.goldpet.domain.walk.repository.BestWalkCoupleRepository
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
+import com.goldpet.domain.walk.event.WalkCompletedEvent
+import com.goldpet.infra.naver.NaverGeocodingService
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -32,7 +35,8 @@ class WalkService(
     private val petRepository: PetRepository,
     private val goldService: GoldService,
     private val badgeAwardService: BadgeAwardService,
-    private val naverGeocodingService: NaverGeocodingService
+    private val naverGeocodingService: NaverGeocodingService,
+    private val applicationEventPublisher: ApplicationEventPublisher
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
 
@@ -51,6 +55,7 @@ class WalkService(
             notes = request.notes,
             isPublic = request.isPublic
         )
+        walk.followedCourseId = request.followedCourseId
         
         // Add spots
         val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
@@ -108,6 +113,8 @@ class WalkService(
         } catch (e: Exception) {
             log.warn("Failed to update gamification progress", e)
         }
+
+        applicationEventPublisher.publishEvent(WalkCompletedEvent(this, savedWalk.id, userId, savedWalk.followedCourseId))
 
         return WalkResponse.from(savedWalk)
     }

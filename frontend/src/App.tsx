@@ -65,6 +65,9 @@ import GoldMainPage from './features/gold/GoldMainPage';
 import GoldPurchasePage from './features/gold/GoldPurchasePage';
 import GoldHistoryPage from './features/gold/GoldHistoryPage';
 import LocationSettingPage from './features/location/LocationSettingPage';
+import CourseDetailPage from './features/course/CourseDetailPage';
+import { CoursePage } from './features/course/CoursePage';
+import { CourseCreatePage } from './features/course/CourseCreatePage';
 
 
 
@@ -168,6 +171,12 @@ function App() {
 
               {/* Walk Map Expand - full screen, no layout wrapper */}
               <Route path="/walk/map-expand/:walkId" element={<WalkMapExpandPage />} />
+
+              {/* Course routes */}
+              <Route path="/courses" element={<CoursePage />} />
+              <Route path="/courses/create" element={<CourseCreatePage />} />
+              <Route path="/courses/create/from-walk/:walkId" element={<CourseCreatePage />} />
+              <Route path="/courses/:courseId" element={<CourseDetailPage />} />
 
               {/* Layout B pages using SubPageLayout internally */}
               <Route path="/mypage" element={<MyPage />} />

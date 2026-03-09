@@ -4,6 +4,7 @@ import com.goldpet.domain.admin.service.AdminCommunityService
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
+import com.goldpet.domain.course.repository.WalkCourseRepository
 import com.goldpet.domain.report.dto.CreateReportRequest
 import com.goldpet.domain.report.entity.Report
 import com.goldpet.domain.report.entity.ReportStatus
@@ -38,6 +39,9 @@ class ReportServiceTest {
     private lateinit var commentRepository: CommunityCommentRepository
 
     @Mock
+    private lateinit var walkCourseRepository: WalkCourseRepository
+
+    @Mock
     private lateinit var systemSettingService: SystemSettingService
 
     @Mock
@@ -51,7 +55,7 @@ class ReportServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        reportService = ReportService(reportRepository, userRepository, postRepository, commentRepository, systemSettingService, adminCommunityService)
+        reportService = ReportService(reportRepository, userRepository, postRepository, commentRepository, walkCourseRepository, systemSettingService, adminCommunityService)
 
         testUser = User(
             id = 1L,

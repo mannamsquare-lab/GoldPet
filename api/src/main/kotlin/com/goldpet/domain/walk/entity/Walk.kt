@@ -54,6 +54,9 @@ class Walk(
     var walkPets: MutableList<WalkPet> = mutableListOf(),
 
     @Column(nullable = false)
-    var isPublic: Boolean = true
+    var isPublic: Boolean = true,
+
+    @Column(name = "followed_course_id")
+    var followedCourseId: Long? = null
 
 ) : BaseTimeEntity()

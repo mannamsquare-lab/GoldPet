@@ -7,6 +7,7 @@ import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.community.repository.CommunityCommentRepository
 import com.goldpet.domain.community.repository.CommunityPostRepository
+import com.goldpet.domain.course.repository.WalkCourseRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.report.entity.Report
 import com.goldpet.domain.report.entity.ReportActionType
@@ -30,6 +31,7 @@ class AdminReportService(
     private val communityPostRepository: CommunityPostRepository,
     private val communityCommentRepository: CommunityCommentRepository,
     private val chatMessageRepository: ChatMessageRepository,
+    private val walkCourseRepository: WalkCourseRepository,
     private val notificationService: NotificationService
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -159,6 +161,13 @@ class AdminReportService(
                 if (report.type != ReportType.COMMENT) throw BadRequestException("COMMENT 신고만 댓글 숨김 가능")
                 adminCommunityService.hideComment(report.targetId, "신고 처리")
             }
+            ReportActionType.HIDE_COURSE -> {
+                if (report.type != ReportType.COURSE) throw BadRequestException("COURSE 신고만 코스 숨김 가능")
+                val course = walkCourseRepository.findById(report.targetId)
+                    .orElseThrow { NotFoundException("코스를 찾을 수 없습니다: ${report.targetId}") }
+                course.isPublished = false
+                walkCourseRepository.save(course)
+            }
         }
     }
 
@@ -188,6 +197,11 @@ class AdminReportService(
                     .orElseThrow { NotFoundException("채팅 메시지를 찾을 수 없습니다: ${report.targetId}") }
                 message.sender?.id
                     ?: throw BadRequestException("시스템 메시지는 사용자 정지 대상이 아닙니다")
+            }
+            ReportType.COURSE -> {
+                val course = walkCourseRepository.findById(report.targetId)
+                    .orElseThrow { NotFoundException("코스를 찾을 수 없습니다: ${report.targetId}") }
+                course.author.id
             }
         }
     }

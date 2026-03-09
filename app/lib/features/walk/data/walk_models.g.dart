@@ -108,6 +108,7 @@ _$CreateWalkRequestImpl _$$CreateWalkRequestImplFromJson(
           .toList() ??
       const [],
   isPublic: json['isPublic'] as bool? ?? true,
+  followedCourseId: (json['followedCourseId'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$$CreateWalkRequestImplToJson(
@@ -123,4 +124,5 @@ Map<String, dynamic> _$$CreateWalkRequestImplToJson(
   'notes': instance.notes,
   'petIds': instance.petIds,
   'isPublic': instance.isPublic,
+  'followedCourseId': instance.followedCourseId,
 };

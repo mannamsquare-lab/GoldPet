@@ -181,44 +181,98 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 24px;
 }
 
-.walk_tabs {
-  width: 100%;
-  padding: 0 16px;
-  overflow: hidden;
+.walk_group_tab {
+  width: calc(100% - 32px);
+  position: relative;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  gap: 24px;
+  gap: 2px;
+  margin: 0 auto;
 }
 
-.walk_tab {
+.walk_group_tab::after {
+  width: 100%;
+  height: 2px;
+  display: block;
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background-color: #614108;
+}
+
+.walk_group_tab button {
+  flex: 1;
   height: 46px;
-  padding: 0 16px;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  border: none;
-  background: transparent;
-  color: #727272;
-  font-size: 16px;
-  font-family: Pretendard, sans-serif;
+  box-sizing: border-box;
+  position: relative;
+  background-color: #EFE1C4;
+  font-size: 15px;
   font-weight: 500;
-  line-height: 22px;
+  color: #614108;
+  border: none;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
   cursor: pointer;
+  font-family: Pretendard, sans-serif;
+}
+
+.walk_group_tab button.active {
+  z-index: 1;
+  border: 2px solid #614108;
+  border-bottom: 0;
+  background-color: #FFF7E6;
+  font-weight: 700;
+}
+
+.walk_empty_state {
+  width: 100%;
+  color: #81662d;
+  padding: 60px 16px;
   display: flex;
+  gap: 8px;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  position: relative;
+  font-size: 24px;
+  font-weight: 700;
+  min-height: 300px;
+  box-sizing: border-box;
+  text-align: center;
 }
 
-.walk_tab.active {
-  border-bottom: 2px solid var(--color-primary);
-  color: var(--color-primary);
-  font-weight: 700;
+.walk_empty_state img {
+  width: 48px;
+}
+
+.walk_courses_list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.walk_courses_more_btn {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1.5px solid #614108;
+  border-radius: 10px;
+  color: #614108;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: Pretendard, sans-serif;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background 0.15s;
+}
+
+.walk_courses_more_btn:active {
+  background: #f5f0e8;
 }
 
 .walk_records_list {

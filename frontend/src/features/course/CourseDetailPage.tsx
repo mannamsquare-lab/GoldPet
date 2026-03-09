@@ -1,0 +1,297 @@
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MainHeader } from '../../components/common/MainHeader';
+import { courseService } from '../../services/courseService';
+import type { CourseDifficulty, CourseSpotType } from '../../services/courseService';
+import { useAuthStore } from '../../stores/authStore';
+import { CourseMap } from './components/CourseMap';
+import './CourseDetailPage.css';
+
+// ── Helpers ──
+
+function difficultyLabel(d: CourseDifficulty): string {
+  switch (d) {
+    case 'EASY': return '초급';
+    case 'MODERATE': return '중급';
+    case 'HARD': return '상급';
+  }
+}
+
+function difficultyClass(d: CourseDifficulty): string {
+  switch (d) {
+    case 'EASY': return 'easy';
+    case 'MODERATE': return 'moderate';
+    case 'HARD': return 'hard';
+  }
+}
+
+function spotTypeLabel(type: CourseSpotType): string {
+  switch (type) {
+    case 'CONVENIENCE_STORE': return '편의점';
+    case 'WATER_FOUNTAIN': return '음수대';
+    case 'RESTROOM': return '화장실';
+    case 'PET_CAFE': return '펫카페';
+    case 'PARK': return '공원';
+    case 'DANGER_ZONE': return '위험구역';
+    case 'REST_AREA': return '쉼터';
+    case 'TRASH_CAN': return '쓰레기통';
+    case 'PHOTO_SPOT': return '포토스팟';
+    case 'OTHER': return '기타';
+  }
+}
+
+function spotTypeEmoji(type: CourseSpotType): string {
+  switch (type) {
+    case 'CONVENIENCE_STORE': return '🏪';
+    case 'WATER_FOUNTAIN': return '💧';
+    case 'RESTROOM': return '🚻';
+    case 'PET_CAFE': return '☕';
+    case 'PARK': return '🌳';
+    case 'DANGER_ZONE': return '⚠️';
+    case 'REST_AREA': return '🪑';
+    case 'TRASH_CAN': return '🗑️';
+    case 'PHOTO_SPOT': return '📷';
+    case 'OTHER': return '📍';
+  }
+}
+
+// ── HeartIcon ──
+
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? '#E74C3C' : 'none'} stroke={filled ? '#E74C3C' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  );
+}
+
+// ── Page ──
+
+export const CourseDetailPage = () => {
+  const { courseId } = useParams<{ courseId: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuthStore();
+
+  const courseIdNum = Number(courseId);
+
+  // Fetch course detail
+  const {
+    data: course,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['course', 'detail', courseIdNum],
+    queryFn: () => courseService.getCourseDetail(courseIdNum),
+    enabled: !!courseIdNum,
+  });
+
+  // Fetch like status (only when authenticated)
+  const { data: likeStatus } = useQuery({
+    queryKey: ['course', 'like', courseIdNum],
+    queryFn: () => courseService.getCourseLikeStatus(courseIdNum),
+    enabled: !!courseIdNum && isAuthenticated,
+  });
+
+  // Toggle like with optimistic update
+  const likeMutation = useMutation({
+    mutationFn: () => courseService.toggleCourseLike(courseIdNum),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['course', 'like', courseIdNum] });
+      const prev = queryClient.getQueryData<typeof likeStatus>(['course', 'like', courseIdNum]);
+      if (prev) {
+        queryClient.setQueryData(['course', 'like', courseIdNum], {
+          ...prev,
+          liked: !prev.liked,
+          likeCount: prev.liked ? prev.likeCount - 1 : prev.likeCount + 1,
+        });
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(['course', 'like', courseIdNum], context.prev);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', 'like', courseIdNum] });
+      queryClient.invalidateQueries({ queryKey: ['course', 'detail', courseIdNum] });
+    },
+  });
+
+  const handleLike = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    if (likeMutation.isPending) return;
+    likeMutation.mutate();
+  };
+
+  const handleStartWalk = async () => {
+    if (!course) return;
+    // Try native bridge first (Flutter app), fallback to web navigation
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bridge = (window as any).nativeBridge;
+    if (bridge?.callMethod) {
+      try {
+        await bridge.callMethod('startCourseWalk', {
+          courseId: courseIdNum,
+          title: course.title,
+          path: course.path ?? [],
+          spots: (course.spots ?? []).map((s: { latitude: number; longitude: number; type: string; name: string | null; description: string | null }) => ({
+            latitude: s.latitude,
+            longitude: s.longitude,
+            type: s.type,
+            name: s.name,
+            description: s.description,
+          })),
+        });
+        return;
+      } catch (e) {
+        console.warn('Native bridge startCourseWalk failed, fallback to web:', e);
+      }
+    }
+    navigate(`/walk/map?courseId=${courseIdNum}`);
+  };
+
+  const isLiked = likeStatus?.liked ?? false;
+  const displayLikeCount = likeStatus?.likeCount ?? course?.likeCount ?? 0;
+
+  if (isLoading) {
+    return (
+      <div className="course_detail_page">
+        <MainHeader variant="back-only" className="intro_header" />
+        <p className="course_detail_loading">코스 정보를 불러오는 중...</p>
+      </div>
+    );
+  }
+
+  if (isError || !course) {
+    return (
+      <div className="course_detail_page">
+        <MainHeader variant="back-only" className="intro_header" />
+        <p className="course_detail_error">코스 정보를 불러올 수 없습니다.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="course_detail_page">
+      <MainHeader variant="back-only" className="intro_header" />
+
+      {/* Map */}
+      <div className="course_detail_map">
+        <CourseMap path={course.path} spots={course.spots} />
+      </div>
+
+      {/* Info section */}
+      <div className="course_detail_info">
+        {/* Badge + like */}
+        <div className="course_detail_badge_row">
+          <span className={`course_difficulty_badge ${difficultyClass(course.difficulty)}`}>
+            {difficultyLabel(course.difficulty)}
+          </span>
+          <button
+            type="button"
+            className={`course_detail_like_btn${isLiked ? ' liked' : ''}`}
+            onClick={handleLike}
+            aria-label={isLiked ? '좋아요 취소' : '좋아요'}
+          >
+            <HeartIcon filled={isLiked} />
+            <span>{displayLikeCount}</span>
+          </button>
+        </div>
+
+        {/* Title */}
+        <h1 className="course_detail_title">{course.title}</h1>
+
+        {/* Author */}
+        <div className="course_detail_author">
+          <img
+            className="course_detail_author_img"
+            src={course.authorProfileImageUrl || '/assets/images/common/pet_none_img.svg'}
+            alt={course.authorNickname}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/images/common/pet_none_img.svg'; }}
+          />
+          <div className="course_detail_author_info">
+            <span className="course_detail_author_label">작성자</span>
+            <span className="course_detail_author_name">{course.authorNickname}</span>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="course_detail_stats">
+          <div className="course_detail_stat_item">
+            <span className="course_detail_stat_label">거리</span>
+            <span className="course_detail_stat_value">
+              {course.distanceKm.toFixed(1)}
+              <span className="course_detail_stat_unit">km</span>
+            </span>
+          </div>
+          <div className="course_detail_stat_item">
+            <span className="course_detail_stat_label">예상시간</span>
+            <span className="course_detail_stat_value">
+              {course.estimatedMinutes}
+              <span className="course_detail_stat_unit">분</span>
+            </span>
+          </div>
+          <div className="course_detail_stat_item">
+            <span className="course_detail_stat_label">산책수</span>
+            <span className="course_detail_stat_value">
+              {course.walkCount.toLocaleString()}
+              <span className="course_detail_stat_unit">회</span>
+            </span>
+          </div>
+          <div className="course_detail_stat_item">
+            <span className="course_detail_stat_label">평점</span>
+            <span className="course_detail_stat_value">
+              {course.ratingCount > 0 ? course.rating.toFixed(1) : '-'}
+              {course.ratingCount > 0 && <span className="course_detail_stat_unit">점</span>}
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        {course.description && (
+          <p className="course_detail_desc">{course.description}</p>
+        )}
+      </div>
+
+      {/* Spots */}
+      {course.spots.length > 0 && (
+        <div className="course_detail_spots">
+          <p className="course_detail_spots_title">코스 스팟 ({course.spots.length})</p>
+          {course.spots
+            .slice()
+            .sort((a, b) => a.orderIndex - b.orderIndex)
+            .map((spot) => (
+              <div key={spot.id} className="course_detail_spot_item">
+                <div className="course_detail_spot_icon" role="img" aria-label={spotTypeLabel(spot.type)}>
+                  {spotTypeEmoji(spot.type)}
+                </div>
+                <div className="course_detail_spot_content">
+                  {spot.name ? (
+                    <p className="course_detail_spot_name">{spot.name}</p>
+                  ) : null}
+                  <p className="course_detail_spot_type">{spotTypeLabel(spot.type)}</p>
+                  {spot.description && (
+                    <p className="course_detail_spot_desc">{spot.description}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+
+      {/* Floating CTA */}
+      <div className="course_detail_float_btn">
+        <button type="button" onClick={handleStartWalk}>
+          이 코스로 산책하기
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default CourseDetailPage;

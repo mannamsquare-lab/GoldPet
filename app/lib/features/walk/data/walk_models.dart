@@ -57,6 +57,7 @@ sealed class CreateWalkRequest with _$CreateWalkRequest {
     String? notes,
     @Default([]) List<int> petIds,
     @Default(true) bool isPublic,
+    int? followedCourseId,
   }) = _CreateWalkRequest;
 
   factory CreateWalkRequest.fromJson(Map<String, dynamic> json) =>

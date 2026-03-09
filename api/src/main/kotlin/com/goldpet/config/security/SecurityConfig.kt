@@ -62,6 +62,8 @@ class SecurityConfig(
                             .permitAll() // Allow Cloudflare RUM
                             .requestMatchers(HttpMethod.GET, "/api/v1/community/**")
                             .permitAll() // Allow community read access
+                            .requestMatchers(HttpMethod.GET, "/api/v1/courses/**")
+                            .permitAll() // Allow course read access
                             .requestMatchers("/ws/**")
                             .permitAll() // Allow WebSocket connection
                             .requestMatchers("/uploads/**")
