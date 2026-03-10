@@ -214,6 +214,20 @@ class WalkService(
         val bestCoupleEntity = bestWalkCoupleRepository.findByYearMonth(yearMonth)
         val bestCouple = bestCoupleEntity?.let { couple ->
             rankings.find { it.userId == couple.user.id }
+                ?: walkRepository.findCalendarRankingForUser(startOfMonth, startOfNextMonth, couple.user.id)?.let { row ->
+                    WalkRankingResponse(
+                        rank = 0,
+                        userId = (row[0] as Number).toLong(),
+                        nickname = row[1] as String,
+                        profileImageUrl = (row[2] as? String).toHttps(),
+                        petName = row[4] as? String,
+                        petProfileImageUrl = (row[5] as? String).toHttps(),
+                        totalDistanceKm = (row[6] as Number).toDouble(),
+                        totalMinutes = (row[7] as Number).toLong(),
+                        totalGold = (row[8] as Number).toInt(),
+                        walkCount = (row[9] as Number).toInt()
+                    )
+                }
         }
 
         return WalkCoupleRankingResponse(
