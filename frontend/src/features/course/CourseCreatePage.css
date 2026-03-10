@@ -5,33 +5,6 @@
   background: #faf8f5;
 }
 
-.course_create_header {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  background: #faf8f5;
-  border-bottom: 1px solid #ede9e0;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.course_create_back_btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px;
-  color: #333;
-  line-height: 1;
-}
-
-.course_create_header h1 {
-  font-size: 17px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0;
-  flex: 1;
-}
 
 .course_create_map_wrap {
   height: 40vh;

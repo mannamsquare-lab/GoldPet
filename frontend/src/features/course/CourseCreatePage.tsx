@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { MainHeader } from '../../components/common/MainHeader';
 import {
   courseService,
   type CreateCourseRequest,
@@ -576,12 +577,7 @@ export function CourseCreatePage() {
   return (
     <div className="course_create_page">
       {/* Header */}
-      <div className="course_create_header">
-        <button className="course_create_back_btn" onClick={() => navigate(-1)} type="button">
-          ‹
-        </button>
-        <h1>{isFromWalk ? '산책을 코스로 등록' : '새 코스 만들기'}</h1>
-      </div>
+      <MainHeader variant="back-only" className="intro_header" />
 
       {/* Map */}
       <div className="course_create_map_wrap">
