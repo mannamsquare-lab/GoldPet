@@ -266,8 +266,8 @@ class CourseService(
                 course = savedCourse,
                 location = walkSpot.location,
                 type = courseSpotType,
-                name = null,
-                description = walkSpot.note,
+                name = walkSpot.note,
+                description = null,
                 imageUrl = walkSpot.imageUrl,
                 orderIndex = orderIndex++
             ))

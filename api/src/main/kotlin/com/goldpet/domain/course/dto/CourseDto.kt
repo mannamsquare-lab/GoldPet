@@ -4,6 +4,9 @@ import com.goldpet.domain.course.entity.CourseDifficulty
 import com.goldpet.domain.course.entity.CourseSpot
 import com.goldpet.domain.course.entity.CourseSpotType
 import com.goldpet.domain.course.entity.WalkCourse
+import jakarta.validation.Valid
+import jakarta.validation.constraints.DecimalMax
+import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -11,6 +14,7 @@ import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.LineString
 import org.locationtech.jts.geom.PrecisionModel
 import java.time.LocalDateTime
 
@@ -32,12 +36,15 @@ data class CreateCourseRequest(
 
     val difficulty: CourseDifficulty = CourseDifficulty.MODERATE,
 
-    val spots: List<CourseSpotDto> = emptyList(),
+    @field:Valid val spots: List<CourseSpotDto> = emptyList(),
 
     val originWalkId: Long? = null
 ) {
-    fun toLineString() = GeometryFactory(PrecisionModel(), 4326)
-        .createLineString(path.map { Coordinate(it[1], it[0]) }.toTypedArray())
+    fun toLineString(): LineString {
+        require(path.all { it.size >= 2 }) { "Each path point must have at least 2 coordinates" }
+        return GeometryFactory(PrecisionModel(), 4326)
+            .createLineString(path.map { Coordinate(it[1], it[0]) }.toTypedArray())
+    }
 }
 
 data class UpdateCourseRequest(
@@ -58,20 +65,29 @@ data class UpdateCourseRequest(
 
     val difficulty: CourseDifficulty,
 
-    val spots: List<CourseSpotDto> = emptyList()
+    @field:Valid val spots: List<CourseSpotDto> = emptyList()
 ) {
-    fun toLineString() = GeometryFactory(PrecisionModel(), 4326)
-        .createLineString(path.map { Coordinate(it[1], it[0]) }.toTypedArray())
+    fun toLineString(): LineString {
+        require(path.all { it.size >= 2 }) { "Each path point must have at least 2 coordinates" }
+        return GeometryFactory(PrecisionModel(), 4326)
+            .createLineString(path.map { Coordinate(it[1], it[0]) }.toTypedArray())
+    }
 }
 
 data class CourseSpotDto(
     val id: Long? = null,
+    @field:DecimalMin("-90.0") @field:DecimalMax("90.0")
     val latitude: Double,
+    @field:DecimalMin("-180.0") @field:DecimalMax("180.0")
     val longitude: Double,
     val type: CourseSpotType,
+    @field:Size(max = 100)
     val name: String? = null,
+    @field:Size(max = 500)
     val description: String? = null,
+    @field:Size(max = 500)
     val imageUrl: String? = null,
+    @field:Min(0)
     val orderIndex: Int
 )
 

@@ -26,6 +26,12 @@ function walkSpotTypeToCourseSpotType(
   }
 }
 
+// ── HTML escape utility ───────────────────────────────────────────────────────
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // ── Haversine distance (km) between two [lat,lng] points ─────────────────────
 
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -79,6 +85,10 @@ function SpotModal({ onConfirm, onClose, editSpot }: SpotModalProps) {
       setSelectedType(editSpot.type);
       setName(editSpot.name);
       setDescription(editSpot.description);
+    } else {
+      setSelectedType(null);
+      setName('');
+      setDescription('');
     }
   }, [editSpot]);
 
@@ -131,7 +141,7 @@ function SpotModal({ onConfirm, onClose, editSpot }: SpotModalProps) {
           disabled={!selectedType}
           type="button"
         >
-          지도에 추가
+          {editSpot ? '수정 완료' : '지도에 추가'}
         </button>
       </div>
     </div>
@@ -252,8 +262,8 @@ export function CourseCreatePage() {
             type: courseType,
             name: ws.note ?? '',
             description: '',
-            imageUrl: ws.imageUrl ?? undefined,
-          } satisfies LocalSpot;
+            imageUrl: ws.imageUrl,
+          } as LocalSpot;
         })
         .filter((s): s is LocalSpot => s !== null);
       setSpots(mappedSpots);
@@ -356,7 +366,7 @@ export function CourseCreatePage() {
     if (!map) return;
 
     const emoji = spotEmoji(spot.type);
-    const label = spot.name || spotLabel(spot.type);
+    const label = escapeHtml(spot.name || spotLabel(spot.type));
     const marker = new naver.maps.Marker({
       map,
       position: new naver.maps.LatLng(spot.lat, spot.lng),
@@ -529,13 +539,15 @@ export function CourseCreatePage() {
     for (const spot of spots) {
       if (!prevIds.has(spot.id)) addSpotMarker(spot);
     }
-    // Update moved spots (same ID, different coordinates)
+    // Update moved spots in-place (no flicker)
     for (const spot of spots) {
       if (prevIds.has(spot.id)) {
         const prev = prevSpotsRef.current.find(p => p.id === spot.id);
         if (prev && (prev.lat !== spot.lat || prev.lng !== spot.lng)) {
-          removeSpotMarker(spot.id);
-          addSpotMarker(spot);
+          const marker = spotMarkersRef.current.get(spot.id);
+          if (marker) {
+            marker.setPosition(new naver.maps.LatLng(spot.lat, spot.lng));
+          }
         }
       }
     }
@@ -875,7 +887,8 @@ export function CourseCreatePage() {
         </button>
         {activeMutation.isError && (
           <p className="course_create_error_text">
-            {isEditMode ? '수정에 실패했습니다. 다시 시도해주세요.' : '등록에 실패했습니다. 다시 시도해주세요.'}
+            {(activeMutation.error as any)?.response?.data?.message
+              ?? (isEditMode ? '수정에 실패했습니다. 다시 시도해주세요.' : '등록에 실패했습니다. 다시 시도해주세요.')}
           </p>
         )}
       </div>

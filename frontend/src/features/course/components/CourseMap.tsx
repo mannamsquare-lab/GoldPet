@@ -2,6 +2,10 @@ import { useRef, useEffect, useCallback } from 'react';
 import type { CourseSpotResponse } from '../../../services/courseService';
 import { spotEmoji, spotLabel } from '../utils/courseHelpers';
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 interface CourseMapProps {
   path: number[][]; // [[lat, lng], ...]
   spots: CourseSpotResponse[];
@@ -77,7 +81,7 @@ export function CourseMap({ path, spots }: CourseMapProps) {
         const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
         bounds.extend(pos);
         const emoji = spotEmoji(spot.type);
-        const label = spot.name || spotLabel(spot.type);
+        const label = escapeHtml(spot.name || spotLabel(spot.type));
         markersRef.current.push(
           new naver.maps.Marker({
             map,
