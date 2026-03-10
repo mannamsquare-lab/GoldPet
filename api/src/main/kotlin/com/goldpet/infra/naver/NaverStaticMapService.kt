@@ -65,13 +65,15 @@ class NaverStaticMapService(
         val startMarker = "type:d|size:small|pos:%.6f".format(startCoord.x) + "%20" + "%.6f".format(startCoord.y) + "|color:green"
         val endMarker = "type:d|size:small|pos:%.6f".format(endCoord.x) + "%20" + "%.6f".format(endCoord.y) + "|color:red"
 
-        val url = STATIC_MAP_URL +
+        // Encode | as %7C so the URL is valid URI syntax.
+        // With EncodingMode.NONE, %7C won't be double-encoded; the server decodes it back to |
+        val url = (STATIC_MAP_URL +
             "?w=$width&h=$height" +
             "&center=%.6f,%.6f".format(centerLng, centerLat) +
             "&level=$zoom" +
             "&path=$pathParam" +
             "&markers=$startMarker" +
-            "&markers=$endMarker"
+            "&markers=$endMarker").replace("|", "%7C")
 
         val headers = HttpHeaders().apply {
             set("x-ncp-apigw-api-key-id", clientId)
