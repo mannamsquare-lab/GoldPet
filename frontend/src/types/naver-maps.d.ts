@@ -39,6 +39,7 @@ declare namespace naver.maps {
         position?: LatLng;
         map?: Map;
         icon?: MarkerIcon;
+        draggable?: boolean;
     }
 
     interface MarkerIcon {
