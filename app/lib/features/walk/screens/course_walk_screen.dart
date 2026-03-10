@@ -393,6 +393,11 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
                             onMapReady: (controller) {
                               trackingMapController = controller;
                               controller.setLocationTrackingMode(NLocationTrackingMode.follow);
+                              // Course overlay may have been skipped if startWalk()
+                              // ran before the map was ready — add it now.
+                              if (trackingIsWalking) {
+                                _addCourseOverlay();
+                              }
                             },
                           ),
                   ),

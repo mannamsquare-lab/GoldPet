@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainHeader } from '../../components/common/MainHeader';
+import { nativeBridge } from '../../bridge/nativeBridge';
 import { courseService } from '../../services/courseService';
 import type { CourseDifficulty, CourseSpotType } from '../../services/courseService';
 import { useAuthStore } from '../../stores/authStore';
@@ -130,12 +131,9 @@ export const CourseDetailPage = () => {
 
   const handleStartWalk = async () => {
     if (!course) return;
-    // Try native bridge first (Flutter app), fallback to web navigation
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const bridge = (window as any).nativeBridge;
-    if (bridge?.callMethod) {
+    if (nativeBridge.isAvailable()) {
       try {
-        await bridge.callMethod('startCourseWalk', {
+        await nativeBridge.callMethod('startCourseWalk', {
           courseId: courseIdNum,
           title: course.title,
           path: course.path ?? [],
@@ -153,7 +151,6 @@ export const CourseDetailPage = () => {
         alert('코스 산책을 시작할 수 없습니다. 앱을 업데이트해주세요.');
         return;
       }
-      return;
     }
     navigate(`/walk/map?courseId=${courseIdNum}`);
   };
