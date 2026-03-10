@@ -279,16 +279,26 @@ export const WalkPage = () => {
                                     이 달의 산책 기록이 없습니다.
                                 </p>
                             ) : (
-                                <div className="walk_ranking_list">
-                                    {rankingData.rankings.map((entry) => (
-                                        <RankingCard
-                                            key={entry.userId}
-                                            entry={entry}
-                                            isHighlighted={entry.userId === selectedUserId}
-                                            onSelect={() => setSelectedUserId(prev => prev === entry.userId ? null : entry.userId)}
-                                        />
-                                    ))}
-                                </div>
+                                <>
+                                    {/* Best Couple Card */}
+                                    {rankingData.bestCouple && (
+                                        <BestCoupleCard entry={rankingData.bestCouple} />
+                                    )}
+
+                                    {/* Ranking List (excluding best couple) */}
+                                    <div className="walk_ranking_list">
+                                        {rankingData.rankings
+                                            .filter(e => !rankingData.bestCouple || e.userId !== rankingData.bestCouple.userId)
+                                            .map((entry) => (
+                                                <RankingCard
+                                                    key={entry.userId}
+                                                    entry={entry}
+                                                    isHighlighted={entry.userId === selectedUserId}
+                                                    onSelect={() => setSelectedUserId(prev => prev === entry.userId ? null : entry.userId)}
+                                                />
+                                            ))}
+                                    </div>
+                                </>
                             )}
 
                             {rankingData && rankingData.rankings && rankingData.rankings.length >= rankingSize && rankingSize < 50 && (
@@ -310,6 +320,57 @@ export const WalkPage = () => {
         </div>
     );
 };
+
+function BestCoupleCard({ entry }: { entry: WalkRankingEntry }) {
+    return (
+        <div className="walk_best_couple">
+            <div className="walk_best_couple_badge">
+                <img src="/assets/images/walk/best_icon.svg" alt="" />
+                BEST 산책 커플
+            </div>
+            <div className="walk_best_couple_avatars">
+                <div className="walk_best_couple_avatar">
+                    <img
+                        src={entry.petProfileImageUrl || '/assets/images/common/pet_none_img.svg'}
+                        alt={entry.petName || ''}
+                    />
+                </div>
+                <div className="walk_best_couple_avatar">
+                    <img
+                        src={entry.profileImageUrl || '/assets/images/common/profile_none_img.svg'}
+                        alt={entry.nickname}
+                    />
+                </div>
+            </div>
+            <div className="walk_best_couple_names">
+                <span>{entry.petName || '반려동물'}</span>
+                <svg width="18" height="16" viewBox="0 0 18 16" fill="none">
+                    <path d="M9 14.65L7.84 13.595C3.72 9.845 1 7.365 1 4.325C1 1.845 2.936 0 5.4 0C6.792 0 8.128 0.6525 9 1.6775C9.872 0.6525 11.208 0 12.6 0C15.064 0 17 1.845 17 4.325C17 7.365 14.28 9.845 10.16 13.605L9 14.65Z" fill="#FF5A5F"/>
+                </svg>
+                <span>{entry.nickname}</span>
+                <svg width="6" height="10" viewBox="0 0 6 10" fill="none">
+                    <path d="M1 1L5 5L1 9" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+            </div>
+            <div className="walk_best_couple_stats">
+                <dl>
+                    <dt>총 거리(km)</dt>
+                    <dd>{entry.totalDistanceKm.toFixed(1)}</dd>
+                </dl>
+                <div className="walk_best_couple_divider" />
+                <dl>
+                    <dt>총 시간(분)</dt>
+                    <dd>{entry.totalMinutes.toLocaleString()}</dd>
+                </dl>
+                <div className="walk_best_couple_divider" />
+                <dl>
+                    <dt>총 적립(Gold)</dt>
+                    <dd>{entry.totalGold.toLocaleString()}</dd>
+                </dl>
+            </div>
+        </div>
+    );
+}
 
 function RankingCard({ entry, isHighlighted, onSelect }: { entry: WalkRankingEntry; isHighlighted: boolean; onSelect: () => void }) {
     return (
