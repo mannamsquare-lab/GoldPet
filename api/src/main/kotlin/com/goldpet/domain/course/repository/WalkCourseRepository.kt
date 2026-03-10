@@ -48,20 +48,20 @@ interface WalkCourseRepository : JpaRepository<WalkCourse, Long> {
         pageable: Pageable
     ): Page<WalkCourse>
 
-    @Query("""
-        SELECT wc FROM WalkCourse wc JOIN FETCH wc.author
-        WHERE (:search IS NULL OR LOWER(wc.title) LIKE LOWER(CONCAT('%', :search, '%')))
-        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
-        AND (:isPublished IS NULL OR wc.isPublished = :isPublished)
+    @Query(value = """
+        SELECT wc.* FROM walk_courses wc JOIN users a ON a.id = wc.author_id
+        WHERE (CAST(:search AS TEXT) IS NULL OR LOWER(wc.title) LIKE LOWER('%' || CAST(:search AS TEXT) || '%'))
+        AND (CAST(:difficulty AS TEXT) IS NULL OR wc.difficulty = CAST(:difficulty AS TEXT))
+        AND (:isPublished IS NULL OR wc.is_published = :isPublished)
     """, countQuery = """
-        SELECT COUNT(wc) FROM WalkCourse wc
-        WHERE (:search IS NULL OR LOWER(wc.title) LIKE LOWER(CONCAT('%', :search, '%')))
-        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
-        AND (:isPublished IS NULL OR wc.isPublished = :isPublished)
-    """)
+        SELECT COUNT(*) FROM walk_courses wc
+        WHERE (CAST(:search AS TEXT) IS NULL OR LOWER(wc.title) LIKE LOWER('%' || CAST(:search AS TEXT) || '%'))
+        AND (CAST(:difficulty AS TEXT) IS NULL OR wc.difficulty = CAST(:difficulty AS TEXT))
+        AND (:isPublished IS NULL OR wc.is_published = :isPublished)
+    """, nativeQuery = true)
     fun findAllForAdmin(
         @Param("search") search: String?,
-        @Param("difficulty") difficulty: CourseDifficulty?,
+        @Param("difficulty") difficulty: String?,
         @Param("isPublished") isPublished: Boolean?,
         pageable: Pageable
     ): Page<WalkCourse>

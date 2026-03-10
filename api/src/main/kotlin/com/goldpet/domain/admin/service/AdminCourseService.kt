@@ -22,7 +22,7 @@ class AdminCourseService(
 
     @Transactional(readOnly = true)
     fun getCourses(pageable: Pageable, search: String?, difficulty: CourseDifficulty?, isPublished: Boolean?): Page<CourseListItemResponse> {
-        return courseRepository.findAllForAdmin(search, difficulty, isPublished, pageable)
+        return courseRepository.findAllForAdmin(search, difficulty?.name, isPublished, pageable)
             .map { course ->
                 CourseListItemResponse(
                     id = course.id,
