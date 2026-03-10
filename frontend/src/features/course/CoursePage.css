@@ -39,7 +39,7 @@
   position: absolute;
   left: 0;
   bottom: 0;
-  background-color: #614108;
+  background-color: var(--color-primary);
 }
 
 .course_filter_tab button {
@@ -47,10 +47,10 @@
   height: 46px;
   box-sizing: border-box;
   position: relative;
-  background-color: #EFE1C4;
+  background-color: var(--color-border);
   font-size: 16px;
-  font-weight: 500;
-  color: #614108;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
   border: none;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
@@ -59,10 +59,10 @@
 
 .course_filter_tab button.active {
   z-index: 1;
-  border: 2px solid #614108;
+  border: 2px solid var(--color-primary);
   border-bottom: 0;
-  background-color: #FFF7E6;
-  font-weight: 700;
+  background-color: var(--color-bg);
+  font-weight: var(--font-weight-bold);
 }
 
 .course_filter_row {
@@ -250,6 +250,10 @@
   line-height: 1;
 }
 
+.course_card_rating_star--empty {
+  color: var(--color-toggle-off);
+}
+
 .course_card_author {
   display: flex;
   align-items: center;
@@ -275,7 +279,7 @@
 
 /* ── Empty / Loading ── */
 .course_empty {
-  color: #81662d;
+  color: var(--color-text-tertiary);
   padding: 60px 16px;
   display: flex;
   gap: 8px;
@@ -283,7 +287,7 @@
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   min-height: 300px;
 }
 

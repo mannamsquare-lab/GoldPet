@@ -3,59 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainHeader } from '../../components/common/MainHeader';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import { courseService } from '../../services/courseService';
-import type { CourseDifficulty, CourseSpotType } from '../../services/courseService';
 import { useAuthStore } from '../../stores/authStore';
 import { useAlert } from '../../contexts/AlertContext';
 import { CourseMap } from './components/CourseMap';
+import { difficultyLabel, difficultyClass, spotLabel as spotTypeLabel, spotEmoji as spotTypeEmoji } from './utils/courseHelpers';
 import './CourseDetailPage.css';
-
-// ── Helpers ──
-
-function difficultyLabel(d: CourseDifficulty): string {
-  switch (d) {
-    case 'EASY': return '초급';
-    case 'MODERATE': return '중급';
-    case 'HARD': return '상급';
-  }
-}
-
-function difficultyClass(d: CourseDifficulty): string {
-  switch (d) {
-    case 'EASY': return 'easy';
-    case 'MODERATE': return 'moderate';
-    case 'HARD': return 'hard';
-  }
-}
-
-function spotTypeLabel(type: CourseSpotType): string {
-  switch (type) {
-    case 'CONVENIENCE_STORE': return '편의점';
-    case 'WATER_FOUNTAIN': return '음수대';
-    case 'RESTROOM': return '화장실';
-    case 'PET_CAFE': return '펫카페';
-    case 'PARK': return '공원';
-    case 'DANGER_ZONE': return '위험구역';
-    case 'REST_AREA': return '쉼터';
-    case 'TRASH_CAN': return '쓰레기통';
-    case 'PHOTO_SPOT': return '포토스팟';
-    case 'OTHER': return '기타';
-  }
-}
-
-function spotTypeEmoji(type: CourseSpotType): string {
-  switch (type) {
-    case 'CONVENIENCE_STORE': return '🏪';
-    case 'WATER_FOUNTAIN': return '💧';
-    case 'RESTROOM': return '🚻';
-    case 'PET_CAFE': return '☕';
-    case 'PARK': return '🌳';
-    case 'DANGER_ZONE': return '⚠️';
-    case 'REST_AREA': return '🪑';
-    case 'TRASH_CAN': return '🗑️';
-    case 'PHOTO_SPOT': return '📷';
-    case 'OTHER': return '📍';
-  }
-}
 
 // ── HeartIcon ──
 

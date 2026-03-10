@@ -1,39 +1,10 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type { CourseSpotResponse } from '../../../services/courseService';
+import { spotEmoji, spotLabel } from '../utils/courseHelpers';
 
 interface CourseMapProps {
   path: number[][]; // [[lat, lng], ...]
   spots: CourseSpotResponse[];
-}
-
-function spotEmoji(type: string): string {
-  switch (type) {
-    case 'CONVENIENCE_STORE': return '🏪';
-    case 'WATER_FOUNTAIN': return '💧';
-    case 'RESTROOM': return '🚻';
-    case 'PET_CAFE': return '☕';
-    case 'PARK': return '🌳';
-    case 'DANGER_ZONE': return '⚠️';
-    case 'REST_AREA': return '🪑';
-    case 'TRASH_CAN': return '🗑️';
-    case 'PHOTO_SPOT': return '📷';
-    default: return '📍';
-  }
-}
-
-function spotLabel(type: string): string {
-  switch (type) {
-    case 'CONVENIENCE_STORE': return '편의점';
-    case 'WATER_FOUNTAIN': return '음수대';
-    case 'RESTROOM': return '화장실';
-    case 'PET_CAFE': return '펫카페';
-    case 'PARK': return '공원';
-    case 'DANGER_ZONE': return '위험구역';
-    case 'REST_AREA': return '쉼터';
-    case 'TRASH_CAN': return '쓰레기통';
-    case 'PHOTO_SPOT': return '포토스팟';
-    default: return '기타';
-  }
 }
 
 export function CourseMap({ path, spots }: CourseMapProps) {

@@ -11,30 +11,8 @@ import {
   type CourseDifficulty,
 } from '../../services/courseService';
 import { walkService } from '../../services/walkService';
+import { SPOT_TYPES, spotEmoji, spotLabel } from './utils/courseHelpers';
 import './CourseCreatePage.css';
-
-// ── Spot helpers (mirror CourseMap.tsx) ──────────────────────────────────────
-
-const SPOT_TYPES: { type: CourseSpotType; emoji: string; label: string }[] = [
-  { type: 'CONVENIENCE_STORE', emoji: '🏪', label: '편의점' },
-  { type: 'WATER_FOUNTAIN',   emoji: '💧', label: '음수대' },
-  { type: 'RESTROOM',         emoji: '🚻', label: '화장실' },
-  { type: 'PET_CAFE',         emoji: '☕', label: '펫카페' },
-  { type: 'PARK',             emoji: '🌳', label: '공원' },
-  { type: 'DANGER_ZONE',      emoji: '⚠️', label: '위험구역' },
-  { type: 'REST_AREA',        emoji: '🪑', label: '쉼터' },
-  { type: 'TRASH_CAN',        emoji: '🗑️', label: '쓰레기통' },
-  { type: 'PHOTO_SPOT',       emoji: '📷', label: '포토스팟' },
-  { type: 'OTHER',            emoji: '📍', label: '기타' },
-];
-
-function spotEmoji(type: CourseSpotType): string {
-  return SPOT_TYPES.find(s => s.type === type)?.emoji ?? '📍';
-}
-
-function spotLabel(type: CourseSpotType): string {
-  return SPOT_TYPES.find(s => s.type === type)?.label ?? '기타';
-}
 
 // ── Walk spot type → Course spot type mapping ────────────────────────────────
 
@@ -651,8 +629,8 @@ export function CourseCreatePage() {
 
   if (walkLoading || courseLoading) {
     return (
-      <div className="course_create_page" style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#888', fontSize: 14 }}>
+      <div className="course_create_page course_create_loading">
+        <p className="course_create_loading_text">
           {isEditMode ? '코스 정보 불러오는 중...' : '산책 기록 불러오는 중...'}
         </p>
       </div>
@@ -701,7 +679,7 @@ export function CourseCreatePage() {
       {/* Scrollable body */}
       <div className="course_create_body">
         {/* Spots section */}
-        <div className="course_create_spots_section" style={{ paddingTop: 16 }}>
+        <div className="course_create_spots_section">
           <div className="course_create_spots_header">
             <span>스팟 ({spots.length})</span>
             <button
@@ -818,24 +796,25 @@ export function CourseCreatePage() {
           </div>
         </div>
 
-        {/* Submit — inside scrollable body */}
-        <div className="course_create_submit_wrap">
-          <button
-            className="course_create_submit_btn"
-            onClick={handleSubmit}
-            disabled={activeMutation.isPending}
-            type="button"
-          >
-            {activeMutation.isPending
-              ? (isEditMode ? '수정 중...' : '등록 중...')
-              : (isEditMode ? '코스 수정' : '코스 등록')}
-          </button>
-          {activeMutation.isError && (
-            <p style={{ color: '#e74c3c', fontSize: 13, textAlign: 'center', marginTop: 8 }}>
-              {isEditMode ? '수정에 실패했습니다. 다시 시도해주세요.' : '등록에 실패했습니다. 다시 시도해주세요.'}
-            </p>
-          )}
-        </div>
+      </div>
+
+      {/* Submit — fixed outside scrollable body */}
+      <div className="course_create_submit_wrap">
+        <button
+          className="course_create_submit_btn"
+          onClick={handleSubmit}
+          disabled={activeMutation.isPending}
+          type="button"
+        >
+          {activeMutation.isPending
+            ? (isEditMode ? '수정 중...' : '등록 중...')
+            : (isEditMode ? '코스 수정' : '코스 등록')}
+        </button>
+        {activeMutation.isError && (
+          <p className="course_create_error_text">
+            {isEditMode ? '수정에 실패했습니다. 다시 시도해주세요.' : '등록에 실패했습니다. 다시 시도해주세요.'}
+          </p>
+        )}
       </div>
 
       {/* Spot modal */}

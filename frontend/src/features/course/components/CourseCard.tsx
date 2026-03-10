@@ -1,21 +1,10 @@
-import type { CourseResponse, CourseDifficulty } from '../../../services/courseService';
+import type { CourseResponse } from '../../../services/courseService';
+import { difficultyLabel, difficultyClass } from '../utils/courseHelpers';
 
 interface CourseCardProps {
   course: CourseResponse;
   onClick: () => void;
 }
-
-const DIFFICULTY_LABEL: Record<CourseDifficulty, string> = {
-  EASY: '초급',
-  MODERATE: '중급',
-  HARD: '상급',
-};
-
-const DIFFICULTY_CLASS: Record<CourseDifficulty, string> = {
-  EASY: 'easy',
-  MODERATE: 'moderate',
-  HARD: 'hard',
-};
 
 function StarRating({ rating }: { rating: number }) {
   const full = Math.floor(rating);
@@ -25,7 +14,7 @@ function StarRating({ rating }: { rating: number }) {
       {Array.from({ length: 5 }, (_, i) => {
         if (i < full) return <span key={i} className="course_card_rating_star">★</span>;
         if (i === full && half) return <span key={i} className="course_card_rating_star" style={{ opacity: 0.5 }}>★</span>;
-        return <span key={i} className="course_card_rating_star" style={{ color: '#D9D9D9' }}>★</span>;
+        return <span key={i} className="course_card_rating_star course_card_rating_star--empty">★</span>;
       })}
     </>
   );
@@ -45,8 +34,8 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
             </svg>
           </div>
         )}
-        <span className={`course_difficulty_badge ${DIFFICULTY_CLASS[course.difficulty]}`}>
-          {DIFFICULTY_LABEL[course.difficulty]}
+        <span className={`course_difficulty_badge ${difficultyClass(course.difficulty)}`}>
+          {difficultyLabel(course.difficulty)}
         </span>
       </div>
 
