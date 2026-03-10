@@ -91,7 +91,8 @@
 }
 
 /* Difficulty badge (reuses CoursePage patterns, standalone here) */
-.course_difficulty_badge {
+.course_detail_page .course_difficulty_badge {
+  position: static;
   display: inline-block;
   padding: 4px 12px;
   border-radius: var(--radius-button);

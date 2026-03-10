@@ -553,6 +553,13 @@ export function CourseCreatePage() {
     createMutation.mutate(req);
   };
 
+  // ── Scroll focused input into view (iOS/Android keyboard) ────────────────
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (walkLoading) {
@@ -673,6 +680,7 @@ export function CourseCreatePage() {
               placeholder="예: 한강 공원 산책로"
               value={title}
               onChange={e => setTitle(e.target.value)}
+              onFocus={handleInputFocus}
               maxLength={100}
             />
           </div>
@@ -686,6 +694,7 @@ export function CourseCreatePage() {
               placeholder="코스에 대한 설명을 적어주세요"
               value={desc}
               onChange={e => setDesc(e.target.value)}
+              onFocus={handleInputFocus}
               rows={3}
             />
           </div>
@@ -720,26 +729,27 @@ export function CourseCreatePage() {
               max={9999}
               value={estimatedMinutes}
               onChange={e => setEstimatedMinutes(e.target.value)}
+              onFocus={handleInputFocus}
             />
           </div>
         </div>
-      </div>
 
-      {/* Submit */}
-      <div className="course_create_submit_wrap">
-        <button
-          className="course_create_submit_btn"
-          onClick={handleSubmit}
-          disabled={createMutation.isPending}
-          type="button"
-        >
-          {createMutation.isPending ? '등록 중...' : '코스 등록'}
-        </button>
-        {createMutation.isError && (
-          <p style={{ color: '#e74c3c', fontSize: 13, textAlign: 'center', marginTop: 8 }}>
-            등록에 실패했습니다. 다시 시도해주세요.
-          </p>
-        )}
+        {/* Submit — inside scrollable body */}
+        <div className="course_create_submit_wrap">
+          <button
+            className="course_create_submit_btn"
+            onClick={handleSubmit}
+            disabled={createMutation.isPending}
+            type="button"
+          >
+            {createMutation.isPending ? '등록 중...' : '코스 등록'}
+          </button>
+          {createMutation.isError && (
+            <p style={{ color: '#e74c3c', fontSize: 13, textAlign: 'center', marginTop: 8 }}>
+              등록에 실패했습니다. 다시 시도해주세요.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Spot modal */}

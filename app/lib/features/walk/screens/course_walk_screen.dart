@@ -68,6 +68,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   double _deviationDistance = 0.0;
   double _courseProgress = 0.0; // 0.0 ~ 1.0
   int _nearestSegmentIndex = 0;
+  int _progressWaypointIndex = 0; // Sequential waypoint tracker for progress
   bool _completionShown = false;
 
   // Course path as NLatLng for map overlay
@@ -287,35 +288,45 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
     return 2 * area / dab;
   }
 
-  // --- Progress tracking ---
+  // --- Progress tracking (sequential waypoint advancement) ---
 
   void _updateProgress(NLatLng latLng) {
     if (_coursePathLatLng.length < 2) return;
 
-    // Calculate total course length and length up to nearest segment
-    double totalLength = 0;
-    double lengthToNearest = 0;
+    // Advance waypoint index when user reaches next waypoint(s)
+    // Check up to 3 ahead to handle GPS jumps over close waypoints
+    final waypointThreshold = 30.0; // meters
+    bool advanced = true;
+    while (advanced && _progressWaypointIndex < _coursePathLatLng.length - 1) {
+      advanced = false;
+      final lookAhead = math.min(_progressWaypointIndex + 3, _coursePathLatLng.length - 1);
+      for (var i = _progressWaypointIndex + 1; i <= lookAhead; i++) {
+        final dist = Geolocator.distanceBetween(
+          latLng.latitude, latLng.longitude,
+          _coursePathLatLng[i].latitude, _coursePathLatLng[i].longitude,
+        );
+        if (dist < waypointThreshold) {
+          _progressWaypointIndex = i;
+          advanced = true;
+          break;
+        }
+      }
+    }
 
+    // Calculate progress from waypoint index
+    double totalLength = 0;
+    double lengthToWaypoint = 0;
     for (var i = 0; i < _coursePathLatLng.length - 1; i++) {
       final segDist = Geolocator.distanceBetween(
         _coursePathLatLng[i].latitude, _coursePathLatLng[i].longitude,
         _coursePathLatLng[i + 1].latitude, _coursePathLatLng[i + 1].longitude,
       );
       totalLength += segDist;
-      if (i < _nearestSegmentIndex) lengthToNearest += segDist;
+      if (i < _progressWaypointIndex) lengthToWaypoint += segDist;
     }
 
-    // Add partial distance within the nearest segment
-    if (_nearestSegmentIndex < _coursePathLatLng.length - 1) {
-      final distToSegStart = Geolocator.distanceBetween(
-        _coursePathLatLng[_nearestSegmentIndex].latitude,
-        _coursePathLatLng[_nearestSegmentIndex].longitude,
-        latLng.latitude, latLng.longitude,
-      );
-      lengthToNearest += distToSegStart;
-    }
-
-    _courseProgress = totalLength > 0 ? (lengthToNearest / totalLength).clamp(0.0, 1.0) : 0.0;
+    final newProgress = totalLength > 0 ? (lengthToWaypoint / totalLength).clamp(0.0, 1.0) : 0.0;
+    _courseProgress = math.max(_courseProgress, newProgress);
 
     // Check completion: within 100m of course end point
     final distToEnd = Geolocator.distanceBetween(
@@ -323,7 +334,9 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
       _coursePathLatLng.last.latitude, _coursePathLatLng.last.longitude,
     );
 
-    if (distToEnd < 100 && !_completionShown && trackingIsWalking) {
+    if (distToEnd < 100 && !_completionShown && trackingIsWalking
+        && _courseProgress >= 0.5
+        && trackingDurationNotifier.value >= 60) {
       _completionShown = true;
       _showCompletionDialog();
     }
