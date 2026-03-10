@@ -279,7 +279,7 @@
   width: 100%;
   max-width: 480px;
   padding: 12px 16px 28px;
-  background: var(--color-bg-white);
+  background: var(--color-bg);
   border-top: 1px solid var(--color-border);
   z-index: 100;
 }
