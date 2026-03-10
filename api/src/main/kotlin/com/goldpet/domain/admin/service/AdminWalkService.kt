@@ -35,7 +35,7 @@ class AdminWalkService(
         minDistance: Double?,
         maxDistance: Double?
     ): Page<WalkAdminResponse> {
-        val pageable: Pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startTime"))
+        val pageable: Pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "start_time"))
         return walkRepository.findAllForAdmin(
             userNickname = userNickname,
             startDate = startDate?.atStartOfDay(),
