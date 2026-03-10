@@ -10,6 +10,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/webview/hybrid_webview.dart';
 import '../../../core/widgets/goldpet_alert_dialog.dart';
 import '../mixins/walk_tracking_mixin.dart';
+// TODO: extract walkSpotActionController to walk_events.dart when a third walk screen type is added
+import 'walk_screen.dart' show walkSpotActionController;
 
 /// Data model for a course spot passed from React WebView via bridge.
 class CourseSpotData {
@@ -63,6 +65,8 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
     with WidgetsBindingObserver, WalkTrackingMixin {
   final Key _mapKey = UniqueKey();
   final DraggableScrollableController _sheetController = DraggableScrollableController();
+  StreamSubscription<String>? _spotActionSubscription;
+  String? _pendingSpotAction;
 
   // Course-specific state
   bool _isOffCourse = false;
@@ -126,6 +130,19 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
     CourseWalkScreen.isOnStack = true;
     WidgetsBinding.instance.addObserver(this);
 
+    // Subscribe to global spot action stream (same pattern as WalkScreen)
+    _spotActionSubscription = walkSpotActionController.stream.listen((type) {
+      if (type == 'STOP') {
+        if (trackingIsWalking) unawaited(stopWalk());
+        return;
+      }
+      if (trackingIsWalking) {
+        addSpot(type);
+      } else {
+        _pendingSpotAction = type;
+      }
+    });
+
     // Convert course path to NLatLng
     _coursePathLatLng = widget.coursePath
         .map((p) => NLatLng(p[0], p[1]))
@@ -139,6 +156,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
     disposeTracking();
     CourseWalkScreen.isOnStack = false;
     WidgetsBinding.instance.removeObserver(this);
+    _spotActionSubscription?.cancel();
     _sheetController.dispose();
     super.dispose();
   }
@@ -155,6 +173,15 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
     await super.startWalk();
     // Add course path overlay on map
     _addCourseOverlay();
+
+    // Execute any pending spot action that arrived before walk started
+    if (_pendingSpotAction != null) {
+      final action = _pendingSpotAction!;
+      _pendingSpotAction = null;
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && trackingIsWalking) addSpot(action);
+      });
+    }
   }
 
   void _addCourseOverlay() {

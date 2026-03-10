@@ -6,6 +6,7 @@ import 'package:goldpet_app/core/constants/app_constants.dart';
 import 'package:goldpet_app/core/constants/keys.dart';
 import 'package:goldpet_app/core/api/api_client.dart';
 import 'package:goldpet_app/features/walk/screens/walk_screen.dart';
+import 'package:goldpet_app/features/walk/screens/course_walk_screen.dart';
 import 'package:goldpet_app/core/services/app_version_service.dart';
 import 'package:goldpet_app/core/widgets/force_update_dialog.dart';
 
@@ -192,19 +193,21 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
 
     // Handle walk/stop deep link — stop the walk if in progress
     if (host == 'walk' && uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'stop') {
-      if (WalkScreen.isOnStack) {
+      if (WalkScreen.isOnStack || CourseWalkScreen.isOnStack) {
         walkSpotActionController.add('STOP');
       }
       return;
     }
 
     if (host == 'walk' || host == 'spot') {
-      debugPrint('[DL] isOnStack=${WalkScreen.isOnStack}, isPushing=$_isPushingWalkScreen, navHash=${rootNavigatorKey.currentState.hashCode}');
-      if (_isPushingWalkScreen) {
-        debugPrint('[DL] BLOCKED: push in progress');
-        return;
-      }
-      if (WalkScreen.isOnStack) {
+      debugPrint('[DL] walkOnStack=${WalkScreen.isOnStack}, courseOnStack=${CourseWalkScreen.isOnStack}, isPushing=$_isPushingWalkScreen');
+      if (CourseWalkScreen.isOnStack) {
+        // CourseWalkScreen is active — deliver spot action via stream, don't push
+        debugPrint('[DL] CourseWalkScreen on stack, spotAction=$spotAction');
+        if (spotAction != null) {
+          walkSpotActionController.add(spotAction);
+        }
+      } else if (WalkScreen.isOnStack) {
         // WalkScreen was pushed and dispose() hasn't run — deliver spot action
         debugPrint('[DL] WalkScreen on stack, spotAction=$spotAction');
         if (spotAction != null) {
@@ -212,8 +215,8 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
         }
         // If no spotAction (stats/body click), PendingIntent already brought
         // the app to foreground with WalkScreen visible — nothing more needed.
-      } else {
-        // Push new WalkScreen
+      } else if (!_isPushingWalkScreen) {
+        // Neither walk screen on stack — push new WalkScreen
         final nav = rootNavigatorKey.currentState;
         debugPrint('[DL] Pushing WalkScreen, nav=$nav');
         if (nav == null) {
@@ -232,6 +235,8 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
         Future.delayed(const Duration(milliseconds: 500), () {
           _isPushingWalkScreen = false;
         });
+      } else {
+        debugPrint('[DL] BLOCKED: push in progress');
       }
     }
   }
