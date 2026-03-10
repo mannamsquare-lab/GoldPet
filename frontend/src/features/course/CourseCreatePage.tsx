@@ -146,7 +146,7 @@ export function CourseCreatePage() {
   const spotMarkersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clickListenerRef = useRef<any>(null);
-  const mapReadyRef = useRef(false);
+  const [mapReady, setMapReady] = useState(false);
 
   // State
   const [waypoints, setWaypoints] = useState<[number, number][]>([]);
@@ -352,12 +352,25 @@ export function CourseCreatePage() {
     }
   }, []);
 
-  // Sync waypoints to map
+  // Sync waypoints to map + fitBounds once for edit/from-walk modes
+  const initialFitDoneRef = useRef(false);
   useEffect(() => {
-    if (!mapReadyRef.current) return;
+    if (!mapReady) return;
     redrawPolyline(waypoints);
     redrawWaypointMarkers(waypoints);
-  }, [waypoints, redrawPolyline, redrawWaypointMarkers]);
+
+    // Fit bounds once when pre-filled waypoints are first drawn
+    if (!initialFitDoneRef.current && (isEditMode || isFromWalk) && waypoints.length >= 2) {
+      initialFitDoneRef.current = true;
+      const map = mapInstanceRef.current;
+      if (map) {
+        const pts = waypoints.map(([lat, lng]) => new naver.maps.LatLng(lat, lng));
+        const bounds = new naver.maps.LatLngBounds(pts[0], pts[0]);
+        for (const pt of pts) bounds.extend(pt);
+        map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
+      }
+    }
+  }, [mapReady, waypoints, redrawPolyline, redrawWaypointMarkers, isEditMode, isFromWalk]);
 
   const initMap = useCallback(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -378,7 +391,7 @@ export function CourseCreatePage() {
         mapDataControl: false,
       });
 
-      mapReadyRef.current = true;
+      setMapReady(true);
 
       // Click listener — add waypoint or record tap position
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -457,35 +470,15 @@ export function CourseCreatePage() {
         mapInstanceRef.current.destroy();
         mapInstanceRef.current = null;
       }
-      mapReadyRef.current = false;
+      setMapReady(false);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Draw pre-filled waypoints once map is ready
-  const prefillDrawnRef = useRef(false);
-  useEffect(() => {
-    if (!mapReadyRef.current || prefillDrawnRef.current) return;
-    if (waypoints.length === 0) return;
-
-    prefillDrawnRef.current = true;
-    redrawPolyline(waypoints);
-    redrawWaypointMarkers(waypoints);
-
-    // Fit bounds
-    const map = mapInstanceRef.current;
-    if (map) {
-      const pts = waypoints.map(([lat, lng]) => new naver.maps.LatLng(lat, lng));
-      const bounds = new naver.maps.LatLngBounds(pts[0], pts[0]);
-      for (const pt of pts) bounds.extend(pt);
-      map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
-    }
-  });
-
   // Add spot markers when spots change
   const prevSpotsRef = useRef<LocalSpot[]>([]);
   useEffect(() => {
-    if (!mapReadyRef.current) return;
+    if (!mapReady) return;
 
     const prevIds = new Set(prevSpotsRef.current.map(s => s.id));
     const currIds = new Set(spots.map(s => s.id));
@@ -500,7 +493,7 @@ export function CourseCreatePage() {
     }
 
     prevSpotsRef.current = spots;
-  }, [spots, addSpotMarker, removeSpotMarker]);
+  }, [mapReady, spots, addSpotMarker, removeSpotMarker]);
 
   // ── Spot modal handling ───────────────────────────────────────────────────
 
