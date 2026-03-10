@@ -301,7 +301,7 @@ class NativeBridge {
           }
 
           final coursePath = pathRaw
-              .map((p) => [(p as List)[0] as double, p[1] as double])
+              .map((p) => [((p as List)[0] as num).toDouble(), (p[1] as num).toDouble()])
               .toList();
           final courseSpots = (spotsRaw ?? [])
               .map((s) => CourseSpotData.fromJson(s as Map<String, dynamic>))

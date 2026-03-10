@@ -149,8 +149,11 @@ export const CourseDetailPage = () => {
         });
         return;
       } catch (e) {
-        console.warn('Native bridge startCourseWalk failed, fallback to web:', e);
+        console.warn('Native bridge startCourseWalk failed:', e);
+        alert('코스 산책을 시작할 수 없습니다. 앱을 업데이트해주세요.');
+        return;
       }
+      return;
     }
     navigate(`/walk/map?courseId=${courseIdNum}`);
   };
