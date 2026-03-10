@@ -51,22 +51,22 @@ interface WalkRepository : JpaRepository<Walk, Long> {
         pageable: org.springframework.data.domain.Pageable
     ): List<Array<Any>>
 
-    @Query("""
-        SELECT w FROM Walk w JOIN FETCH w.user
-        WHERE (:userNickname IS NULL OR w.user.nickname LIKE %:userNickname%)
-        AND (:startDate IS NULL OR w.startTime >= :startDate)
-        AND (:endDate IS NULL OR w.startTime <= :endDate)
-        AND (:minDistance IS NULL OR w.distanceKm >= :minDistance)
-        AND (:maxDistance IS NULL OR w.distanceKm <= :maxDistance)
-    """,
-    countQuery = """
-        SELECT COUNT(w) FROM Walk w
-        WHERE (:userNickname IS NULL OR w.user.nickname LIKE %:userNickname%)
-        AND (:startDate IS NULL OR w.startTime >= :startDate)
-        AND (:endDate IS NULL OR w.startTime <= :endDate)
-        AND (:minDistance IS NULL OR w.distanceKm >= :minDistance)
-        AND (:maxDistance IS NULL OR w.distanceKm <= :maxDistance)
-    """)
+    @Query(value = """
+        SELECT w.* FROM walks w JOIN users u ON u.id = w.user_id
+        WHERE (CAST(:userNickname AS TEXT) IS NULL OR u.nickname LIKE '%' || CAST(:userNickname AS TEXT) || '%')
+        AND (CAST(:startDate AS TIMESTAMP) IS NULL OR w.start_time >= CAST(:startDate AS TIMESTAMP))
+        AND (CAST(:endDate AS TIMESTAMP) IS NULL OR w.start_time <= CAST(:endDate AS TIMESTAMP))
+        AND (CAST(:minDistance AS DOUBLE PRECISION) IS NULL OR w.distance_km >= CAST(:minDistance AS DOUBLE PRECISION))
+        AND (CAST(:maxDistance AS DOUBLE PRECISION) IS NULL OR w.distance_km <= CAST(:maxDistance AS DOUBLE PRECISION))
+        ORDER BY w.start_time DESC
+    """, countQuery = """
+        SELECT COUNT(*) FROM walks w JOIN users u ON u.id = w.user_id
+        WHERE (CAST(:userNickname AS TEXT) IS NULL OR u.nickname LIKE '%' || CAST(:userNickname AS TEXT) || '%')
+        AND (CAST(:startDate AS TIMESTAMP) IS NULL OR w.start_time >= CAST(:startDate AS TIMESTAMP))
+        AND (CAST(:endDate AS TIMESTAMP) IS NULL OR w.start_time <= CAST(:endDate AS TIMESTAMP))
+        AND (CAST(:minDistance AS DOUBLE PRECISION) IS NULL OR w.distance_km >= CAST(:minDistance AS DOUBLE PRECISION))
+        AND (CAST(:maxDistance AS DOUBLE PRECISION) IS NULL OR w.distance_km <= CAST(:maxDistance AS DOUBLE PRECISION))
+    """, nativeQuery = true)
     fun findAllForAdmin(
         @Param("userNickname") userNickname: String?,
         @Param("startDate") startDate: java.time.LocalDateTime?,
