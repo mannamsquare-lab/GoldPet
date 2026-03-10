@@ -90,7 +90,7 @@ class AdminCourseController(
         @RequestParam(required = false) search: String?,
         @RequestParam(required = false) difficulty: CourseDifficulty?,
         @RequestParam(required = false) isPublished: Boolean?,
-        @RequestParam(defaultValue = "createdAt") sortBy: String,
+        @RequestParam(defaultValue = "created_at") sortBy: String,
         @RequestParam(defaultValue = "desc") sortDir: String
     ): ResponseEntity<Page<CourseListItemResponse>> {
         val sort = if (sortDir == "asc") Sort.by(sortBy).ascending() else Sort.by(sortBy).descending()
