@@ -114,6 +114,32 @@ class CourseService(
         course.difficulty = request.difficulty
         course.estimatedMinutes = request.estimatedMinutes
 
+        // Update path and distance
+        val newPath = request.toLineString()
+        course.path = newPath
+        course.distanceKm = request.distanceKm
+
+        // Recalculate region and addresses from new path
+        val startCoord = newPath.coordinates.first()
+        val endCoord = newPath.coordinates.last()
+        course.startLocation = geometryFactory.createPoint(Coordinate(startCoord.x, startCoord.y))
+        course.region = try {
+            naverGeocodingService.reverseGeocode(startCoord.y, startCoord.x)
+        } catch (e: Exception) {
+            log.warn("Reverse geocoding failed for course update: {}", e.message)
+            course.region
+        }
+        course.startAddress = try { naverGeocodingService.reverseGeocode(startCoord.y, startCoord.x) } catch (e: Exception) { course.startAddress }
+        course.endAddress = if (newPath.coordinates.size > 1) {
+            try { naverGeocodingService.reverseGeocode(endCoord.y, endCoord.x) } catch (e: Exception) { course.endAddress }
+        } else course.endAddress
+
+        // Regenerate thumbnail
+        val thumbnailUrl = generateAndUploadThumbnail(courseId, newPath.coordinates)
+        if (thumbnailUrl != null) {
+            course.thumbnailUrl = thumbnailUrl
+        }
+
         courseSpotRepository.deleteByCourseId(courseId)
         val spots = saveSpotsFromDto(course, request.spots)
         val savedCourse = walkCourseRepository.save(course)

@@ -270,6 +270,47 @@
   gap: 8px;
 }
 
+.course_detail_badge_row_right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Owner actions ── */
+.course_detail_owner_actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.course_detail_edit_btn,
+.course_detail_delete_btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-button);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg-white);
+  color: var(--color-text-secondary);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.course_detail_edit_btn:active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.course_detail_delete_btn {
+  color: #E74C3C;
+  border-color: #E74C3C;
+  background: transparent;
+}
+
+.course_detail_delete_btn:active {
+  background: #FFF0F0;
+}
+
 /* ── Floating CTA button ── */
 .course_detail_float_btn {
   position: fixed;

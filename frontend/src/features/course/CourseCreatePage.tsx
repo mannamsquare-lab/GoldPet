@@ -1,10 +1,11 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainHeader } from '../../components/common/MainHeader';
 import {
   courseService,
   type CreateCourseRequest,
+  type UpdateCourseRequest,
   type CourseSpotDto,
   type CourseSpotType,
   type CourseDifficulty,
@@ -152,9 +153,12 @@ function SpotModal({ onConfirm, onClose }: SpotModalProps) {
 
 export function CourseCreatePage() {
   const navigate = useNavigate();
-  const { walkId: walkIdParam } = useParams<{ walkId: string }>();
+  const queryClient = useQueryClient();
+  const { walkId: walkIdParam, courseId: courseIdParam } = useParams<{ walkId: string; courseId: string }>();
   const walkId = walkIdParam ? parseInt(walkIdParam, 10) : undefined;
   const isFromWalk = walkId != null && !isNaN(walkId);
+  const courseId = courseIdParam ? parseInt(courseIdParam, 10) : undefined;
+  const isEditMode = courseId != null && !isNaN(courseId);
 
   // Map refs
   const mapRef = useRef<HTMLDivElement>(null);
@@ -187,6 +191,44 @@ export function CourseCreatePage() {
     queryFn: () => walkService.getWalkDetail(walkId!),
     enabled: isFromWalk,
   });
+
+  // ── Fetch course detail when in edit mode ────────────────────────────────
+
+  const { data: courseDetail, isLoading: courseLoading } = useQuery({
+    queryKey: ['course', 'detail', courseId],
+    queryFn: () => courseService.getCourseDetail(courseId!),
+    enabled: isEditMode,
+  });
+
+  // Pre-fill from existing course data
+  const courseFilledRef = useRef(false);
+  useEffect(() => {
+    if (!courseDetail || courseFilledRef.current) return;
+    courseFilledRef.current = true;
+
+    setTitle(courseDetail.title);
+    setDesc(courseDetail.description ?? '');
+    setDifficulty(courseDetail.difficulty);
+    setEstimatedMinutes(String(courseDetail.estimatedMinutes));
+    setDistanceKm(courseDetail.distanceKm);
+
+    if (courseDetail.path && courseDetail.path.length > 0) {
+      const pts: [number, number][] = courseDetail.path.map(p => [p[0], p[1]]);
+      setWaypoints(pts);
+    }
+
+    if (courseDetail.spots && courseDetail.spots.length > 0) {
+      const mappedSpots: LocalSpot[] = courseDetail.spots.map((s, i) => ({
+        id: `edit-spot-${i}`,
+        lat: s.latitude,
+        lng: s.longitude,
+        type: s.type as CourseSpotType,
+        name: s.name ?? '',
+        description: s.description ?? '',
+      }));
+      setSpots(mappedSpots);
+    }
+  }, [courseDetail]);
 
   // Pre-fill from walk data
   useEffect(() => {
@@ -224,11 +266,23 @@ export function CourseCreatePage() {
     }
   }, [walkDetail]);
 
-  // Recalculate distance when waypoints change (unless pre-filled from walk)
+  // Recalculate distance when waypoints change (unless initial pre-fill)
+  const userEditedPathRef = useRef(false);
   useEffect(() => {
-    if (isFromWalk && walkDetail) return; // keep walk's original distance
+    // Skip recalculation until pre-fill is done
+    if (isFromWalk && walkDetail && !userEditedPathRef.current) return;
+    if (isEditMode && !courseFilledRef.current) return;
+    // After pre-fill, skip one more cycle (the waypoints set by pre-fill)
+    if (isEditMode && courseFilledRef.current && !userEditedPathRef.current) {
+      userEditedPathRef.current = true;
+      return;
+    }
+    if (isFromWalk && !userEditedPathRef.current) {
+      userEditedPathRef.current = true;
+      return;
+    }
     setDistanceKm(calcTotalDistance(waypoints));
-  }, [waypoints, isFromWalk, walkDetail]);
+  }, [waypoints, isFromWalk, walkDetail, isEditMode]);
 
   // ── Map initialization ────────────────────────────────────────────────────
 
@@ -521,6 +575,18 @@ export function CourseCreatePage() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (req: UpdateCourseRequest) =>
+      courseService.updateCourse(courseId!, req),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course'] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      navigate(`/courses/${courseId}`);
+    },
+  });
+
+  const activeMutation = isEditMode ? updateMutation : createMutation;
+
   const handleSubmit = () => {
     if (!title.trim()) {
       alert('코스 제목을 입력해주세요.');
@@ -528,6 +594,14 @@ export function CourseCreatePage() {
     }
     if (waypoints.length < 2) {
       alert('지도에 경로 지점을 2개 이상 추가해주세요.');
+      return;
+    }
+    if (!estimatedMinutes || parseInt(estimatedMinutes, 10) <= 0) {
+      alert('예상 소요 시간을 입력해주세요.');
+      return;
+    }
+    if (distanceKm <= 0) {
+      alert('경로 거리가 0입니다. 경로 지점을 더 넓게 배치해주세요.');
       return;
     }
 
@@ -540,18 +614,30 @@ export function CourseCreatePage() {
       orderIndex: i,
     }));
 
-    const req: CreateCourseRequest = {
-      title: title.trim(),
-      description: desc.trim() || undefined,
-      path: waypoints,
-      distanceKm,
-      estimatedMinutes: parseInt(estimatedMinutes, 10) || 0,
-      difficulty,
-      spots: spotDtos.length > 0 ? spotDtos : undefined,
-      originWalkId: isFromWalk ? walkId : undefined,
-    };
-
-    createMutation.mutate(req);
+    if (isEditMode) {
+      const req: UpdateCourseRequest = {
+        title: title.trim(),
+        description: desc.trim() || undefined,
+        path: waypoints,
+        distanceKm,
+        estimatedMinutes: parseInt(estimatedMinutes, 10) || 0,
+        difficulty,
+        spots: spotDtos,
+      };
+      updateMutation.mutate(req);
+    } else {
+      const req: CreateCourseRequest = {
+        title: title.trim(),
+        description: desc.trim() || undefined,
+        path: waypoints,
+        distanceKm,
+        estimatedMinutes: parseInt(estimatedMinutes, 10) || 0,
+        difficulty,
+        spots: spotDtos,
+        originWalkId: isFromWalk ? walkId : undefined,
+      };
+      createMutation.mutate(req);
+    }
   };
 
   // ── Scroll focused input into view (iOS/Android keyboard) ────────────────
@@ -563,10 +649,12 @@ export function CourseCreatePage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  if (walkLoading) {
+  if (walkLoading || courseLoading) {
     return (
       <div className="course_create_page" style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#888', fontSize: 14 }}>산책 기록 불러오는 중...</p>
+        <p style={{ color: '#888', fontSize: 14 }}>
+          {isEditMode ? '코스 정보 불러오는 중...' : '산책 기록 불러오는 중...'}
+        </p>
       </div>
     );
   }
@@ -735,14 +823,16 @@ export function CourseCreatePage() {
           <button
             className="course_create_submit_btn"
             onClick={handleSubmit}
-            disabled={createMutation.isPending}
+            disabled={activeMutation.isPending}
             type="button"
           >
-            {createMutation.isPending ? '등록 중...' : '코스 등록'}
+            {activeMutation.isPending
+              ? (isEditMode ? '수정 중...' : '등록 중...')
+              : (isEditMode ? '코스 수정' : '코스 등록')}
           </button>
-          {createMutation.isError && (
+          {activeMutation.isError && (
             <p style={{ color: '#e74c3c', fontSize: 13, textAlign: 'center', marginTop: 8 }}>
-              등록에 실패했습니다. 다시 시도해주세요.
+              {isEditMode ? '수정에 실패했습니다. 다시 시도해주세요.' : '등록에 실패했습니다. 다시 시도해주세요.'}
             </p>
           )}
         </div>

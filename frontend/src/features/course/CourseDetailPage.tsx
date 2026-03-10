@@ -5,6 +5,7 @@ import { nativeBridge } from '../../bridge/nativeBridge';
 import { courseService } from '../../services/courseService';
 import type { CourseDifficulty, CourseSpotType } from '../../services/courseService';
 import { useAuthStore } from '../../stores/authStore';
+import { useAlert } from '../../contexts/AlertContext';
 import { CourseMap } from './components/CourseMap';
 import './CourseDetailPage.css';
 
@@ -72,7 +73,8 @@ export const CourseDetailPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { showConfirm } = useAlert();
 
   const courseIdNum = Number(courseId);
 
@@ -155,6 +157,24 @@ export const CourseDetailPage = () => {
     navigate(`/walk/map?courseId=${courseIdNum}`);
   };
 
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: () => courseService.deleteCourse(courseIdNum),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course'] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      navigate('/courses');
+    },
+  });
+
+  const handleDelete = () => {
+    if (deleteMutation.isPending) return;
+    showConfirm('삭제된 코스는 복구할 수 없습니다.\n이 코스를 삭제하시겠습니까?', () => {
+      deleteMutation.mutate();
+    });
+  };
+
+  const isOwner = isAuthenticated && user?.id === course?.authorId;
   const isLiked = likeStatus?.liked ?? false;
   const displayLikeCount = likeStatus?.likeCount ?? course?.likeCount ?? 0;
 
@@ -187,20 +207,41 @@ export const CourseDetailPage = () => {
 
       {/* Info section */}
       <div className="course_detail_info">
-        {/* Badge + like */}
+        {/* Badge + like + owner actions */}
         <div className="course_detail_badge_row">
           <span className={`course_difficulty_badge ${difficultyClass(course.difficulty)}`}>
             {difficultyLabel(course.difficulty)}
           </span>
-          <button
-            type="button"
-            className={`course_detail_like_btn${isLiked ? ' liked' : ''}`}
-            onClick={handleLike}
-            aria-label={isLiked ? '좋아요 취소' : '좋아요'}
-          >
-            <HeartIcon filled={isLiked} />
-            <span>{displayLikeCount}</span>
-          </button>
+          <div className="course_detail_badge_row_right">
+            {isOwner && (
+              <div className="course_detail_owner_actions">
+                <button
+                  type="button"
+                  className="course_detail_edit_btn"
+                  onClick={() => navigate(`/courses/${courseIdNum}/edit`)}
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  className="course_detail_delete_btn"
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className={`course_detail_like_btn${isLiked ? ' liked' : ''}`}
+              onClick={handleLike}
+              aria-label={isLiked ? '좋아요 취소' : '좋아요'}
+            >
+              <HeartIcon filled={isLiked} />
+              <span>{displayLikeCount}</span>
+            </button>
+          </div>
         </div>
 
         {/* Title */}

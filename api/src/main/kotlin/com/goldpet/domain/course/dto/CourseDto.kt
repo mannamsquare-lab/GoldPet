@@ -47,12 +47,22 @@ data class UpdateCourseRequest(
 
     val description: String?,
 
-    val difficulty: CourseDifficulty,
+    @field:Size(min = 2, message = "경로는 최소 2개 이상의 좌표가 필요합니다")
+    val path: List<List<Double>>, // [[lat, lng], ...]
 
+    @field:Positive(message = "거리는 0보다 커야 합니다")
+    val distanceKm: Double,
+
+    @field:Positive(message = "예상 소요 시간은 0보다 커야 합니다")
     val estimatedMinutes: Int,
 
+    val difficulty: CourseDifficulty,
+
     val spots: List<CourseSpotDto> = emptyList()
-)
+) {
+    fun toLineString() = GeometryFactory(PrecisionModel(), 4326)
+        .createLineString(path.map { Coordinate(it[1], it[0]) }.toTypedArray())
+}
 
 data class CourseSpotDto(
     val latitude: Double,

@@ -176,6 +176,7 @@ function App() {
               <Route path="/courses" element={<CoursePage />} />
               <Route path="/courses/create" element={<CourseCreatePage />} />
               <Route path="/courses/create/from-walk/:walkId" element={<CourseCreatePage />} />
+              <Route path="/courses/:courseId/edit" element={<CourseCreatePage />} />
               <Route path="/courses/:courseId" element={<CourseDetailPage />} />
 
               {/* Layout B pages using SubPageLayout internally */}

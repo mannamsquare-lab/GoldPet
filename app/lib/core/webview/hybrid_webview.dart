@@ -23,6 +23,11 @@ class HybridWebView extends StatefulWidget {
 
   const HybridWebView({super.key, required this.initialUrl, this.onAppLoaded});
 
+  /// Static reference for reloading WebView after returning from native screens.
+  /// iOS WKWebView may kill the content process when hidden for extended periods
+  /// (e.g., during walk tracking), resulting in a blank page on return.
+  static Future<void> Function()? ensureContentAlive;
+
   @override
   State<HybridWebView> createState() => _HybridWebViewState();
 }
@@ -273,6 +278,24 @@ class _HybridWebViewState extends State<HybridWebView> {
     // Bridge Controller 초기화 (JavaScript Channel 등록)
     _bridgeController = BridgeMessageHandler(_controller, _bridge);
     await _bridgeController.setup();
+
+    // Register content-alive check for native screen return
+    HybridWebView.ensureContentAlive = () async {
+      try {
+        final result = await _controller.runJavaScriptReturningResult('document.title');
+        if (result == null || result.toString().isEmpty || result.toString() == 'null' || result.toString() == '""') {
+          final url = await _controller.currentUrl();
+          await _controller.loadRequest(Uri.parse(url ?? widget.initialUrl));
+        }
+      } catch (_) {
+        try {
+          final url = await _controller.currentUrl();
+          await _controller.loadRequest(Uri.parse(url ?? widget.initialUrl));
+        } catch (_) {
+          await _controller.loadRequest(Uri.parse(widget.initialUrl));
+        }
+      }
+    };
 
     // 마지막으로 페이지 로드
     _controller.loadRequest(Uri.parse(widget.initialUrl));

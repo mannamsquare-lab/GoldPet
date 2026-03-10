@@ -80,8 +80,10 @@ export interface CreateCourseRequest {
 export interface UpdateCourseRequest {
   title: string;
   description?: string;
-  difficulty: CourseDifficulty;
+  path: number[][];
+  distanceKm: number;
   estimatedMinutes: number;
+  difficulty: CourseDifficulty;
   spots?: CourseSpotDto[];
 }
 

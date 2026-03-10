@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/webview/hybrid_webview.dart';
 import '../mixins/walk_tracking_mixin.dart';
 
 /// Global stream for delivering spot actions to an existing WalkScreen
@@ -72,6 +73,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
       return;
     }
     Navigator.of(context).pop();
+    HybridWebView.ensureContentAlive?.call();
   }
 
   @override
