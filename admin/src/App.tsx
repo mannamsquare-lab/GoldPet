@@ -27,6 +27,8 @@ import AIProfileLoadingTipsPage from './pages/aiprofile/AIProfileLoadingTipsPage
 import NoticeManagementPage from './pages/notice/NoticeManagementPage';
 import EmoticonManagementPage from './pages/emoticon/EmoticonManagementPage';
 import WalkRankingManagementPage from './pages/walk/WalkRankingManagementPage';
+import CoursePage from './pages/course/CoursePage';
+import CourseDetailPage from './pages/course/CourseDetailPage';
 
 
 function App() {
@@ -65,6 +67,8 @@ function App() {
             <Route path="users/:userId" element={<UserDetailPage />} />
             <Route path="community/:postId" element={<CommunityDetailPage />} />
             <Route path="reports/:reportId" element={<ReportDetailPage />} />
+            <Route path="courses" element={<CoursePage />} />
+            <Route path="courses/:courseId" element={<CourseDetailPage />} />
           </Route>
 
           {/* Fallback */}

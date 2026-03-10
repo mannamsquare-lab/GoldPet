@@ -19,7 +19,8 @@ import {
   User,
   Sparkles,
   BellRing,
-  Smile
+  Smile,
+  MapPin
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
@@ -36,6 +37,7 @@ const NAVIGATION = [
   { name: 'Gold/결제', path: '/economy', icon: Coins },
   { name: 'AI 프로필', path: '/ai-profile', icon: Sparkles },
   { name: '산책/지도', path: '/lbs', icon: Map },
+  { name: '코스 관리', path: '/courses', icon: MapPin },
   { name: '베스트 랭킹', path: '/walk-ranking', icon: Award },
   { name: '게이미피케이션', path: '/gamification', icon: Trophy },
   { name: '코드/데이터', path: '/data', icon: Database },

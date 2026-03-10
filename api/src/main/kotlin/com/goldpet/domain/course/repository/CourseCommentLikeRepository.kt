@@ -13,4 +13,12 @@ interface CourseCommentLikeRepository : JpaRepository<CourseCommentLike, Long> {
     @Modifying
     @Query("DELETE FROM CourseCommentLike ccl WHERE ccl.comment.id = :commentId AND ccl.user.id = :userId")
     fun deleteByCommentIdAndUserId(@Param("commentId") commentId: Long, @Param("userId") userId: Long)
+
+    @Modifying
+    @Query("DELETE FROM CourseCommentLike ccl WHERE ccl.comment.course.id = :courseId")
+    fun deleteAllByCourseId(@Param("courseId") courseId: Long)
+
+    @Modifying
+    @Query("DELETE FROM CourseCommentLike ccl WHERE ccl.comment.id = :commentId")
+    fun deleteAllByCommentId(@Param("commentId") commentId: Long)
 }

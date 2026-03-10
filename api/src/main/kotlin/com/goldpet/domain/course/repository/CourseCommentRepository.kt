@@ -9,4 +9,5 @@ interface CourseCommentRepository : JpaRepository<CourseComment, Long> {
     fun findByCourseIdOrderByCreatedAtDesc(courseId: Long, pageable: Pageable): Page<CourseComment>
     fun countByCourseId(courseId: Long): Long
     fun findAllByCourseId(courseId: Long): List<CourseComment>
+    fun deleteAllByCourseId(courseId: Long)
 }

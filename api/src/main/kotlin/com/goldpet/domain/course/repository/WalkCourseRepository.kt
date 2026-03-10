@@ -1,5 +1,6 @@
 package com.goldpet.domain.course.repository
 
+import com.goldpet.domain.course.entity.CourseDifficulty
 import com.goldpet.domain.course.entity.WalkCourse
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -44,6 +45,24 @@ interface WalkCourseRepository : JpaRepository<WalkCourse, Long> {
         @Param("lng") lng: Double,
         @Param("lat") lat: Double,
         @Param("radiusMeters") radiusMeters: Double,
+        pageable: Pageable
+    ): Page<WalkCourse>
+
+    @Query("""
+        SELECT wc FROM WalkCourse wc JOIN FETCH wc.author
+        WHERE (:search IS NULL OR LOWER(wc.title) LIKE LOWER(CONCAT('%', :search, '%')))
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
+        AND (:isPublished IS NULL OR wc.isPublished = :isPublished)
+    """, countQuery = """
+        SELECT COUNT(wc) FROM WalkCourse wc
+        WHERE (:search IS NULL OR LOWER(wc.title) LIKE LOWER(CONCAT('%', :search, '%')))
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
+        AND (:isPublished IS NULL OR wc.isPublished = :isPublished)
+    """)
+    fun findAllForAdmin(
+        @Param("search") search: String?,
+        @Param("difficulty") difficulty: CourseDifficulty?,
+        @Param("isPublished") isPublished: Boolean?,
         pageable: Pageable
     ): Page<WalkCourse>
 
