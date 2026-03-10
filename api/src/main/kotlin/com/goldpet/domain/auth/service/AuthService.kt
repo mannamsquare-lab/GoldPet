@@ -165,7 +165,7 @@ class AuthService(
 
     @Transactional(readOnly = true)
     fun findUsername(request: FindUsernameRequest): FindUsernameResponse {
-        val user = userRepository.findByEmail(request.email).orElse(null)
+        val user = userRepository.findByEmailHash(request.email).orElse(null)
             ?: throw NotFoundException("해당 이메일로 가입된 계정을 찾을 수 없습니다.")
         val username = user.username ?: throw NotFoundException("해당 이메일로 가입된 계정을 찾을 수 없습니다.")
         val snsProvider = if (user.oauthProvider != "LOCAL") user.oauthProvider else null
