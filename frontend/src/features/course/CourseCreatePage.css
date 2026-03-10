@@ -5,6 +5,10 @@
   background: #faf8f5;
 }
 
+.course_create_page #header.intro_header {
+  background-color: #faf8f5;
+}
+
 
 .course_create_map_wrap {
   height: 40vh;
