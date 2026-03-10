@@ -65,6 +65,7 @@ data class UpdateCourseRequest(
 }
 
 data class CourseSpotDto(
+    val id: Long? = null,
     val latitude: Double,
     val longitude: Double,
     val type: CourseSpotType,

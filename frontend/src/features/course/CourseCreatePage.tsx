@@ -52,11 +52,13 @@ function calcTotalDistance(waypoints: [number, number][]): number {
 
 interface LocalSpot {
   id: string; // temp key
+  serverId?: number;
   lat: number;
   lng: number;
   type: CourseSpotType;
   name: string;
   description: string;
+  imageUrl?: string;
 }
 
 // ── SpotModal component ───────────────────────────────────────────────────────
@@ -64,12 +66,21 @@ interface LocalSpot {
 interface SpotModalProps {
   onConfirm: (type: CourseSpotType, name: string, description: string) => void;
   onClose: () => void;
+  editSpot?: LocalSpot;
 }
 
-function SpotModal({ onConfirm, onClose }: SpotModalProps) {
+function SpotModal({ onConfirm, onClose, editSpot }: SpotModalProps) {
   const [selectedType, setSelectedType] = useState<CourseSpotType | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (editSpot) {
+      setSelectedType(editSpot.type);
+      setName(editSpot.name);
+      setDescription(editSpot.description);
+    }
+  }, [editSpot]);
 
   const handleConfirm = () => {
     if (!selectedType) return;
@@ -81,7 +92,7 @@ function SpotModal({ onConfirm, onClose }: SpotModalProps) {
       <div className="course_create_spot_modal_backdrop" onClick={onClose} />
       <div className="course_create_spot_modal_content">
         <div className="course_create_spot_modal_handle" />
-        <p className="course_create_spot_modal_title">스팟 추가</p>
+        <p className="course_create_spot_modal_title">{editSpot ? '스팟 수정' : '스팟 추가'}</p>
 
         <div className="course_create_spot_types">
           {SPOT_TYPES.map(s => (
@@ -153,7 +164,9 @@ export function CourseCreatePage() {
   const [spots, setSpots] = useState<LocalSpot[]>([]);
   const [lastTapPos, setLastTapPos] = useState<{ lat: number; lng: number } | null>(null);
   const [showSpotModal, setShowSpotModal] = useState(false);
+  const [editingSpot, setEditingSpot] = useState<LocalSpot | null>(null);
   const [mapLoadFailed, setMapLoadFailed] = useState(false);
+  const isAddingSpotRef = useRef(false);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -198,11 +211,13 @@ export function CourseCreatePage() {
     if (courseDetail.spots && courseDetail.spots.length > 0) {
       const mappedSpots: LocalSpot[] = courseDetail.spots.map((s, i) => ({
         id: `edit-spot-${i}`,
+        serverId: s.id,
         lat: s.latitude,
         lng: s.longitude,
         type: s.type as CourseSpotType,
         name: s.name ?? '',
         description: s.description ?? '',
+        imageUrl: s.imageUrl ?? undefined,
       }));
       setSpots(mappedSpots);
     }
@@ -237,6 +252,7 @@ export function CourseCreatePage() {
             type: courseType,
             name: ws.note ?? '',
             description: '',
+            imageUrl: ws.imageUrl ?? undefined,
           } satisfies LocalSpot;
         })
         .filter((s): s is LocalSpot => s !== null);
@@ -311,6 +327,7 @@ export function CourseCreatePage() {
           size: new naver.maps.Size(14, 14),
           anchor: new naver.maps.Point(7, 7),
         } as unknown as naver.maps.MarkerIcon,
+        draggable: true,
       });
 
       // Click marker to remove it (last waypoint only for simplicity)
@@ -320,6 +337,14 @@ export function CourseCreatePage() {
           const next = prev.filter((_, i) => i !== idx);
           return next;
         });
+      });
+
+      // Drag marker to update coordinates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (naver.maps as any).Event.addListener(marker, 'dragend', (e: { coord: naver.maps.LatLng }) => {
+        setWaypoints(prev => prev.map((p, i) =>
+          i === idx ? [e.coord.lat(), e.coord.lng()] as [number, number] : p
+        ));
       });
 
       waypointMarkersRef.current.push(marker);
@@ -340,7 +365,17 @@ export function CourseCreatePage() {
         size: new naver.maps.Size(64, 50),
         anchor: new naver.maps.Point(32, 16),
       } as unknown as naver.maps.MarkerIcon,
+      draggable: true,
     });
+
+    // Drag marker to update spot coordinates
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (naver.maps as any).Event.addListener(marker, 'dragend', (e: { coord: naver.maps.LatLng }) => {
+      setSpots(prev => prev.map(s =>
+        s.id === spot.id ? { ...s, lat: e.coord.lat(), lng: e.coord.lng() } : s
+      ));
+    });
+
     spotMarkersRef.current.set(spot.id, marker);
   }, []);
 
@@ -393,7 +428,7 @@ export function CourseCreatePage() {
 
       setMapReady(true);
 
-      // Click listener — add waypoint or record tap position
+      // Click listener — add waypoint or open spot modal (one-shot mode)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       clickListenerRef.current = (naver.maps as any).Event.addListener(
         mapInstanceRef.current,
@@ -402,7 +437,14 @@ export function CourseCreatePage() {
           const lat = e.coord.lat();
           const lng = e.coord.lng();
           setLastTapPos({ lat, lng });
-          setWaypoints(prev => [...prev, [lat, lng]]);
+
+          if (isAddingSpotRef.current) {
+            // One-shot spot mode: open modal without adding waypoint
+            isAddingSpotRef.current = false;
+            setShowSpotModal(true);
+          } else {
+            setWaypoints(prev => [...prev, [lat, lng]]);
+          }
         },
       );
 
@@ -487,6 +529,16 @@ export function CourseCreatePage() {
     for (const spot of spots) {
       if (!prevIds.has(spot.id)) addSpotMarker(spot);
     }
+    // Update moved spots (same ID, different coordinates)
+    for (const spot of spots) {
+      if (prevIds.has(spot.id)) {
+        const prev = prevSpotsRef.current.find(p => p.id === spot.id);
+        if (prev && (prev.lat !== spot.lat || prev.lng !== spot.lng)) {
+          removeSpotMarker(spot.id);
+          addSpotMarker(spot);
+        }
+      }
+    }
     // Remove deleted spots
     for (const prev of prevSpotsRef.current) {
       if (!currIds.has(prev.id)) removeSpotMarker(prev.id);
@@ -498,14 +550,20 @@ export function CourseCreatePage() {
   // ── Spot modal handling ───────────────────────────────────────────────────
 
   const handleAddSpot = () => {
-    if (!lastTapPos && waypoints.length === 0) {
-      alert('먼저 지도를 탭하여 위치를 선택하세요.');
-      return;
-    }
-    setShowSpotModal(true);
+    isAddingSpotRef.current = true;
+    alert('지도에서 스팟을 추가할 위치를 탭하세요.');
   };
 
   const handleSpotConfirm = (type: CourseSpotType, name: string, description: string) => {
+    if (editingSpot) {
+      setSpots(prev => prev.map(s =>
+        s.id === editingSpot.id ? { ...s, type, name, description } : s
+      ));
+      setEditingSpot(null);
+      setShowSpotModal(false);
+      return;
+    }
+
     const pos = lastTapPos ?? (waypoints.length > 0
       ? { lat: waypoints[waypoints.length - 1][0], lng: waypoints[waypoints.length - 1][1] }
       : null);
@@ -530,6 +588,7 @@ export function CourseCreatePage() {
   // ── Clear waypoints ───────────────────────────────────────────────────────
 
   const handleClearWaypoints = () => {
+    if (waypoints.length > 0 && !confirm('경로를 초기화하시겠습니까?')) return;
     setWaypoints([]);
     setLastTapPos(null);
   };
@@ -577,11 +636,13 @@ export function CourseCreatePage() {
     }
 
     const spotDtos: CourseSpotDto[] = spots.map((s, i) => ({
+      id: s.serverId || undefined,
       latitude: s.lat,
       longitude: s.lng,
       type: s.type,
       name: s.name || undefined,
       description: s.description || undefined,
+      imageUrl: s.imageUrl || undefined,
       orderIndex: i,
     }));
 
@@ -665,7 +726,9 @@ export function CourseCreatePage() {
         )}
 
         {!mapLoadFailed && waypoints.length === 0 && (
-          <div className="course_create_map_hint">지도를 탭하여 경로를 그려보세요</div>
+          <div className="course_create_map_hint">
+            {isEditMode ? '경로가 초기화되었습니다. 지도를 탭하여 새 경로를 그려보세요' : '지도를 탭하여 경로를 그려보세요'}
+          </div>
         )}
       </div>
 
@@ -687,7 +750,14 @@ export function CourseCreatePage() {
           {spots.length > 0 && (
             <div className="course_create_spots_list">
               {spots.map(s => (
-                <div key={s.id} className="course_create_spot_item">
+                <div
+                  key={s.id}
+                  className="course_create_spot_item"
+                  onClick={() => {
+                    setEditingSpot(s);
+                    setShowSpotModal(true);
+                  }}
+                >
                   <div className="course_create_spot_emoji">{spotEmoji(s.type)}</div>
                   <div className="course_create_spot_info">
                     <div className="course_create_spot_name">
@@ -697,7 +767,7 @@ export function CourseCreatePage() {
                   </div>
                   <button
                     className="course_create_spot_remove"
-                    onClick={() => handleRemoveSpot(s.id)}
+                    onClick={e => { e.stopPropagation(); handleRemoveSpot(s.id); }}
                     type="button"
                   >
                     ×
@@ -814,7 +884,12 @@ export function CourseCreatePage() {
       {showSpotModal && (
         <SpotModal
           onConfirm={handleSpotConfirm}
-          onClose={() => setShowSpotModal(false)}
+          onClose={() => {
+            setShowSpotModal(false);
+            setEditingSpot(null);
+            isAddingSpotRef.current = false;
+          }}
+          editSpot={editingSpot ?? undefined}
         />
       )}
     </div>

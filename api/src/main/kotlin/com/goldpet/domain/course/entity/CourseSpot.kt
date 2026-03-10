@@ -16,11 +16,11 @@ class CourseSpot(
     val course: WalkCourse,
 
     @Column(columnDefinition = "geometry(Point, 4326)", nullable = false)
-    val location: Point,
+    var location: Point,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    val type: CourseSpotType,
+    var type: CourseSpotType,
 
     @Column(length = 100)
     var name: String? = null,
@@ -32,6 +32,6 @@ class CourseSpot(
     var imageUrl: String? = null,
 
     @Column(nullable = false)
-    val orderIndex: Int
+    var orderIndex: Int
 
 ) : BaseTimeEntity()

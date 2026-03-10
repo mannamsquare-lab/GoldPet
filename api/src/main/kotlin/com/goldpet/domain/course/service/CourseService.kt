@@ -140,8 +140,42 @@ class CourseService(
             course.thumbnailUrl = thumbnailUrl
         }
 
-        courseSpotRepository.deleteByCourseId(courseId)
-        val spots = saveSpotsFromDto(course, request.spots)
+        // 1. 기존 스팟 로드
+        val existingSpots = courseSpotRepository.findByCourseIdOrderByOrderIndex(courseId)
+        val existingById = existingSpots.associateBy { it.id }
+        val requestIds = request.spots.mapNotNull { it.id }.toSet()
+
+        // 2. 요청에 없는 기존 스팟 삭제
+        existingSpots.filter { it.id !in requestIds }
+            .forEach { courseSpotRepository.delete(it) }
+        courseSpotRepository.flush()
+
+        // 3. Upsert: ID 있으면 업데이트, 없으면 생성
+        val spots = request.spots.mapIndexed { idx, dto ->
+            val spotId = dto.id
+            if (spotId != null) {
+                val existing = existingById[spotId]
+                    ?: throw ForbiddenException("Spot $spotId does not belong to course $courseId")
+                existing.location = geometryFactory.createPoint(Coordinate(dto.longitude, dto.latitude))
+                existing.type = dto.type
+                existing.orderIndex = idx
+                existing.name = dto.name
+                existing.description = dto.description
+                existing.imageUrl = dto.imageUrl
+                existing
+            } else {
+                val location = geometryFactory.createPoint(Coordinate(dto.longitude, dto.latitude))
+                courseSpotRepository.save(CourseSpot(
+                    course = course,
+                    location = location,
+                    type = dto.type,
+                    name = dto.name,
+                    description = dto.description,
+                    imageUrl = dto.imageUrl,
+                    orderIndex = idx
+                ))
+            }
+        }
         val savedCourse = walkCourseRepository.save(course)
         return CourseResponse.from(savedCourse, spots)
     }

@@ -19,6 +19,7 @@ export type CourseSpotType =
   | 'OTHER';
 
 export interface CourseSpotDto {
+  id?: number;
   latitude: number;
   longitude: number;
   type: CourseSpotType;
