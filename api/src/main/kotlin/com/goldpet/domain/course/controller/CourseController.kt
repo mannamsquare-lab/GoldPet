@@ -80,9 +80,10 @@ class CourseController(
     fun getPopularCourses(
         @RequestParam(required = false) region: String?,
         @RequestParam(required = false) difficulty: CourseDifficulty?,
-        @PageableDefault(size = 20, sort = ["likeCount"], direction = Sort.Direction.DESC) pageable: Pageable
+        @RequestParam(defaultValue = "popular") sortBy: String,
+        @PageableDefault(size = 20) pageable: Pageable
     ): ResponseEntity<Page<CourseResponse>> {
-        return ResponseEntity.ok(courseService.getPopularCourses(region, difficulty, pageable))
+        return ResponseEntity.ok(courseService.getPopularCourses(region, difficulty, sortBy, pageable))
     }
 
     @Operation(summary = "내가 만든 코스 목록")

@@ -17,11 +17,62 @@ interface WalkCourseRepository : JpaRepository<WalkCourse, Long> {
     @Query("""
         SELECT wc FROM WalkCourse wc JOIN FETCH wc.author
         WHERE wc.isPublished = true
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
         ORDER BY (wc.likeCount * 2 + wc.walkCount * 3 + wc.rating * 10 + wc.commentCount) DESC
     """, countQuery = """
-        SELECT COUNT(wc) FROM WalkCourse wc WHERE wc.isPublished = true
+        SELECT COUNT(wc) FROM WalkCourse wc
+        WHERE wc.isPublished = true
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
     """)
-    fun findPopularCourses(pageable: Pageable): Page<WalkCourse>
+    fun findPopularCourses(
+        @Param("difficulty") difficulty: CourseDifficulty?,
+        pageable: Pageable
+    ): Page<WalkCourse>
+
+    @Query("""
+        SELECT wc FROM WalkCourse wc JOIN FETCH wc.author
+        WHERE wc.isPublished = true
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
+        ORDER BY wc.createdAt DESC
+    """, countQuery = """
+        SELECT COUNT(wc) FROM WalkCourse wc
+        WHERE wc.isPublished = true
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
+    """)
+    fun findLatestCourses(
+        @Param("difficulty") difficulty: CourseDifficulty?,
+        pageable: Pageable
+    ): Page<WalkCourse>
+
+    @Query("""
+        SELECT wc FROM WalkCourse wc JOIN FETCH wc.author
+        WHERE wc.isPublished = true
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
+        ORDER BY wc.distanceKm ASC
+    """, countQuery = """
+        SELECT COUNT(wc) FROM WalkCourse wc
+        WHERE wc.isPublished = true
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
+    """)
+    fun findByDistanceCourses(
+        @Param("difficulty") difficulty: CourseDifficulty?,
+        pageable: Pageable
+    ): Page<WalkCourse>
+
+    @Query("""
+        SELECT wc FROM WalkCourse wc JOIN FETCH wc.author
+        WHERE wc.isPublished = true
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
+        ORDER BY wc.rating DESC, wc.ratingCount DESC
+    """, countQuery = """
+        SELECT COUNT(wc) FROM WalkCourse wc
+        WHERE wc.isPublished = true
+        AND (:difficulty IS NULL OR wc.difficulty = :difficulty)
+    """)
+    fun findByRatingCourses(
+        @Param("difficulty") difficulty: CourseDifficulty?,
+        pageable: Pageable
+    ): Page<WalkCourse>
 
     @Query(value = """
         SELECT * FROM walk_courses

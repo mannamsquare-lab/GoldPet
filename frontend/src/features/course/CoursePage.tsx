@@ -28,6 +28,7 @@ export function CoursePage() {
     queryFn: ({ pageParam = 0 }) =>
       courseService.getPopularCourses({
         difficulty: filters.difficulty,
+        sortBy: filters.sortBy,
         page: pageParam as number,
         size: 10,
       }),

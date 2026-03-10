@@ -170,6 +170,7 @@ export const courseService = {
   getPopularCourses: async (params?: {
     region?: string;
     difficulty?: CourseDifficulty;
+    sortBy?: string;
     page?: number;
     size?: number;
   }): Promise<PageResponse<CourseResponse>> => {
