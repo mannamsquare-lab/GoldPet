@@ -9,6 +9,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.util.DefaultUriBuilderFactory
 
 @Service
 class NaverStaticMapService(
@@ -19,7 +20,12 @@ class NaverStaticMapService(
     private val restTemplate = RestTemplate(SimpleClientHttpRequestFactory().apply {
         setConnectTimeout(5000)
         setReadTimeout(5000)
-    })
+    }).apply {
+        // Disable URI encoding to preserve | (pipe) delimiters and %20 in coordinates
+        uriTemplateHandler = DefaultUriBuilderFactory().apply {
+            encodingMode = DefaultUriBuilderFactory.EncodingMode.NONE
+        }
+    }
 
     companion object {
         private const val STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster"
@@ -46,18 +52,26 @@ class NaverStaticMapService(
         val centerLat = (lats.min() + lats.max()) / 2
         val zoom = calculateZoom(lats.min(), lats.max(), lngs.min(), lngs.max())
 
-        // Build path parameter: color:0xRRGGBBAA|weight:N|lng1 lat1|lng2 lat2|...
-        val pathParts = simplified.joinToString("|") { "%.6f %.6f".format(it.x, it.y) }
+        // Build path parameter: color:0xRRGGBBAA|weight:N|lng1%20lat1|lng2%20lat2|...
+        // Coordinates use %20 (URL-encoded space) between lng and lat per Naver API spec
+        val pathParts = simplified.joinToString("|") {
+            "%.6f".format(it.x) + "%20" + "%.6f".format(it.y)
+        }
         val pathParam = "color:0xFF5A5FFF|weight:4|$pathParts"
 
         // Build markers for start and end points
         val startCoord = simplified.first()
         val endCoord = simplified.last()
-        val markersParam = "type:d|size:small|pos:%.6f %.6f|color:green&markers=type:d|size:small|pos:%.6f %.6f|color:red"
-            .format(startCoord.x, startCoord.y, endCoord.x, endCoord.y)
+        val startMarker = "type:d|size:small|pos:%.6f".format(startCoord.x) + "%20" + "%.6f".format(startCoord.y) + "|color:green"
+        val endMarker = "type:d|size:small|pos:%.6f".format(endCoord.x) + "%20" + "%.6f".format(endCoord.y) + "|color:red"
 
-        val url = "$STATIC_MAP_URL?w=$width&h=$height&center=%.6f,%.6f&level=$zoom&path=$pathParam&markers=$markersParam"
-            .format(centerLng, centerLat)
+        val url = STATIC_MAP_URL +
+            "?w=$width&h=$height" +
+            "&center=%.6f,%.6f".format(centerLng, centerLat) +
+            "&level=$zoom" +
+            "&path=$pathParam" +
+            "&markers=$startMarker" +
+            "&markers=$endMarker"
 
         val headers = HttpHeaders().apply {
             set("x-ncp-apigw-api-key-id", clientId)
