@@ -507,7 +507,26 @@
   }
 }
 
-/* Main comment input bar - fixed at viewport bottom */
+/* Main comment input bar - static in flex flow (detail mode) */
+#communityContainer.community-detail-mode > .comment_submit {
+  background: var(--color-border);
+  z-index: 10;
+  padding: 8px 16px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  flex-shrink: 0;
+}
+
+#communityContainer.community-detail-mode > .comment_submit .comment_input_row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Legacy: keep old selectors for non-detail-mode contexts */
 #communityContainer .detail_wrap .comment_wrap > .comment_submit {
   position: fixed;
   bottom: 0;
@@ -552,8 +571,8 @@
   line-height: 1;
 }
 
-/* Prevent last content from being hidden behind fixed input bar */
-#communityContainer .detail_wrap .comment_wrap {
+/* Prevent last content from being hidden behind fixed input bar (list mode only) */
+#communityContainer:not(.community-detail-mode) .detail_wrap .comment_wrap {
   padding-bottom: 120px;
 }
 

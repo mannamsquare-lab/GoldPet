@@ -76,21 +76,9 @@ interface SpotModalProps {
 }
 
 function SpotModal({ onConfirm, onClose, editSpot }: SpotModalProps) {
-  const [selectedType, setSelectedType] = useState<CourseSpotType | null>(null);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-
-  useEffect(() => {
-    if (editSpot) {
-      setSelectedType(editSpot.type);
-      setName(editSpot.name);
-      setDescription(editSpot.description);
-    } else {
-      setSelectedType(null);
-      setName('');
-      setDescription('');
-    }
-  }, [editSpot]);
+  const [selectedType, setSelectedType] = useState<CourseSpotType | null>(editSpot?.type ?? null);
+  const [name, setName] = useState(editSpot?.name ?? '');
+  const [description, setDescription] = useState(editSpot?.description ?? '');
 
   const handleConfirm = () => {
     if (!selectedType) return;
@@ -887,7 +875,7 @@ export function CourseCreatePage() {
         </button>
         {activeMutation.isError && (
           <p className="course_create_error_text">
-            {(activeMutation.error as any)?.response?.data?.message
+            {(activeMutation.error as Error & { response?: { data?: { message?: string } } })?.response?.data?.message
               ?? (isEditMode ? '수정에 실패했습니다. 다시 시도해주세요.' : '등록에 실패했습니다. 다시 시도해주세요.')}
           </p>
         )}
@@ -896,6 +884,7 @@ export function CourseCreatePage() {
       {/* Spot modal */}
       {showSpotModal && (
         <SpotModal
+          key={editingSpot?.id ?? 'new'}
           onConfirm={handleSpotConfirm}
           onClose={() => {
             setShowSpotModal(false);

@@ -39,43 +39,63 @@ export default function CommunityDetailPage() {
   const [editCommentInput, setEditCommentInput] = useState('');
 
   const isInputFocusedRef = useRef(false);
+  const detailWrapRef = useRef<HTMLDivElement>(null);
 
-  const scrollToCommentPosition = useCallback(() => {
-    const scroller = document.scrollingElement || document.documentElement;
+  const scrollToPosition = useCallback(() => {
+    const container = detailWrapRef.current;
+    if (!container) return;
     if (replyTargetId) {
-      const parentComment = document.querySelector(`[data-comment-id="${replyTargetId}"]`);
+      const parentComment = container.querySelector(`[data-comment-id="${replyTargetId}"]`);
       if (parentComment instanceof HTMLElement) {
-        const targetTop = parentComment.getBoundingClientRect().top + scroller.scrollTop - 80;
-        scroller.scrollTop = Math.max(0, targetTop);
+        const containerRect = container.getBoundingClientRect();
+        const commentRect = parentComment.getBoundingClientRect();
+        const targetTop = container.scrollTop + (commentRect.top - containerRect.top) - 80;
+        container.scrollTop = Math.max(0, targetTop);
       }
     } else {
-      scroller.scrollTop = scroller.scrollHeight;
+      container.scrollTop = container.scrollHeight;
     }
   }, [replyTargetId]);
 
-  // Resize listener: detect keyboard open/close and re-scroll
+  // Inline keyboard detection (from ChatDetailPage pattern)
+  // TODO: extract useKeyboardScroll when a third consumer appears
   useEffect(() => {
+    const viewport = window.visualViewport;
+    let prevHeight = viewport ? viewport.height : window.innerHeight;
+    let prevWidth = viewport ? viewport.width : window.innerWidth;
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+
     const handleResize = () => {
-      if (!isInputFocusedRef.current) return;
-      scrollToCommentPosition();
-      setTimeout(scrollToCommentPosition, 300);
+      const currentHeight = viewport ? viewport.height : window.innerHeight;
+      const currentWidth = viewport ? viewport.width : window.innerWidth;
+      const keyboardOpened = currentHeight < prevHeight && currentWidth === prevWidth;
+      prevHeight = currentHeight;
+      prevWidth = currentWidth;
+
+      if (keyboardOpened && isInputFocusedRef.current) {
+        scrollToPosition();
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          requestAnimationFrame(() => scrollToPosition());
+        }, 300);
+      }
     };
-    const vp = window.visualViewport;
-    if (vp) vp.addEventListener('resize', handleResize);
+
+    if (viewport) viewport.addEventListener('resize', handleResize);
     window.addEventListener('resize', handleResize);
     return () => {
-      if (vp) vp.removeEventListener('resize', handleResize);
+      if (resizeTimer) clearTimeout(resizeTimer);
+      if (viewport) viewport.removeEventListener('resize', handleResize);
       window.removeEventListener('resize', handleResize);
     };
-  }, [scrollToCommentPosition]);
+  }, [scrollToPosition]);
 
   const handleInputFocus = () => {
     isInputFocusedRef.current = true;
     const nav = document.getElementById('bottomNav');
     if (nav) nav.style.display = 'none';
-    scrollToCommentPosition();
-    setTimeout(scrollToCommentPosition, 300);
-    setTimeout(scrollToCommentPosition, 600);
+    scrollToPosition();
+    setTimeout(() => scrollToPosition(), 300);
   };
 
   const handleInputBlur = () => {
@@ -298,7 +318,7 @@ export default function CommunityDetailPage() {
   }
 
   return (
-    <div id="communityContainer">
+    <div id="communityContainer" className="community-detail-mode">
       {/* Top Header */}
       <div className="history_util">
         <BackButton onClick={() => navigate(-1)} />
@@ -311,7 +331,7 @@ export default function CommunityDetailPage() {
         </button>
       </div>
 
-      <div className="detail_wrap">
+      <div className="detail_wrap" ref={detailWrapRef}>
         <div className="view_contents">
           {/* Profile */}
           <div className="detail_profile">
@@ -486,32 +506,33 @@ export default function CommunityDetailPage() {
             ))}
           </ul>
 
-          {/* Main Comment Input */}
-          <div className="comment_submit">
-            {replyTargetId && replyTargetNickname && (
-              <div className="reply_indicator">
-                <span>@{replyTargetNickname} 에게 답글 중</span>
-                <button type="button" onClick={() => setReplyTargetId(null)}>✕</button>
-              </div>
-            )}
-            <div className="comment_input_row">
-              <textarea
-                ref={mainInputRef}
-                placeholder={replyTargetId ? '답글을 남겨보세요' : '댓글을 남겨보세요'}
-                value={commentInput}
-                rows={1}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                onChange={(e) => {
-                  setCommentInput(e.target.value);
-                  e.target.style.height = '32px';
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 108)}px`;
-                  e.target.style.overflowY = e.target.scrollHeight > 108 ? 'auto' : 'hidden';
-                }}
-              />
-              <button type="button" onClick={handleSubmitComment}>전송</button>
-            </div>
+        </div>
+      </div>
+
+      {/* Comment Input: direct child of container for flex layout (not inside detail_wrap) */}
+      <div className="comment_submit">
+        {replyTargetId && replyTargetNickname && (
+          <div className="reply_indicator">
+            <span>@{replyTargetNickname} 에게 답글 중</span>
+            <button type="button" onClick={() => setReplyTargetId(null)}>✕</button>
           </div>
+        )}
+        <div className="comment_input_row">
+          <textarea
+            ref={mainInputRef}
+            placeholder={replyTargetId ? '답글을 남겨보세요' : '댓글을 남겨보세요'}
+            value={commentInput}
+            rows={1}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            onChange={(e) => {
+              setCommentInput(e.target.value);
+              e.target.style.height = '32px';
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 108)}px`;
+              e.target.style.overflowY = e.target.scrollHeight > 108 ? 'auto' : 'hidden';
+            }}
+          />
+          <button type="button" onClick={handleSubmitComment}>전송</button>
         </div>
       </div>
       {/* Action Sheet Modal */}
