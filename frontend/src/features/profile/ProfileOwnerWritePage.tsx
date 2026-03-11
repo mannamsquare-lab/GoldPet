@@ -41,6 +41,9 @@ const ProfileOwnerWritePage: React.FC = () => {
     const [birthDate, setBirthDate] = useState('');
     const [phoneNumber, setPhoneNumber] = useState(''); 
     const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCheckingNickname, setIsCheckingNickname] = useState(false);
+    const [isPhoneVerifying, setIsPhoneVerifying] = useState(false);
 
     const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^0-9]/g, '');
@@ -199,11 +202,13 @@ const ProfileOwnerWritePage: React.FC = () => {
     };
 
     const handleCheckNickname = async () => {
+        if (isCheckingNickname) return;
         if (!nickname) {
             showAlert('닉네임을 입력해주세요.', () => nicknameRef.current?.focus());
             return;
         }
-        
+
+        setIsCheckingNickname(true);
         try {
             const isAvailable = await userService.checkNickname(nickname);
             if (isAvailable) {
@@ -216,19 +221,23 @@ const ProfileOwnerWritePage: React.FC = () => {
         } catch {
             showAlert('중복 확인에 실패했습니다.');
             setIsNicknameChecked(false);
+        } finally {
+            setIsCheckingNickname(false);
         }
     };
 
     const handleRequestVerifyCode = async () => {
+        if (isPhoneVerifying) return;
         if (!phoneNumber || phoneNumber.length !== 11) {
             showAlert('휴대폰 번호 11자리를 정확히 입력해주세요.', () => phoneNumberRef.current?.focus());
             return;
         }
-        
+
         // If specifically requesting re-verification (even if number matches), we allow it.
         // It resets the verified state until they confirm the new code.
-        setIsPhoneVerified(false); 
+        setIsPhoneVerified(false);
 
+        setIsPhoneVerifying(true);
         try {
             const devCode = await userService.requestVerificationCode(phoneNumber);
             if (devCode) {
@@ -239,14 +248,18 @@ const ProfileOwnerWritePage: React.FC = () => {
             }
         } catch {
              showAlert('인증번호 발송에 실패했습니다.');
+        } finally {
+            setIsPhoneVerifying(false);
         }
     };
 
     const handleConfirmVerifyCode = async () => {
+        if (isPhoneVerifying) return;
         if (!verifyCode) {
             showAlert('인증번호를 입력해주세요.');
             return;
         }
+        setIsPhoneVerifying(true);
         try {
             const success = await userService.confirmVerificationCode(phoneNumber, verifyCode);
             if (success) {
@@ -257,10 +270,13 @@ const ProfileOwnerWritePage: React.FC = () => {
             }
         } catch {
             showAlert('인증 확인에 실패했습니다.');
+        } finally {
+            setIsPhoneVerifying(false);
         }
     };
 
     const handleSubmit = async () => {
+        if (isSubmitting) return;
         // Validation: Basic Info
         if (!name.trim()) {
             showAlert('이름을 입력해주세요.', () => nameRef.current?.focus());
@@ -304,6 +320,7 @@ const ProfileOwnerWritePage: React.FC = () => {
             return;
         }
 
+        setIsSubmitting(true);
         try {
             // Update profile images (send valid list only)
              await userService.updateProfileImages(validImages);
@@ -356,6 +373,8 @@ const ProfileOwnerWritePage: React.FC = () => {
             const err = error as { response?: { data?: { message?: string } }; message?: string };
             const message = err?.response?.data?.message || err?.message || '저장에 실패했습니다.';
             showAlert(message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -432,7 +451,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                     // If checked, button is active (for 'Change'). If NOT checked, active (for 'Check').
                                     // Basically always active unless empty?
                                     className={nickname ? '' : 'disabled'}
-                                    disabled={!nickname}
+                                    disabled={!nickname || isCheckingNickname}
                                     onClick={isNicknameChecked ? () => nicknameRef.current?.focus() : handleCheckNickname}
                                 >
                                     {isNicknameChecked ? '닉네임 변경' : '중복 확인'}
@@ -485,7 +504,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                         <button
                                             type="button"
                                             className={phoneNumber.length === 11 ? '' : 'disabled'}
-                                            disabled={phoneNumber.length !== 11}
+                                            disabled={phoneNumber.length !== 11 || isPhoneVerifying}
                                             onClick={handleRequestVerifyCode}
                                         >
                                             {isPhoneVerified ? '재인증' : '인증번호'}
@@ -504,7 +523,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                         <button
                                             type="button"
                                             className={verifyCode.length >= 4 && !isPhoneVerified ? '' : 'disabled'}
-                                            disabled={isPhoneVerified}
+                                            disabled={isPhoneVerified || isPhoneVerifying}
                                             onClick={handleConfirmVerifyCode}
                                         >
                                             {isPhoneVerified ? '확인 완료' : '확인'}
@@ -654,7 +673,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                     </div>
                     <div className="btn_wrap">
                         <button type="button" className="cancel_btn" onClick={() => navigate('/profile?tab=owner')}>취소</button>
-                        <button type="button" className="submit_btn" onClick={handleSubmit}>저장</button>
+                        <button type="button" className="submit_btn" onClick={handleSubmit} disabled={isSubmitting}>{isSubmitting ? '저장 중...' : '저장'}</button>
                     </div>
                 </div>
             </div>
