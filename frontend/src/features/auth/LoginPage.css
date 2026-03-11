@@ -303,8 +303,13 @@
   transition: transform 0.2s ease;
 }
 
-.login-sns-button:hover {
+.login-sns-button:hover:not(:disabled) {
   transform: scale(1.1);
+}
+
+.login-sns-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .login-sns-button-apple {

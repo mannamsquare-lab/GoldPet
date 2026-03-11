@@ -85,6 +85,8 @@ export const LoginPage = () => {
   };
 
   const handleSnsLogin = async (provider: 'naver' | 'kakao' | 'apple' | 'google', email?: string) => {
+    if (isLoading) return;
+
     const executeLogin = async (loginEmail?: string) => {
         try {
             const result = await authService.openLoginPopup(provider, loginEmail);
@@ -126,18 +128,23 @@ export const LoginPage = () => {
           }
     };
 
-    if (email) {
-        executeLogin(email);
-        return;
-    }
+    setIsLoading(true);
+    try {
+      if (email) {
+          await executeLogin(email);
+          return;
+      }
 
-    if (import.meta.env.VITE_USE_MOCK === 'true') {
-        const testEmail = prompt('테스트 로그인할 이메일을 입력하세요', 'sungchuli@test.com');
-        if (testEmail !== null) { // Cancel returns null
-             executeLogin(testEmail);
-        }
-    } else {
-        executeLogin();
+      if (import.meta.env.VITE_USE_MOCK === 'true') {
+          const testEmail = prompt('테스트 로그인할 이메일을 입력하세요', 'sungchuli@test.com');
+          if (testEmail !== null) { // Cancel returns null
+               await executeLogin(testEmail);
+          }
+      } else {
+          await executeLogin();
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -283,6 +290,7 @@ export const LoginPage = () => {
                 type="button"
                 className="login-sns-button btn-effect"
                 onClick={() => handleSnsLogin('naver')}
+                disabled={isLoading}
                 aria-label="네이버 로그인"
               >
                 <img
@@ -314,6 +322,7 @@ export const LoginPage = () => {
                 type="button"
                 className="login-sns-button btn-effect"
                 onClick={() => handleSnsLogin('kakao')}
+                disabled={isLoading}
                 aria-label="카카오 로그인"
               >
                 <img
@@ -346,6 +355,7 @@ export const LoginPage = () => {
                   type="button"
                   className="login-sns-button login-sns-button-apple btn-effect"
                   onClick={() => handleSnsLogin('apple')}
+                  disabled={isLoading}
                   aria-label="애플 로그인"
                 >
                   <img
@@ -376,6 +386,7 @@ export const LoginPage = () => {
                 type="button"
                 className="login-sns-button login-sns-button-google btn-effect"
                 onClick={() => handleSnsLogin('google')}
+                disabled={isLoading}
                 aria-label="구글 로그인"
               >
                 <img
