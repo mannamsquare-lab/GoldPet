@@ -13,6 +13,7 @@ import {
 import { walkService } from '../../services/walkService';
 import { SPOT_TYPES, spotEmoji, spotLabel } from './utils/courseHelpers';
 import './CourseCreatePage.css';
+import { nativeBridge } from '../../bridge/nativeBridge';
 
 // ── Walk spot type → Course spot type mapping ────────────────────────────────
 
@@ -452,13 +453,25 @@ export function CourseCreatePage() {
         mapInstanceRef.current.setCenter(new naver.maps.LatLng(lat, lng));
       };
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => setCenter(pos.coords.latitude, pos.coords.longitude),
-          () => {},
-          { timeout: 5000 },
-        );
-      }
+      const getLocation = async () => {
+        if (nativeBridge.isAvailable()) {
+          try {
+            const loc = await nativeBridge.callMethod('getCurrentLocation') as { latitude: number; longitude: number };
+            setCenter(loc.latitude, loc.longitude);
+            return;
+          } catch {
+            // fall through to web geolocation
+          }
+        }
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            pos => setCenter(pos.coords.latitude, pos.coords.longitude),
+            () => {},
+            { timeout: 5000 },
+          );
+        }
+      };
+      getLocation();
     } catch (e) {
       console.error('[CourseCreatePage] map init failed:', e);
       setMapLoadFailed(true);
