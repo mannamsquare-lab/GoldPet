@@ -11,6 +11,7 @@ import '../../../core/webview/hybrid_webview.dart';
 import '../../../core/widgets/goldpet_alert_dialog.dart';
 import '../mixins/walk_tracking_mixin.dart';
 // TODO: extract walkSpotActionController to walk_events.dart when a third walk screen type is added
+// TODO: extract isAnyWalkActive() helper when third walk type added. Guard sites: api_client.dart (2), hybrid_webview.dart (1)
 import 'walk_screen.dart' show walkSpotActionController;
 
 /// Data model for a course spot passed from React WebView via bridge.
@@ -48,6 +49,10 @@ class CourseWalkScreen extends ConsumerStatefulWidget {
 
   /// Singleton guard (same pattern as WalkScreen)
   static bool isOnStack = false;
+
+  /// Set by HybridWebView when auth expires during an active course walk.
+  /// The auth expiry dialog is deferred until the walk ends naturally.
+  static bool authExpiredDuringWalk = false;
 
   const CourseWalkScreen({
     super.key,
@@ -102,6 +107,12 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
 
   @override
   void onWalkSaved() {
+    // Handle deferred auth expiry (same pattern as WalkScreen)
+    if (CourseWalkScreen.authExpiredDuringWalk) {
+      CourseWalkScreen.authExpiredDuringWalk = false;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
     Navigator.of(context).pop();
     HybridWebView.ensureContentAlive?.call();
   }
@@ -155,6 +166,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   void dispose() {
     disposeTracking();
     CourseWalkScreen.isOnStack = false;
+    CourseWalkScreen.authExpiredDuringWalk = false;
     WidgetsBinding.instance.removeObserver(this);
     _spotActionSubscription?.cancel();
     _sheetController.dispose();
@@ -322,13 +334,24 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   void _updateProgress(NLatLng latLng) {
     if (_coursePathLatLng.length < 2) return;
 
-    // Find the nearest segment, searching from a few behind current progress
-    // to allow for GPS jitter, but covering all segments ahead.
+    // Don't update progress when significantly off course (>200m)
+    if (_deviationDistance > 200) {
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final totalSegments = _coursePathLatLng.length - 1;
+
+    // Windowed search: look back a few and forward a limited amount.
+    // This prevents loop/circular courses from matching end segments
+    // when the user is near the start (since start ≈ end physically).
     final searchStart = math.max(0, _progressWaypointIndex - 2);
+    final maxLookahead = math.max(5, totalSegments ~/ 3);
+    final searchEnd = math.min(_progressWaypointIndex + maxLookahead, totalSegments);
     double minDist = double.infinity;
     int nearestIdx = _progressWaypointIndex;
 
-    for (var i = searchStart; i < _coursePathLatLng.length - 1; i++) {
+    for (var i = searchStart; i < searchEnd; i++) {
       final dist = _distanceToSegment(
         latLng.latitude, latLng.longitude,
         _coursePathLatLng[i].latitude, _coursePathLatLng[i].longitude,
@@ -366,7 +389,10 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
           latLng.latitude, latLng.longitude,
           _coursePathLatLng[i + 1].latitude, _coursePathLatLng[i + 1].longitude,
         );
-        final fraction = (dToA + dToB) > 0 ? (dToA / (dToA + dToB)).clamp(0.0, 1.0) : 0.0;
+        // Project position onto segment using law of cosines for accurate fraction
+        final fraction = segLen > 0.001
+            ? ((dToA * dToA + segLen * segLen - dToB * dToB) / (2 * segLen * segLen)).clamp(0.0, 1.0)
+            : 0.0;
         progressLength += segLen * fraction;
       }
     }

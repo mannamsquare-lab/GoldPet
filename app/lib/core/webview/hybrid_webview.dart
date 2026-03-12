@@ -12,6 +12,7 @@ import '../constants/keys.dart';
 import '../services/location_service.dart';
 import '../widgets/goldpet_alert_dialog.dart';
 import '../../features/walk/screens/walk_screen.dart';
+import '../../features/walk/screens/course_walk_screen.dart';
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -247,6 +248,11 @@ class _HybridWebViewState extends State<HybridWebView> {
       if (WalkScreen.isOnStack) {
         debugPrint('[AuthExpiry] Walk active — deferring auth expiry');
         WalkScreen.authExpiredDuringWalk = true;
+        return;
+      }
+      if (CourseWalkScreen.isOnStack) {
+        debugPrint('[AuthExpiry] Course walk active — deferring auth expiry');
+        CourseWalkScreen.authExpiredDuringWalk = true;
         return;
       }
       _showAuthExpiredDialog();

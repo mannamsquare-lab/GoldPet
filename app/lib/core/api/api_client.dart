@@ -9,6 +9,7 @@ import '../constants/app_constants.dart';
 import '../constants/keys.dart';
 import '../../features/walk/data/walk_local_storage.dart';
 import '../../features/walk/screens/walk_screen.dart';
+import '../../features/walk/screens/course_walk_screen.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
@@ -135,7 +136,7 @@ class ApiClient {
               debugPrint('[AuthExpiry] Token refresh failed, showing expiry dialog');
               onAuthExpired?.call();
             }
-            if (!WalkScreen.isOnStack) { await clearToken(); }
+            if (!WalkScreen.isOnStack && !CourseWalkScreen.isOnStack) { await clearToken(); }
           }
           return handler.next(error);
         },
@@ -229,7 +230,7 @@ class ApiClient {
     _isRecoveringWalk = true;
     try {
       // 산책 화면이 활성 중이면 복구 건너뜀
-      if (WalkScreen.isOnStack) return;
+      if (WalkScreen.isOnStack || CourseWalkScreen.isOnStack) return;
 
       final walkData = await WalkLocalStorage.loadWalkData();
       if (walkData == null) return;
