@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
+import type { WalkSpot } from '../../services/walkService';
 import { WalkChart, aggregateDaily, aggregateWeekly, aggregateMonthly } from './components/WalkChart';
 import type { WalkDataPoint } from './components/WalkChart';
 import { useNaverMap } from '../../hooks/useNaverMap';
@@ -11,13 +12,41 @@ import './WalkDetail.css';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 
-function spotMarkerImage(type: string): string {
+function spotMarkerHtml(type: string): string {
+    const t = (type ?? 'OTHER').toLowerCase();
+    const emojis: Record<string, string> = { pee: '💧', poop: '💩', photo: '📷', problem: '⚠️', other: '📌' };
+    const emoji = emojis[t] || '📌';
+    return `<div class="walk_spot_marker walk_spot_marker--${t}"><span>${emoji}</span></div>`;
+}
+
+function spotTypeLabel(type: string): string {
     switch (type) {
-        case 'PEE': return '/assets/images/walk/marker_pee.png';
-        case 'POOP': return '/assets/images/walk/marker_poop.png';
-        case 'PHOTO': return '/assets/images/walk/marker_camera.png';
-        default: return '/assets/images/walk/marker_pee.png';
+        case 'PEE': return '소변';
+        case 'POOP': return '대변';
+        case 'PHOTO': return '사진';
+        case 'PROBLEM': return '문제';
+        default: return '기타';
     }
+}
+
+function spotTypeColor(type: string): string {
+    switch (type) {
+        case 'PEE': return '#4A90D9';
+        case 'POOP': return '#8B6914';
+        case 'PHOTO': return '#8A497D';
+        case 'PROBLEM': return '#D94A4A';
+        default: return '#8B8B8B';
+    }
+}
+
+function formatSpotTimestamp(ts: string): string {
+    const d = new Date(ts);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${y}.${m}.${day} ${h}:${min}`;
 }
 
 function petCircleMarkerHtml(variant: 'start' | 'end', imageUrl?: string | null): string {
@@ -61,6 +90,9 @@ export const WalkDetailPage = () => {
     const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getMonday(new Date()));
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+    const [selectedSpot, setSelectedSpot] = useState<WalkSpot | null>(null);
+    const [photoLoaded, setPhotoLoaded] = useState(false);
+    const [photoError, setPhotoError] = useState(false);
 
     // Walk detail (for route map)
     const { data: walkDetail } = useQuery({
@@ -91,6 +123,8 @@ export const WalkDetailPage = () => {
     // Draw polyline when walk detail + map ready
     const polylineRef = useRef<naver.maps.Polyline | null>(null);
     const polylineDrawn = useRef(false);
+    const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
+    const listenersRef = useRef<any[]>([]);
 
     const drawRoute = useCallback(() => {
         if (!mapInstanceRef.current || !walkDetail?.pathPoints?.length || polylineDrawn.current) return;
@@ -134,22 +168,31 @@ export const WalkDetailPage = () => {
                 } as unknown as naver.maps.MarkerIcon,
             });
 
-            // Draw spot markers
+            // Draw spot markers with click listeners
             if (walkDetail.spots?.length) {
-                walkDetail.spots.forEach(spot => {
+                walkDetail.spots.forEach((spot: WalkSpot) => {
                     if (spot.latitude == null || spot.longitude == null) return;
                     const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
                     bounds.extend(pos);
-                    const imgSrc = spotMarkerImage(spot.type ?? 'OTHER');
-                    new naver.maps.Marker({
+                    const marker = new naver.maps.Marker({
                         map: mapInstanceRef.current!,
                         position: pos,
                         icon: {
-                            content: `<img src="${imgSrc}" width="32" height="32" style="display:block;" alt="${spot.type}" />`,
-                            size: new naver.maps.Size(32, 32),
-                            anchor: new naver.maps.Point(16, 16),
+                            content: spotMarkerHtml(spot.type),
+                            size: new naver.maps.Size(32, 38),
+                            anchor: new naver.maps.Point(16, 38),
                         } as unknown as naver.maps.MarkerIcon,
                     });
+                    spotMarkersRef.current.push(marker);
+                    const listener = (naver.maps as any).Event.addListener(marker, 'click', () => {
+                        setSelectedSpot(spot);
+                        setPhotoLoaded(false);
+                        setPhotoError(false);
+                        if (mapInstanceRef.current) {
+                            (mapInstanceRef.current as any).panTo(pos);
+                        }
+                    });
+                    listenersRef.current.push(listener);
                 });
             }
 
@@ -171,14 +214,30 @@ export const WalkDetailPage = () => {
         return () => clearInterval(timer);
     }, [walkDetail, mapInstanceRef, drawRoute]);
 
-    // Cleanup polyline on unmount
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
+            listenersRef.current.forEach(l => {
+                try { (naver.maps as any).Event.removeListener(l); } catch {}
+            });
+            listenersRef.current = [];
+            spotMarkersRef.current.forEach(m => m.setMap(null));
+            spotMarkersRef.current = [];
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
             }
         };
     }, []);
+
+    // Prevent body scroll when sheet is open
+    useEffect(() => {
+        if (selectedSpot) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [selectedSpot]);
 
     // --- Chart data ---
     const chartData: WalkDataPoint[] = (() => {
@@ -241,6 +300,8 @@ export const WalkDetailPage = () => {
     const detailDate = walkDetail?.startTime
         ? formatDate(new Date(walkDetail.startTime))
         : '';
+
+    const closeSheet = () => setSelectedSpot(null);
 
     return (
         <div className="walk_detail_page">
@@ -399,6 +460,62 @@ export const WalkDetailPage = () => {
                     )}
                 </div>
             </div>
+
+            {/* Spot Detail Bottom Sheet */}
+            {selectedSpot && (
+                <>
+                    <div className="walk_spot_sheet_backdrop" onClick={closeSheet} />
+                    <div className="walk_spot_sheet">
+                        <div className="walk_spot_sheet_handle" />
+                        <div className="walk_spot_sheet_header">
+                            <div className="walk_spot_sheet_type" style={{ color: spotTypeColor(selectedSpot.type) }}>
+                                <span className="walk_spot_sheet_emoji">
+                                    {({ PEE: '💧', POOP: '💩', PHOTO: '📷', PROBLEM: '⚠️' } as Record<string, string>)[selectedSpot.type] || '📌'}
+                                </span>
+                                <span className="walk_spot_sheet_label">{spotTypeLabel(selectedSpot.type)}</span>
+                            </div>
+                            <button type="button" className="walk_spot_sheet_close" onClick={closeSheet} aria-label="닫기">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M18 6L6 18M6 6L18 18" stroke="#8B8B8B" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="walk_spot_sheet_time">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <circle cx="8" cy="8" r="6.5" stroke="#A58A54" strokeWidth="1.2"/>
+                                <path d="M8 4.5V8L10.5 10" stroke="#A58A54" strokeWidth="1.2" strokeLinecap="round"/>
+                            </svg>
+                            <span>{formatSpotTimestamp(selectedSpot.timestamp)}</span>
+                        </div>
+                        {selectedSpot.note && (
+                            <div className="walk_spot_sheet_note">
+                                <p>{selectedSpot.note}</p>
+                            </div>
+                        )}
+                        {selectedSpot.type === 'PHOTO' && selectedSpot.imageUrl && (
+                            <div className="walk_spot_sheet_photo">
+                                {!photoLoaded && !photoError && (
+                                    <div className="walk_spot_sheet_photo_placeholder">
+                                        <span>사진 로딩 중...</span>
+                                    </div>
+                                )}
+                                {photoError && (
+                                    <div className="walk_spot_sheet_photo_placeholder">
+                                        <span>사진을 불러올 수 없습니다</span>
+                                    </div>
+                                )}
+                                <img
+                                    src={selectedSpot.imageUrl}
+                                    alt="산책 사진"
+                                    style={{ display: photoLoaded && !photoError ? 'block' : 'none' }}
+                                    onLoad={() => setPhotoLoaded(true)}
+                                    onError={() => setPhotoError(true)}
+                                />
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
 
             <BottomNav />
         </div>
