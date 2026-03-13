@@ -271,6 +271,7 @@ export const WalkMapExpandPage = () => {
 
     const closeSheet = () => {
         setSelectedSpot(null);
+        if (resolvedPhotoUrl?.startsWith('blob:')) URL.revokeObjectURL(resolvedPhotoUrl);
         setResolvedPhotoUrl(null);
     };
 
@@ -281,9 +282,14 @@ export const WalkMapExpandPage = () => {
             setResolvedPhotoUrl(selectedSpot.imageUrl);
             return;
         }
-        // Use API proxy for private-bucket files
+        // Fetch private-bucket file with auth headers and create blob URL
         import('../../services/api/client').then(({ default: apiClient }) => {
-            setResolvedPhotoUrl(`${apiClient.defaults.baseURL}/files/${selectedSpot.imageUrl}/content`);
+            apiClient.get(`/files/${selectedSpot.imageUrl}/content`, { responseType: 'blob' })
+                .then(res => {
+                    const url = URL.createObjectURL(res.data);
+                    setResolvedPhotoUrl(url);
+                })
+                .catch(() => setPhotoError(true));
         }).catch(() => setPhotoError(true));
     }, [selectedSpot]);
 
