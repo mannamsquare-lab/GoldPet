@@ -391,8 +391,12 @@ class FileService(
         val presignedUrl = amazonS3.generatePresignedUrl(request).toString()
 
         // Replace internal S3 endpoint with public endpoint so browsers/devices can access
-        val internalHost = try { java.net.URI(s3Endpoint).let { "${it.scheme}://${it.host}:${it.port}" } } catch (_: Exception) { s3Endpoint }
-        val publicHost = try { java.net.URI(publicEndpoint).let { "${it.scheme}://${it.host}:${it.port}" } } catch (_: Exception) { publicEndpoint }
+        fun hostWithOptionalPort(urlStr: String): String {
+            val uri = java.net.URI(urlStr)
+            return if (uri.port > 0) "${uri.scheme}://${uri.host}:${uri.port}" else "${uri.scheme}://${uri.host}"
+        }
+        val internalHost = try { hostWithOptionalPort(s3Endpoint) } catch (_: Exception) { s3Endpoint }
+        val publicHost = try { hostWithOptionalPort(publicEndpoint) } catch (_: Exception) { publicEndpoint }
         return presignedUrl.replace(internalHost, publicHost)
     }
 }
