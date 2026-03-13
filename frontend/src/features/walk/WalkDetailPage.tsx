@@ -8,7 +8,6 @@ import type { WalkSpot } from '../../services/walkService';
 import { WalkChart, aggregateDaily, aggregateWeekly, aggregateMonthly } from './components/WalkChart';
 import type { WalkDataPoint } from './components/WalkChart';
 import { useAuthStore } from '../../stores/authStore';
-import { useNaverMap } from '../../hooks/useNaverMap';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml } from './utils/walkMapUtils';
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
@@ -125,32 +124,95 @@ export const WalkDetailPage = () => {
         enabled: walkOwnerId != null,
     });
 
-    // Naver Map
-    const { mapRef, mapInstanceRef, mapLoadFailed } = useNaverMap({
-        zoom: 15,
-        withMarker: false,
-        withAddressLookup: false,
-        skipGeolocation: true,
-    });
-
-    // Map drawing refs
+    // Direct map initialization (same pattern as WalkMapExpandPage)
+    const mapRef = useRef<HTMLDivElement>(null);
+    const mapInstanceRef = useRef<naver.maps.Map | null>(null);
     const polylineRef = useRef<naver.maps.Polyline | null>(null);
     const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
     const petMarkersRef = useRef<naver.maps.Marker[]>([]);
     const listenersRef = useRef<any[]>([]);
+    const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
 
-    // Poll for map readiness (useNaverMap hook doesn't expose mapReady state)
+    // Init map
     useEffect(() => {
-        if (mapReady) return;
-        const timer = setInterval(() => {
-            if (mapInstanceRef.current) {
-                setMapReady(true);
-                clearInterval(timer);
+        let cancelled = false;
+        let pollTimer: ReturnType<typeof setInterval>;
+
+        const initMap = (lat: number, lng: number) => {
+            if (!mapRef.current || mapInstanceRef.current) return;
+            const el = mapRef.current;
+            if (el.clientWidth === 0 || el.clientHeight === 0) {
+                setTimeout(() => { if (!cancelled) initMap(lat, lng); }, 300);
+                return;
             }
-        }, 200);
-        return () => clearInterval(timer);
-    }, [mapReady, mapInstanceRef]);
+            try {
+                const center = new naver.maps.LatLng(lat, lng);
+                mapInstanceRef.current = new naver.maps.Map(el, {
+                    center,
+                    zoom: 15,
+                    mapTypeControl: false,
+                    zoomControl: false,
+                    scaleControl: false,
+                    mapDataControl: false,
+                });
+                setMapReady(true);
+                setTimeout(() => {
+                    if (cancelled) return;
+                    if (!mapInstanceRef.current || (mapRef.current && mapRef.current.querySelectorAll('img').length === 0)) {
+                        setMapLoadFailed(true);
+                    }
+                }, 3000);
+            } catch {
+                setMapLoadFailed(true);
+            }
+        };
+
+        const setup = () => {
+            if (cancelled) return;
+            const lat = walkDetail?.startLatitude ?? 37.5665;
+            const lng = walkDetail?.startLongitude ?? 126.9780;
+            setTimeout(() => { if (!cancelled) initMap(lat, lng); }, 100);
+        };
+
+        if (window.naver?.maps) {
+            setup();
+        } else {
+            let attempts = 0;
+            pollTimer = setInterval(() => {
+                attempts++;
+                if (window.naver?.maps) {
+                    clearInterval(pollTimer);
+                    setup();
+                } else if (attempts >= 50) {
+                    clearInterval(pollTimer);
+                    setMapLoadFailed(true);
+                }
+            }, 200);
+        }
+
+        return () => {
+            cancelled = true;
+            if (pollTimer) clearInterval(pollTimer);
+            listenersRef.current.forEach(l => {
+                try { (naver.maps as any).Event.removeListener(l); } catch {}
+            });
+            listenersRef.current = [];
+            spotMarkersRef.current.forEach(m => m.setMap(null));
+            spotMarkersRef.current = [];
+            petMarkersRef.current.forEach(m => m.setMap(null));
+            petMarkersRef.current = [];
+            if (polylineRef.current) {
+                polylineRef.current.setMap(null);
+                polylineRef.current = null;
+            }
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.destroy();
+                mapInstanceRef.current = null;
+            }
+            setMapReady(false);
+        };
+    }, [walkDetail?.startLatitude, walkDetail?.startLongitude]);
 
     // Draw route, spots, and pet markers when map is ready and walk data loaded
     useEffect(() => {
@@ -250,24 +312,6 @@ export const WalkDetailPage = () => {
             console.error('WalkDetail: route drawing failed', err);
         }
     }, [mapReady, walkDetail]);
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            listenersRef.current.forEach(l => {
-                try { (naver.maps as any).Event.removeListener(l); } catch {}
-            });
-            listenersRef.current = [];
-            spotMarkersRef.current.forEach(m => m.setMap(null));
-            spotMarkersRef.current = [];
-            petMarkersRef.current.forEach(m => m.setMap(null));
-            petMarkersRef.current = [];
-            if (polylineRef.current) {
-                polylineRef.current.setMap(null);
-                polylineRef.current = null;
-            }
-        };
-    }, []);
 
     // Prevent body scroll when sheet is open
     useEffect(() => {
