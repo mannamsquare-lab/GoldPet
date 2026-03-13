@@ -188,9 +188,9 @@ export const WalkMapExpandPage = () => {
             polylineRef.current = new naver.maps.Polyline({
                 map: mapInstanceRef.current,
                 path,
-                strokeColor: '#6B9A2B',
-                strokeWeight: 4,
-                strokeOpacity: 0.9,
+                strokeColor: '#FF0000',
+                strokeWeight: 6,
+                strokeOpacity: 1.0,
             });
             // Build bounds from path + spots
             const bounds = path.length > 1
