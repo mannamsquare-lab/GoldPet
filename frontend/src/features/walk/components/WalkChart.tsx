@@ -149,7 +149,24 @@ export function WalkChart({ period, data }: WalkChartProps) {
         ],
     };
 
-    return <Line data={lineData} options={commonOptions} />;
+    const lineOptions = period === 'daily'
+        ? {
+            ...commonOptions,
+            scales: {
+                ...commonOptions.scales,
+                x: {
+                    ...commonOptions.scales.x,
+                    ticks: {
+                        ...commonOptions.scales.x.ticks,
+                        maxTicksLimit: 8,
+                        callback: (val: number | string) => `${val}시`,
+                    },
+                },
+            },
+        }
+        : commonOptions;
+
+    return <Line data={lineData} options={lineOptions} />;
 }
 
 // --- Aggregation helpers ---

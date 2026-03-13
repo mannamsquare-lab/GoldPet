@@ -51,7 +51,32 @@ export const WalkDetailPage = () => {
     const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getMonday(new Date()));
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+    const chartDateSynced = useRef(false);
     const [selectedSpot, setSelectedSpot] = useState<WalkSpot | null>(null);
+
+    // Sync chart date to viewed walk's date and cross-sync on period change
+    const handlePeriodChange = (newPeriod: Period) => {
+        // Derive reference date from current period's context
+        let refDate: Date;
+        if (period === 'daily') {
+            refDate = new Date(currentDate);
+        } else if (period === 'weekly') {
+            refDate = new Date(currentWeekStart);
+        } else {
+            refDate = new Date(currentYear, currentMonth - 1, 1);
+        }
+
+        if (newPeriod === 'daily') {
+            refDate.setHours(0, 0, 0, 0);
+            setCurrentDate(refDate);
+        } else if (newPeriod === 'weekly') {
+            setCurrentWeekStart(getMonday(refDate));
+        } else {
+            setCurrentYear(refDate.getFullYear());
+            setCurrentMonth(refDate.getMonth() + 1);
+        }
+        setPeriod(newPeriod);
+    };
 
     // Walk detail (for route map)
     const { data: walkDetail } = useQuery({
@@ -59,6 +84,19 @@ export const WalkDetailPage = () => {
         queryFn: () => walkService.getWalkDetail(Number(walkId)),
         enabled: !!walkId,
     });
+
+    // Sync chart dates to walk's startTime on first load
+    useEffect(() => {
+        if (!walkDetail?.startTime || chartDateSynced.current) return;
+        chartDateSynced.current = true;
+        const walkDate = new Date(walkDetail.startTime);
+        const d = new Date(walkDate);
+        d.setHours(0, 0, 0, 0);
+        setCurrentDate(d);
+        setCurrentWeekStart(getMonday(walkDate));
+        setCurrentYear(walkDate.getFullYear());
+        setCurrentMonth(walkDate.getMonth() + 1);
+    }, [walkDetail]);
 
     const {
         resolvedUrls: galleryUrls, galleryOpen, initialIndex,
@@ -336,7 +374,7 @@ export const WalkDetailPage = () => {
                                     key={p}
                                     type="button"
                                     className={`walk_detail_period_tab${period === p ? ' active' : ''}`}
-                                    onClick={() => setPeriod(p)}
+                                    onClick={() => handlePeriodChange(p)}
                                 >
                                     {p === 'daily' ? '일' : p === 'weekly' ? '주' : '월'}
                                 </button>
