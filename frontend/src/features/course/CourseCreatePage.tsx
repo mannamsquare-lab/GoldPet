@@ -12,6 +12,7 @@ import {
 } from '../../services/courseService';
 import { walkService } from '../../services/walkService';
 import { SPOT_TYPES, spotEmoji, spotLabel } from './utils/courseHelpers';
+import { createSvgPathOverlay } from '../walk/utils/walkMapUtils';
 import './CourseCreatePage.css';
 import { nativeBridge } from '../../bridge/nativeBridge';
 
@@ -151,7 +152,7 @@ export function CourseCreatePage() {
   // Map refs
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<naver.maps.Map | null>(null);
-  const polylineRef = useRef<naver.maps.Polyline | null>(null);
+  const polylineRef = useRef<{ setMap: (map: naver.maps.Map | null) => void } | null>(null);
   const waypointMarkersRef = useRef<naver.maps.Marker[]>([]);
   const spotMarkersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -290,12 +291,10 @@ export function CourseCreatePage() {
     if (pts.length < 2) return;
 
     const path = pts.map(([lat, lng]) => new naver.maps.LatLng(lat, lng));
-    polylineRef.current = new naver.maps.Polyline({
-      path,
+    polylineRef.current = createSvgPathOverlay(map, path, {
       strokeColor: '#614108',
       strokeWeight: 4,
       strokeOpacity: 0.85,
-      map,
     });
   }, []);
 

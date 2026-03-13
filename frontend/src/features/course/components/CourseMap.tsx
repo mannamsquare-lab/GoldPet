@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type { CourseSpotResponse } from '../../../services/courseService';
 import { spotEmoji, spotLabel } from '../utils/courseHelpers';
+import { createSvgPathOverlay } from '../../walk/utils/walkMapUtils';
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -14,7 +15,7 @@ interface CourseMapProps {
 export function CourseMap({ path, spots }: CourseMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<naver.maps.Map | null>(null);
-  const polylineRef = useRef<naver.maps.Polyline | null>(null);
+  const polylineRef = useRef<{ setMap: (map: naver.maps.Map | null) => void } | null>(null);
   const markersRef = useRef<naver.maps.Marker[]>([]);
   const initializedRef = useRef(false);
 
@@ -35,12 +36,10 @@ export function CourseMap({ path, spots }: CourseMapProps) {
       if (polylineRef.current) {
         polylineRef.current.setMap(null);
       }
-      polylineRef.current = new naver.maps.Polyline({
-        path: points,
+      polylineRef.current = createSvgPathOverlay(map, points, {
         strokeColor: '#614108',
         strokeWeight: 4,
         strokeOpacity: 0.85,
-        map,
       });
 
       // Compute bounds
