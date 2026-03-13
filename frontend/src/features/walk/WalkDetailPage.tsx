@@ -12,11 +12,13 @@ import './WalkDetail.css';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 
-function spotMarkerHtml(type: string): string {
-    const t = (type ?? 'OTHER').toLowerCase();
-    const emojis: Record<string, string> = { pee: '💧', poop: '💩', photo: '📷', problem: '⚠️', other: '📌' };
-    const emoji = emojis[t] || '📌';
-    return `<div class="walk_spot_marker walk_spot_marker--${t}"><span>${emoji}</span></div>`;
+function spotMarkerImage(type: string): string {
+    switch (type) {
+        case 'PEE': return '/assets/images/walk/marker_pee.png';
+        case 'POOP': return '/assets/images/walk/marker_poop.png';
+        case 'PHOTO': return '/assets/images/walk/marker_camera.png';
+        default: return '/assets/images/walk/marker_pee.png';
+    }
 }
 
 function spotTypeLabel(type: string): string {
@@ -174,13 +176,14 @@ export const WalkDetailPage = () => {
                     if (spot.latitude == null || spot.longitude == null) return;
                     const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
                     bounds.extend(pos);
+                    const imgSrc = spotMarkerImage(spot.type ?? 'OTHER');
                     const marker = new naver.maps.Marker({
                         map: mapInstanceRef.current!,
                         position: pos,
                         icon: {
-                            content: spotMarkerHtml(spot.type),
-                            size: new naver.maps.Size(32, 38),
-                            anchor: new naver.maps.Point(16, 38),
+                            content: `<img src="${imgSrc}" width="32" height="32" style="display:block;" alt="${spot.type}" />`,
+                            size: new naver.maps.Size(32, 32),
+                            anchor: new naver.maps.Point(16, 16),
                         } as unknown as naver.maps.MarkerIcon,
                     });
                     spotMarkersRef.current.push(marker);
