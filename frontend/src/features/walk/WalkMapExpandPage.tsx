@@ -35,7 +35,7 @@ export const WalkMapExpandPage = () => {
     });
 
     const {
-        resolvedUrls: galleryUrls, isLoading: galleryLoading, galleryOpen, initialIndex,
+        resolvedUrls: galleryUrls, galleryOpen, initialIndex,
         previewUrl, previewLoading, previewError,
         openGallery, closeGallery, resolvePreview, clearPreview,
     } = useWalkPhotoGallery(walk?.spots);
