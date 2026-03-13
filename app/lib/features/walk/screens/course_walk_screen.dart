@@ -647,7 +647,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
                 const SizedBox(height: 12),
                 // Stats row
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
                       Expanded(
@@ -851,7 +851,10 @@ class _CourseStat extends StatelessWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Flexible(
-              child: Text(value, maxLines: 1, overflow: TextOverflow.clip, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+              ),
             ),
             if (unit != null) ...[
               const SizedBox(width: 2),

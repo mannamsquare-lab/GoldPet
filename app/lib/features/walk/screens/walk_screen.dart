@@ -344,7 +344,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
 
   Widget _buildStatsRow() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Expanded(
@@ -545,14 +545,15 @@ class _WalkStat extends StatelessWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Flexible(
-              child: Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ),
