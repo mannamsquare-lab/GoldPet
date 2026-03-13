@@ -5,6 +5,7 @@ declare namespace naver.maps {
         setZoom(zoom: number): void;
         getCenter(): LatLng;
         fitBounds(bounds: LatLngBounds, padding?: { top?: number; right?: number; bottom?: number; left?: number }): void;
+        autoResize(): void;
         destroy(): void;
     }
 

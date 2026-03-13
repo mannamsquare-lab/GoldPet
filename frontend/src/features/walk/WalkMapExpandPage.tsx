@@ -54,6 +54,7 @@ export const WalkMapExpandPage = () => {
     useEffect(() => {
         let cancelled = false;
         let pollTimer: ReturnType<typeof setInterval>;
+        let resizeObserver: ResizeObserver | null = null;
 
         const initMap = (lat: number, lng: number) => {
             if (!mapRef.current || mapInstanceRef.current) return;
@@ -73,6 +74,21 @@ export const WalkMapExpandPage = () => {
                     mapDataControl: false,
                 });
                 setMapReady(true);
+                // Ensure canvas matches final flex layout dimensions
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        if (!cancelled && mapInstanceRef.current) {
+                            mapInstanceRef.current.autoResize();
+                        }
+                    }, 200);
+                });
+                // Track container resizes to keep canvas in sync
+                resizeObserver = new ResizeObserver(() => {
+                    if (mapInstanceRef.current) {
+                        mapInstanceRef.current.autoResize();
+                    }
+                });
+                resizeObserver.observe(el);
                 setTimeout(() => {
                     if (cancelled) return;
                     if (!mapInstanceRef.current || (mapRef.current && mapRef.current.querySelectorAll('img').length === 0)) {
@@ -110,6 +126,7 @@ export const WalkMapExpandPage = () => {
         return () => {
             cancelled = true;
             if (pollTimer) clearInterval(pollTimer);
+            if (resizeObserver) resizeObserver.disconnect();
             // Clean up all markers and listeners
             listenersRef.current.forEach(l => {
                 try { (naver.maps as any).Event.removeListener(l); } catch {}
