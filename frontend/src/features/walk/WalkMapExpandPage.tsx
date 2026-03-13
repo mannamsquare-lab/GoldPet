@@ -6,12 +6,13 @@ import type { WalkSpot } from '../../services/walkService';
 import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
-import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml } from './utils/walkMapUtils';
+import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, snapToPath } from './utils/walkMapUtils';
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
 import './WalkMapExpand.css';
 
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.9780;
+
 
 export const WalkMapExpandPage = () => {
     const navigate = useNavigate();
@@ -222,10 +223,15 @@ export const WalkMapExpandPage = () => {
             }
 
             // Spot markers with click listeners
+            // Snap spots to nearest path point to compensate for GPS jitter
+            const pathCoords = walk.pathPoints
+                .filter(p => p.lat != null && p.lng != null)
+                .map(p => ({ lat: p.lat, lng: p.lng }));
             if (walk.spots?.length) {
                 walk.spots.forEach(spot => {
                     if (spot.latitude == null || spot.longitude == null) return;
-                    const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
+                    const snapped = snapToPath(spot.latitude, spot.longitude, pathCoords);
+                    const pos = new naver.maps.LatLng(snapped.lat, snapped.lng);
                     if (bounds) bounds.extend(pos);
                     const imgSrc = spotMarkerImage(spot.type ?? 'OTHER');
                     const marker = new naver.maps.Marker({

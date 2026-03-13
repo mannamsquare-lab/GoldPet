@@ -9,7 +9,7 @@ import { WalkChart, aggregateDaily, aggregateWeekly, aggregateMonthly } from './
 import type { WalkDataPoint } from './components/WalkChart';
 import { useAuthStore } from '../../stores/authStore';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
-import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml } from './utils/walkMapUtils';
+import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, snapToPath } from './utils/walkMapUtils';
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
 import './WalkDetail.css';
 
@@ -275,10 +275,15 @@ export const WalkDetailPage = () => {
             }
 
             // Draw spot markers with click listeners
+            // Snap spots to nearest path point to compensate for GPS jitter
+            const pathCoords = walkDetail.pathPoints
+                .filter((p: { lat: number; lng: number }) => p.lat != null && p.lng != null)
+                .map((p: { lat: number; lng: number }) => ({ lat: p.lat, lng: p.lng }));
             if (walkDetail.spots?.length) {
                 walkDetail.spots.forEach((spot: WalkSpot) => {
                     if (spot.latitude == null || spot.longitude == null) return;
-                    const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
+                    const snapped = snapToPath(spot.latitude, spot.longitude, pathCoords);
+                    const pos = new naver.maps.LatLng(snapped.lat, snapped.lng);
                     if (bounds) bounds.extend(pos);
                     const imgSrc = spotMarkerImage(spot.type ?? 'OTHER');
                     const marker = new naver.maps.Marker({

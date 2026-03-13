@@ -35,3 +35,27 @@ export function petCircleMarkerHtml(variant: 'start' | 'end', imageUrl?: string 
     const imgSrc = imageUrl || '/assets/images/common/pet_none_img.svg';
     return `<div class="walk_pet_circle walk_pet_circle--${variant}"><img src="${imgSrc}" alt="" /></div>`;
 }
+
+/** Snap a point to the nearest position on a polyline path.
+ *  GPS jitter means spot coords differ slightly from the tracked route;
+ *  at high zoom this offset becomes visible. Snapping eliminates it. */
+export function snapToPath(lat: number, lng: number, path: { lat: number; lng: number }[]): { lat: number; lng: number } {
+    if (path.length === 0) return { lat, lng };
+    let minDist = Infinity;
+    let closest = { lat, lng };
+    for (let i = 0; i < path.length - 1; i++) {
+        const a = path[i], b = path[i + 1];
+        const dx = b.lng - a.lng, dy = b.lat - a.lat;
+        const lenSq = dx * dx + dy * dy;
+        let t = lenSq === 0 ? 0 : ((lng - a.lng) * dx + (lat - a.lat) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+        const projLat = a.lat + t * dy;
+        const projLng = a.lng + t * dx;
+        const dist = (lat - projLat) ** 2 + (lng - projLng) ** 2;
+        if (dist < minDist) {
+            minDist = dist;
+            closest = { lat: projLat, lng: projLng };
+        }
+    }
+    return closest;
+}
