@@ -159,6 +159,8 @@ export const WalkMapExpandPage = () => {
                 mapInstanceRef.current.destroy();
                 mapInstanceRef.current = null;
             }
+            // Reset so route drawing effect re-fires when new map is created
+            setMapReady(false);
         };
     }, [walk?.startLatitude, walk?.startLongitude]);
 
