@@ -502,7 +502,7 @@ export const WalkDetailPage = () => {
                                         style={{ display: photoLoaded && !photoError ? 'block' : 'none', cursor: 'pointer' }}
                                         onLoad={() => setPhotoLoaded(true)}
                                         onError={() => setPhotoError(true)}
-                                        onClick={() => setGalleryOpen(true)}
+                                        onClick={() => { setSelectedSpot(null); setGalleryOpen(true); }}
                                     />
                                 )}
                             </div>
@@ -521,7 +521,7 @@ export const WalkDetailPage = () => {
                 <ImageGalleryModal
                     isOpen={galleryOpen}
                     images={[resolvedPhotoUrl]}
-                    onClose={() => setGalleryOpen(false)}
+                    onClose={() => { setGalleryOpen(false); if (resolvedPhotoUrl?.startsWith('blob:')) URL.revokeObjectURL(resolvedPhotoUrl); setResolvedPhotoUrl(null); }}
                 />
             )}
 
