@@ -20,6 +20,7 @@ import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import com.goldpet.domain.walk.event.WalkCompletedEvent
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.infra.naver.NaverGeocodingService
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
@@ -36,12 +37,24 @@ class WalkService(
     private val goldService: GoldService,
     private val badgeAwardService: BadgeAwardService,
     private val naverGeocodingService: NaverGeocodingService,
-    private val applicationEventPublisher: ApplicationEventPublisher
+    private val applicationEventPublisher: ApplicationEventPublisher,
+    private val systemSettingService: SystemSettingService
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
 
     @Transactional
     fun createWalk(userId: Long, request: CreateWalkRequest): WalkResponse {
+        // 산책 최소 저장 조건 검증
+        val minDuration = systemSettingService.getInt("WALK_MIN_DURATION_SECONDS", 30)
+        val minDistance = systemSettingService.getInt("WALK_MIN_DISTANCE_METERS", 10)
+        val distanceMeters = (request.distanceKm * 1000).toInt()
+        if (request.durationSeconds < minDuration || distanceMeters < minDistance) {
+            throw BadRequestException(
+                "산책 저장 조건 미충족: ${minDuration}초 이상, ${minDistance}m 이상 필요 " +
+                "(현재: ${request.durationSeconds}초, ${distanceMeters}m)"
+            )
+        }
+
         val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
 
         val walk = Walk(

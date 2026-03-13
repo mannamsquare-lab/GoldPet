@@ -18,7 +18,9 @@ class SystemSettingController(
     @GetMapping("/public")
     fun getPublicSettings(): Map<String, Any> {
         return mapOf(
-            "communityPostPreviewLength" to systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100)
+            "communityPostPreviewLength" to systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100),
+            "walkMinDurationSeconds" to systemSettingService.getInt("WALK_MIN_DURATION_SECONDS", 30),
+            "walkMinDistanceMeters" to systemSettingService.getInt("WALK_MIN_DISTANCE_METERS", 10)
         )
     }
 }

@@ -252,7 +252,12 @@ class ApiClient {
       }
     } catch (e) {
       debugPrint('[WalkRecovery] Failed to recover pending walk: $e');
-      // 실패 시 로컬 데이터 유지 — 다음 setToken() 호출 시 재시도
+      if (e is DioException && e.response?.statusCode == 400) {
+        // 400 = 데이터 유효성 실패 → 재시도해도 동일하므로 로컬 데이터 삭제
+        await WalkLocalStorage.clearWalkData();
+        debugPrint('[WalkRecovery] Cleared invalid walk data (400)');
+      }
+      // 그 외 에러(네트워크, 5xx 등)는 로컬 데이터 유지 → 다음 setToken() 호출 시 재시도
     } finally {
       _isRecoveringWalk = false;
     }

@@ -15,6 +15,7 @@ import '../../../core/api/api_client.dart';
 import '../data/walk_models.dart';
 import '../data/walk_repository.dart';
 import '../data/walk_local_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/widgets/goldpet_alert_dialog.dart';
 
 /// Mixin that provides common walk tracking functionality:
@@ -175,6 +176,24 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     try {
       await ApiClient().refreshTokenIfNeeded();
     } catch (_) {}
+    if (!mounted) return;
+
+    // 산책 최소 저장 조건 설정값 fetch + 캐시
+    try {
+      final res = await ApiClient().dio.get('/api/v1/settings/public');
+      if (res.statusCode == 200 && res.data is Map) {
+        final data = res.data as Map;
+        final prefs = await SharedPreferences.getInstance();
+        if (data.containsKey('walkMinDurationSeconds')) {
+          await prefs.setInt('walk_min_duration_seconds', (data['walkMinDurationSeconds'] as num).toInt());
+        }
+        if (data.containsKey('walkMinDistanceMeters')) {
+          await prefs.setDouble('walk_min_distance_meters', (data['walkMinDistanceMeters'] as num).toDouble());
+        }
+      }
+    } catch (_) {
+      // non-fatal: 캐시된 값 또는 하드코딩 기본값 사용
+    }
     if (!mounted) return;
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -383,6 +402,49 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       return;
     }
 
+    // 최소 저장 조건 체크: 시간 >= 30초 AND 거리 >= 10m
+    final prefs = await SharedPreferences.getInstance();
+    final minDuration = prefs.getInt('walk_min_duration_seconds') ?? 30;
+    final minDistanceM = prefs.getDouble('walk_min_distance_meters') ?? 10.0;
+    final distanceMeters = trackingDistanceNotifier.value * 1000.0;
+
+    if (durationSeconds < minDuration || distanceMeters < minDistanceM) {
+      if (!mounted) return;
+      final keepWalking = await showGoldPetConfirm(
+        context,
+        message: '산책 기록을 저장할 수 없습니다.\n\n'
+            '최소 조건: $minDuration초 이상, ${minDistanceM.toInt()}m 이상\n'
+            '현재 기록: $durationSeconds초, ${distanceMeters.toInt()}m\n\n'
+            '산책을 계속하시겠습니까?',
+        confirmText: '산책 계속하기',
+        cancelText: '기록 삭제',
+      );
+      if (keepWalking) {
+        // "산책 계속하기" — 일시정지 상태 복원 후 재개
+        if (wasPaused) {
+          trackingIsPaused = true;
+          _trackingPauseStartTime = savedPauseStartTime;
+          _trackingTotalPauseDuration -= DateTime.now().difference(savedPauseStartTime!);
+        }
+        return;
+      }
+      // "기록 삭제" — 산책 데이터 폐기
+      _trackingTimer?.cancel();
+      _trackingPositionSub?.cancel();
+      _stopWalkWidget();
+      await WalkLocalStorage.clearWalkData();
+      if (mounted) {
+        setState(() {
+          trackingIsWalking = false;
+          trackingIsSaving = false;
+        });
+        showTrackingSnackBar('산책 기록이 삭제되었습니다.');
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) onWalkSaved();
+      }
+      return;
+    }
+
     _trackingTimer?.cancel();
     _trackingPositionSub?.cancel();
     _stopWalkWidget();
@@ -442,8 +504,13 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
           return;
         }
         if (e is DioException && e.response?.statusCode == 400) {
-          await WalkLocalStorage.saveWalkData(request);
-          showTrackingSnackBar('산책 데이터 저장 중 문제가 발생했습니다. 다음 접속 시 자동으로 재시도됩니다.');
+          await WalkLocalStorage.clearWalkData();
+          final prefs400 = await SharedPreferences.getInstance();
+          final minDur = prefs400.getInt('walk_min_duration_seconds') ?? 30;
+          final minDist = prefs400.getDouble('walk_min_distance_meters') ?? 10.0;
+          showTrackingSnackBar(
+            '산책 저장 조건 미충족: $minDur초 이상, ${minDist.toInt()}m 이상 필요',
+          );
           if (mounted) onWalkSaved();
           return;
         }
@@ -504,6 +571,21 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
           await WalkLocalStorage.saveWalkData(request);
           if (mounted) {
             showTrackingSnackBar('산책이 저장되었습니다! 다음 로그인 시 서버에 동기화됩니다.');
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) onWalkSaved();
+          }
+          return;
+        }
+        if (e is DioException && e.response?.statusCode == 400) {
+          await WalkLocalStorage.clearWalkData();
+          if (mounted) {
+            setState(() => trackingIsSaving = false);
+            final prefs400 = await SharedPreferences.getInstance();
+            final minDur = prefs400.getInt('walk_min_duration_seconds') ?? 30;
+            final minDist = prefs400.getDouble('walk_min_distance_meters') ?? 10.0;
+            showTrackingSnackBar(
+              '산책 저장 조건 미충족: $minDur초 이상, ${minDist.toInt()}m 이상 필요',
+            );
             await Future.delayed(const Duration(milliseconds: 500));
             if (mounted) onWalkSaved();
           }
