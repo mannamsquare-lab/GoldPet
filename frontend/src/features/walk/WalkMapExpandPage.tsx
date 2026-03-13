@@ -255,6 +255,23 @@ export const WalkMapExpandPage = () => {
                 });
             }
 
+            // DEBUG: place blue dots at path points to test Marker-Polyline alignment
+            const debugIndices = [0, Math.floor(path.length / 4), Math.floor(path.length / 2), Math.floor(3 * path.length / 4), path.length - 1];
+            debugIndices.forEach(idx => {
+                if (idx < path.length) {
+                    const debugMarker = new naver.maps.Marker({
+                        map: mapInstanceRef.current!,
+                        position: path[idx],
+                        icon: {
+                            content: `<div style="width:16px;height:16px;border-radius:50%;background:blue;border:2px solid white;"></div>`,
+                            size: new naver.maps.Size(16, 16),
+                            anchor: new naver.maps.Point(8, 8),
+                        } as unknown as naver.maps.MarkerIcon,
+                    });
+                    spotMarkersRef.current.push(debugMarker);
+                }
+            });
+
             if (bounds) {
                 mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 20, bottom: 80, left: 20 });
             }
