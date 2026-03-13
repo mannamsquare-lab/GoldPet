@@ -735,29 +735,6 @@ export function CourseCreatePage() {
           <div ref={mapRef} className="course_create_map" />
         )}
 
-        {waypoints.length > 0 && (
-          <div className="course_create_waypoint_count">
-            {waypoints.length}개 지점
-          </div>
-        )}
-
-        {!mapLoadFailed && (
-          <div
-            className="course_create_map_controls"
-            onTouchStart={e => e.stopPropagation()}
-            onTouchEnd={e => e.stopPropagation()}
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              className="course_create_map_ctrl_btn"
-              onClick={handleClearWaypoints}
-              type="button"
-            >
-              경로 초기화
-            </button>
-          </div>
-        )}
-
         {!mapLoadFailed && waypoints.length === 0 && (
           <div className="course_create_map_hint">
             {isEditMode ? '경로가 초기화되었습니다. 지도를 탭하여 새 경로를 그려보세요' : '지도를 탭하여 경로를 그려보세요'}
@@ -767,6 +744,20 @@ export function CourseCreatePage() {
 
       {/* Scrollable body */}
       <div className="course_create_body">
+        {/* Path controls — outside map for WebView touch compatibility */}
+        {waypoints.length > 0 && (
+          <div className="course_create_path_bar">
+            <span className="course_create_path_bar_count">{waypoints.length}개 지점</span>
+            <button
+              className="course_create_path_bar_reset"
+              onClick={handleClearWaypoints}
+              type="button"
+            >
+              경로 초기화
+            </button>
+          </div>
+        )}
+
         {/* Spots section */}
         <div className="course_create_spots_section">
           <div className="course_create_spots_header">
