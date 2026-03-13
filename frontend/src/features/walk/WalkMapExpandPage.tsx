@@ -153,6 +153,9 @@ export const WalkMapExpandPage = () => {
     useEffect(() => {
         if (!mapReady || !mapInstanceRef.current || !walk?.pathPoints?.length) return;
         try {
+            // Sync canvas size with flex container before drawing overlays
+            mapInstanceRef.current.autoResize();
+
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
             }
@@ -238,6 +241,13 @@ export const WalkMapExpandPage = () => {
             if (bounds) {
                 mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 20, bottom: 80, left: 20 });
             }
+
+            // Re-sync canvas after fitBounds animation settles
+            setTimeout(() => {
+                if (mapInstanceRef.current) {
+                    mapInstanceRef.current.autoResize();
+                }
+            }, 500);
         } catch (err) {
             console.error('WalkMapExpand: route drawing failed', err);
         }
