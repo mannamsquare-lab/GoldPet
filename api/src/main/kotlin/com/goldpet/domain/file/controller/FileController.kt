@@ -2,6 +2,9 @@ package com.goldpet.domain.file.controller
 
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.file.service.FileService
+import org.springframework.core.io.InputStreamResource
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
@@ -65,6 +68,22 @@ class FileController(
      * Get a time-limited presigned URL for a private-bucket file.
      * The `fileKey` is the key returned in the `url` field when uploading to the private bucket.
      */
+    /**
+     * Stream a private-bucket file through the API (proxy).
+     */
+    @GetMapping("/{fileKey}/content")
+    fun getFileContent(
+        @PathVariable fileKey: String,
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<InputStreamResource> {
+        val s3Object = fileService.getPrivateFileObject(fileKey)
+        val contentType = s3Object.objectMetadata.contentType ?: "application/octet-stream"
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(contentType))
+            .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+            .body(InputStreamResource(s3Object.objectContent))
+    }
+
     @GetMapping("/{fileKey}/url")
     fun getPresignedUrl(
         @PathVariable fileKey: String,

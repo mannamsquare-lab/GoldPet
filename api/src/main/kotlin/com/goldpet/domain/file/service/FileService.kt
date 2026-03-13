@@ -383,6 +383,13 @@ class FileService(
      * @param expirationMinutes how long the URL remains valid (default 60 minutes)
      * @return presigned HTTPS URL
      */
+    /**
+     * Get the raw file content from the private bucket as an S3Object.
+     */
+    fun getPrivateFileObject(fileKey: String): com.amazonaws.services.s3.model.S3Object {
+        return amazonS3.getObject(privateBucketName, fileKey)
+    }
+
     fun getPresignedUrl(fileKey: String, expirationMinutes: Long = 60): String {
         val expiration = Date(System.currentTimeMillis() + expirationMinutes * 60 * 1000)
         val request = GeneratePresignedUrlRequest(privateBucketName, fileKey)

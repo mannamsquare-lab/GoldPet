@@ -89,7 +89,7 @@ export const WalkDetailPage = () => {
     const [selectedSpot, setSelectedSpot] = useState<WalkSpot | null>(null);
     const [photoLoaded, setPhotoLoaded] = useState(false);
     const [photoError, setPhotoError] = useState(false);
-    const [presignedPhotoUrl, setPresignedPhotoUrl] = useState<string | null>(null);
+    const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string | null>(null);
 
     // Walk detail (for route map)
     const { data: walkDetail } = useQuery({
@@ -301,20 +301,19 @@ export const WalkDetailPage = () => {
 
     const closeSheet = () => {
         setSelectedSpot(null);
-        setPresignedPhotoUrl(null);
+        setResolvedPhotoUrl(null);
     };
 
-    // Fetch presigned URL for private-bucket photos
+    // Resolve photo URL for spot images
     useEffect(() => {
         if (!selectedSpot || selectedSpot.type !== 'PHOTO' || !selectedSpot.imageUrl) return;
         if (selectedSpot.imageUrl.startsWith('http')) {
-            setPresignedPhotoUrl(selectedSpot.imageUrl);
+            setResolvedPhotoUrl(selectedSpot.imageUrl);
             return;
         }
+        // Use API proxy for private-bucket files
         import('../../services/api/client').then(({ default: apiClient }) => {
-            apiClient.get(`/files/${selectedSpot.imageUrl}/url`)
-                .then(res => setPresignedPhotoUrl(res.data.url))
-                .catch(() => setPhotoError(true));
+            setResolvedPhotoUrl(`${apiClient.defaults.baseURL}/files/${selectedSpot.imageUrl}/content`);
         }).catch(() => setPhotoError(true));
     }, [selectedSpot]);
 
@@ -517,9 +516,9 @@ export const WalkDetailPage = () => {
                                         <span>사진을 불러올 수 없습니다</span>
                                     </div>
                                 )}
-                                {presignedPhotoUrl && (
+                                {resolvedPhotoUrl && (
                                     <img
-                                        src={presignedPhotoUrl}
+                                        src={resolvedPhotoUrl}
                                         alt="산책 사진"
                                         style={{ display: photoLoaded && !photoError ? 'block' : 'none' }}
                                         onLoad={() => setPhotoLoaded(true)}
