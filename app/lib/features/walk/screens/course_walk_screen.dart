@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/webview/hybrid_webview.dart';
 import '../../../core/widgets/goldpet_alert_dialog.dart';
 import '../mixins/walk_tracking_mixin.dart';
+import '../widgets/photo_memo_sheet.dart';
 // TODO: extract walkSpotActionController to walk_events.dart when a third walk screen type is added
 // TODO: extract isAnyWalkActive() helper when third walk type added. Guard sites: api_client.dart (2), hybrid_webview.dart (1)
 import 'walk_screen.dart' show walkSpotActionController;
@@ -77,7 +77,6 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   bool _isOffCourse = false;
   double _deviationDistance = 0.0;
   double _courseProgress = 0.0; // 0.0 ~ 1.0
-  int _nearestSegmentIndex = 0;
   int _progressWaypointIndex = 0; // Sequential waypoint tracker for progress
   bool _completionShown = false;
 
@@ -123,7 +122,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _CoursePhotoMemoSheet(photoPath: photoPath),
+      builder: (ctx) => PhotoMemoSheet(photoPath: photoPath),
     );
   }
 
@@ -275,7 +274,6 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
 
     // Find minimum distance from current position to any course segment
     double minDist = double.infinity;
-    int nearestIdx = 0;
 
     for (var i = 0; i < _coursePathLatLng.length - 1; i++) {
       final dist = _distanceToSegment(
@@ -285,11 +283,9 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
       );
       if (dist < minDist) {
         minDist = dist;
-        nearestIdx = i;
       }
     }
 
-    _nearestSegmentIndex = nearestIdx;
     _deviationDistance = minDist;
 
     // Dynamic threshold: max(50m, accuracy * 2.5)
@@ -595,13 +591,24 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
             controller: scrollController,
             child: Column(
               children: [
-                // Drag handle
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Center(
-                    child: Container(
-                      width: 40, height: 4,
-                      decoration: BoxDecoration(color: _handleColor, borderRadius: BorderRadius.circular(2)),
+                // Drag handle (tap to toggle)
+                GestureDetector(
+                  onTap: () {
+                    final isExpanded = _sheetController.size >= _expandedSheetSize - 0.01;
+                    _sheetController.animateTo(
+                      isExpanded ? _collapsedSheetSize : _expandedSheetSize,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Center(
+                      child: Container(
+                        width: 40, height: 4,
+                        decoration: BoxDecoration(color: _handleColor, borderRadius: BorderRadius.circular(2)),
+                      ),
                     ),
                   ),
                 ),
@@ -843,10 +850,12 @@ class _CourseStat extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary)),
+            Flexible(
+              child: Text(value, maxLines: 1, overflow: TextOverflow.clip, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+            ),
             if (unit != null) ...[
               const SizedBox(width: 2),
-              Text(unit!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primary)),
+              Text(unit!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.primary)),
             ],
           ],
         ),
@@ -877,102 +886,6 @@ class _CourseSpotButton extends StatelessWidget {
             Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF727272))),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CoursePhotoMemoSheet extends StatefulWidget {
-  final String photoPath;
-  const _CoursePhotoMemoSheet({required this.photoPath});
-
-  @override
-  State<_CoursePhotoMemoSheet> createState() => _CoursePhotoMemoSheetState();
-}
-
-class _CoursePhotoMemoSheetState extends State<_CoursePhotoMemoSheet> {
-  final _textController = TextEditingController();
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFF7E6),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, 12, 20, 24 + bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2)))),
-          const SizedBox(height: 8),
-          const Text('사진', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333))),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.file(File(widget.photoPath), height: 220, width: double.infinity, fit: BoxFit.cover),
-          ),
-          const SizedBox(height: 20),
-          const Text('메모', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333))),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: _textController,
-              maxLength: 100,
-              maxLines: 3,
-              decoration: const InputDecoration(hintText: '이 장소에 대한 메모를 남겨보세요.', border: InputBorder.none, counterText: ''),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _textController,
-              builder: (_, value, child) => Text('${value.text.length}/100자', style: const TextStyle(fontSize: 12, color: Color(0xFF999999))),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.camera_alt, size: 18),
-                  label: const Text('다시 촬영'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF614108),
-                    side: const BorderSide(color: Color(0xFF614108)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () => Navigator.pop(context, <String, dynamic>{'retake': true}),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF614108),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () => Navigator.pop(context, <String, dynamic>{'memo': _textController.text}),
-                  child: const Text('저장'),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

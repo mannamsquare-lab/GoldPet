@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/webview/hybrid_webview.dart';
 import '../mixins/walk_tracking_mixin.dart';
+import '../widgets/photo_memo_sheet.dart';
 
 /// Global stream for delivering spot actions to an existing WalkScreen
 /// without pushing a duplicate. Used by deep link handler in hybrid_app.dart.
@@ -82,7 +82,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _PhotoMemoSheet(photoPath: photoPath),
+      builder: (ctx) => PhotoMemoSheet(photoPath: photoPath),
     );
   }
 
@@ -313,16 +313,29 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
     );
   }
 
+  void _toggleSheet() {
+    final isExpanded = _sheetController.size >= _expandedSheetSize - 0.01;
+    _sheetController.animateTo(
+      isExpanded ? _collapsedSheetSize : _expandedSheetSize,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
   Widget _buildDragHandle() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: Container(
-          width: 40,
-          height: 4,
-          decoration: BoxDecoration(
-            color: _handleColor,
-            borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: _toggleSheet,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: _handleColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
         ),
       ),
@@ -531,12 +544,16 @@ class _WalkStat extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
               ),
             ),
             if (unit != null) ...[
@@ -544,7 +561,7 @@ class _WalkStat extends StatelessWidget {
               Text(
                 unit!,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: AppColors.primary,
                 ),
@@ -628,150 +645,6 @@ class _LocationChip extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
               overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Redesigned photo + memo bottom sheet for walk photo spots
-class _PhotoMemoSheet extends StatefulWidget {
-  final String photoPath;
-  const _PhotoMemoSheet({required this.photoPath});
-
-  @override
-  State<_PhotoMemoSheet> createState() => _PhotoMemoSheetState();
-}
-
-class _PhotoMemoSheetState extends State<_PhotoMemoSheet> {
-  final _textController = TextEditingController();
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFF7E6),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, 12, 20, 24 + bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '사진',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
-            ),
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.file(
-              File(widget.photoPath),
-              height: 220,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            '메모',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: _textController,
-              maxLength: 100,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: '이 장소에 대한 메모를 남겨보세요.',
-                border: InputBorder.none,
-                counterText: '',
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _textController,
-              builder: (context, value, _) {
-                return Text(
-                  '${value.text.length}/100자',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF999999),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.camera_alt, size: 18),
-                  label: const Text('다시 촬영'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF614108),
-                    side: const BorderSide(color: Color(0xFF614108)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context, <String, dynamic>{'retake': true}),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF614108),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context, <String, dynamic>{'memo': _textController.text}),
-                  child: const Text('저장'),
-                ),
-              ),
-            ],
           ),
         ],
       ),
