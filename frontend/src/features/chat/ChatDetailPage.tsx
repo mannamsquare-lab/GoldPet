@@ -325,6 +325,7 @@ const ChatDetailPage = () => {
         queryKey: ['chatMessages', chatId],
         queryFn: () => chatService.getMessages(chatId!),
         enabled: !!chatId,
+        refetchOnMount: 'always',
         ...CACHE_TIME.REAL_TIME,
     });
 
