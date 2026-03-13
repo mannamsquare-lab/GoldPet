@@ -1,16 +1,55 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
+import { queryClient } from '../../lib/queryClient';
 
 const THRESHOLD = 60;
 const MAX_PULL = 120;
+const ACTIVATION_DY = 30;
+const MIN_SPINNER_MS = 400;
+
+const PTR_ENABLED_ROUTES = [
+    '/home',
+    '/community',
+    '/walk',
+    '/chat',
+    '/friend-list',
+    '/friend-find',
+    '/notifications',
+    '/places',
+    '/mypage',
+    '/my-walks',
+    '/gold',
+    '/courses',
+];
 
 export const PullToRefresh = () => {
+    const { pathname } = useLocation();
+    const isEnabled = PTR_ENABLED_ROUTES.includes(pathname);
+
     const startY = useRef(0);
+    const startX = useRef(0);
     const activeRef = useRef(false);
+    const directionLocked = useRef(false);
+    const nonPassiveAdded = useRef(false);
     const [pullDistance, setPullDistance] = useState(0);
     const [releasing, setReleasing] = useState(false);
 
+    // Non-passive touchmove handler for preventing scroll during PTR
+    const nonPassiveHandler = useRef<((e: TouchEvent) => void) | null>(null);
+
+    const cleanupNonPassive = useCallback(() => {
+        if (nonPassiveAdded.current && nonPassiveHandler.current) {
+            document.removeEventListener('touchmove', nonPassiveHandler.current);
+            nonPassiveAdded.current = false;
+        }
+    }, []);
+
     const onTouchStart = useCallback((e: TouchEvent) => {
-        if (window.scrollY > 0 || releasing) return;
+        if (releasing) return;
+
+        // Check if #root (the real scroll container) is scrolled
+        const root = document.getElementById('root');
+        if (root && root.scrollTop > 0) return;
 
         // Check if touch started inside a scrollable container that isn't at top
         let el = e.target as HTMLElement | null;
@@ -19,40 +58,104 @@ export const PullToRefresh = () => {
                 const style = window.getComputedStyle(el);
                 const overflowY = style.overflowY;
                 if (overflowY === 'auto' || overflowY === 'scroll') {
-                    return; // scrollable parent not at top, skip pull-to-refresh
+                    return;
                 }
             }
             el = el.parentElement;
         }
 
         startY.current = e.touches[0].clientY;
+        startX.current = e.touches[0].clientX;
         activeRef.current = true;
+        directionLocked.current = false;
     }, [releasing]);
 
     const onTouchMove = useCallback((e: TouchEvent) => {
         if (!activeRef.current) return;
+
         const dy = e.touches[0].clientY - startY.current;
-        if (dy > 10 && window.scrollY <= 0) {
-            setPullDistance(Math.min(dy * 0.4, MAX_PULL));
-        } else if (dy <= 0) {
-            activeRef.current = false;
-            setPullDistance(0);
+        const dx = e.touches[0].clientX - startX.current;
+
+        // Before direction is locked, check movement intent
+        if (!directionLocked.current) {
+            // Need at least ACTIVATION_DY to evaluate direction
+            if (Math.abs(dy) < ACTIVATION_DY && Math.abs(dx) < ACTIVATION_DY) return;
+
+            // Horizontal movement dominant → abort PTR
+            if (Math.abs(dx) > Math.abs(dy)) {
+                activeRef.current = false;
+                setPullDistance(0);
+                return;
+            }
+
+            // Upward movement → abort PTR
+            if (dy <= 0) {
+                activeRef.current = false;
+                setPullDistance(0);
+                return;
+            }
+
+            // Vertical downward confirmed — lock direction
+            directionLocked.current = true;
+
+            // Add non-passive listener to enable preventDefault
+            nonPassiveHandler.current = (ev: TouchEvent) => {
+                if (directionLocked.current && activeRef.current) {
+                    ev.preventDefault();
+                }
+            };
+            document.addEventListener('touchmove', nonPassiveHandler.current, { passive: false });
+            nonPassiveAdded.current = true;
         }
-    }, []);
+
+        // Direction is locked vertical — update pull distance
+        const root = document.getElementById('root');
+        if (dy > 0 && (!root || root.scrollTop <= 0)) {
+            setPullDistance(Math.min(dy * 0.4, MAX_PULL));
+        } else {
+            activeRef.current = false;
+            directionLocked.current = false;
+            setPullDistance(0);
+            cleanupNonPassive();
+        }
+    }, [cleanupNonPassive]);
 
     const onTouchEnd = useCallback(() => {
-        if (!activeRef.current) return;
+        if (!activeRef.current) {
+            cleanupNonPassive();
+            return;
+        }
         activeRef.current = false;
+        directionLocked.current = false;
+        cleanupNonPassive();
+
         if (pullDistance >= THRESHOLD) {
             setReleasing(true);
             setPullDistance(THRESHOLD);
-            setTimeout(() => window.location.reload(), 300);
+
+            const refreshStart = Date.now();
+
+            queryClient.invalidateQueries().then(() => {
+                const elapsed = Date.now() - refreshStart;
+                const remaining = Math.max(MIN_SPINNER_MS - elapsed, 0);
+                setTimeout(() => {
+                    document.getElementById('root')?.scrollTo({ top: 0, behavior: 'smooth' });
+                    setReleasing(false);
+                    setPullDistance(0);
+                }, remaining);
+            }).catch(() => {
+                // On failure: dismiss spinner, keep existing data
+                setReleasing(false);
+                setPullDistance(0);
+            });
         } else {
             setPullDistance(0);
         }
-    }, [pullDistance]);
+    }, [pullDistance, cleanupNonPassive]);
 
     useEffect(() => {
+        if (!isEnabled) return;
+
         document.addEventListener('touchstart', onTouchStart, { passive: true });
         document.addEventListener('touchmove', onTouchMove, { passive: true });
         document.addEventListener('touchend', onTouchEnd);
@@ -60,10 +163,11 @@ export const PullToRefresh = () => {
             document.removeEventListener('touchstart', onTouchStart);
             document.removeEventListener('touchmove', onTouchMove);
             document.removeEventListener('touchend', onTouchEnd);
+            cleanupNonPassive();
         };
-    }, [onTouchStart, onTouchMove, onTouchEnd]);
+    }, [isEnabled, onTouchStart, onTouchMove, onTouchEnd, cleanupNonPassive]);
 
-    if (pullDistance <= 0) return null;
+    if (!isEnabled || pullDistance <= 0) return null;
 
     const progress = Math.min(pullDistance / THRESHOLD, 1);
     const pastThreshold = pullDistance >= THRESHOLD;
