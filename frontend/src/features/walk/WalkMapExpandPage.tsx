@@ -174,21 +174,9 @@ export const WalkMapExpandPage = () => {
                 map: mapInstanceRef.current,
                 path,
                 strokeColor: '#6B9A2B',
-                strokeWeight: 5,
-                strokeOpacity: 1,
+                strokeWeight: 4,
+                strokeOpacity: 0.9,
             });
-
-            // Force polyline repaint after zoom (WebView compositor workaround)
-            const zoomListener = (naver.maps as any).Event.addListener(
-                mapInstanceRef.current, 'idle', () => {
-                    if (polylineRef.current && mapInstanceRef.current) {
-                        polylineRef.current.setMap(null);
-                        polylineRef.current.setMap(mapInstanceRef.current);
-                    }
-                }
-            );
-            listenersRef.current.push(zoomListener);
-
             // Build bounds from path + spots
             const bounds = path.length > 1
                 ? new naver.maps.LatLngBounds(path[0], path[0])
