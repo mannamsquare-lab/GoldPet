@@ -10,6 +10,7 @@ import type { WalkDataPoint } from './components/WalkChart';
 import { useNaverMap } from '../../hooks/useNaverMap';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml } from './utils/walkMapUtils';
+import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
 import './WalkDetail.css';
 
 type Period = 'daily' | 'weekly' | 'monthly';
@@ -51,10 +52,6 @@ export const WalkDetailPage = () => {
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
     const [selectedSpot, setSelectedSpot] = useState<WalkSpot | null>(null);
-    const [photoLoaded, setPhotoLoaded] = useState(false);
-    const [photoError, setPhotoError] = useState(false);
-    const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string | null>(null);
-    const [galleryOpen, setGalleryOpen] = useState(false);
 
     // Walk detail (for route map)
     const { data: walkDetail } = useQuery({
@@ -62,6 +59,12 @@ export const WalkDetailPage = () => {
         queryFn: () => walkService.getWalkDetail(Number(walkId)),
         enabled: !!walkId,
     });
+
+    const {
+        resolvedUrls: galleryUrls, isLoading: galleryLoading, galleryOpen, initialIndex,
+        previewUrl, previewLoading, previewError,
+        openGallery, closeGallery, resolvePreview, clearPreview,
+    } = useWalkPhotoGallery(walkDetail?.spots);
 
     // All walk records for chart aggregation
     const { data: allWalks = [] } = useQuery({
@@ -153,8 +156,7 @@ export const WalkDetailPage = () => {
                     spotMarkersRef.current.push(marker);
                     const listener = (naver.maps as any).Event.addListener(marker, 'click', () => {
                         setSelectedSpot(spot);
-                        setPhotoLoaded(false);
-                        setPhotoError(false);
+                        if (spot.type === 'PHOTO' && spot.imageUrl) resolvePreview(spot);
                         if (mapInstanceRef.current) {
                             (mapInstanceRef.current as any).panTo(pos);
                         }
@@ -272,27 +274,8 @@ export const WalkDetailPage = () => {
 
     const closeSheet = () => {
         setSelectedSpot(null);
-        if (resolvedPhotoUrl?.startsWith('blob:')) URL.revokeObjectURL(resolvedPhotoUrl);
-        setResolvedPhotoUrl(null);
+        clearPreview();
     };
-
-    // Resolve photo URL for spot images
-    useEffect(() => {
-        if (!selectedSpot || selectedSpot.type !== 'PHOTO' || !selectedSpot.imageUrl) return;
-        if (selectedSpot.imageUrl.startsWith('http')) {
-            setResolvedPhotoUrl(selectedSpot.imageUrl);
-            return;
-        }
-        // Fetch private-bucket file with auth headers and create blob URL
-        import('../../services/api/client').then(({ default: apiClient }) => {
-            apiClient.get(`/files/${selectedSpot.imageUrl}/content`, { responseType: 'blob' })
-                .then(res => {
-                    const url = URL.createObjectURL(res.data);
-                    setResolvedPhotoUrl(url);
-                })
-                .catch(() => setPhotoError(true));
-        }).catch(() => setPhotoError(true));
-    }, [selectedSpot]);
 
     return (
         <div className="walk_detail_page">
@@ -485,24 +468,22 @@ export const WalkDetailPage = () => {
                         {/* PHOTO spots: photo first, then note below */}
                         {selectedSpot.type === 'PHOTO' && selectedSpot.imageUrl && (
                             <div className="walk_spot_sheet_photo">
-                                {!photoLoaded && !photoError && (
+                                {previewLoading && (
                                     <div className="walk_spot_sheet_photo_placeholder">
                                         <span>사진 로딩 중...</span>
                                     </div>
                                 )}
-                                {photoError && (
+                                {previewError && (
                                     <div className="walk_spot_sheet_photo_placeholder">
                                         <span>사진을 불러올 수 없습니다</span>
                                     </div>
                                 )}
-                                {resolvedPhotoUrl && (
+                                {previewUrl && (
                                     <img
-                                        src={resolvedPhotoUrl}
+                                        src={previewUrl}
                                         alt="산책 사진"
-                                        style={{ display: photoLoaded && !photoError ? 'block' : 'none', cursor: 'pointer' }}
-                                        onLoad={() => setPhotoLoaded(true)}
-                                        onError={() => setPhotoError(true)}
-                                        onClick={() => { setSelectedSpot(null); setGalleryOpen(true); }}
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => { setSelectedSpot(null); openGallery(selectedSpot); }}
                                     />
                                 )}
                             </div>
@@ -516,12 +497,13 @@ export const WalkDetailPage = () => {
                 </>
             )}
 
-            {/* Fullscreen photo gallery */}
-            {resolvedPhotoUrl && (
+            {/* Fullscreen photo gallery — shows all walk photos */}
+            {galleryUrls.length > 0 && (
                 <ImageGalleryModal
                     isOpen={galleryOpen}
-                    images={[resolvedPhotoUrl]}
-                    onClose={() => { setGalleryOpen(false); if (resolvedPhotoUrl?.startsWith('blob:')) URL.revokeObjectURL(resolvedPhotoUrl); setResolvedPhotoUrl(null); }}
+                    images={galleryUrls}
+                    initialIndex={initialIndex}
+                    onClose={closeGallery}
                 />
             )}
 
