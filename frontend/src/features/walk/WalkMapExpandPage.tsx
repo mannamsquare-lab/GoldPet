@@ -4,6 +4,7 @@ import { walkService } from '../../services/walkService';
 import type { WalkSession, WalkSpot } from '../../services/walkService';
 import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
+import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import './WalkMapExpand.css';
 
 const DEFAULT_LAT = 37.5665;
@@ -63,6 +64,7 @@ export const WalkMapExpandPage = () => {
     const [photoLoaded, setPhotoLoaded] = useState(false);
     const [photoError, setPhotoError] = useState(false);
     const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string | null>(null);
+    const [galleryOpen, setGalleryOpen] = useState(false);
 
     // Load walk data
     useEffect(() => {
@@ -386,11 +388,13 @@ export const WalkMapExpandPage = () => {
                             </svg>
                             <span>{formatSpotTimestamp(selectedSpot.timestamp)}</span>
                         </div>
-                        {selectedSpot.note && (
+                        {/* Non-PHOTO spots: note after timestamp */}
+                        {selectedSpot.type !== 'PHOTO' && selectedSpot.note && (
                             <div className="walk_spot_sheet_note">
                                 <p>{selectedSpot.note}</p>
                             </div>
                         )}
+                        {/* PHOTO spots: photo first, then note below */}
                         {selectedSpot.type === 'PHOTO' && selectedSpot.imageUrl && (
                             <div className="walk_spot_sheet_photo">
                                 {!photoLoaded && !photoError && (
@@ -407,15 +411,30 @@ export const WalkMapExpandPage = () => {
                                     <img
                                         src={resolvedPhotoUrl}
                                         alt="산책 사진"
-                                        style={{ display: photoLoaded && !photoError ? 'block' : 'none' }}
+                                        style={{ display: photoLoaded && !photoError ? 'block' : 'none', cursor: 'pointer' }}
                                         onLoad={() => setPhotoLoaded(true)}
                                         onError={() => setPhotoError(true)}
+                                        onClick={() => setGalleryOpen(true)}
                                     />
                                 )}
                             </div>
                         )}
+                        {selectedSpot.type === 'PHOTO' && selectedSpot.note && (
+                            <div className="walk_spot_sheet_note">
+                                <p>{selectedSpot.note}</p>
+                            </div>
+                        )}
                     </div>
                 </>
+            )}
+
+            {/* Fullscreen photo gallery */}
+            {resolvedPhotoUrl && (
+                <ImageGalleryModal
+                    isOpen={galleryOpen}
+                    images={[resolvedPhotoUrl]}
+                    onClose={() => setGalleryOpen(false)}
+                />
             )}
 
             <BottomNav />
