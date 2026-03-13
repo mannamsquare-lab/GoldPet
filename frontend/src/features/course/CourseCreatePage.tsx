@@ -13,6 +13,7 @@ import {
 import { walkService } from '../../services/walkService';
 import { SPOT_TYPES, spotEmoji, spotLabel } from './utils/courseHelpers';
 import { createSvgPathOverlay } from '../walk/utils/walkMapUtils';
+import { useAlert } from '../../contexts/AlertContext';
 import './CourseCreatePage.css';
 import { nativeBridge } from '../../bridge/nativeBridge';
 
@@ -143,6 +144,7 @@ function SpotModal({ onConfirm, onClose, editSpot }: SpotModalProps) {
 export function CourseCreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showAlert, showConfirm } = useAlert();
   const { walkId: walkIdParam, courseId: courseIdParam } = useParams<{ walkId: string; courseId: string }>();
   const walkId = walkIdParam ? parseInt(walkIdParam, 10) : undefined;
   const isFromWalk = walkId != null && !isNaN(walkId);
@@ -167,6 +169,7 @@ export function CourseCreatePage() {
   const [editingSpot, setEditingSpot] = useState<LocalSpot | null>(null);
   const [mapLoadFailed, setMapLoadFailed] = useState(false);
   const isAddingSpotRef = useRef(false);
+  const lastTouchRef = useRef<{ touches: number; time: number }>({ touches: 0, time: 0 });
 
   // Form state
   const [title, setTitle] = useState('');
@@ -426,12 +429,23 @@ export function CourseCreatePage() {
 
       setMapReady(true);
 
+      // Track multi-touch to filter out pinch-to-zoom clicks
+      el.addEventListener('touchstart', (te: TouchEvent) => {
+        lastTouchRef.current = { touches: te.touches.length, time: Date.now() };
+      }, { passive: true });
+
       // Click listener — add waypoint or open spot modal (one-shot mode)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       clickListenerRef.current = (naver.maps as any).Event.addListener(
         mapInstanceRef.current,
         'click',
         (e: { coord: naver.maps.LatLng }) => {
+          // Ignore clicks from pinch-to-zoom (multi-touch gesture)
+          if (lastTouchRef.current.touches >= 2) {
+            lastTouchRef.current = { touches: 0, time: 0 };
+            return;
+          }
+
           const lat = e.coord.lat();
           const lng = e.coord.lng();
           setLastTapPos({ lat, lng });
@@ -563,7 +577,7 @@ export function CourseCreatePage() {
 
   const handleAddSpot = () => {
     isAddingSpotRef.current = true;
-    alert('지도에서 스팟을 추가할 위치를 탭하세요.');
+    showAlert('지도에서 스팟을 추가할 위치를 탭하세요.');
   };
 
   const handleSpotConfirm = (type: CourseSpotType, name: string, description: string) => {
@@ -600,9 +614,11 @@ export function CourseCreatePage() {
   // ── Clear waypoints ───────────────────────────────────────────────────────
 
   const handleClearWaypoints = () => {
-    if (waypoints.length > 0 && !confirm('경로를 초기화하시겠습니까?')) return;
-    setWaypoints([]);
-    setLastTapPos(null);
+    if (waypoints.length === 0) return;
+    showConfirm('경로를 초기화하시겠습니까?', () => {
+      setWaypoints([]);
+      setLastTapPos(null);
+    });
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -631,19 +647,19 @@ export function CourseCreatePage() {
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      alert('코스 제목을 입력해주세요.');
+      showAlert('코스 제목을 입력해주세요.');
       return;
     }
     if (waypoints.length < 2) {
-      alert('지도에 경로 지점을 2개 이상 추가해주세요.');
+      showAlert('지도에 경로 지점을 2개 이상 추가해주세요.');
       return;
     }
     if (!estimatedMinutes || parseInt(estimatedMinutes, 10) <= 0) {
-      alert('예상 소요 시간을 입력해주세요.');
+      showAlert('예상 소요 시간을 입력해주세요.');
       return;
     }
     if (distanceKm <= 0) {
-      alert('경로 거리가 0입니다. 경로 지점을 더 넓게 배치해주세요.');
+      showAlert('경로 거리가 0입니다. 경로 지점을 더 넓게 배치해주세요.');
       return;
     }
 
