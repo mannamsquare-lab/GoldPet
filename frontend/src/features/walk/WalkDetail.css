@@ -393,9 +393,10 @@
   gap: 8px;
 }
 
-.walk_spot_sheet_emoji {
-  font-size: 20px;
-  line-height: 1;
+.walk_spot_sheet_icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
 .walk_spot_sheet_label {

@@ -20,22 +20,16 @@ function spotMarkerImage(type: string): string {
 
 function spotTypeLabel(type: string): string {
     switch (type) {
-        case 'PEE': return '소변';
-        case 'POOP': return '대변';
+        case 'PEE': return '쉬';
+        case 'POOP': return '응가';
         case 'PHOTO': return '사진';
         case 'PROBLEM': return '문제';
         default: return '기타';
     }
 }
 
-function spotTypeColor(type: string): string {
-    switch (type) {
-        case 'PEE': return '#4A90D9';
-        case 'POOP': return '#8B6914';
-        case 'PHOTO': return '#8A497D';
-        case 'PROBLEM': return '#D94A4A';
-        default: return '#8B8B8B';
-    }
+function spotTypeMarkerIcon(type: string): string {
+    return spotMarkerImage(type);
 }
 
 function formatSpotTimestamp(ts: string): string {
@@ -68,6 +62,7 @@ export const WalkMapExpandPage = () => {
     const [selectedSpot, setSelectedSpot] = useState<WalkSpot | null>(null);
     const [photoLoaded, setPhotoLoaded] = useState(false);
     const [photoError, setPhotoError] = useState(false);
+    const [presignedPhotoUrl, setPresignedPhotoUrl] = useState<string | null>(null);
 
     // Load walk data
     useEffect(() => {
@@ -274,7 +269,26 @@ export const WalkMapExpandPage = () => {
         return cal.toLocaleString();
     };
 
-    const closeSheet = () => setSelectedSpot(null);
+    const closeSheet = () => {
+        setSelectedSpot(null);
+        setPresignedPhotoUrl(null);
+    };
+
+    // Fetch presigned URL for private-bucket photos
+    useEffect(() => {
+        if (!selectedSpot || selectedSpot.type !== 'PHOTO' || !selectedSpot.imageUrl) return;
+        // If already a full URL, use directly
+        if (selectedSpot.imageUrl.startsWith('http')) {
+            setPresignedPhotoUrl(selectedSpot.imageUrl);
+            return;
+        }
+        // Fetch presigned URL from API
+        import('../../services/api/client').then(({ default: apiClient }) => {
+            apiClient.get(`/files/${selectedSpot.imageUrl}/url`)
+                .then(res => setPresignedPhotoUrl(res.data.url))
+                .catch(() => setPhotoError(true));
+        }).catch(() => setPhotoError(true));
+    }, [selectedSpot]);
 
     return (
         <div className="walk_map_expand_page">
@@ -352,10 +366,8 @@ export const WalkMapExpandPage = () => {
                     <div className="walk_spot_sheet">
                         <div className="walk_spot_sheet_handle" />
                         <div className="walk_spot_sheet_header">
-                            <div className="walk_spot_sheet_type" style={{ color: spotTypeColor(selectedSpot.type) }}>
-                                <span className="walk_spot_sheet_emoji">
-                                    {({ PEE: '💧', POOP: '💩', PHOTO: '📷', PROBLEM: '⚠️' } as Record<string, string>)[selectedSpot.type] || '📌'}
-                                </span>
+                            <div className="walk_spot_sheet_type">
+                                <img className="walk_spot_sheet_icon" src={spotTypeMarkerIcon(selectedSpot.type)} alt="" />
                                 <span className="walk_spot_sheet_label">{spotTypeLabel(selectedSpot.type)}</span>
                             </div>
                             <button type="button" className="walk_spot_sheet_close" onClick={closeSheet} aria-label="닫기">
@@ -388,13 +400,15 @@ export const WalkMapExpandPage = () => {
                                         <span>사진을 불러올 수 없습니다</span>
                                     </div>
                                 )}
-                                <img
-                                    src={selectedSpot.imageUrl}
-                                    alt="산책 사진"
-                                    style={{ display: photoLoaded && !photoError ? 'block' : 'none' }}
-                                    onLoad={() => setPhotoLoaded(true)}
-                                    onError={() => setPhotoError(true)}
-                                />
+                                {presignedPhotoUrl && (
+                                    <img
+                                        src={presignedPhotoUrl}
+                                        alt="산책 사진"
+                                        style={{ display: photoLoaded && !photoError ? 'block' : 'none' }}
+                                        onLoad={() => setPhotoLoaded(true)}
+                                        onError={() => setPhotoError(true)}
+                                    />
+                                )}
                             </div>
                         )}
                     </div>
