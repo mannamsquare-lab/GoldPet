@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MainHeader } from '../../components/common/MainHeader';
@@ -133,33 +133,46 @@ export const WalkDetailPage = () => {
         skipGeolocation: true,
     });
 
-    // Draw polyline when walk detail + map ready
+    // Map drawing refs
     const polylineRef = useRef<naver.maps.Polyline | null>(null);
-    const polylineDrawn = useRef(false);
     const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
     const petMarkersRef = useRef<naver.maps.Marker[]>([]);
     const listenersRef = useRef<any[]>([]);
+    const [mapReady, setMapReady] = useState(false);
 
-    const drawRoute = useCallback(() => {
-        if (!mapInstanceRef.current || !walkDetail?.pathPoints?.length || polylineDrawn.current) return;
+    // Poll for map readiness (useNaverMap hook doesn't expose mapReady state)
+    useEffect(() => {
+        if (mapReady) return;
+        const timer = setInterval(() => {
+            if (mapInstanceRef.current) {
+                setMapReady(true);
+                clearInterval(timer);
+            }
+        }, 200);
+        return () => clearInterval(timer);
+    }, [mapReady, mapInstanceRef]);
+
+    // Draw route, spots, and pet markers when map is ready and walk data loaded
+    useEffect(() => {
+        if (!mapReady || !mapInstanceRef.current || !walkDetail?.pathPoints?.length) return;
         try {
-            const points = walkDetail.pathPoints
-                .filter((p: { lat: number; lng: number }) => p.lat != null && p.lng != null)
-                .map((p: { lat: number; lng: number }) => new naver.maps.LatLng(p.lat, p.lng));
-            if (points.length === 0) return;
-
             // Clean up previous drawings
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
             }
-            spotMarkersRef.current.forEach(m => m.setMap(null));
-            spotMarkersRef.current = [];
-            petMarkersRef.current.forEach(m => m.setMap(null));
-            petMarkersRef.current = [];
             listenersRef.current.forEach(l => {
                 try { (naver.maps as any).Event.removeListener(l); } catch {}
             });
             listenersRef.current = [];
+            spotMarkersRef.current.forEach(m => m.setMap(null));
+            spotMarkersRef.current = [];
+            petMarkersRef.current.forEach(m => m.setMap(null));
+            petMarkersRef.current = [];
+
+            const points = walkDetail.pathPoints
+                .filter((p: { lat: number; lng: number }) => p.lat != null && p.lng != null)
+                .map((p: { lat: number; lng: number }) => new naver.maps.LatLng(p.lat, p.lng));
+            if (points.length === 0) return;
 
             polylineRef.current = new naver.maps.Polyline({
                 path: points,
@@ -233,22 +246,10 @@ export const WalkDetailPage = () => {
                 mapInstanceRef.current.setCenter(points[0]);
                 mapInstanceRef.current.setZoom(16);
             }
-            polylineDrawn.current = true;
         } catch (err) {
             console.error('WalkDetail: route drawing failed', err);
         }
-    }, [mapInstanceRef, walkDetail]);
-
-    useEffect(() => {
-        if (!walkDetail?.pathPoints?.length) return;
-        const timer = setInterval(() => {
-            if (mapInstanceRef.current) {
-                clearInterval(timer);
-                drawRoute();
-            }
-        }, 200);
-        return () => clearInterval(timer);
-    }, [walkDetail, mapInstanceRef, drawRoute]);
+    }, [mapReady, walkDetail]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -263,6 +264,7 @@ export const WalkDetailPage = () => {
             petMarkersRef.current = [];
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
+                polylineRef.current = null;
             }
         };
     }, []);
