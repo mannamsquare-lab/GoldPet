@@ -147,9 +147,20 @@ export const WalkDetailPage = () => {
                 .filter((p: { lat: number; lng: number }) => p.lat != null && p.lng != null)
                 .map((p: { lat: number; lng: number }) => new naver.maps.LatLng(p.lat, p.lng));
             if (points.length === 0) return;
+
+            // Clean up previous drawings
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
             }
+            spotMarkersRef.current.forEach(m => m.setMap(null));
+            spotMarkersRef.current = [];
+            petMarkersRef.current.forEach(m => m.setMap(null));
+            petMarkersRef.current = [];
+            listenersRef.current.forEach(l => {
+                try { (naver.maps as any).Event.removeListener(l); } catch {}
+            });
+            listenersRef.current = [];
+
             polylineRef.current = new naver.maps.Polyline({
                 path: points,
                 strokeColor: '#6B9A2B',
@@ -157,40 +168,43 @@ export const WalkDetailPage = () => {
                 strokeOpacity: 0.9,
                 map: mapInstanceRef.current,
             });
+
             // Fit bounds (include path + spots)
-            const bounds = new naver.maps.LatLngBounds(points[0], points[0]);
-            for (const pt of points) bounds.extend(pt);
+            const bounds = points.length > 1
+                ? new naver.maps.LatLngBounds(points[0], points[0])
+                : null;
+            if (bounds) points.forEach(p => bounds.extend(p));
 
             // Pet profile markers at start and end
-            petMarkersRef.current.forEach(m => m.setMap(null));
-            petMarkersRef.current = [];
-            const petImg = walkDetail.petProfileImageUrls?.[0];
-            const startMarker = new naver.maps.Marker({
-                map: mapInstanceRef.current,
-                position: points[0],
-                icon: {
-                    content: petCircleMarkerHtml('start', petImg),
-                    size: new naver.maps.Size(52, 52),
-                    anchor: new naver.maps.Point(26, 26),
-                } as unknown as naver.maps.MarkerIcon,
-            });
-            const endMarker = new naver.maps.Marker({
-                map: mapInstanceRef.current,
-                position: points[points.length - 1],
-                icon: {
-                    content: petCircleMarkerHtml('end', petImg),
-                    size: new naver.maps.Size(52, 52),
-                    anchor: new naver.maps.Point(26, 26),
-                } as unknown as naver.maps.MarkerIcon,
-            });
-            petMarkersRef.current.push(startMarker, endMarker);
+            if (points.length > 0) {
+                const petImg = walkDetail.petProfileImageUrls?.[0];
+                const startMarker = new naver.maps.Marker({
+                    map: mapInstanceRef.current,
+                    position: points[0],
+                    icon: {
+                        content: petCircleMarkerHtml('start', petImg),
+                        size: new naver.maps.Size(52, 52),
+                        anchor: new naver.maps.Point(26, 26),
+                    } as unknown as naver.maps.MarkerIcon,
+                });
+                const endMarker = new naver.maps.Marker({
+                    map: mapInstanceRef.current,
+                    position: points[points.length - 1],
+                    icon: {
+                        content: petCircleMarkerHtml('end', petImg),
+                        size: new naver.maps.Size(52, 52),
+                        anchor: new naver.maps.Point(26, 26),
+                    } as unknown as naver.maps.MarkerIcon,
+                });
+                petMarkersRef.current.push(startMarker, endMarker);
+            }
 
             // Draw spot markers with click listeners
             if (walkDetail.spots?.length) {
                 walkDetail.spots.forEach((spot: WalkSpot) => {
                     if (spot.latitude == null || spot.longitude == null) return;
                     const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
-                    bounds.extend(pos);
+                    if (bounds) bounds.extend(pos);
                     const imgSrc = spotMarkerImage(spot.type ?? 'OTHER');
                     const marker = new naver.maps.Marker({
                         map: mapInstanceRef.current!,
@@ -213,7 +227,12 @@ export const WalkDetailPage = () => {
                 });
             }
 
-            mapInstanceRef.current.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
+            if (bounds) {
+                mapInstanceRef.current.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
+            } else if (points.length === 1) {
+                mapInstanceRef.current.setCenter(points[0]);
+                mapInstanceRef.current.setZoom(16);
+            }
             polylineDrawn.current = true;
         } catch (err) {
             console.error('WalkDetail: route drawing failed', err);
