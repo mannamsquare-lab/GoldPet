@@ -6,7 +6,7 @@ import type { WalkSpot } from '../../services/walkService';
 import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
-import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, snapToPath } from './utils/walkMapUtils';
+import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, createSvgPathOverlay } from './utils/walkMapUtils';
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
 import './WalkMapExpand.css';
 
@@ -19,7 +19,7 @@ export const WalkMapExpandPage = () => {
     const { walkId } = useParams<{ walkId: string }>();
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<naver.maps.Map | null>(null);
-    const polylineRef = useRef<naver.maps.Polyline | null>(null);
+    const pathOverlayRef = useRef<{ setMap: (map: naver.maps.Map | null) => void } | null>(null);
     const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
     const petMarkersRef = useRef<naver.maps.Marker[]>([]);
     const listenersRef = useRef<any[]>([]);
@@ -142,9 +142,9 @@ export const WalkMapExpandPage = () => {
             spotMarkersRef.current = [];
             petMarkersRef.current.forEach(m => m.setMap(null));
             petMarkersRef.current = [];
-            if (polylineRef.current) {
-                polylineRef.current.setMap(null);
-                polylineRef.current = null;
+            if (pathOverlayRef.current) {
+                pathOverlayRef.current.setMap(null);
+                pathOverlayRef.current = null;
             }
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.destroy();
@@ -159,17 +159,8 @@ export const WalkMapExpandPage = () => {
     useEffect(() => {
         if (!mapReady || !mapInstanceRef.current || !walk?.pathPoints?.length) return;
         try {
-            // Sync map internal size with flex container before drawing overlays
-            if (mapRef.current) {
-                const w = mapRef.current.clientWidth;
-                const h = mapRef.current.clientHeight;
-                if (w > 0 && h > 0) {
-                    mapInstanceRef.current.setSize(new naver.maps.Size(w, h));
-                }
-            }
-
-            if (polylineRef.current) {
-                polylineRef.current.setMap(null);
+            if (pathOverlayRef.current) {
+                pathOverlayRef.current.setMap(null);
             }
             // Clean previous markers
             listenersRef.current.forEach(l => {
@@ -185,13 +176,15 @@ export const WalkMapExpandPage = () => {
                 .filter(p => p.lat != null && p.lng != null)
                 .map(p => new naver.maps.LatLng(p.lat, p.lng));
             if (path.length === 0) return;
-            polylineRef.current = new naver.maps.Polyline({
-                map: mapInstanceRef.current,
-                path,
-                strokeColor: '#FF0000',
-                strokeWeight: 6,
-                strokeOpacity: 1.0,
+
+            // Use SVG OverlayView instead of Polyline to avoid canvas-DOM
+            // coordinate divergence at high zoom in WebView
+            pathOverlayRef.current = createSvgPathOverlay(mapInstanceRef.current, path, {
+                strokeColor: '#6B9A2B',
+                strokeWeight: 4,
+                strokeOpacity: 0.9,
             });
+
             // Build bounds from path + spots
             const bounds = path.length > 1
                 ? new naver.maps.LatLngBounds(path[0], path[0])
@@ -223,15 +216,10 @@ export const WalkMapExpandPage = () => {
             }
 
             // Spot markers with click listeners
-            // Snap spots to nearest path point to compensate for GPS jitter
-            const pathCoords = walk.pathPoints
-                .filter(p => p.lat != null && p.lng != null)
-                .map(p => ({ lat: p.lat, lng: p.lng }));
             if (walk.spots?.length) {
                 walk.spots.forEach(spot => {
                     if (spot.latitude == null || spot.longitude == null) return;
-                    const snapped = snapToPath(spot.latitude, spot.longitude, pathCoords);
-                    const pos = new naver.maps.LatLng(snapped.lat, snapped.lng);
+                    const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
                     if (bounds) bounds.extend(pos);
                     const imgSrc = spotMarkerImage(spot.type ?? 'OTHER');
                     const marker = new naver.maps.Marker({
@@ -255,37 +243,9 @@ export const WalkMapExpandPage = () => {
                 });
             }
 
-            // DEBUG: place blue dots at path points to test Marker-Polyline alignment
-            const debugIndices = [0, Math.floor(path.length / 4), Math.floor(path.length / 2), Math.floor(3 * path.length / 4), path.length - 1];
-            debugIndices.forEach(idx => {
-                if (idx < path.length) {
-                    const debugMarker = new naver.maps.Marker({
-                        map: mapInstanceRef.current!,
-                        position: path[idx],
-                        icon: {
-                            content: `<div style="width:16px;height:16px;border-radius:50%;background:blue;border:2px solid white;"></div>`,
-                            size: new naver.maps.Size(16, 16),
-                            anchor: new naver.maps.Point(8, 8),
-                        } as unknown as naver.maps.MarkerIcon,
-                    });
-                    spotMarkersRef.current.push(debugMarker);
-                }
-            });
-
             if (bounds) {
                 mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 20, bottom: 80, left: 20 });
             }
-
-            // Re-sync map size after fitBounds animation settles
-            setTimeout(() => {
-                if (mapInstanceRef.current && mapRef.current) {
-                    const w = mapRef.current.clientWidth;
-                    const h = mapRef.current.clientHeight;
-                    if (w > 0 && h > 0) {
-                        mapInstanceRef.current.setSize(new naver.maps.Size(w, h));
-                    }
-                }
-            }, 500);
         } catch (err) {
             console.error('WalkMapExpand: route drawing failed', err);
         }

@@ -87,6 +87,24 @@ declare namespace naver.maps {
         content?: string | HTMLElement;
         anchor?: Point | string;
     }
+
+    class OverlayView {
+        constructor();
+        setMap(map: Map | null): void;
+        getMap(): Map | null;
+        getPanes(): { overlayLayer: HTMLElement; overlayImage: HTMLElement; floatPane: HTMLElement };
+        getProjection(): MapProjection;
+        onAdd(): void;
+        draw(): void;
+        onRemove(): void;
+    }
+
+    interface MapProjection {
+        fromCoordToOffset(latlng: LatLng): Point;
+        fromOffsetToCoord(point: Point): LatLng;
+        fromCoordToPoint(latlng: LatLng): Point;
+        fromPointToCoord(point: Point): LatLng;
+    }
 }
 
 interface Window {
