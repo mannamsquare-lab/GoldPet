@@ -321,7 +321,7 @@
 
 .course_create_spot_modal_content {
   position: relative;
-  background: var(--color-bg-white);
+  background: var(--color-bg);
   border-radius: 20px 20px 0 0;
   padding: 20px 16px 40px;
   max-height: 75vh;
