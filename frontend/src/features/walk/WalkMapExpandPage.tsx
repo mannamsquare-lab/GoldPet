@@ -6,48 +6,11 @@ import type { WalkSpot } from '../../services/walkService';
 import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
+import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml } from './utils/walkMapUtils';
 import './WalkMapExpand.css';
 
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.9780;
-
-function spotMarkerImage(type: string): string {
-    switch (type) {
-        case 'PEE': return '/assets/images/walk/marker_pee.png';
-        case 'POOP': return '/assets/images/walk/marker_poop.png';
-        case 'PHOTO': return '/assets/images/walk/marker_camera.png';
-        default: return '/assets/images/walk/marker_pee.png';
-    }
-}
-
-function spotTypeLabel(type: string): string {
-    switch (type) {
-        case 'PEE': return '쉬';
-        case 'POOP': return '응가';
-        case 'PHOTO': return '사진';
-        case 'PROBLEM': return '문제';
-        default: return '기타';
-    }
-}
-
-function spotTypeMarkerIcon(type: string): string {
-    return spotMarkerImage(type);
-}
-
-function formatSpotTimestamp(ts: string): string {
-    const d = new Date(ts);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const h = String(d.getHours()).padStart(2, '0');
-    const min = String(d.getMinutes()).padStart(2, '0');
-    return `${y}.${m}.${day} ${h}:${min}`;
-}
-
-function petCircleMarkerHtml(variant: 'start' | 'end', imageUrl?: string | null): string {
-    const imgSrc = imageUrl || '/assets/images/common/pet_none_img.svg';
-    return `<div class="walk_pet_circle walk_pet_circle--${variant}"><img src="${imgSrc}" alt="" /></div>`;
-}
 
 export const WalkMapExpandPage = () => {
     const navigate = useNavigate();
