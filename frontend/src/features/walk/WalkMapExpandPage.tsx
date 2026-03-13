@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { walkService } from '../../services/walkService';
-import type { WalkSession, WalkSpot } from '../../services/walkService';
+import type { WalkSpot } from '../../services/walkService';
 import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
@@ -55,8 +56,8 @@ export const WalkMapExpandPage = () => {
     const mapInstanceRef = useRef<naver.maps.Map | null>(null);
     const polylineRef = useRef<naver.maps.Polyline | null>(null);
     const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
+    const petMarkersRef = useRef<naver.maps.Marker[]>([]);
     const listenersRef = useRef<any[]>([]);
-    const [walk, setWalk] = useState<WalkSession | null>(null);
     const [address, setAddress] = useState('위치 확인 중...');
     const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
@@ -66,13 +67,12 @@ export const WalkMapExpandPage = () => {
     const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string | null>(null);
     const [galleryOpen, setGalleryOpen] = useState(false);
 
-    // Load walk data
-    useEffect(() => {
-        if (!walkId) return;
-        walkService.getWalkDetail(Number(walkId))
-            .then(setWalk)
-            .catch(() => navigate(-1));
-    }, [walkId, navigate]);
+    // Load walk data (shares cache with WalkDetailPage)
+    const { data: walk } = useQuery({
+        queryKey: ['walk', 'detail', walkId],
+        queryFn: () => walkService.getWalkDetail(Number(walkId)),
+        enabled: !!walkId,
+    });
 
     // Reverse geocode from start coords
     useEffect(() => {
@@ -144,13 +144,15 @@ export const WalkMapExpandPage = () => {
         return () => {
             cancelled = true;
             if (pollTimer) clearInterval(pollTimer);
-            // Clean up spot markers and listeners
+            // Clean up all markers and listeners
             listenersRef.current.forEach(l => {
                 try { (naver.maps as any).Event.removeListener(l); } catch {}
             });
             listenersRef.current = [];
             spotMarkersRef.current.forEach(m => m.setMap(null));
             spotMarkersRef.current = [];
+            petMarkersRef.current.forEach(m => m.setMap(null));
+            petMarkersRef.current = [];
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
                 polylineRef.current = null;
@@ -171,13 +173,15 @@ export const WalkMapExpandPage = () => {
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
             }
-            // Clean previous spot markers
+            // Clean previous markers
             listenersRef.current.forEach(l => {
                 try { (naver.maps as any).Event.removeListener(l); } catch {}
             });
             listenersRef.current = [];
             spotMarkersRef.current.forEach(m => m.setMap(null));
             spotMarkersRef.current = [];
+            petMarkersRef.current.forEach(m => m.setMap(null));
+            petMarkersRef.current = [];
 
             const path = walk.pathPoints
                 .filter(p => p.lat != null && p.lng != null)
@@ -186,9 +190,9 @@ export const WalkMapExpandPage = () => {
             polylineRef.current = new naver.maps.Polyline({
                 map: mapInstanceRef.current,
                 path,
-                strokeColor: '#614108',
+                strokeColor: '#6B9A2B',
                 strokeWeight: 4,
-                strokeOpacity: 1,
+                strokeOpacity: 0.9,
             });
             // Build bounds from path + spots
             const bounds = path.length > 1
@@ -199,7 +203,7 @@ export const WalkMapExpandPage = () => {
             // Pet markers at start and end
             if (path.length > 0) {
                 const petImg = walk.petProfileImageUrls?.[0];
-                new naver.maps.Marker({
+                const startMarker = new naver.maps.Marker({
                     map: mapInstanceRef.current,
                     position: path[0],
                     icon: {
@@ -208,7 +212,7 @@ export const WalkMapExpandPage = () => {
                         anchor: new naver.maps.Point(26, 26),
                     } as unknown as naver.maps.MarkerIcon,
                 });
-                new naver.maps.Marker({
+                const endMarker = new naver.maps.Marker({
                     map: mapInstanceRef.current,
                     position: path[path.length - 1],
                     icon: {
@@ -217,6 +221,7 @@ export const WalkMapExpandPage = () => {
                         anchor: new naver.maps.Point(26, 26),
                     } as unknown as naver.maps.MarkerIcon,
                 });
+                petMarkersRef.current.push(startMarker, endMarker);
             }
 
             // Spot markers with click listeners

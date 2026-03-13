@@ -123,6 +123,7 @@ export const WalkDetailPage = () => {
     const polylineRef = useRef<naver.maps.Polyline | null>(null);
     const polylineDrawn = useRef(false);
     const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
+    const petMarkersRef = useRef<naver.maps.Marker[]>([]);
     const listenersRef = useRef<any[]>([]);
 
     const drawRoute = useCallback(() => {
@@ -147,8 +148,10 @@ export const WalkDetailPage = () => {
             for (const pt of points) bounds.extend(pt);
 
             // Pet profile markers at start and end
+            petMarkersRef.current.forEach(m => m.setMap(null));
+            petMarkersRef.current = [];
             const petImg = walkDetail.petProfileImageUrls?.[0];
-            new naver.maps.Marker({
+            const startMarker = new naver.maps.Marker({
                 map: mapInstanceRef.current,
                 position: points[0],
                 icon: {
@@ -157,7 +160,7 @@ export const WalkDetailPage = () => {
                     anchor: new naver.maps.Point(26, 26),
                 } as unknown as naver.maps.MarkerIcon,
             });
-            new naver.maps.Marker({
+            const endMarker = new naver.maps.Marker({
                 map: mapInstanceRef.current,
                 position: points[points.length - 1],
                 icon: {
@@ -166,6 +169,7 @@ export const WalkDetailPage = () => {
                     anchor: new naver.maps.Point(26, 26),
                 } as unknown as naver.maps.MarkerIcon,
             });
+            petMarkersRef.current.push(startMarker, endMarker);
 
             // Draw spot markers with click listeners
             if (walkDetail.spots?.length) {
@@ -223,6 +227,8 @@ export const WalkDetailPage = () => {
             listenersRef.current = [];
             spotMarkersRef.current.forEach(m => m.setMap(null));
             spotMarkersRef.current = [];
+            petMarkersRef.current.forEach(m => m.setMap(null));
+            petMarkersRef.current = [];
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
             }
