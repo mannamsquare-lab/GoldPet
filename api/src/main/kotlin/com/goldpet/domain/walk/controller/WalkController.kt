@@ -41,9 +41,10 @@ class WalkController(
     @GetMapping("/public")
     fun getPublicWalks(
         @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable,
-        @RequestParam(required = false) yearMonth: String?
+        @RequestParam(required = false) yearMonth: String?,
+        @RequestParam(required = false) userId: Long?
     ): ResponseEntity<org.springframework.data.domain.Page<WalkResponse>> {
-        val walkResponses = walkService.getPublicWalks(pageable, yearMonth)
+        val walkResponses = walkService.getPublicWalks(pageable, yearMonth, userId)
         return ResponseEntity.ok(walkResponses)
     }
 

@@ -41,6 +41,7 @@ export interface WalkSpot {
 
 export interface WalkSession {
   id: number;
+  userId?: number;
   startTime: string;
   endTime?: string;
   distance: number;
@@ -210,6 +211,7 @@ export const walkService = {
       const data = response.data;
       return {
         id: data.id,
+        userId: data.userId,
         startTime: data.startTime,
         endTime: data.endTime,
         distance: data.distanceKm ?? 0,
@@ -246,6 +248,12 @@ export const walkService = {
       params: { mode: 'calendar', yearMonth, size },
     });
     return response.data;
+  },
+
+  getUserPublicWalksRaw: async (userId: number): Promise<unknown[]> => {
+    const response = await apiClient.get('/walks/public', { params: { userId, size: 2000 } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.content ?? []);
   },
 
   getStaticMapImage: async (walkId: number, width: number, height: number): Promise<string | null> => {

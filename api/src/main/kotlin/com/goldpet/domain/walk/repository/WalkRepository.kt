@@ -13,6 +13,22 @@ interface WalkRepository : JpaRepository<Walk, Long> {
         countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true")
     fun findPublicWalks(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<Walk>
 
+    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.user.id = :userId ORDER BY w.startTime DESC",
+        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.user.id = :userId")
+    fun findPublicWalksByUserId(
+        @Param("userId") userId: Long,
+        pageable: org.springframework.data.domain.Pageable
+    ): org.springframework.data.domain.Page<Walk>
+
+    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.user.id = :userId AND w.startTime >= :start AND w.startTime < :end ORDER BY w.startTime DESC",
+        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.user.id = :userId AND w.startTime >= :start AND w.startTime < :end")
+    fun findPublicWalksByUserIdAndMonth(
+        @Param("userId") userId: Long,
+        @Param("start") start: java.time.LocalDateTime,
+        @Param("end") end: java.time.LocalDateTime,
+        pageable: org.springframework.data.domain.Pageable
+    ): org.springframework.data.domain.Page<Walk>
+
     @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.startTime >= :start AND w.startTime < :end ORDER BY w.startTime DESC",
         countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.startTime >= :start AND w.startTime < :end")
     fun findPublicWalksByMonth(

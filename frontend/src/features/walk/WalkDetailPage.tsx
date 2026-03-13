@@ -7,6 +7,7 @@ import { walkService } from '../../services/walkService';
 import type { WalkSpot } from '../../services/walkService';
 import { WalkChart, aggregateDaily, aggregateWeekly, aggregateMonthly } from './components/WalkChart';
 import type { WalkDataPoint } from './components/WalkChart';
+import { useAuthStore } from '../../stores/authStore';
 import { useNaverMap } from '../../hooks/useNaverMap';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml } from './utils/walkMapUtils';
@@ -41,6 +42,7 @@ function formatMonth(year: number, month: number): string {
 export const WalkDetailPage = () => {
     const { walkId } = useParams<{ walkId: string }>();
     const navigate = useNavigate();
+    const { user: authUser } = useAuthStore();
 
     const [period, setPeriod] = useState<Period>('weekly');
     const [currentDate, setCurrentDate] = useState<Date>(() => {
@@ -104,15 +106,23 @@ export const WalkDetailPage = () => {
         openGallery, closeGallery, resolvePreview, clearPreview,
     } = useWalkPhotoGallery(walkDetail?.spots);
 
-    // All walk records for chart aggregation
+    const isOwnWalk = walkDetail?.userId != null && walkDetail.userId === authUser?.id;
+    const walkOwnerId = walkDetail?.userId;
+
+    // Own walks: fetch from /walks/my; others: fetch their public walks
     const { data: allWalks = [] } = useQuery({
-        queryKey: ['walk', 'records', 'raw'],
+        queryKey: ['walk', 'chart-data', isOwnWalk ? 'my' : `user-${walkOwnerId}`],
         queryFn: async () => {
-            const { default: apiClient } = await import('../../services/api/client');
-            const res = await apiClient.get('/walks/my', { params: { size: 2000 } });
-            const data = res.data;
-            return Array.isArray(data) ? data : (data.content ?? []);
+            if (isOwnWalk) {
+                const { default: apiClient } = await import('../../services/api/client');
+                const res = await apiClient.get('/walks/my', { params: { size: 2000 } });
+                const data = res.data;
+                return Array.isArray(data) ? data : (data.content ?? []);
+            } else {
+                return walkService.getUserPublicWalksRaw(walkOwnerId!);
+            }
         },
+        enabled: walkOwnerId != null,
     });
 
     // Naver Map

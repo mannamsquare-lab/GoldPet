@@ -144,8 +144,13 @@ class WalkService(
         return WalkResponse.publicFrom(walk)
     }
 
-    fun getPublicWalks(pageable: org.springframework.data.domain.Pageable, yearMonth: String? = null): org.springframework.data.domain.Page<WalkResponse> {
-        val walks = if (yearMonth != null) {
+    fun getPublicWalks(pageable: org.springframework.data.domain.Pageable, yearMonth: String? = null, userId: Long? = null): org.springframework.data.domain.Page<WalkResponse> {
+        val walks = if (userId != null && yearMonth != null) {
+            val (start, end) = parseYearMonth(yearMonth)
+            walkRepository.findPublicWalksByUserIdAndMonth(userId, start, end, pageable)
+        } else if (userId != null) {
+            walkRepository.findPublicWalksByUserId(userId, pageable)
+        } else if (yearMonth != null) {
             val (start, end) = parseYearMonth(yearMonth)
             walkRepository.findPublicWalksByMonth(start, end, pageable)
         } else {
