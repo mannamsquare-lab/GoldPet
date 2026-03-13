@@ -9,7 +9,7 @@ import { WalkChart, aggregateDaily, aggregateWeekly, aggregateMonthly } from './
 import type { WalkDataPoint } from './components/WalkChart';
 import { useAuthStore } from '../../stores/authStore';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
-import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, snapToPath } from './utils/walkMapUtils';
+import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, createSvgPathOverlay } from './utils/walkMapUtils';
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
 import './WalkDetail.css';
 
@@ -127,7 +127,7 @@ export const WalkDetailPage = () => {
     // Direct map initialization (same pattern as WalkMapExpandPage)
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<naver.maps.Map | null>(null);
-    const polylineRef = useRef<naver.maps.Polyline | null>(null);
+    const pathOverlayRef = useRef<{ setMap: (map: naver.maps.Map | null) => void } | null>(null);
     const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
     const petMarkersRef = useRef<naver.maps.Marker[]>([]);
     const listenersRef = useRef<any[]>([]);
@@ -202,9 +202,9 @@ export const WalkDetailPage = () => {
             spotMarkersRef.current = [];
             petMarkersRef.current.forEach(m => m.setMap(null));
             petMarkersRef.current = [];
-            if (polylineRef.current) {
-                polylineRef.current.setMap(null);
-                polylineRef.current = null;
+            if (pathOverlayRef.current) {
+                pathOverlayRef.current.setMap(null);
+                pathOverlayRef.current = null;
             }
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.destroy();
@@ -219,8 +219,8 @@ export const WalkDetailPage = () => {
         if (!mapReady || !mapInstanceRef.current || !walkDetail?.pathPoints?.length) return;
         try {
             // Clean up previous drawings
-            if (polylineRef.current) {
-                polylineRef.current.setMap(null);
+            if (pathOverlayRef.current) {
+                pathOverlayRef.current.setMap(null);
             }
             listenersRef.current.forEach(l => {
                 try { (naver.maps as any).Event.removeListener(l); } catch {}
@@ -236,12 +236,12 @@ export const WalkDetailPage = () => {
                 .map((p: { lat: number; lng: number }) => new naver.maps.LatLng(p.lat, p.lng));
             if (points.length === 0) return;
 
-            polylineRef.current = new naver.maps.Polyline({
-                path: points,
+            // Use SVG OverlayView instead of Polyline to avoid canvas-DOM
+            // coordinate divergence at high zoom in WebView
+            pathOverlayRef.current = createSvgPathOverlay(mapInstanceRef.current, points, {
                 strokeColor: '#6B9A2B',
                 strokeWeight: 4,
                 strokeOpacity: 0.9,
-                map: mapInstanceRef.current,
             });
 
             // Fit bounds (include path + spots)
@@ -275,15 +275,10 @@ export const WalkDetailPage = () => {
             }
 
             // Draw spot markers with click listeners
-            // Snap spots to nearest path point to compensate for GPS jitter
-            const pathCoords = walkDetail.pathPoints
-                .filter((p: { lat: number; lng: number }) => p.lat != null && p.lng != null)
-                .map((p: { lat: number; lng: number }) => ({ lat: p.lat, lng: p.lng }));
             if (walkDetail.spots?.length) {
                 walkDetail.spots.forEach((spot: WalkSpot) => {
                     if (spot.latitude == null || spot.longitude == null) return;
-                    const snapped = snapToPath(spot.latitude, spot.longitude, pathCoords);
-                    const pos = new naver.maps.LatLng(snapped.lat, snapped.lng);
+                    const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
                     if (bounds) bounds.extend(pos);
                     const imgSrc = spotMarkerImage(spot.type ?? 'OTHER');
                     const marker = new naver.maps.Marker({
