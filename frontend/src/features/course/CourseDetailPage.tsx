@@ -115,7 +115,7 @@ export const CourseDetailPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['course'] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
-      navigate('/courses');
+      navigate('/courses', { replace: true });
     },
   });
 

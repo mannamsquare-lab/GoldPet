@@ -614,7 +614,7 @@ export function CourseCreatePage() {
         ? courseService.createCourseFromWalk(walkId!, req)
         : courseService.createCourse(req),
     onSuccess: (data) => {
-      navigate(`/courses/${data.id}`);
+      navigate(`/courses/${data.id}`, { replace: true });
     },
   });
 
@@ -624,7 +624,7 @@ export function CourseCreatePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['course'] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
-      navigate(`/courses/${courseId}`);
+      navigate(`/courses/${courseId}`, { replace: true });
     },
   });
 

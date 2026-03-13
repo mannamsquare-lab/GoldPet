@@ -59,7 +59,7 @@ export default function AIProfileSimplePage() {
 
   const createMutation = useMutation({
     mutationFn: aiProfileService.createRequest,
-    onSuccess: (data) => navigate(`/ai-profile/result/${data.id}`),
+    onSuccess: (data) => navigate(`/ai-profile/result/${data.id}`, { replace: true }),
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { message?: string } } };
       const message = err?.response?.data?.message || '프로필 생성에 실패했습니다.';

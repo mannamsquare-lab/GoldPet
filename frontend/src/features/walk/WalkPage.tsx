@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { walkService, getTodayStats } from '../../services/walkService';
 import { courseService } from '../../services/courseService';
 import type { WalkRecord, WalkRankingEntry } from '../../services/walkService';
@@ -57,7 +57,17 @@ function CoursesTabContent() {
 
 export const WalkPage = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'records' | 'courses' | 'ranking'>('records');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    const activeTab: 'records' | 'courses' | 'ranking' =
+        tabParam === 'courses' || tabParam === 'ranking' ? tabParam : 'records';
+    const setActiveTab = (tab: 'records' | 'courses' | 'ranking') => {
+        if (tab === 'records') {
+            setSearchParams({}, { replace: true });
+        } else {
+            setSearchParams({ tab }, { replace: true });
+        }
+    };
     const [yearMonth, setYearMonth] = useState<string>(getCurrentYearMonth());
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [rankingSize, setRankingSize] = useState<number>(10);

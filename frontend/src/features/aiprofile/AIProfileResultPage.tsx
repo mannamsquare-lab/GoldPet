@@ -51,7 +51,7 @@ export default function AIProfileResultPage() {
     mutationFn: () => aiProfileService.cancelRequest(Number(requestId)),
     onSuccess: () => {
       showToast('요청이 취소되었습니다.');
-      navigate('/ai-profile');
+      navigate('/ai-profile', { replace: true });
     },
     onError: () => {
       showToast('취소에 실패했습니다.', 'error');
@@ -68,7 +68,7 @@ export default function AIProfileResultPage() {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
       showToast('프로필에 적용되었습니다!', 'success');
       setShowApplySheet(false);
-      navigate('/profile?tab=pet');
+      navigate('/profile?tab=pet', { replace: true });
     },
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { message?: string } } };
@@ -206,7 +206,7 @@ export default function AIProfileResultPage() {
               <button
                 type="button"
                 className="ai-result-remake-btn"
-                onClick={() => navigate('/ai-profile')}
+                onClick={() => navigate('/ai-profile', { replace: true })}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
@@ -238,7 +238,7 @@ export default function AIProfileResultPage() {
             <button
               type="button"
               className="submit_btn"
-              onClick={() => navigate('/ai-profile')}
+              onClick={() => navigate('/ai-profile', { replace: true })}
             >
               다시 시도하기
             </button>
@@ -257,7 +257,7 @@ export default function AIProfileResultPage() {
             <button
               type="button"
               className="submit_btn"
-              onClick={() => navigate('/ai-profile')}
+              onClick={() => navigate('/ai-profile', { replace: true })}
             >
               다시 만들기
             </button>

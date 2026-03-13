@@ -32,7 +32,7 @@ export default function AIProfileStyleSelectPage() {
   const createMutation = useMutation({
     mutationFn: aiProfileService.createRequest,
     onSuccess: (data) => {
-      navigate(`/ai-profile/result/${data.id}`);
+      navigate(`/ai-profile/result/${data.id}`, { replace: true });
     },
   });
 
