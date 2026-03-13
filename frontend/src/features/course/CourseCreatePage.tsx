@@ -742,7 +742,12 @@ export function CourseCreatePage() {
         )}
 
         {!mapLoadFailed && (
-          <div className="course_create_map_controls">
+          <div
+            className="course_create_map_controls"
+            onTouchStart={e => e.stopPropagation()}
+            onTouchEnd={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+          >
             <button
               className="course_create_map_ctrl_btn"
               onClick={handleClearWaypoints}
