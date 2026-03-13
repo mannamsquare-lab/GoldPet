@@ -74,20 +74,25 @@ export const WalkMapExpandPage = () => {
                     mapDataControl: false,
                 });
                 setMapReady(true);
-                // Ensure canvas matches final flex layout dimensions
+                // Track container resizes and sync map internal size via setSize()
+                // Naver Maps v3 does NOT auto-update internal size on CSS changes
+                const syncMapSize = () => {
+                    if (mapInstanceRef.current && mapRef.current) {
+                        const w = mapRef.current.clientWidth;
+                        const h = mapRef.current.clientHeight;
+                        if (w > 0 && h > 0) {
+                            mapInstanceRef.current.setSize(new naver.maps.Size(w, h));
+                        }
+                    }
+                };
+                // Sync after flex layout settles
                 requestAnimationFrame(() => {
                     setTimeout(() => {
-                        if (!cancelled && mapInstanceRef.current) {
-                            mapInstanceRef.current.autoResize();
-                        }
+                        if (!cancelled) syncMapSize();
                     }, 200);
                 });
-                // Track container resizes to keep canvas in sync
-                resizeObserver = new ResizeObserver(() => {
-                    if (mapInstanceRef.current) {
-                        mapInstanceRef.current.autoResize();
-                    }
-                });
+                // Keep synced on future resizes (orientation change, etc.)
+                resizeObserver = new ResizeObserver(() => syncMapSize());
                 resizeObserver.observe(el);
                 setTimeout(() => {
                     if (cancelled) return;
@@ -153,8 +158,14 @@ export const WalkMapExpandPage = () => {
     useEffect(() => {
         if (!mapReady || !mapInstanceRef.current || !walk?.pathPoints?.length) return;
         try {
-            // Sync canvas size with flex container before drawing overlays
-            mapInstanceRef.current.autoResize();
+            // Sync map internal size with flex container before drawing overlays
+            if (mapRef.current) {
+                const w = mapRef.current.clientWidth;
+                const h = mapRef.current.clientHeight;
+                if (w > 0 && h > 0) {
+                    mapInstanceRef.current.setSize(new naver.maps.Size(w, h));
+                }
+            }
 
             if (polylineRef.current) {
                 polylineRef.current.setMap(null);
@@ -242,10 +253,14 @@ export const WalkMapExpandPage = () => {
                 mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 20, bottom: 80, left: 20 });
             }
 
-            // Re-sync canvas after fitBounds animation settles
+            // Re-sync map size after fitBounds animation settles
             setTimeout(() => {
-                if (mapInstanceRef.current) {
-                    mapInstanceRef.current.autoResize();
+                if (mapInstanceRef.current && mapRef.current) {
+                    const w = mapRef.current.clientWidth;
+                    const h = mapRef.current.clientHeight;
+                    if (w > 0 && h > 0) {
+                        mapInstanceRef.current.setSize(new naver.maps.Size(w, h));
+                    }
                 }
             }, 500);
         } catch (err) {
