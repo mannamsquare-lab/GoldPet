@@ -169,6 +169,7 @@ export function CourseCreatePage() {
   const [editingSpot, setEditingSpot] = useState<LocalSpot | null>(null);
   const [mapLoadFailed, setMapLoadFailed] = useState(false);
   const isAddingSpotRef = useRef(false);
+  const modalOpenRef = useRef(false);
   const lastClickTimeRef = useRef(0);
   const lastPinchTimeRef = useRef(0);
 
@@ -440,7 +441,9 @@ export function CourseCreatePage() {
 
       // Map tap/click handler — add waypoint or open spot modal
       const handleMapTap = (e: { coord: naver.maps.LatLng }) => {
-        // Debounce: prevent double-fire from both click+tap
+        // Ignore taps while modal is open (Android leaks tap events through modal)
+        if (modalOpenRef.current) return;
+        // Debounce: prevent double-fire
         const now = Date.now();
         if (now - lastClickTimeRef.current < 300) return;
         // Ignore taps during/after pinch-to-zoom gesture
@@ -454,6 +457,7 @@ export function CourseCreatePage() {
         if (isAddingSpotRef.current) {
           isAddingSpotRef.current = false;
           setSpotHint(false);
+          modalOpenRef.current = true;
           setShowSpotModal(true);
         } else {
           setWaypoints(prev => [...prev, [lat, lng]]);
@@ -587,13 +591,21 @@ export function CourseCreatePage() {
     setSpotHint(true);
   };
 
+  const closeModal = () => {
+    setShowSpotModal(false);
+    setEditingSpot(null);
+    isAddingSpotRef.current = false;
+    setSpotHint(false);
+    // Delay clearing modalOpenRef to absorb leaked tap events on Android
+    setTimeout(() => { modalOpenRef.current = false; }, 400);
+  };
+
   const handleSpotConfirm = (type: CourseSpotType, name: string, description: string) => {
     if (editingSpot) {
       setSpots(prev => prev.map(s =>
         s.id === editingSpot.id ? { ...s, type, name, description } : s
       ));
-      setEditingSpot(null);
-      setShowSpotModal(false);
+      closeModal();
       return;
     }
 
@@ -611,7 +623,7 @@ export function CourseCreatePage() {
       description,
     };
     setSpots(prev => [...prev, newSpot]);
-    setShowSpotModal(false);
+    closeModal();
   };
 
   const handleRemoveSpot = (spotId: string) => {
@@ -791,6 +803,7 @@ export function CourseCreatePage() {
                   className="course_create_spot_item"
                   onClick={() => {
                     setEditingSpot(s);
+                    modalOpenRef.current = true;
                     setShowSpotModal(true);
                   }}
                 >
@@ -922,12 +935,7 @@ export function CourseCreatePage() {
         <SpotModal
           key={editingSpot?.id ?? 'new'}
           onConfirm={handleSpotConfirm}
-          onClose={() => {
-            setShowSpotModal(false);
-            setEditingSpot(null);
-            isAddingSpotRef.current = false;
-            setSpotHint(false);
-          }}
+          onClose={closeModal}
           editSpot={editingSpot ?? undefined}
         />
       )}
