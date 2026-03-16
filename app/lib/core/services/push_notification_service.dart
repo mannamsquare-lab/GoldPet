@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../bridge/native_bridge.dart';
 import '../config/environment.dart';
 
@@ -219,14 +220,29 @@ class PushNotificationService {
     }
   }
 
-  /// 안정적인 deviceId를 SharedPreferences에서 가져오거나 생성
+  /// 안정적인 deviceId를 Keychain(iOS)/EncryptedPrefs(Android)에서 가져오거나 생성
+  /// iOS에서 SharedPreferences는 앱 재설치 시 초기화되므로 flutter_secure_storage 사용
   Future<String> getOrCreateDeviceId() async {
-    final prefs = await SharedPreferences.getInstance();
+    const storage = FlutterSecureStorage(
+      iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+    );
     const key = 'device_id';
-    String? deviceId = prefs.getString(key);
+    String? deviceId = await storage.read(key: key);
+
+    // SharedPreferences에서 마이그레이션 (기존 사용자 호환)
+    if (deviceId == null) {
+      final prefs = await SharedPreferences.getInstance();
+      deviceId = prefs.getString(key);
+      if (deviceId != null) {
+        await storage.write(key: key, value: deviceId);
+        await prefs.remove(key);
+        debugPrint('[FCM] Migrated deviceId to secure storage: $deviceId');
+      }
+    }
+
     if (deviceId == null) {
       deviceId = const Uuid().v4();
-      await prefs.setString(key, deviceId);
+      await storage.write(key: key, value: deviceId);
       debugPrint('[FCM] Generated new deviceId: $deviceId');
     } else {
       debugPrint('[FCM] Using existing deviceId: $deviceId');
