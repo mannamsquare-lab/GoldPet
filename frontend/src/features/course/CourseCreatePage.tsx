@@ -728,6 +728,14 @@ export function CourseCreatePage() {
     }, 300);
   };
 
+  // ── Dismiss keyboard on tap outside inputs ────────────────────────────────
+  const handlePageClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
+      (document.activeElement as HTMLElement)?.blur();
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (walkLoading || courseLoading) {
@@ -744,7 +752,7 @@ export function CourseCreatePage() {
   const formattedMinutes = estimatedMinutes ? `${estimatedMinutes}분` : '-';
 
   return (
-    <div className="course_create_page">
+    <div className="course_create_page" onClick={handlePageClick}>
       {/* Header */}
       <MainHeader variant="back-only" className="intro_header" />
 
@@ -852,6 +860,7 @@ export function CourseCreatePage() {
               value={title}
               onChange={e => setTitle(e.target.value)}
               onFocus={handleInputFocus}
+              onTouchEnd={e => (e.target as HTMLInputElement).focus()}
               maxLength={100}
             />
           </div>
@@ -866,6 +875,7 @@ export function CourseCreatePage() {
               value={desc}
               onChange={e => setDesc(e.target.value)}
               onFocus={handleInputFocus}
+              onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
               rows={3}
             />
           </div>
@@ -901,6 +911,7 @@ export function CourseCreatePage() {
               value={estimatedMinutes}
               onChange={e => setEstimatedMinutes(e.target.value)}
               onFocus={handleInputFocus}
+              onTouchEnd={e => (e.target as HTMLInputElement).focus()}
             />
           </div>
         </div>
