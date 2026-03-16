@@ -138,6 +138,7 @@ export const WalkDetailPage = () => {
     useEffect(() => {
         let cancelled = false;
         let pollTimer: ReturnType<typeof setInterval>;
+        let resizeObserver: ResizeObserver | null = null;
 
         const initMap = (lat: number, lng: number) => {
             if (!mapRef.current || mapInstanceRef.current) return;
@@ -157,6 +158,26 @@ export const WalkDetailPage = () => {
                     mapDataControl: false,
                 });
                 setMapReady(true);
+                // Track container resizes and sync map internal size via setSize()
+                // Naver Maps v3 does NOT auto-update internal size on CSS changes
+                const syncMapSize = () => {
+                    if (mapInstanceRef.current && mapRef.current) {
+                        const w = mapRef.current.clientWidth;
+                        const h = mapRef.current.clientHeight;
+                        if (w > 0 && h > 0) {
+                            mapInstanceRef.current.setSize(new naver.maps.Size(w, h));
+                        }
+                    }
+                };
+                // Sync after flex layout settles
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        if (!cancelled) syncMapSize();
+                    }, 200);
+                });
+                // Keep synced on future resizes (orientation change, etc.)
+                resizeObserver = new ResizeObserver(() => syncMapSize());
+                resizeObserver.observe(el);
                 setTimeout(() => {
                     if (cancelled) return;
                     if (!mapInstanceRef.current || (mapRef.current && mapRef.current.querySelectorAll('img').length === 0)) {
@@ -194,6 +215,7 @@ export const WalkDetailPage = () => {
         return () => {
             cancelled = true;
             if (pollTimer) clearInterval(pollTimer);
+            if (resizeObserver) resizeObserver.disconnect();
             listenersRef.current.forEach(l => {
                 try { (naver.maps as any).Event.removeListener(l); } catch {}
             });
@@ -304,6 +326,13 @@ export const WalkDetailPage = () => {
 
             if (bounds) {
                 mapInstanceRef.current.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
+                // Force overlay redraw after fitBounds animation completes
+                const idleListener = (naver.maps as any).Event.addListenerOnce(
+                    mapInstanceRef.current, 'idle', () => {
+                        (naver.maps as any).Event.trigger(mapInstanceRef.current, 'resize');
+                    }
+                );
+                listenersRef.current.push(idleListener);
             } else if (points.length === 1) {
                 mapInstanceRef.current.setCenter(points[0]);
                 mapInstanceRef.current.setZoom(16);
