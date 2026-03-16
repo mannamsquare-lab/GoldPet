@@ -340,9 +340,9 @@ export const CourseReviewSection = ({ courseId }: Props) => {
   };
 
   const handlePageTouch = (e: React.TouchEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
-      (document.activeElement as HTMLElement)?.blur();
+    const active = document.activeElement as HTMLElement;
+    if (active && active !== e.target) {
+      active.blur();
     }
   };
 
