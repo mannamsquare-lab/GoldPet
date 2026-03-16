@@ -332,9 +332,9 @@ export function CourseCreatePage() {
         draggable: true,
       });
 
-      // Click marker to remove it (last waypoint only for simplicity)
+      // Tap marker to remove it (consistent with map 'tap' event)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (naver.maps as any).Event.addListener(marker, 'click', () => {
+      (naver.maps as any).Event.addListener(marker, 'tap', () => {
         setWaypoints(prev => {
           const next = prev.filter((_, i) => i !== idx);
           return next;
@@ -459,12 +459,12 @@ export function CourseCreatePage() {
         }
       };
 
-      // Use 'click' for map tap — Naver Maps translates touch to click on both platforms.
-      // Do NOT add both click+tap: the delayed click event hits newly-created markers
-      // (whose click handler removes the waypoint), causing the "appears then disappears" bug.
+      // Use 'tap' for map — Android WebView only fires 'click' on long press.
+      // Both map and marker handlers must use the same event type ('tap') to
+      // prevent cross-event interference (tap adds → click removes).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const clickL = (naver.maps as any).Event.addListener(mapInstanceRef.current, 'click', handleMapTap);
-      clickListenerRef.current = [clickL, zoomListener];
+      const tapL = (naver.maps as any).Event.addListener(mapInstanceRef.current, 'tap', handleMapTap);
+      clickListenerRef.current = [tapL, zoomListener];
 
       // Try to get current position
       const setCenter = (lat: number, lng: number) => {
