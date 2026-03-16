@@ -453,6 +453,7 @@ export function CourseCreatePage() {
 
         if (isAddingSpotRef.current) {
           isAddingSpotRef.current = false;
+          setSpotHint(false);
           setShowSpotModal(true);
         } else {
           setWaypoints(prev => [...prev, [lat, lng]]);
@@ -580,9 +581,10 @@ export function CourseCreatePage() {
 
   // ── Spot modal handling ───────────────────────────────────────────────────
 
+  const [spotHint, setSpotHint] = useState(false);
   const handleAddSpot = () => {
     isAddingSpotRef.current = true;
-    showAlert('지도에서 스팟을 추가할 위치를 탭하세요.');
+    setSpotHint(true);
   };
 
   const handleSpotConfirm = (type: CourseSpotType, name: string, description: string) => {
@@ -740,9 +742,14 @@ export function CourseCreatePage() {
           <div ref={mapRef} className="course_create_map" />
         )}
 
-        {!mapLoadFailed && waypoints.length === 0 && (
+        {!mapLoadFailed && waypoints.length === 0 && !spotHint && (
           <div className="course_create_map_hint">
             {isEditMode ? '경로가 초기화되었습니다. 지도를 탭하여 새 경로를 그려보세요' : '지도를 탭하여 경로를 그려보세요'}
+          </div>
+        )}
+        {spotHint && (
+          <div className="course_create_map_hint" style={{ background: 'rgba(97,65,8,0.85)' }}>
+            지도에서 스팟을 추가할 위치를 탭하세요
           </div>
         )}
       </div>
@@ -919,6 +926,7 @@ export function CourseCreatePage() {
             setShowSpotModal(false);
             setEditingSpot(null);
             isAddingSpotRef.current = false;
+            setSpotHint(false);
           }}
           editSpot={editingSpot ?? undefined}
         />
