@@ -28,6 +28,7 @@ import org.mockito.kotlin.*
 import java.time.LocalDateTime
 import java.util.*
 import com.goldpet.domain.common.exception.*
+import com.goldpet.domain.common.service.SystemSettingService
 
 class WalkServiceTest {
 
@@ -55,6 +56,9 @@ class WalkServiceTest {
     @Mock
     private lateinit var applicationEventPublisher: ApplicationEventPublisher
 
+    @Mock
+    private lateinit var systemSettingService: SystemSettingService
+
     private lateinit var walkService: WalkService
 
     private lateinit var testUser: User
@@ -63,7 +67,7 @@ class WalkServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        walkService = WalkService(walkRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, naverGeocodingService, applicationEventPublisher)
+        walkService = WalkService(walkRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, naverGeocodingService, applicationEventPublisher, systemSettingService)
         whenever(naverGeocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
 
         testUser = createTestUser(1L, "testuser", "테스트유저")

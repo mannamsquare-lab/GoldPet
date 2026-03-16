@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param
 interface ChatMessageRepository : JpaRepository<ChatMessage, Long> {
     @EntityGraph(attributePaths = ["sender", "replyTo", "replyTo.sender"])
     fun findByChatRoomIdOrderByCreatedAtAsc(chatRoomId: Long, pageable: Pageable): List<ChatMessage>
+    @EntityGraph(attributePaths = ["sender", "replyTo", "replyTo.sender"])
     fun findByChatRoomIdOrderByCreatedAtDesc(chatRoomId: Long, pageable: Pageable): Page<ChatMessage>
     fun findTopByChatRoomIdOrderByCreatedAtDesc(chatRoomId: Long): ChatMessage?
     fun deleteByChatRoomId(chatRoomId: Long)

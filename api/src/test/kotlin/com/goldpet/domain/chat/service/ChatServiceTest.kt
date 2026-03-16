@@ -21,6 +21,7 @@ import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.time.LocalDateTime
 import java.util.*
@@ -345,13 +346,13 @@ class ChatServiceTest {
         }
 
         whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
-        whenever(chatMessageRepository.findByChatRoomIdOrderByCreatedAtAsc(1L, PageRequest.of(0, 50)))
-            .thenReturn(listOf(message1, message2))
+        whenever(chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(1L, PageRequest.of(0, 50)))
+            .thenReturn(PageImpl(listOf(message2, message1)))
 
         // When
         val result = chatService.getChatHistory(1L, 0, 50)
 
-        // Then
+        // Then — DESC 결과를 reversed()하여 ASC 순서로 반환
         assertEquals(2, result.size)
         assertEquals("첫 번째 메시지", result[0].textContent)
         assertEquals("두 번째 메시지", result[1].textContent)

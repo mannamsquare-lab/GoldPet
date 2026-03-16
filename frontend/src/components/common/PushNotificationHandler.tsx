@@ -16,7 +16,7 @@ export function PushNotificationHandler() {
             const { targetType, targetId, type } = data;
             switch (targetType) {
                 case 'CHAT_ROOM':
-                    queryClient.invalidateQueries({ queryKey: ['chatMessages', String(targetId)] });
+                    queryClient.removeQueries({ queryKey: ['chatMessages', String(targetId)] });
                     navigate(`/chat/${targetId}`);
                     break;
                 case 'POST': navigate(`/community/${targetId}`); break;
@@ -26,7 +26,7 @@ export function PushNotificationHandler() {
                     if (type === 'LIKE' || type === 'MATCH') {
                         navigate('/friend-list');
                     } else if (type === 'MESSAGE') {
-                        queryClient.invalidateQueries({ queryKey: ['chatMessages', String(targetId)] });
+                        queryClient.removeQueries({ queryKey: ['chatMessages', String(targetId)] });
                         navigate(`/chat/${targetId}`);
                     } else {
                         navigate('/notifications');
