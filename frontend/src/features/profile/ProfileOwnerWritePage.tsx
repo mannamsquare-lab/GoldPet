@@ -378,9 +378,16 @@ const ProfileOwnerWritePage: React.FC = () => {
         }
     };
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
+      (document.activeElement as HTMLElement)?.blur();
+    }
+  };
+
     return (
         <SubPageLayout title="프로필 수정">
-            <div id="profileContainer">
+            <div id="profileContainer" onTouchStart={handlePageTouch}>
                 <div className="profile_write">
                     <div className="profile_img_edit">
                             <div className="profile_img" style={{ 
@@ -426,6 +433,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                     placeholder="이름을 입력해주세요."
                                     value={name}
                                     onChange={(e) => !isProfileLocked && setName(e.target.value)}
+                                    onTouchEnd={e => (e.target as HTMLInputElement).focus()}
                                     readOnly={isProfileLocked}
                                     maxLength={20}
                                 />
@@ -443,6 +451,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                         placeholder="닉네임을 입력해주세요."
                                         value={nickname}
                                         onChange={handleNicknameChange}
+                                        onTouchEnd={e => (e.target as HTMLInputElement).focus()}
                                         maxLength={15}
                                     />
                                 </div>
@@ -469,6 +478,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                     placeholder="생년월일 8자리"
                                     value={birthDate}
                                     onChange={(e) => !isProfileLocked && setBirthDate(e.target.value.replace(/[^0-9]/g, ''))}
+                                    onTouchEnd={e => (e.target as HTMLInputElement).focus()}
                                     maxLength={8}
                                     readOnly={isProfileLocked}
                                 />
@@ -492,6 +502,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                         placeholder="휴대폰 11자리"
                                         value={phoneNumber}
                                         onChange={(e) => !isProfileLocked && handlePhoneNumberChange(e)}
+                                        onTouchEnd={e => (e.target as HTMLInputElement).focus()}
                                         maxLength={11}
                                         readOnly={isProfileLocked}
                                     />
@@ -516,6 +527,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                                 placeholder="인증번호 6자리"
                                                 value={verifyCode}
                                                 onChange={(e) => setVerifyCode(e.target.value.replace(/[^0-9]/g, ''))}
+                                                onTouchEnd={e => (e.target as HTMLInputElement).focus()}
                                                 maxLength={6}
                                                 disabled={isPhoneVerified}
                                             />
@@ -602,6 +614,7 @@ const ProfileOwnerWritePage: React.FC = () => {
                                     placeholder="간단한 자기소개을 적어주세요."
                                     value={intro}
                                     onChange={(e) => setIntro(e.target.value)}
+                                    onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
                                     maxLength={100}
                                     onFocus={() => {
                                         setTimeout(() => {

@@ -151,8 +151,15 @@ export default function PetRegisterPage() {
 
   const selectedTags = formData.temperamentTags?.split(',').filter(Boolean) || [];
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
+      (document.activeElement as HTMLElement)?.blur();
+    }
+  };
+
   return (
-    <div id="petRegisterPage">
+    <div id="petRegisterPage" onTouchStart={handlePageTouch}>
       {/* Header */}
       <div className="pet_header">
         <BackButton onClick={() => navigate(-1)} />
@@ -184,6 +191,7 @@ export default function PetRegisterPage() {
             placeholder="반려동물 이름"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onTouchEnd={e => (e.target as HTMLInputElement).focus()}
             maxLength={20}
           />
         </div>
@@ -247,6 +255,7 @@ export default function PetRegisterPage() {
             type="date"
             value={formData.birthDate || ''}
             onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+            onTouchEnd={e => (e.target as HTMLInputElement).focus()}
             max={new Date().toISOString().split('T')[0]}
           />
         </div>
@@ -262,6 +271,7 @@ export default function PetRegisterPage() {
             max="100"
             value={formData.weightKg || ''}
             onChange={(e) => setFormData({ ...formData, weightKg: Number(e.target.value) || undefined })}
+            onTouchEnd={e => (e.target as HTMLInputElement).focus()}
           />
         </div>
 

@@ -317,8 +317,15 @@ export default function CommunityDetailPage() {
     return <div className="error">게시글을 찾을 수 없습니다.</div>;
   }
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
+      (document.activeElement as HTMLElement)?.blur();
+    }
+  };
+
   return (
-    <div id="communityContainer" className="community-detail-mode">
+    <div id="communityContainer" className="community-detail-mode" onTouchStart={handlePageTouch}>
       {/* Top Header */}
       <div className="history_util">
         <BackButton onClick={() => navigate(-1)} />
@@ -439,6 +446,7 @@ export default function CommunityDetailPage() {
                                e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
                                e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                              }}
+                             onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
                              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', resize: 'none', minHeight: '60px', maxHeight: '120px', overflowY: 'hidden', fontFamily: 'inherit' }}
                           />
                           <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
@@ -525,6 +533,7 @@ export default function CommunityDetailPage() {
             rows={1}
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
+            onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
             onChange={(e) => {
               setCommentInput(e.target.value);
               e.target.style.height = '32px';

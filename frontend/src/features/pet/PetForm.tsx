@@ -334,6 +334,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
                                     placeholder="입력해 주세요"
                                     value={attributeValues[attr.code] || ''}
                                     onChange={(e) => setAttributeValues(prev => ({ ...prev, [attr.code]: e.target.value }))}
+                                    onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
                                 ></textarea>
                             )}
 
@@ -394,6 +395,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
                                 placeholder="입력해 주세요"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
+                                onTouchEnd={e => (e.target as HTMLInputElement).focus()}
                                 maxLength={20}
                             />
                         </div>
@@ -525,6 +527,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
                                         setWeightKg(value);
                                     }
                                 }}
+                                onTouchEnd={e => (e.target as HTMLInputElement).focus()}
                                 inputMode="decimal"
                             />
                         </div>

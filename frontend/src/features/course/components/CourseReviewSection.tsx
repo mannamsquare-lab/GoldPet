@@ -211,6 +211,7 @@ function CommentItem({ comment, courseId, currentUserId, isReply = false, onRepl
             className="course_review_edit_textarea"
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
+            onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
           />
           <div className="course_review_edit_actions">
             <button type="button" className="course_review_edit_btn" onClick={() => setEditMode(false)}>취소</button>
@@ -338,8 +339,15 @@ export const CourseReviewSection = ({ courseId }: Props) => {
     createMutation.mutate();
   };
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
+      (document.activeElement as HTMLElement)?.blur();
+    }
+  };
+
   return (
-    <section className="course_review_section">
+    <section className="course_review_section" onTouchStart={handlePageTouch}>
       <div className="course_review_header">
         <span className="course_review_header_title">리뷰</span>
         {hasLoadedOnce && totalCount > 0 && (
@@ -374,6 +382,7 @@ export const CourseReviewSection = ({ courseId }: Props) => {
             placeholder="리뷰를 남겨보세요"
             value={formContent}
             onChange={(e) => setFormContent(e.target.value)}
+            onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
             rows={3}
           />
           <button

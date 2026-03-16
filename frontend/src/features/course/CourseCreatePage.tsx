@@ -729,7 +729,7 @@ export function CourseCreatePage() {
   };
 
   // ── Dismiss keyboard on tap outside inputs ────────────────────────────────
-  const handlePageClick = (e: React.MouseEvent) => {
+  const handlePageTouch = (e: React.TouchEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
       (document.activeElement as HTMLElement)?.blur();
@@ -752,7 +752,7 @@ export function CourseCreatePage() {
   const formattedMinutes = estimatedMinutes ? `${estimatedMinutes}분` : '-';
 
   return (
-    <div className="course_create_page" onClick={handlePageClick}>
+    <div className="course_create_page" onTouchStart={handlePageTouch}>
       {/* Header */}
       <MainHeader variant="back-only" className="intro_header" />
 
