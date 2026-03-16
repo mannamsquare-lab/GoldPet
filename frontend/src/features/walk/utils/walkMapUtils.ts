@@ -36,57 +36,21 @@ export function petCircleMarkerHtml(variant: 'start' | 'end', imageUrl?: string 
     return `<div class="walk_pet_circle walk_pet_circle--${variant}"><img src="${imgSrc}" alt="" /></div>`;
 }
 
-/** Create an SVG-based path overlay using OverlayView.
- *  Uses DOM rendering (same as Marker) instead of canvas (Polyline),
- *  so the path stays aligned with markers at all zoom levels in WebView. */
+/** Create a path overlay on the map using naver.maps.Polyline.
+ *  Returns an object with setMap() for consistent cleanup interface. */
 export function createSvgPathOverlay(
     map: naver.maps.Map,
     path: naver.maps.LatLng[],
     options: { strokeColor?: string; strokeWeight?: number; strokeOpacity?: number } = {},
 ): { setMap: (map: naver.maps.Map | null) => void } {
-    const color = options.strokeColor || '#6B9A2B';
-    const weight = options.strokeWeight || 4;
-    const opacity = options.strokeOpacity || 0.9;
-
-    const Ctor = function (this: any) {
-        this._path = path;
-        this._el = null as HTMLElement | null;
-    };
-    Ctor.prototype = new (naver.maps as any).OverlayView();
-    Ctor.prototype.constructor = Ctor;
-
-    Ctor.prototype.onAdd = function (this: any) {
-        const el = document.createElement('div');
-        el.style.position = 'absolute';
-        el.style.left = '0';
-        el.style.top = '0';
-        el.style.pointerEvents = 'none';
-        this._el = el;
-        this.getPanes().overlayLayer.appendChild(el);
-    };
-
-    Ctor.prototype.draw = function (this: any) {
-        const proj = this.getProjection();
-        if (!proj || !this._path.length || !this._el) return;
-        const pts: string[] = [];
-        for (let i = 0; i < this._path.length; i++) {
-            const px = proj.fromCoordToOffset(this._path[i]);
-            pts.push(`${px.x},${px.y}`);
-        }
-        this._el.innerHTML =
-            `<svg style="position:absolute;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none" xmlns="http://www.w3.org/2000/svg">` +
-            `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="${weight}" stroke-opacity="${opacity}" stroke-linecap="round" stroke-linejoin="round"/>` +
-            `</svg>`;
-    };
-
-    Ctor.prototype.onRemove = function (this: any) {
-        if (this._el?.parentNode) this._el.parentNode.removeChild(this._el);
-        this._el = null;
-    };
-
-    const overlay = new (Ctor as any)();
-    overlay.setMap(map);
-    return overlay;
+    const polyline = new naver.maps.Polyline({
+        map,
+        path,
+        strokeColor: options.strokeColor || '#6B9A2B',
+        strokeWeight: options.strokeWeight || 4,
+        strokeOpacity: options.strokeOpacity || 0.9,
+    });
+    return { setMap: (m: naver.maps.Map | null) => polyline.setMap(m as any) };
 }
 
 /** Snap a point to the nearest position on a polyline path.
