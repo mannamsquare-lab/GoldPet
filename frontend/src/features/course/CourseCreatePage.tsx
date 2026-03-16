@@ -434,11 +434,12 @@ export function CourseCreatePage() {
         lastTouchRef.current = { touches: te.touches.length, time: Date.now() };
       }, { passive: true });
 
-      // Click listener — add waypoint or open spot modal (one-shot mode)
+      // Tap listener — add waypoint or open spot modal (one-shot mode)
+      // Use 'tap' instead of 'click' for reliable touch handling on Android WebView
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       clickListenerRef.current = (naver.maps as any).Event.addListener(
         mapInstanceRef.current,
-        'click',
+        'tap',
         (e: { coord: naver.maps.LatLng }) => {
           // Ignore clicks from pinch-to-zoom (multi-touch gesture)
           if (lastTouchRef.current.touches >= 2) {
