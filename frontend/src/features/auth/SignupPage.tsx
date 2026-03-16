@@ -279,8 +279,15 @@ export const SignupPage = () => {
     }
   };
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const active = document.activeElement as HTMLElement;
+    if (active && active !== e.target) {
+      active.blur();
+    }
+  };
+
   return (
-    <div className="signup-page-container">
+    <div className="signup-page-container" onTouchStart={handlePageTouch}>
       {/* Title Section */}
       <div className="typea-title-group-bc">
         <h2 className="typea-title">회원가입</h2>
@@ -302,6 +309,7 @@ export const SignupPage = () => {
                 value={formData.username}
                 onChange={handleChange}
                 disabled={isLoading}
+                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               <button
                 type="button"
@@ -332,6 +340,7 @@ export const SignupPage = () => {
                 value={formData.password}
                 onChange={handleChange}
                 disabled={isLoading}
+                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               <button
                 type="button"
@@ -362,6 +371,7 @@ export const SignupPage = () => {
                 value={formData.passwordConfirm}
                 onChange={handleChange}
                 disabled={isLoading}
+                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               <button
                 type="button"
@@ -391,6 +401,7 @@ export const SignupPage = () => {
               value={formData.name}
               onChange={handleChange}
               disabled={isLoading}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.name && (
               <span className="signup-error-message">{errors.name}</span>
@@ -455,6 +466,7 @@ export const SignupPage = () => {
               value={formData.phoneNumber}
               onChange={handleChange}
               disabled={isLoading}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.phoneNumber && (
               <span className="signup-error-message">{errors.phoneNumber}</span>
@@ -472,6 +484,7 @@ export const SignupPage = () => {
               value={formData.email}
               onChange={handleChange}
               disabled={isLoading}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.email && (
               <span className="signup-error-message">{errors.email}</span>
@@ -490,6 +503,7 @@ export const SignupPage = () => {
                 value={formData.nickname}
                 onChange={handleChange}
                 disabled={isLoading}
+                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               <button
                 type="button"

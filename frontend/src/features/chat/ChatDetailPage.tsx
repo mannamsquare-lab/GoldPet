@@ -821,8 +821,15 @@ const ChatDetailPage = () => {
 
     if (isLoading) return <Loading description="대화 내용을 불러오고 있어요" />;
 
+    const handlePageTouch = (e: React.TouchEvent) => {
+        const active = document.activeElement as HTMLElement;
+        if (active && active !== e.target) {
+            active.blur();
+        }
+    };
+
     return (
-        <div className="chat_detail_page">
+        <div className="chat_detail_page" onTouchStart={handlePageTouch}>
             {/* Hidden file input */}
             <input
                 type="file"
@@ -1176,6 +1183,7 @@ const ChatDetailPage = () => {
                                     handleTyping();
                                 }}
                                 onKeyDown={handleKeyDown}
+                                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLTextAreaElement).focus(); }}
                             />
                             {message.length > 100 && (
                                 <span className="chat_detail_char_count">

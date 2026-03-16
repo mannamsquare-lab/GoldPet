@@ -133,8 +133,16 @@ export default function AIProfileCustomPage() {
     });
   };
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const active = document.activeElement as HTMLElement;
+    if (active && active !== e.target) {
+      active.blur();
+    }
+  };
+
   return (
     <SubPageLayout title="">
+      <div onTouchStart={handlePageTouch}>
       <AIProfileTabMenu activeTab="custom" />
       <div className="ai-form-section">
         <div>
@@ -159,6 +167,7 @@ export default function AIProfileCustomPage() {
               placeholder="반려동물 이름을 입력해 주세요"
               value={petName}
               onChange={(e) => setPetName(e.target.value)}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
           )}
         </div>
@@ -250,6 +259,7 @@ export default function AIProfileCustomPage() {
             value={prompt}
             maxLength={MAX_CHARS}
             onChange={(e) => setPrompt(e.target.value)}
+            onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLTextAreaElement).focus(); }}
           />
         </div>
       </div>
@@ -259,6 +269,7 @@ export default function AIProfileCustomPage() {
           disabled={!prompt.trim() || createMutation.isPending}>
           {createMutation.isPending ? '프로필 생성 중...' : '프로필 생성하기'}
         </button>
+      </div>
       </div>
     </SubPageLayout>
   );

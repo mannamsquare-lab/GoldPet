@@ -141,6 +141,13 @@ export const ResetPasswordPage = () => {
     navigate('/signup');
   };
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const active = document.activeElement as HTMLElement;
+    if (active && active !== e.target) {
+      active.blur();
+    }
+  };
+
   // Intro Screen
   if (state === 'intro') {
     return (
@@ -220,7 +227,7 @@ export const ResetPasswordPage = () => {
   // 비밀번호 입력 화면
   if (state === 'input-password') {
     return (
-      <div className="page-container">
+      <div className="page-container" onTouchStart={handlePageTouch}>
         <Header onBack={() => setState('input-username')} />
 
         <div className="page-title-section">
@@ -242,6 +249,7 @@ export const ResetPasswordPage = () => {
                   value={password}
                   onChange={handlePasswordChange}
                   disabled={isLoading}
+                  onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
                 />
                 <button
                   type="button"
@@ -272,6 +280,7 @@ export const ResetPasswordPage = () => {
                   value={passwordConfirm}
                   onChange={handlePasswordChange}
                   disabled={isLoading}
+                  onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
                 />
                 <button
                   type="button"
@@ -307,7 +316,7 @@ export const ResetPasswordPage = () => {
 
   // 아이디/이메일 입력 화면 (input-username)
   return (
-    <div className="page-container">
+    <div className="page-container" onTouchStart={handlePageTouch}>
       <Header onBack={() => setState('intro')} />
 
       <div className="page-title-section">
@@ -328,6 +337,7 @@ export const ResetPasswordPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
           </div>
 
@@ -342,6 +352,7 @@ export const ResetPasswordPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
           </div>
 

@@ -72,8 +72,15 @@ const CreateGroupChatModal = ({ isOpen, onClose }: CreateGroupChatModalProps) =>
 
     const selectedFriendList = mutualFriends.filter((f: Friend) => selectedFriends.has(f.id));
 
+    const handlePageTouch = (e: React.TouchEvent) => {
+        const active = document.activeElement as HTMLElement;
+        if (active && active !== e.target) {
+            active.blur();
+        }
+    };
+
     return (
-        <div className="group_modal_overlay" onClick={handleClose}>
+        <div className="group_modal_overlay" onClick={handleClose} onTouchStart={handlePageTouch}>
             <div className="group_modal_panel" onClick={(e) => e.stopPropagation()}>
                 {/* Modal Header */}
                 <div className="group_modal_header">
@@ -149,6 +156,7 @@ const CreateGroupChatModal = ({ isOpen, onClose }: CreateGroupChatModalProps) =>
                                     value={groupName}
                                     onChange={(e) => setGroupName(e.target.value)}
                                     maxLength={20}
+                                    onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
                                 />
                             </div>
                         </div>

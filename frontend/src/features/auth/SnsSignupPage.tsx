@@ -130,8 +130,15 @@ export const SnsSignupPage = () => {
     }
   };
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const active = document.activeElement as HTMLElement;
+    if (active && active !== e.target) {
+      active.blur();
+    }
+  };
+
   return (
-    <div>
+    <div onTouchStart={handlePageTouch}>
 
       {/* Title Section */}
       <div className="typea-title-group-bc">
@@ -154,6 +161,7 @@ export const SnsSignupPage = () => {
                 onChange={handleChange}
                 disabled={isLoading}
                 maxLength={15}
+                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               <button
                 type="button"
@@ -184,6 +192,7 @@ export const SnsSignupPage = () => {
               onChange={handleChange}
               disabled={isLoading}
               maxLength={20}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.name && (
               <span className="sns-signup-error-message">{errors.name}</span>
@@ -239,6 +248,7 @@ export const SnsSignupPage = () => {
               value={formData.phoneNumber}
               onChange={handleChange}
               disabled={isLoading}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.phoneNumber && (
               <span className="sns-signup-error-message">{errors.phoneNumber}</span>

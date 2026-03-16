@@ -64,9 +64,16 @@ const PasswordChangePage: React.FC = () => {
     }
   };
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const active = document.activeElement as HTMLElement;
+    if (active && active !== e.target) {
+      active.blur();
+    }
+  };
+
   return (
     <SubPageLayout title="비밀번호 변경" onBack={() => navigate('/settings')}>
-      <div className="settings-container">
+      <div className="settings-container" onTouchStart={handlePageTouch}>
         <form onSubmit={handleSubmit}>
           <div className="settings-group">
             <div className="settings-group-title">비밀번호 변경</div>
@@ -80,6 +87,7 @@ const PasswordChangePage: React.FC = () => {
                 placeholder="현재 비밀번호 입력"
                 className="pw-input"
                 autoComplete="current-password"
+                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               {errors.current && <p className="pw-error">{errors.current}</p>}
             </div>
@@ -93,6 +101,7 @@ const PasswordChangePage: React.FC = () => {
                 placeholder="8자 이상, 영문/숫자/특수문자 포함"
                 className="pw-input"
                 autoComplete="new-password"
+                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               {errors.new && <p className="pw-error">{errors.new}</p>}
             </div>
@@ -106,6 +115,7 @@ const PasswordChangePage: React.FC = () => {
                 placeholder="새 비밀번호 다시 입력"
                 className="pw-input"
                 autoComplete="new-password"
+                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               {errors.confirm && <p className="pw-error">{errors.confirm}</p>}
             </div>

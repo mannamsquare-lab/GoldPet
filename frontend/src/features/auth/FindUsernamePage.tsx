@@ -68,6 +68,13 @@ export const FindUsernamePage = () => {
     navigate('/signup');
   };
 
+  const handlePageTouch = (e: React.TouchEvent) => {
+    const active = document.activeElement as HTMLElement;
+    if (active && active !== e.target) {
+      active.blur();
+    }
+  };
+
   // Intro Screen
   if (resultState === 'intro') {
     return (
@@ -262,7 +269,7 @@ export const FindUsernamePage = () => {
 
   // 입력 화면
   return (
-    <div className="find-username-page">
+    <div className="find-username-page" onTouchStart={handlePageTouch}>
       <Header onBack={() => setResultState('intro')} />
 
       {/* Title Section */}
@@ -293,6 +300,7 @@ export const FindUsernamePage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
           </div>
 
