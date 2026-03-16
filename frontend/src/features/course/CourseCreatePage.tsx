@@ -168,7 +168,6 @@ export function CourseCreatePage() {
   const [showSpotModal, setShowSpotModal] = useState(false);
   const [editingSpot, setEditingSpot] = useState<LocalSpot | null>(null);
   const [mapLoadFailed, setMapLoadFailed] = useState(false);
-  const isAddingSpotRef = useRef(false);
   const modalOpenRef = useRef(false);
   const lastClickTimeRef = useRef(0);
   const lastPinchTimeRef = useRef(0);
@@ -453,15 +452,7 @@ export function CourseCreatePage() {
         const lat = e.coord.lat();
         const lng = e.coord.lng();
         setLastTapPos({ lat, lng });
-
-        if (isAddingSpotRef.current) {
-          isAddingSpotRef.current = false;
-          setSpotHint(false);
-          modalOpenRef.current = true;
-          setShowSpotModal(true);
-        } else {
-          setWaypoints(prev => [...prev, [lat, lng]]);
-        }
+        setWaypoints(prev => [...prev, [lat, lng]]);
       };
 
       // Use 'tap' for map — Android WebView only fires 'click' on long press.
@@ -585,17 +576,28 @@ export function CourseCreatePage() {
 
   // ── Spot modal handling ───────────────────────────────────────────────────
 
-  const [spotHint, setSpotHint] = useState(false);
   const handleAddSpot = () => {
-    isAddingSpotRef.current = true;
-    setSpotHint(true);
+    // Determine spot position: last waypoint, last tap, or map center
+    let pos: { lat: number; lng: number } | null = null;
+    if (waypoints.length > 0) {
+      const last = waypoints[waypoints.length - 1];
+      pos = { lat: last[0], lng: last[1] };
+    } else if (lastTapPos) {
+      pos = lastTapPos;
+    } else if (mapInstanceRef.current) {
+      const center = mapInstanceRef.current.getCenter();
+      pos = { lat: center.lat(), lng: center.lng() };
+    }
+    if (pos) {
+      setLastTapPos(pos);
+      modalOpenRef.current = true;
+      setShowSpotModal(true);
+    }
   };
 
   const closeModal = () => {
     setShowSpotModal(false);
     setEditingSpot(null);
-    isAddingSpotRef.current = false;
-    setSpotHint(false);
     // Delay clearing modalOpenRef to absorb leaked tap events on Android
     setTimeout(() => { modalOpenRef.current = false; }, 400);
   };
@@ -754,14 +756,9 @@ export function CourseCreatePage() {
           <div ref={mapRef} className="course_create_map" />
         )}
 
-        {!mapLoadFailed && waypoints.length === 0 && !spotHint && (
+        {!mapLoadFailed && waypoints.length === 0 && (
           <div className="course_create_map_hint">
             {isEditMode ? '경로가 초기화되었습니다. 지도를 탭하여 새 경로를 그려보세요' : '지도를 탭하여 경로를 그려보세요'}
-          </div>
-        )}
-        {spotHint && (
-          <div className="course_create_map_hint" style={{ background: 'rgba(97,65,8,0.85)' }}>
-            지도에서 스팟을 추가할 위치를 탭하세요
           </div>
         )}
       </div>
