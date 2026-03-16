@@ -83,6 +83,8 @@ class _HybridWebViewState extends State<HybridWebView> {
             // iOS WKWebView content process kill 후 페이지 리로드 시
             // Flutter secure storage의 토큰을 React에 동기화
             _syncTokensToReact();
+            // Cold boot: 알림 클릭으로 앱이 열린 경우 React 로드 후 이벤트 전달
+            _bridge.pushNotificationService.deliverPendingMessage();
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint('WebView error: ${error.description}');

@@ -44,15 +44,21 @@ class PushNotificationService {
   NativeBridge? get bridge => _bridge;
   set bridge(NativeBridge? value) {
     _bridge = value;
-    // Deliver pending initial message when bridge is connected
-    // React side has event buffer — no delay needed
-    if (value != null && _pendingInitialMessage != null) {
+  }
+
+  /// WebView 페이지 로드 완료 후 호출하여 pending 알림 이벤트 전달
+  /// Cold boot 시 bridge setter에서 즉시 보내면 React 앱이 아직 로드되지 않아 이벤트 소실됨
+  void deliverPendingMessage() {
+    if (_bridge != null && _pendingInitialMessage != null) {
       final msg = _pendingInitialMessage!;
       _pendingInitialMessage = null;
-      value.sendEventToReact('pushNotificationClicked', {
-        'title': msg.notification?.title,
-        'body': msg.notification?.body,
-        'data': msg.data,
+      // React 앱 초기화 시간 확보 후 전달
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _bridge?.sendEventToReact('pushNotificationClicked', {
+          'title': msg.notification?.title,
+          'body': msg.notification?.body,
+          'data': msg.data,
+        });
       });
     }
   }
