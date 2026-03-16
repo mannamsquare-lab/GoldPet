@@ -158,7 +158,7 @@ export function CourseCreatePage() {
   const waypointMarkersRef = useRef<naver.maps.Marker[]>([]);
   const spotMarkersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const clickListenerRef = useRef<any>(null);
+  const clickListenerRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
 
   // State
@@ -169,7 +169,8 @@ export function CourseCreatePage() {
   const [editingSpot, setEditingSpot] = useState<LocalSpot | null>(null);
   const [mapLoadFailed, setMapLoadFailed] = useState(false);
   const isAddingSpotRef = useRef(false);
-  const lastTouchRef = useRef<{ touches: number; time: number }>({ touches: 0, time: 0 });
+  const lastClickTimeRef = useRef(0);
+  const lastPinchTimeRef = useRef(0);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -429,37 +430,42 @@ export function CourseCreatePage() {
 
       setMapReady(true);
 
-      // Track multi-touch to filter out pinch-to-zoom clicks
-      el.addEventListener('touchstart', (te: TouchEvent) => {
-        lastTouchRef.current = { touches: te.touches.length, time: Date.now() };
-      }, { passive: true });
-
-      // Tap listener — add waypoint or open spot modal (one-shot mode)
-      // Use 'tap' instead of 'click' for reliable touch handling on Android WebView
+      // Track pinch-to-zoom via zoom_changed to filter gesture-related events
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      clickListenerRef.current = (naver.maps as any).Event.addListener(
-        mapInstanceRef.current,
-        'tap',
-        (e: { coord: naver.maps.LatLng }) => {
-          // Ignore clicks from pinch-to-zoom (multi-touch gesture)
-          if (lastTouchRef.current.touches >= 2) {
-            lastTouchRef.current = { touches: 0, time: 0 };
-            return;
-          }
-
-          const lat = e.coord.lat();
-          const lng = e.coord.lng();
-          setLastTapPos({ lat, lng });
-
-          if (isAddingSpotRef.current) {
-            // One-shot spot mode: open modal without adding waypoint
-            isAddingSpotRef.current = false;
-            setShowSpotModal(true);
-          } else {
-            setWaypoints(prev => [...prev, [lat, lng]]);
-          }
+      const zoomListener = (naver.maps as any).Event.addListener(
+        mapInstanceRef.current, 'zoom_changed', () => {
+          lastPinchTimeRef.current = Date.now();
         },
       );
+
+      // Map tap/click handler — add waypoint or open spot modal
+      const handleMapTap = (e: { coord: naver.maps.LatLng }) => {
+        // Debounce: prevent double-fire from both click+tap
+        const now = Date.now();
+        if (now - lastClickTimeRef.current < 300) return;
+        // Ignore taps during/after pinch-to-zoom gesture
+        if (now - lastPinchTimeRef.current < 400) return;
+        lastClickTimeRef.current = now;
+
+        const lat = e.coord.lat();
+        const lng = e.coord.lng();
+        setLastTapPos({ lat, lng });
+
+        if (isAddingSpotRef.current) {
+          isAddingSpotRef.current = false;
+          setShowSpotModal(true);
+        } else {
+          setWaypoints(prev => [...prev, [lat, lng]]);
+        }
+      };
+
+      // Listen to both click and tap for cross-platform compatibility
+      // iOS WebView fires 'click', Android WebView fires 'tap'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clickL = (naver.maps as any).Event.addListener(mapInstanceRef.current, 'click', handleMapTap);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tapL = (naver.maps as any).Event.addListener(mapInstanceRef.current, 'tap', handleMapTap);
+      clickListenerRef.current = [clickL, tapL, zoomListener];
 
       // Try to get current position
       const setCenter = (lat: number, lng: number) => {
@@ -520,11 +526,10 @@ export function CourseCreatePage() {
     return () => {
       cancelled = true;
       if (pollTimer) clearInterval(pollTimer);
-      if (clickListenerRef.current) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (naver.maps as any).Event.removeListener(clickListenerRef.current);
-        clickListenerRef.current = null;
+      for (const l of clickListenerRef.current) {
+        try { (naver.maps as any).Event.removeListener(l); } catch {}
       }
+      clickListenerRef.current = [];
       for (const m of waypointMarkersRef.current) m.setMap(null);
       waypointMarkersRef.current = [];
       for (const m of spotMarkersRef.current.values()) m.setMap(null);
