@@ -326,13 +326,6 @@ export const WalkDetailPage = () => {
 
             if (bounds) {
                 mapInstanceRef.current.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
-                // Force overlay redraw after fitBounds animation completes
-                const idleListener = (naver.maps as any).Event.addListenerOnce(
-                    mapInstanceRef.current, 'idle', () => {
-                        (naver.maps as any).Event.trigger(mapInstanceRef.current, 'resize');
-                    }
-                );
-                listenersRef.current.push(idleListener);
             } else if (points.length === 1) {
                 mapInstanceRef.current.setCenter(points[0]);
                 mapInstanceRef.current.setZoom(16);
