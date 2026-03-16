@@ -459,13 +459,12 @@ export function CourseCreatePage() {
         }
       };
 
-      // Listen to both click and tap for cross-platform compatibility
-      // iOS WebView fires 'click', Android WebView fires 'tap'
+      // Use 'click' for map tap — Naver Maps translates touch to click on both platforms.
+      // Do NOT add both click+tap: the delayed click event hits newly-created markers
+      // (whose click handler removes the waypoint), causing the "appears then disappears" bug.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clickL = (naver.maps as any).Event.addListener(mapInstanceRef.current, 'click', handleMapTap);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tapL = (naver.maps as any).Event.addListener(mapInstanceRef.current, 'tap', handleMapTap);
-      clickListenerRef.current = [clickL, tapL, zoomListener];
+      clickListenerRef.current = [clickL, zoomListener];
 
       // Try to get current position
       const setCenter = (lat: number, lng: number) => {
