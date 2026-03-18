@@ -14,6 +14,9 @@ export function useKeyboardDismiss() {
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     const active = document.activeElement;
     if (active instanceof HTMLElement && active !== e.target) {
+      const target = e.target as HTMLElement;
+      // 버튼 등 인터랙티브 요소 터치 시 blur 하지 않음 (click 이벤트 보호)
+      if (target.closest('button, a, [role="button"]')) return;
       active.blur();
     }
   }, []);
