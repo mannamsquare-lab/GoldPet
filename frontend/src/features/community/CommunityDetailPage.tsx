@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
 import { getImageUrl } from '../../utils/imageUrl';

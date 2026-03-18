@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
 import type { FileInfo, ChatMessage } from '../../services/chatService';

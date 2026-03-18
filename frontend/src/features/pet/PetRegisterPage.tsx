@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAlert } from '../../contexts/AlertContext';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { petService } from '../../services/petService';
 import type { CreatePetRequest } from '../../services/petService';

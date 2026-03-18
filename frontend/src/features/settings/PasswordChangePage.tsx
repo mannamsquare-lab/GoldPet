@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { userService } from '../../services/userService';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import './SettingsPage.css';
 
 const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{}|;:',.<>?/~`]).{8,}$/;

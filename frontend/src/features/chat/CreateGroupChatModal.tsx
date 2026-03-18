@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { friendService, type Friend } from '../../services/friendService';
 import { chatService } from '../../services/chatService';
 import { useAlert } from '../../contexts/AlertContext';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 
 interface CreateGroupChatModalProps {
     isOpen: boolean;

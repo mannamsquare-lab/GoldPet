@@ -9,7 +9,7 @@ import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import CustomSelect from '../../components/common/CustomSelect';
 import { AIProfileTabMenu } from './components/AIProfileTabMenu';
 import apiClient from '../../services/api/client';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import './AIProfilePage.css';
 
 const CUSTOM_GOLD_COST = 100;

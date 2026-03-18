@@ -5,7 +5,7 @@ import './FindUsernamePage.css';
 import { Header } from '../../components/common/Header';
 import { FindAccountTabs } from './components/FindAccountTabs';
 import { useAlert } from '../../contexts/AlertContext';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 
 type FindResultState = 'intro' | 'input' | 'not-found' | 'found-general' | 'found-sns';
 

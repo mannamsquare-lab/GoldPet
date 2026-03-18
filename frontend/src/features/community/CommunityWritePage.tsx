@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
 import type { CreatePostRequest } from '../../services/communityService';
 import { useAlert } from '../../contexts/AlertContext';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
 import CustomSelect from '../../components/common/CustomSelect';
 

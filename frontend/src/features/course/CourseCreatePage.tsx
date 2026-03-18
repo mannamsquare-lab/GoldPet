@@ -16,7 +16,7 @@ import { createSvgPathOverlay } from '../walk/utils/walkMapUtils';
 import { useAlert } from '../../contexts/AlertContext';
 import './CourseCreatePage.css';
 import { nativeBridge } from '../../bridge/nativeBridge';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 
 // ── Walk spot type → Course spot type mapping ────────────────────────────────
 

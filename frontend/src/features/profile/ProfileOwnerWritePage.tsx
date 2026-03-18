@@ -7,7 +7,7 @@ import { userService } from '../../services/userService';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
 
 import { useAlert } from '../../contexts/AlertContext';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import CustomSelect from '../../components/common/CustomSelect';
 
 const ProfileOwnerWritePage: React.FC = () => {

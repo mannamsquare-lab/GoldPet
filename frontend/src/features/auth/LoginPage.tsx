@@ -8,7 +8,7 @@ import { nativeBridge } from '../../bridge/nativeBridge';
 import { userService } from '../../services/userService';
 import { useAlert } from '../../contexts/AlertContext';
 import { AccountLinkModal } from '../../components/auth/AccountLinkModal';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import './LoginPage.css';
 
 export const LoginPage = () => {

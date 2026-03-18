@@ -5,7 +5,7 @@ import { useAuthStore } from '../../stores/authStore';
 import './SignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
 import CustomSelect from '../../components/common/CustomSelect';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 
 export const SignupPage = () => {
   const navigate = useNavigate();

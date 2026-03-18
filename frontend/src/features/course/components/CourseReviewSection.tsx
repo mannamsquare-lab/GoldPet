@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
+import { useKeyboardDismiss } from '../../../hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { courseService } from '../../../services/courseService';
 import type { CourseCommentResponse } from '../../../services/courseService';
