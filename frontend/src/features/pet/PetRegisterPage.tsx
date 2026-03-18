@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAlert } from '../../contexts/AlertContext';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { petService } from '../../services/petService';
 import type { CreatePetRequest } from '../../services/petService';
@@ -151,15 +152,10 @@ export default function PetRegisterPage() {
 
   const selectedTags = formData.temperamentTags?.split(',').filter(Boolean) || [];
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   return (
-    <div id="petRegisterPage" onTouchStart={handlePageTouch}>
+    <div id="petRegisterPage" {...keyboardDismiss}>
       {/* Header */}
       <div className="pet_header">
         <BackButton onClick={() => navigate(-1)} />
@@ -191,7 +187,6 @@ export default function PetRegisterPage() {
             placeholder="반려동물 이름"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            onTouchEnd={e => (e.target as HTMLInputElement).focus()}
             maxLength={20}
           />
         </div>
@@ -255,7 +250,6 @@ export default function PetRegisterPage() {
             type="date"
             value={formData.birthDate || ''}
             onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-            onTouchEnd={e => (e.target as HTMLInputElement).focus()}
             max={new Date().toISOString().split('T')[0]}
           />
         </div>
@@ -271,7 +265,6 @@ export default function PetRegisterPage() {
             max="100"
             value={formData.weightKg || ''}
             onChange={(e) => setFormData({ ...formData, weightKg: Number(e.target.value) || undefined })}
-            onTouchEnd={e => (e.target as HTMLInputElement).focus()}
           />
         </div>
 

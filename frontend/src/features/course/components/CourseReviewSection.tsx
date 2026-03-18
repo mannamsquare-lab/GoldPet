@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { courseService } from '../../../services/courseService';
 import type { CourseCommentResponse } from '../../../services/courseService';
@@ -211,7 +212,6 @@ function CommentItem({ comment, courseId, currentUserId, isReply = false, onRepl
             className="course_review_edit_textarea"
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
           />
           <div className="course_review_edit_actions">
             <button type="button" className="course_review_edit_btn" onClick={() => setEditMode(false)}>취소</button>
@@ -339,15 +339,10 @@ export const CourseReviewSection = ({ courseId }: Props) => {
     createMutation.mutate();
   };
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   return (
-    <section className="course_review_section" onTouchStart={handlePageTouch}>
+    <section className="course_review_section" {...keyboardDismiss}>
       <div className="course_review_header">
         <span className="course_review_header_title">리뷰</span>
         {hasLoadedOnce && totalCount > 0 && (
@@ -382,7 +377,6 @@ export const CourseReviewSection = ({ courseId }: Props) => {
             placeholder="리뷰를 남겨보세요"
             value={formContent}
             onChange={(e) => setFormContent(e.target.value)}
-            onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
             rows={3}
           />
           <button

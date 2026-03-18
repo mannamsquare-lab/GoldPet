@@ -5,6 +5,7 @@ import './ResetPasswordPage.css';
 import { Header } from '../../components/common/Header';
 import { FindAccountTabs } from './components/FindAccountTabs';
 import { useAlert } from '../../contexts/AlertContext';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 
 type ResetPasswordState = 'intro' | 'input-username' | 'input-password' | 'complete';
 
@@ -141,12 +142,7 @@ export const ResetPasswordPage = () => {
     navigate('/signup');
   };
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   // Intro Screen
   if (state === 'intro') {
@@ -227,7 +223,7 @@ export const ResetPasswordPage = () => {
   // 비밀번호 입력 화면
   if (state === 'input-password') {
     return (
-      <div className="page-container" onTouchStart={handlePageTouch}>
+      <div className="page-container" {...keyboardDismiss}>
         <Header onBack={() => setState('input-username')} />
 
         <div className="page-title-section">
@@ -249,7 +245,6 @@ export const ResetPasswordPage = () => {
                   value={password}
                   onChange={handlePasswordChange}
                   disabled={isLoading}
-                  onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
                 />
                 <button
                   type="button"
@@ -280,7 +275,6 @@ export const ResetPasswordPage = () => {
                   value={passwordConfirm}
                   onChange={handlePasswordChange}
                   disabled={isLoading}
-                  onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
                 />
                 <button
                   type="button"
@@ -316,7 +310,7 @@ export const ResetPasswordPage = () => {
 
   // 아이디/이메일 입력 화면 (input-username)
   return (
-    <div className="page-container" onTouchStart={handlePageTouch}>
+    <div className="page-container" {...keyboardDismiss}>
       <Header onBack={() => setState('intro')} />
 
       <div className="page-title-section">
@@ -336,9 +330,7 @@ export const ResetPasswordPage = () => {
               placeholder="아이디를 입력해주세요"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              disabled={isLoading}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
-            />
+              disabled={isLoading}            />
           </div>
 
           <div className="reset-password-input-group">
@@ -351,9 +343,7 @@ export const ResetPasswordPage = () => {
               placeholder="이메일을 입력해주세요"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
-            />
+              disabled={isLoading}            />
           </div>
 
           <div className="reset-password-button-group">

@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
 import type { CreatePostRequest } from '../../services/communityService';
 import { useAlert } from '../../contexts/AlertContext';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
 import CustomSelect from '../../components/common/CustomSelect';
 
@@ -177,16 +178,11 @@ export default function CommunityWritePage() {
     }
   };
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   return (
     <>
-    <div id="writeModal" style={{ display: 'block' }} onTouchStart={handlePageTouch}>
+    <div id="writeModal" style={{ display: 'block' }} {...keyboardDismiss}>
       <div className="modal_wrap">
         {/* Title */}
         <div className="input_wrap">
@@ -197,7 +193,6 @@ export default function CommunityWritePage() {
               placeholder="제목을 입력해주세요."
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              onTouchEnd={e => (e.target as HTMLInputElement).focus()}
               maxLength={100}
             />
         </div>
@@ -210,7 +205,6 @@ export default function CommunityWritePage() {
               placeholder="게시글 내용을 입력해주세요."
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
               onFocus={(e) => {
                 setTimeout(() => {
                   e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

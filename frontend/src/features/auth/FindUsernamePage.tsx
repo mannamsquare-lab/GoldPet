@@ -5,6 +5,7 @@ import './FindUsernamePage.css';
 import { Header } from '../../components/common/Header';
 import { FindAccountTabs } from './components/FindAccountTabs';
 import { useAlert } from '../../contexts/AlertContext';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 
 type FindResultState = 'intro' | 'input' | 'not-found' | 'found-general' | 'found-sns';
 
@@ -68,12 +69,7 @@ export const FindUsernamePage = () => {
     navigate('/signup');
   };
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   // Intro Screen
   if (resultState === 'intro') {
@@ -269,7 +265,7 @@ export const FindUsernamePage = () => {
 
   // 입력 화면
   return (
-    <div className="find-username-page" onTouchStart={handlePageTouch}>
+    <div className="find-username-page" {...keyboardDismiss}>
       <Header onBack={() => setResultState('intro')} />
 
       {/* Title Section */}
@@ -299,9 +295,7 @@ export const FindUsernamePage = () => {
               placeholder="이메일"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
-            />
+              disabled={isLoading}            />
           </div>
 
           <div className="find-username-button-group">

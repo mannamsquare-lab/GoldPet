@@ -8,6 +8,7 @@ import { nativeBridge } from '../../bridge/nativeBridge';
 import { userService } from '../../services/userService';
 import { useAlert } from '../../contexts/AlertContext';
 import { AccountLinkModal } from '../../components/auth/AccountLinkModal';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 import './LoginPage.css';
 
 export const LoginPage = () => {
@@ -173,16 +174,11 @@ export const LoginPage = () => {
     setLinkProvider('');
   };
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   return (
     <>
-    <div className='login-page-container' data-name="로그인_텍스트홀더" data-node-id="4017:22523" onTouchStart={handlePageTouch}>
+    <div className='login-page-container' data-name="로그인_텍스트홀더" data-node-id="4017:22523" {...keyboardDismiss}>
       {/* Title Section */}
       <div className="login-title-section" data-name="Title" data-node-id="4017:22554">
         <div className="login-logo-container">
@@ -206,7 +202,6 @@ export const LoginPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             <div className="login-input-wrapper">
               <input
@@ -216,7 +211,6 @@ export const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
               />
               <button
                 type="button"
@@ -444,7 +438,6 @@ export const LoginPage = () => {
                     defaultValue="sungchuli@test.com"
                     className="flex-1 max-w-[200px] h-8 text-sm px-2 border border-gray-300 rounded focus:border-amber-500 outline-none"
                     placeholder="테스트 계정 이메일"
-                    onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
                 />
                 <button
                     type="submit"

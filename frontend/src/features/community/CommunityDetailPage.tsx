@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -317,15 +318,10 @@ export default function CommunityDetailPage() {
     return <div className="error">게시글을 찾을 수 없습니다.</div>;
   }
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   return (
-    <div id="communityContainer" className="community-detail-mode" onTouchStart={handlePageTouch}>
+    <div id="communityContainer" className="community-detail-mode" {...keyboardDismiss}>
       {/* Top Header */}
       <div className="history_util">
         <BackButton onClick={() => navigate(-1)} />
@@ -446,7 +442,6 @@ export default function CommunityDetailPage() {
                                e.target.style.overflowY = e.target.scrollHeight > 120 ? 'auto' : 'hidden';
                                e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                              }}
-                             onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
                              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', resize: 'none', minHeight: '60px', maxHeight: '120px', overflowY: 'hidden', fontFamily: 'inherit' }}
                           />
                           <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
@@ -533,7 +528,6 @@ export default function CommunityDetailPage() {
             rows={1}
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
-            onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
             onChange={(e) => {
               setCommentInput(e.target.value);
               e.target.style.height = '32px';

@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/authStore';
 import './SignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
 import CustomSelect from '../../components/common/CustomSelect';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 
 export const SignupPage = () => {
   const navigate = useNavigate();
@@ -279,15 +280,10 @@ export const SignupPage = () => {
     }
   };
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   return (
-    <div className="signup-page-container" onTouchStart={handlePageTouch}>
+    <div className="signup-page-container" {...keyboardDismiss}>
       {/* Title Section */}
       <div className="typea-title-group-bc">
         <h2 className="typea-title">회원가입</h2>
@@ -308,9 +304,7 @@ export const SignupPage = () => {
                 placeholder="4-12자, 영문, 숫자"
                 value={formData.username}
                 onChange={handleChange}
-                disabled={isLoading}
-                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
-              />
+                disabled={isLoading}              />
               <button
                 type="button"
                 className={`signup-check-button ${formData.username.length >= 4 ? 'active' : ''}`}
@@ -339,9 +333,7 @@ export const SignupPage = () => {
                 placeholder="8자 이상, 영문, 숫자, 특수문자 포함"
                 value={formData.password}
                 onChange={handleChange}
-                disabled={isLoading}
-                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
-              />
+                disabled={isLoading}              />
               <button
                 type="button"
                 className="signup-password-toggle"
@@ -370,9 +362,7 @@ export const SignupPage = () => {
                 placeholder="비밀번호 확인"
                 value={formData.passwordConfirm}
                 onChange={handleChange}
-                disabled={isLoading}
-                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
-              />
+                disabled={isLoading}              />
               <button
                 type="button"
                 className="signup-password-toggle"
@@ -401,7 +391,6 @@ export const SignupPage = () => {
               value={formData.name}
               onChange={handleChange}
               disabled={isLoading}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.name && (
               <span className="signup-error-message">{errors.name}</span>
@@ -466,7 +455,6 @@ export const SignupPage = () => {
               value={formData.phoneNumber}
               onChange={handleChange}
               disabled={isLoading}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.phoneNumber && (
               <span className="signup-error-message">{errors.phoneNumber}</span>
@@ -484,7 +472,6 @@ export const SignupPage = () => {
               value={formData.email}
               onChange={handleChange}
               disabled={isLoading}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.email && (
               <span className="signup-error-message">{errors.email}</span>
@@ -502,9 +489,7 @@ export const SignupPage = () => {
                 placeholder="2-10자, 한글, 영문, 숫자"
                 value={formData.nickname}
                 onChange={handleChange}
-                disabled={isLoading}
-                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
-              />
+                disabled={isLoading}              />
               <button
                 type="button"
                 className={`signup-check-button ${formData.nickname.length >= 2 ? 'active' : ''}`}

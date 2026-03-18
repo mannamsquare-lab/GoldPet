@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../../services/chatService';
 import type { FileInfo, ChatMessage } from '../../services/chatService';
@@ -260,6 +261,7 @@ const ChatDetailPage = () => {
     } | null>(null);
 
     useOverlayColor(!!previewImageUrl);
+    const keyboardDismiss = useKeyboardDismiss();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -821,15 +823,8 @@ const ChatDetailPage = () => {
 
     if (isLoading) return <Loading description="대화 내용을 불러오고 있어요" />;
 
-    const handlePageTouch = (e: React.TouchEvent) => {
-        const active = document.activeElement as HTMLElement;
-        if (active && active !== e.target) {
-            active.blur();
-        }
-    };
-
     return (
-        <div className="chat_detail_page" onTouchStart={handlePageTouch}>
+        <div className="chat_detail_page" {...keyboardDismiss}>
             {/* Hidden file input */}
             <input
                 type="file"
@@ -1183,7 +1178,6 @@ const ChatDetailPage = () => {
                                     handleTyping();
                                 }}
                                 onKeyDown={handleKeyDown}
-                                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLTextAreaElement).focus(); }}
                             />
                             {message.length > 100 && (
                                 <span className="chat_detail_char_count">

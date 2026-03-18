@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/authStore';
 import './SnsSignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
 import CustomSelect from '../../components/common/CustomSelect';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 
 export const SnsSignupPage = () => {
   const navigate = useNavigate();
@@ -130,15 +131,10 @@ export const SnsSignupPage = () => {
     }
   };
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   return (
-    <div onTouchStart={handlePageTouch}>
+    <div {...keyboardDismiss}>
 
       {/* Title Section */}
       <div className="typea-title-group-bc">
@@ -160,9 +156,7 @@ export const SnsSignupPage = () => {
                 value={formData.nickname}
                 onChange={handleChange}
                 disabled={isLoading}
-                maxLength={15}
-                onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
-              />
+                maxLength={15}              />
               <button
                 type="button"
                 className={`sns-signup-check-button ${formData.nickname.length >= 2 && formData.nickname.length <= 10 ? 'active' : ''}`}
@@ -192,7 +186,6 @@ export const SnsSignupPage = () => {
               onChange={handleChange}
               disabled={isLoading}
               maxLength={20}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.name && (
               <span className="sns-signup-error-message">{errors.name}</span>
@@ -248,7 +241,6 @@ export const SnsSignupPage = () => {
               value={formData.phoneNumber}
               onChange={handleChange}
               disabled={isLoading}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
             {errors.phoneNumber && (
               <span className="sns-signup-error-message">{errors.phoneNumber}</span>

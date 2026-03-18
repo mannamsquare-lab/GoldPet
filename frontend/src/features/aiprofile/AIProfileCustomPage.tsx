@@ -9,6 +9,7 @@ import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import CustomSelect from '../../components/common/CustomSelect';
 import { AIProfileTabMenu } from './components/AIProfileTabMenu';
 import apiClient from '../../services/api/client';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 import './AIProfilePage.css';
 
 const CUSTOM_GOLD_COST = 100;
@@ -133,16 +134,11 @@ export default function AIProfileCustomPage() {
     });
   };
 
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   return (
     <SubPageLayout title="">
-      <div onTouchStart={handlePageTouch}>
+      <div {...keyboardDismiss}>
       <AIProfileTabMenu activeTab="custom" />
       <div className="ai-form-section">
         <div>
@@ -167,7 +163,6 @@ export default function AIProfileCustomPage() {
               placeholder="반려동물 이름을 입력해 주세요"
               value={petName}
               onChange={(e) => setPetName(e.target.value)}
-              onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLInputElement).focus(); }}
             />
           )}
         </div>
@@ -259,7 +254,6 @@ export default function AIProfileCustomPage() {
             value={prompt}
             maxLength={MAX_CHARS}
             onChange={(e) => setPrompt(e.target.value)}
-            onTouchEnd={e => { e.stopPropagation(); (e.target as HTMLTextAreaElement).focus(); }}
           />
         </div>
       </div>

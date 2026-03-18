@@ -16,6 +16,7 @@ import { createSvgPathOverlay } from '../walk/utils/walkMapUtils';
 import { useAlert } from '../../contexts/AlertContext';
 import './CourseCreatePage.css';
 import { nativeBridge } from '../../bridge/nativeBridge';
+import { useKeyboardDismiss } from '@/hooks/useKeyboardDismiss';
 
 // ── Walk spot type → Course spot type mapping ────────────────────────────────
 
@@ -729,12 +730,7 @@ export function CourseCreatePage() {
   };
 
   // ── Dismiss keyboard on tap outside inputs ────────────────────────────────
-  const handlePageTouch = (e: React.TouchEvent) => {
-    const active = document.activeElement as HTMLElement;
-    if (active && active !== e.target) {
-      active.blur();
-    }
-  };
+  const keyboardDismiss = useKeyboardDismiss();
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -752,7 +748,7 @@ export function CourseCreatePage() {
   const formattedMinutes = estimatedMinutes ? `${estimatedMinutes}분` : '-';
 
   return (
-    <div className="course_create_page" onTouchStart={handlePageTouch}>
+    <div className="course_create_page" {...keyboardDismiss}>
       {/* Header */}
       <MainHeader variant="back-only" className="intro_header" />
 
@@ -860,7 +856,6 @@ export function CourseCreatePage() {
               value={title}
               onChange={e => setTitle(e.target.value)}
               onFocus={handleInputFocus}
-              onTouchEnd={e => (e.target as HTMLInputElement).focus()}
               maxLength={100}
             />
           </div>
@@ -875,7 +870,6 @@ export function CourseCreatePage() {
               value={desc}
               onChange={e => setDesc(e.target.value)}
               onFocus={handleInputFocus}
-              onTouchEnd={e => (e.target as HTMLTextAreaElement).focus()}
               rows={3}
             />
           </div>
@@ -911,7 +905,6 @@ export function CourseCreatePage() {
               value={estimatedMinutes}
               onChange={e => setEstimatedMinutes(e.target.value)}
               onFocus={handleInputFocus}
-              onTouchEnd={e => (e.target as HTMLInputElement).focus()}
             />
           </div>
         </div>
