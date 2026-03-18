@@ -275,6 +275,7 @@ class ChatWebSocketService {
       replyToId: data.replyToId,
       replyToSenderNickname: data.replyToSenderNickname,
       replyToTextContent: data.replyToTextContent,
+      unreadCount: data.unreadCount,
     };
   }
 

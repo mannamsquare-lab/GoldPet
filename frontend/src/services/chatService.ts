@@ -54,6 +54,8 @@ export interface ChatMessage {
   replyToEmoticonImageUrl?: string;
   // Soft delete
   deletedAt?: string;
+  // Read receipt
+  unreadCount?: number;
 }
 
 export interface ChatRequestItem {

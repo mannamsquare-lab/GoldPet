@@ -5,6 +5,7 @@ import com.goldpet.domain.chat.dto.ChatRoomResponse
 import com.goldpet.domain.chat.dto.ChatMessageResponse
 import com.goldpet.domain.chat.dto.ChatRequestResponse
 import com.goldpet.domain.chat.dto.SendMessageRequest
+import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.emoticon.service.EmoticonService
@@ -23,7 +24,8 @@ class ChatRoomController(
     private val fileAttachmentRepository: FileAttachmentRepository,
     private val emoticonService: EmoticonService,
     private val simpMessageSendingOperations: SimpMessageSendingOperations,
-    private val fileService: FileService
+    private val fileService: FileService,
+    private val chatRoomParticipantRepository: ChatRoomParticipantRepository
 ) {
     private fun resolveFileUrl(url: String): String =
         if (url.startsWith("http")) url else fileService.getPresignedUrl(url)
@@ -67,6 +69,7 @@ class ChatRoomController(
         @RequestParam(defaultValue = "50") size: Int
     ): ResponseEntity<List<ChatMessageResponse>> {
         val messages = chatService.getChatHistory(roomId, page, size)
+        val participants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
 
         // Fetch all file attachments for messages with fileId
         val fileIds = messages.mapNotNull { it.fileId }
@@ -99,6 +102,7 @@ class ChatRoomController(
             val resolvedReplyUrl = msg.replyTo?.fileId?.let { replyToFileAttachments[it] }?.url?.let { resolveFileUrl(it) }
             ChatMessageResponse.from(
                 msg,
+                participants,
                 msg.fileId?.let { fileAttachments[it] },
                 msg.emoticonId?.let { emoticons[it] },
                 msg.replyTo?.fileId?.let { replyToFileAttachments[it] },
@@ -138,8 +142,9 @@ class ChatRoomController(
 
         val resolvedUrl = fileAttachment?.url?.let { resolveFileUrl(it) }
         val resolvedReplyUrl = replyToFileAttachment?.url?.let { resolveFileUrl(it) }
+        val allParticipants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
         val chatMessageResponse = ChatMessageResponse.from(
-            message, fileAttachment, emoticon, replyToFileAttachment, replyToEmoticon,
+            message, allParticipants, fileAttachment, emoticon, replyToFileAttachment, replyToEmoticon,
             resolvedFileUrl = resolvedUrl,
             resolvedReplyToFileUrl = resolvedReplyUrl
         )
@@ -148,8 +153,7 @@ class ChatRoomController(
         simpMessageSendingOperations.convertAndSend("/topic/chat/$roomId", chatMessageResponse)
 
         // Broadcast to user-specific topics for chat list updates
-        val participants = chatService.getParticipants(roomId)
-        participants.forEach { participant ->
+        allParticipants.forEach { participant ->
             simpMessageSendingOperations.convertAndSend(
                 "/topic/user/${participant.user.id}/chats",
                 mapOf("roomId" to roomId, "type" to "NEW_MESSAGE")
@@ -179,6 +183,17 @@ class ChatRoomController(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
     ): ResponseEntity<Void> {
         chatService.markAsRead(roomId, userDetails.id)
+
+        // Broadcast read event to room subscribers
+        simpMessageSendingOperations.convertAndSend(
+            "/topic/chat/$roomId/read",
+            mapOf(
+                "type" to "READ_UPDATE",
+                "userId" to userDetails.id,
+                "lastReadAt" to java.time.LocalDateTime.now().toString()
+            )
+        )
+
         return ResponseEntity.ok().build()
     }
 

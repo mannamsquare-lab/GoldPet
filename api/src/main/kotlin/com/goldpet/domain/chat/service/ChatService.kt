@@ -254,6 +254,8 @@ class ChatService(
 
         // Mark as left instead of deleting (soft delete)
         participant.leftAt = java.time.LocalDateTime.now()
+        // Set lastReadAt to leftAt so left participants don't inflate unread counts
+        participant.lastReadAt = participant.leftAt
         chatRoomParticipantRepository.save(participant)
     }
 

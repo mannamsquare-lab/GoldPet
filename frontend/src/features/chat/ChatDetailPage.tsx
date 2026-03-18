@@ -218,6 +218,9 @@ const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLo
                     )}
                 </div>
                 <div className="chat_detail_message_actions">
+                    {isMine && msg.unreadCount !== undefined && msg.unreadCount > 0 && (
+                        <span className="chat_unread_count">{msg.unreadCount}</span>
+                    )}
                     <span className="chat_detail_message_time">{time}</span>
                 </div>
             </div>

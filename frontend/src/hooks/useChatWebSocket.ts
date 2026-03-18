@@ -66,6 +66,32 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
     [queryClient, roomId]
   );
 
+  // Handle read receipt events
+  const handleReadUpdate = useCallback(
+    (event: { type: string; userId: number; lastReadAt: string }) => {
+      if (!roomId) return;
+      const readAt = event.lastReadAt;
+
+      queryClient.setQueryData(
+        ['chatMessages', roomId],
+        (oldMessages: ChatMessage[] | undefined) => {
+          if (!oldMessages) return oldMessages;
+          return oldMessages.map((msg) => {
+            // Only decrement for messages created before or at readAt
+            if (msg.unreadCount && msg.unreadCount > 0 && msg.createdAt && msg.createdAt <= readAt) {
+              return { ...msg, unreadCount: Math.max(0, msg.unreadCount - 1) };
+            }
+            return msg;
+          });
+        }
+      );
+
+      // Also invalidate chat rooms to update room-level unread count
+      queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+    },
+    [queryClient, roomId]
+  );
+
   // Handle typing events
   const handleTyping = useCallback(
     (userId: number, isTyping: boolean) => {
@@ -111,6 +137,9 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
         await chatWebSocket.connect();
         chatWebSocket.subscribeToRoom(roomId, handleMessage);
         chatWebSocket.subscribeToTyping(roomId, handleTyping);
+        chatWebSocket.subscribeToTopic(`/topic/chat/${roomId}/read`, (data: unknown) => {
+          handleReadUpdate(data as { type: string; userId: number; lastReadAt: string });
+        });
         isConnectedRef.current = true;
       } catch (error) {
         console.error('[useChatWebSocket] Connection failed:', error);
@@ -125,12 +154,13 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
       if (roomId) {
         chatWebSocket.unsubscribeFromRoom(roomId);
         chatWebSocket.unsubscribeFromTyping(roomId);
+        chatWebSocket.unsubscribeFromTopic(`/topic/chat/${roomId}/read`);
         // Clear all typing timeouts
         timeouts.forEach(timeout => clearTimeout(timeout));
         timeouts.clear();
       }
     };
-  }, [roomId, enabled, handleMessage, handleTyping]);
+  }, [roomId, enabled, handleMessage, handleTyping, handleReadUpdate]);
 
   // Send message via WebSocket
   const sendMessage = useCallback(

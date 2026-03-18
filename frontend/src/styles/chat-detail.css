@@ -333,6 +333,16 @@
   word-wrap: break-word;
 }
 
+/* Chat unread count indicator (KakaoTalk style) */
+.chat_unread_count {
+  font-size: 11px;
+  color: #A58A54;
+  font-weight: 600;
+  line-height: 1;
+  margin-right: 4px;
+  align-self: flex-end;
+}
+
 /* Input Area */
 .chat_detail_input_area {
   width: 100%;
