@@ -7,6 +7,7 @@ import com.goldpet.domain.chat.entity.ChatRoom
 import com.goldpet.domain.chat.entity.ChatRoomType
 import com.goldpet.domain.chat.entity.MessageType
 import com.goldpet.domain.chat.service.ChatService
+import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.emoticon.service.EmoticonService
 import com.goldpet.domain.user.entity.User
@@ -22,6 +23,7 @@ class WebSocketChatControllerTest {
     private lateinit var chatService: ChatService
     private lateinit var emoticonService: EmoticonService
     private lateinit var fileAttachmentRepository: FileAttachmentRepository
+    private lateinit var chatRoomParticipantRepository: ChatRoomParticipantRepository
     private lateinit var webSocketChatController: WebSocketChatController
 
     private lateinit var testUser: User
@@ -33,7 +35,8 @@ class WebSocketChatControllerTest {
         chatService = mock(ChatService::class.java)
         emoticonService = mock(EmoticonService::class.java)
         fileAttachmentRepository = mock(FileAttachmentRepository::class.java)
-        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, emoticonService, fileAttachmentRepository)
+        chatRoomParticipantRepository = mock(ChatRoomParticipantRepository::class.java)
+        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, emoticonService, fileAttachmentRepository, chatRoomParticipantRepository)
 
         testUser = User(
             id = 1L,
