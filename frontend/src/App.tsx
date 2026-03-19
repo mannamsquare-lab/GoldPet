@@ -108,134 +108,104 @@ function App() {
               {/* Login - standalone */}
               <Route path="/login" element={<Suspense fallback={null}><LoginPage /></Suspense>} />
 
-              {/* Type A Layout (Logo Only): Onboarding, Permissions, Benefits, Terms Agreement, Signup Complete */}
+              {/* Type A Layout (Logo Only) */}
               <Route element={<TypeALayout variant="logo-only" />}>
-                <Suspense fallback={null}>
-                  <Route path="/onboarding" element={<OnboardingPage />} />
-                  <Route path="/permissions" element={<PermissionsPage />} />
-                  <Route path="/benefits" element={<BenefitsPage />} />
-                  <Route path="/signup/complete" element={<SignupCompletePage />} />
-                </Suspense>
+                <Route path="/onboarding" element={<Suspense fallback={null}><OnboardingPage /></Suspense>} />
+                <Route path="/permissions" element={<Suspense fallback={null}><PermissionsPage /></Suspense>} />
+                <Route path="/benefits" element={<Suspense fallback={null}><BenefitsPage /></Suspense>} />
+                <Route path="/signup/complete" element={<Suspense fallback={null}><SignupCompletePage /></Suspense>} />
               </Route>
 
-              {/* Type A Layout (Back Only): Signup Form */}
+              {/* Type A Layout (Back Only) */}
               <Route element={<TypeALayout variant="back-only" />}>
-                <Suspense fallback={null}>
-                  <Route path="/signup" element={<TermsAgreementPage />} />
-                  <Route path="/signup/form" element={<SignupPage />} />
-                  <Route path="/signup/sns" element={<SnsSignupPage />} />
-                  <Route path="/loginSuccess" element={<LoginSuccessPage />} />
-                </Suspense>
+                <Route path="/signup" element={<Suspense fallback={null}><TermsAgreementPage /></Suspense>} />
+                <Route path="/signup/form" element={<Suspense fallback={null}><SignupPage /></Suspense>} />
+                <Route path="/signup/sns" element={<Suspense fallback={null}><SnsSignupPage /></Suspense>} />
+                <Route path="/loginSuccess" element={<Suspense fallback={null}><LoginSuccessPage /></Suspense>} />
               </Route>
 
-              {/* No Layout: Find Account (custom header per state) */}
-              <Suspense fallback={null}>
-                <Route path="/find-username" element={<FindUsernamePage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-              </Suspense>
+              {/* No Layout: Find Account */}
+              <Route path="/find-username" element={<Suspense fallback={null}><FindUsernamePage /></Suspense>} />
+              <Route path="/reset-password" element={<Suspense fallback={null}><ResetPasswordPage /></Suspense>} />
 
-              {/* Type A Layout (Close Only / Layout E): Account Edge Cases + Terms Detail */}
+              {/* Type A Layout (Close Only) */}
               <Route element={<TypeALayout variant="close-only" />}>
-                <Suspense fallback={null}>
-                  <Route path="/account/dormant" element={<DormantAccountPage />} />
-                  <Route path="/account/withdrawn" element={<WithdrawnAccountPage />} />
-                  <Route path="/account/suspended" element={<SuspendedAccountPage />} />
-                  <Route path="/terms/:type" element={<TermsDetailPage />} />
-                </Suspense>
+                <Route path="/account/dormant" element={<Suspense fallback={null}><DormantAccountPage /></Suspense>} />
+                <Route path="/account/withdrawn" element={<Suspense fallback={null}><WithdrawnAccountPage /></Suspense>} />
+                <Route path="/account/suspended" element={<Suspense fallback={null}><SuspendedAccountPage /></Suspense>} />
+                <Route path="/terms/:type" element={<Suspense fallback={null}><TermsDetailPage /></Suspense>} />
               </Route>
 
               {/* No Layout: Walk pages */}
-              <Suspense fallback={null}>
-                <Route path="/walk/ranking" element={<WalkRankingPage />} />
-                <Route path="/walk/map" element={<WalkMapPage />} />
-                <Route path="/walk/detail/:walkId" element={<WalkDetailPage />} />
-                <Route path="/walk/map-expand/:walkId" element={<WalkMapExpandPage />} />
-              </Suspense>
+              <Route path="/walk/ranking" element={<Suspense fallback={null}><WalkRankingPage /></Suspense>} />
+              <Route path="/walk/map" element={<Suspense fallback={null}><WalkMapPage /></Suspense>} />
+              <Route path="/walk/detail/:walkId" element={<Suspense fallback={null}><WalkDetailPage /></Suspense>} />
+              <Route path="/walk/map-expand/:walkId" element={<Suspense fallback={null}><WalkMapExpandPage /></Suspense>} />
 
-              {/* No Layout: Gold pages (uses SubPageLayout internally) */}
-              <Suspense fallback={null}>
-                <Route path="/gold" element={<GoldMainPage />} />
-                <Route path="/gold/purchase" element={<GoldPurchasePage />} />
-                <Route path="/gold/history" element={<GoldHistoryPage />} />
-              </Suspense>
+              {/* No Layout: Gold pages */}
+              <Route path="/gold" element={<Suspense fallback={null}><GoldMainPage /></Suspense>} />
+              <Route path="/gold/purchase" element={<Suspense fallback={null}><GoldPurchasePage /></Suspense>} />
+              <Route path="/gold/history" element={<Suspense fallback={null}><GoldHistoryPage /></Suspense>} />
 
               {/* No Layout: Custom header pages */}
-              <Suspense fallback={null}>
-                <Route path="/location/setting" element={<LocationSettingPage />} />
-              </Suspense>
+              <Route path="/location/setting" element={<Suspense fallback={null}><LocationSettingPage /></Suspense>} />
 
               {/* Type B Layout (Logo + Icons): Home, Main Features */}
               <Route element={<TypeBLayout variant="logo-with-icons" />}>
-                <Suspense fallback={null}>
-                  <Route path="/home" element={<HomePage />} />
-                  <Route path="/friend-find" element={<FriendFindPage />} />
-                  <Route path="/friend-list" element={<FriendsListPage />} />
-                  <Route path="/chat" element={<ChatListPage />} />
-                  <Route path="/walk" element={<WalkPage />} />
-                  <Route path="/community" element={<CommunityListPage />} />
-                  <Route path="/places" element={<PlaceListPage />} />
-                  <Route path="/places/:placeId" element={<PlaceDetailPage />} />
-                  <Route path="/ai-profile" element={<AIProfilePage />} />
-                </Suspense>
+                <Route path="/home" element={<Suspense fallback={null}><HomePage /></Suspense>} />
+                <Route path="/friend-find" element={<Suspense fallback={null}><FriendFindPage /></Suspense>} />
+                <Route path="/friend-list" element={<Suspense fallback={null}><FriendsListPage /></Suspense>} />
+                <Route path="/chat" element={<Suspense fallback={null}><ChatListPage /></Suspense>} />
+                <Route path="/walk" element={<Suspense fallback={null}><WalkPage /></Suspense>} />
+                <Route path="/community" element={<Suspense fallback={null}><CommunityListPage /></Suspense>} />
+                <Route path="/places" element={<Suspense fallback={null}><PlaceListPage /></Suspense>} />
+                <Route path="/places/:placeId" element={<Suspense fallback={null}><PlaceDetailPage /></Suspense>} />
+                <Route path="/ai-profile" element={<Suspense fallback={null}><AIProfilePage /></Suspense>} />
               </Route>
 
               {/* No Layout: Community */}
-              <Suspense fallback={null}>
-                <Route path="/community/:postId" element={<CommunityDetailPage />} />
-                <Route path="/community/write" element={<CommunityWritePage />} />
-              </Suspense>
+              <Route path="/community/:postId" element={<Suspense fallback={null}><CommunityDetailPage /></Suspense>} />
+              <Route path="/community/write" element={<Suspense fallback={null}><CommunityWritePage /></Suspense>} />
 
               {/* Course routes */}
-              <Suspense fallback={null}>
-                <Route path="/courses" element={<CoursePage />} />
-                <Route path="/courses/create" element={<CourseCreatePage />} />
-                <Route path="/courses/create/from-walk/:walkId" element={<CourseCreatePage />} />
-                <Route path="/courses/:courseId/edit" element={<CourseCreatePage />} />
-                <Route path="/courses/:courseId" element={<CourseDetailPage />} />
-              </Suspense>
+              <Route path="/courses" element={<Suspense fallback={null}><CoursePage /></Suspense>} />
+              <Route path="/courses/create" element={<Suspense fallback={null}><CourseCreatePage /></Suspense>} />
+              <Route path="/courses/create/from-walk/:walkId" element={<Suspense fallback={null}><CourseCreatePage /></Suspense>} />
+              <Route path="/courses/:courseId/edit" element={<Suspense fallback={null}><CourseCreatePage /></Suspense>} />
+              <Route path="/courses/:courseId" element={<Suspense fallback={null}><CourseDetailPage /></Suspense>} />
 
               {/* MyPage / Profile / Settings */}
-              <Suspense fallback={null}>
-                <Route path="/mypage" element={<MyPage />} />
-                <Route path="/mypage/pet/edit" element={<MyPagePetEditPage />} />
-                <Route path="/mypage/posts" element={<MyPostsPage />} />
-                <Route path="/my-walks" element={<MyWalkPage />} />
-                <Route path="/block-management" element={<BlockManagementPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/profile/owner/edit" element={<ProfileOwnerWritePage />} />
-                <Route path="/profile/pet/edit" element={<ProfilePetWritePage />} />
-                <Route path="/profile/terms" element={<ProfileTermsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/settings/password" element={<PasswordChangePage />} />
-              </Suspense>
+              <Route path="/mypage" element={<Suspense fallback={null}><MyPage /></Suspense>} />
+              <Route path="/mypage/pet/edit" element={<Suspense fallback={null}><MyPagePetEditPage /></Suspense>} />
+              <Route path="/mypage/posts" element={<Suspense fallback={null}><MyPostsPage /></Suspense>} />
+              <Route path="/my-walks" element={<Suspense fallback={null}><MyWalkPage /></Suspense>} />
+              <Route path="/block-management" element={<Suspense fallback={null}><BlockManagementPage /></Suspense>} />
+              <Route path="/profile" element={<Suspense fallback={null}><ProfilePage /></Suspense>} />
+              <Route path="/profile/owner/edit" element={<Suspense fallback={null}><ProfileOwnerWritePage /></Suspense>} />
+              <Route path="/profile/pet/edit" element={<Suspense fallback={null}><ProfilePetWritePage /></Suspense>} />
+              <Route path="/profile/terms" element={<Suspense fallback={null}><ProfileTermsPage /></Suspense>} />
+              <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
+              <Route path="/settings/password" element={<Suspense fallback={null}><PasswordChangePage /></Suspense>} />
 
               {/* Notifications */}
-              <Suspense fallback={null}>
-                <Route path="/notifications" element={<NotificationPage />} />
-                <Route path="/notices/:id" element={<NoticeDetailPage />} />
-              </Suspense>
+              <Route path="/notifications" element={<Suspense fallback={null}><NotificationPage /></Suspense>} />
+              <Route path="/notices/:id" element={<Suspense fallback={null}><NoticeDetailPage /></Suspense>} />
 
               {/* AI Profile Routes */}
-              <Suspense fallback={null}>
-                <Route path="/ai-profile/styles" element={<AIProfileStyleSelectPage />} />
-                <Route path="/ai-profile/simple" element={<AIProfileSimplePage />} />
-                <Route path="/ai-profile/custom" element={<AIProfileCustomPage />} />
-                <Route path="/ai-profile/result/:requestId" element={<AIProfileResultPage />} />
-              </Suspense>
+              <Route path="/ai-profile/styles" element={<Suspense fallback={null}><AIProfileStyleSelectPage /></Suspense>} />
+              <Route path="/ai-profile/simple" element={<Suspense fallback={null}><AIProfileSimplePage /></Suspense>} />
+              <Route path="/ai-profile/custom" element={<Suspense fallback={null}><AIProfileCustomPage /></Suspense>} />
+              <Route path="/ai-profile/result/:requestId" element={<Suspense fallback={null}><AIProfileResultPage /></Suspense>} />
 
               {/* Chat - No Layout */}
-              <Suspense fallback={null}>
-                <Route path="/chat/:chatId" element={<ChatDetailPage />} />
-                <Route path="/chat/group/:chatId" element={<ChatDetailPage />} />
-              </Suspense>
+              <Route path="/chat/:chatId" element={<Suspense fallback={null}><ChatDetailPage /></Suspense>} />
+              <Route path="/chat/group/:chatId" element={<Suspense fallback={null}><ChatDetailPage /></Suspense>} />
 
               {/* Misc */}
-              <Suspense fallback={null}>
-                <Route path="/pet/register" element={<PetRegisterPage />} />
-                <Route path="/pet/edit/:petId" element={<PetRegisterPage />} />
-                <Route path="/my-badges" element={<GamificationTabPage />} />
-                <Route path="/missions" element={<GamificationTabPage />} />
-              </Suspense>
+              <Route path="/pet/register" element={<Suspense fallback={null}><PetRegisterPage /></Suspense>} />
+              <Route path="/pet/edit/:petId" element={<Suspense fallback={null}><PetRegisterPage /></Suspense>} />
+              <Route path="/my-badges" element={<Suspense fallback={null}><GamificationTabPage /></Suspense>} />
+              <Route path="/missions" element={<Suspense fallback={null}><GamificationTabPage /></Suspense>} />
 
               <Route path="/" element={<Navigate to="/splash" replace />} />
             </Routes>
