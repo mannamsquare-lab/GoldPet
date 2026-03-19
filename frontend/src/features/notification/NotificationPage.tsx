@@ -39,16 +39,36 @@ const NotificationPage = () => {
     useEffect(() => {
         if (isBoardTab) {
             loadNotices();
+        } else if (activeTab === 'ALL') {
+            loadAll();
         } else {
             loadNotifications();
         }
     }, [activeTab]);
+
+    const loadAll = async () => {
+        setLoading(true);
+        try {
+            const [{ notifications: notiData }, noticeData, eventData] = await Promise.all([
+                notificationService.getNotifications('ALL'),
+                noticeService.getNoticesByType('NOTICE'),
+                noticeService.getNoticesByType('EVENT_BANNER'),
+            ]);
+            setNotifications(notiData);
+            setNotices([...noticeData, ...eventData]);
+        } catch {
+            // silent
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const loadNotifications = async () => {
         setLoading(true);
         try {
             const { notifications: data } = await notificationService.getNotifications(activeTab);
             setNotifications(data);
+            setNotices([]);
         } catch {
             // silent
         } finally {
@@ -187,34 +207,57 @@ const NotificationPage = () => {
                         )}
                     </div>
                 ) : (
-                    /* Notification list for other tabs */
-                    <div className="notification_list">
-                        {notifications.length === 0 ? (
-                            <div className="empty_state">
-                                <img src="/assets/images/common/comment_icon03.svg" alt="" />
-                                <p>{emptyMessage}</p>
+                    <>
+                        {/* Board items in ALL tab */}
+                        {activeTab === 'ALL' && notices.length > 0 && (
+                            <div className="notice_board_list">
+                                <ul>
+                                    {notices.map(item => (
+                                        <li key={`notice-${item.id}`} className="notice_board_item" onClick={() => handleNoticeClick(item)}>
+                                            {item.imageUrls.length > 0 && (
+                                                <div className="notice_board_thumb">
+                                                    <img src={item.imageUrls[0]} alt="" />
+                                                </div>
+                                            )}
+                                            <div className="notice_board_content">
+                                                <span className="notice_board_badge">{item.type === 'NOTICE' ? '공지' : '이벤트'}</span>
+                                                <strong className="notice_board_title">{item.title}</strong>
+                                                <span className="notice_board_date">{formatDate(item.startAt)}</span>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
-                        ) : (
-                            <ul>
-                                {notifications.map(item => (
-                                    <li key={item.id} className="notification_item" onClick={() => handleNotificationClick(item)}>
-                                        <div className="notification_profile">
-                                            <img
-                                                src={item.senderProfileImage || '/assets/images/common/profile_none_img.svg'}
-                                                alt=""
-                                            />
-                                            {!item.isRead && <span className="unread_dot" />}
-                                        </div>
-                                        <div className="notification_content">
-                                            <strong className="notification_title">{item.title}</strong>
-                                            <p className="notification_message">{item.message}</p>
-                                            <span className="notification_time">{formatTime(item.createdAt)}</span>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
                         )}
-                    </div>
+                        {/* Notification list */}
+                        <div className="notification_list">
+                            {notifications.length === 0 && notices.length === 0 ? (
+                                <div className="empty_state">
+                                    <img src="/assets/images/common/comment_icon03.svg" alt="" />
+                                    <p>{emptyMessage}</p>
+                                </div>
+                            ) : notifications.length === 0 ? null : (
+                                <ul>
+                                    {notifications.map(item => (
+                                        <li key={item.id} className="notification_item" onClick={() => handleNotificationClick(item)}>
+                                            <div className="notification_profile">
+                                                <img
+                                                    src={item.senderProfileImage || '/assets/images/common/profile_none_img.svg'}
+                                                    alt=""
+                                                />
+                                                {!item.isRead && <span className="unread_dot" />}
+                                            </div>
+                                            <div className="notification_content">
+                                                <strong className="notification_title">{item.title}</strong>
+                                                <p className="notification_message">{item.message}</p>
+                                                <span className="notification_time">{formatTime(item.createdAt)}</span>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
         </SubPageLayout>
