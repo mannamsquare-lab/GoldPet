@@ -66,25 +66,31 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
     [queryClient, roomId]
   );
 
-  // Handle read receipt events
+  // Handle read receipt events with server-computed unreadCounts
   const handleReadUpdate = useCallback(
-    (event: { type: string; userId: number; lastReadAt: string }) => {
+    (event: { type: string; userId: number; updates?: Array<{ messageId: number; unreadCount: number }> }) => {
       if (!roomId) return;
-      const readAt = event.lastReadAt;
 
-      queryClient.setQueryData(
-        ['chatMessages', roomId],
-        (oldMessages: ChatMessage[] | undefined) => {
-          if (!oldMessages) return oldMessages;
-          return oldMessages.map((msg) => {
-            // Only decrement for messages created before or at readAt
-            if (msg.unreadCount && msg.unreadCount > 0 && msg.createdAt && msg.createdAt <= readAt) {
-              return { ...msg, unreadCount: Math.max(0, msg.unreadCount - 1) };
-            }
-            return msg;
-          });
-        }
-      );
+      if (event.updates && event.updates.length > 0) {
+        // Build a map of messageId -> server-computed unreadCount
+        const updateMap = new Map(
+          event.updates.map((u) => [Number(u.messageId), u.unreadCount])
+        );
+
+        queryClient.setQueryData(
+          ['chatMessages', roomId],
+          (oldMessages: ChatMessage[] | undefined) => {
+            if (!oldMessages) return oldMessages;
+            return oldMessages.map((msg) => {
+              const newCount = updateMap.get(Number(msg.id));
+              if (newCount !== undefined) {
+                return { ...msg, unreadCount: newCount };
+              }
+              return msg;
+            });
+          }
+        );
+      }
 
       // Also invalidate chat rooms to update room-level unread count
       queryClient.invalidateQueries({ queryKey: ['chatRooms'] });

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.LocalDateTime
 
 interface ChatMessageRepository : JpaRepository<ChatMessage, Long> {
     @EntityGraph(attributePaths = ["sender", "replyTo", "replyTo.sender"])
@@ -18,4 +19,15 @@ interface ChatMessageRepository : JpaRepository<ChatMessage, Long> {
 
     @Query("SELECT m FROM ChatMessage m WHERE m.sender.id = :userId")
     fun findAllBySenderId(@Param("userId") userId: Long): List<ChatMessage>
+
+    @EntityGraph(attributePaths = ["sender"])
+    @Query("SELECT m FROM ChatMessage m WHERE m.chatRoom.id = :roomId AND m.createdAt > :since ORDER BY m.createdAt ASC")
+    fun findByChatRoomIdAndCreatedAtAfter(
+        @Param("roomId") roomId: Long,
+        @Param("since") since: LocalDateTime
+    ): List<ChatMessage>
+
+    @EntityGraph(attributePaths = ["sender"])
+    @Query("SELECT m FROM ChatMessage m WHERE m.chatRoom.id = :roomId ORDER BY m.createdAt ASC")
+    fun findAllByChatRoomId(@Param("roomId") roomId: Long): List<ChatMessage>
 }

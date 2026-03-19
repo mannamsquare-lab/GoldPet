@@ -238,13 +238,20 @@ class ChatService(
         }
     }
 
+    /**
+     * Mark all messages as read for a user in a room.
+     * Returns the previous lastReadAt (null if first time reading).
+     * Returns the current lastReadAt if nothing new to read (caller can skip broadcast).
+     */
     @Transactional
-    fun markAsRead(roomId: Long, userId: Long) {
+    fun markAsRead(roomId: Long, userId: Long): LocalDateTime? {
         val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId)
             .orElseThrow { NotFoundException("Participant not found in chat room $roomId for user $userId") }
 
-        participant.lastReadAt = java.time.LocalDateTime.now()
+        val oldLastReadAt = participant.lastReadAt
+        participant.lastReadAt = LocalDateTime.now()
         chatRoomParticipantRepository.save(participant)
+        return oldLastReadAt
     }
 
     @Transactional

@@ -5,6 +5,7 @@ import com.goldpet.domain.chat.dto.ChatRoomResponse
 import com.goldpet.domain.chat.dto.ChatMessageResponse
 import com.goldpet.domain.chat.dto.ChatRequestResponse
 import com.goldpet.domain.chat.dto.SendMessageRequest
+import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
@@ -25,7 +26,8 @@ class ChatRoomController(
     private val emoticonService: EmoticonService,
     private val simpMessageSendingOperations: SimpMessageSendingOperations,
     private val fileService: FileService,
-    private val chatRoomParticipantRepository: ChatRoomParticipantRepository
+    private val chatRoomParticipantRepository: ChatRoomParticipantRepository,
+    private val chatMessageRepository: ChatMessageRepository
 ) {
     private fun resolveFileUrl(url: String): String =
         if (url.startsWith("http")) url else fileService.getPresignedUrl(url)
@@ -182,15 +184,38 @@ class ChatRoomController(
         @PathVariable roomId: Long,
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
     ): ResponseEntity<Void> {
-        chatService.markAsRead(roomId, userDetails.id)
+        val oldLastReadAt = chatService.markAsRead(roomId, userDetails.id)
 
-        // Broadcast read event to room subscribers
+        // Fetch messages that were newly read (between old and new lastReadAt)
+        val newlyReadMessages = if (oldLastReadAt != null) {
+            chatMessageRepository.findByChatRoomIdAndCreatedAtAfter(roomId, oldLastReadAt)
+        } else {
+            // First time reading: all messages in the room
+            chatMessageRepository.findAllByChatRoomId(roomId)
+        }
+
+        if (newlyReadMessages.isEmpty()) {
+            return ResponseEntity.ok().build()
+        }
+
+        // Fetch updated participants (with new lastReadAt already persisted)
+        val participants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
+
+        // Compute per-message unreadCount using existing logic
+        val updates = newlyReadMessages.map { msg ->
+            mapOf(
+                "messageId" to msg.id,
+                "unreadCount" to ChatMessageResponse.computeUnreadCount(msg, participants)
+            )
+        }
+
+        // Broadcast enriched read event
         simpMessageSendingOperations.convertAndSend(
             "/topic/chat/$roomId/read",
             mapOf(
                 "type" to "READ_UPDATE",
                 "userId" to userDetails.id,
-                "lastReadAt" to java.time.LocalDateTime.now().toString()
+                "updates" to updates
             )
         )
 

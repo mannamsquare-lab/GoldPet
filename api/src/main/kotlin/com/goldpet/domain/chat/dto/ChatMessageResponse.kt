@@ -139,7 +139,7 @@ data class ChatMessageResponse(
             )
         }
 
-        private fun computeUnreadCount(message: ChatMessage, participants: List<ChatRoomParticipant>): Int {
+        fun computeUnreadCount(message: ChatMessage, participants: List<ChatRoomParticipant>): Int {
             val sender = message.sender ?: return 0
             return participants.count { p ->
                 p.user.id != sender.id &&
