@@ -1211,6 +1211,7 @@ const ChatDetailPage = () => {
                         <button
                             type="button"
                             className="chat_detail_send_btn btn-effect"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={selectedEmoticon ? handleSendSelectedEmoticon : handleSendMessage}
                             disabled={(!message.trim() && selectedFiles.length === 0 && !selectedEmoticon) || isUploading}
                         >
