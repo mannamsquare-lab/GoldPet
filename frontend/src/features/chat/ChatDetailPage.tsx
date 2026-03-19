@@ -417,7 +417,7 @@ const ChatDetailPage = () => {
                 scrollToBottom(false);
             }
         }
-    }, [messages]);
+    }, [messages, scrollToBottom]);
 
     useEffect(() => {
         if (chatId && !USE_MOCK) {

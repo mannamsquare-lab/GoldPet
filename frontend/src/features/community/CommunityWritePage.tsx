@@ -58,6 +58,7 @@ export default function CommunityWritePage() {
            setTimeout(() => setFormData(prev => ({ ...prev, categoryId: categories[0].id })), 0);
        }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only runs when available categories change; formData.categoryId is read to check validity, not as a trigger
   }, [categories, editMode]);
 
   const createMutation = useMutation({

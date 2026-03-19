@@ -1,13 +1,21 @@
 declare namespace naver.maps {
+    type MapEventListener = object;
+
     class Map {
         constructor(el: HTMLElement, options?: MapOptions);
         setCenter(latlng: LatLng): void;
         setZoom(zoom: number): void;
         getCenter(): LatLng;
+        panTo(latlng: LatLng): void;
         fitBounds(bounds: LatLngBounds, padding?: { top?: number; right?: number; bottom?: number; left?: number }): void;
         autoResize(): void;
         setSize(size: Size): void;
         destroy(): void;
+    }
+
+    namespace Event {
+        function addListener(target: Map | Marker, event: string, listener: () => void): MapEventListener;
+        function removeListener(listener: MapEventListener): void;
     }
 
     class LatLngBounds {
@@ -56,6 +64,8 @@ declare namespace naver.maps {
 
     class Point {
         constructor(x: number, y: number);
+        readonly x: number;
+        readonly y: number;
     }
 
     class Polyline {

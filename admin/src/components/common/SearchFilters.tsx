@@ -46,8 +46,9 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
 
   // Cleanup timers
   useEffect(() => {
+    const timers = debounceTimers.current;
     return () => {
-      Object.values(debounceTimers.current).forEach(clearTimeout);
+      Object.values(timers).forEach(clearTimeout);
     };
   }, []);
 

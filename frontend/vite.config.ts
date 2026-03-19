@@ -12,6 +12,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          query: ['@tanstack/react-query'],
+          ui: ['zustand', 'axios'],
+        },
+      },
+    },
   },
   publicDir: 'public', // public 디렉토리 명시
   define: {

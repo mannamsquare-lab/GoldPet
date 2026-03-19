@@ -36,6 +36,11 @@ export function petCircleMarkerHtml(variant: 'start' | 'end', imageUrl?: string 
     return `<div class="walk_pet_circle walk_pet_circle--${variant}"><img src="${imgSrc}" alt="" /></div>`;
 }
 
+interface SvgOverlayInstance extends naver.maps.OverlayView {
+    _path: naver.maps.LatLng[];
+    _el: HTMLElement | null;
+}
+
 /** Create an SVG-based path overlay using OverlayView.
  *  Uses DOM rendering (same as Marker) so the path stays aligned with
  *  markers at all zoom levels. SVG is sized to its bounding box to avoid
@@ -49,14 +54,14 @@ export function createSvgPathOverlay(
     const weight = options.strokeWeight || 4;
     const opacity = options.strokeOpacity || 0.9;
 
-    const Ctor = function (this: any) {
+    const Ctor = function (this: SvgOverlayInstance) {
         this._path = path;
-        this._el = null as HTMLElement | null;
+        this._el = null;
     };
-    Ctor.prototype = new (naver.maps as any).OverlayView();
+    Ctor.prototype = new naver.maps.OverlayView();
     Ctor.prototype.constructor = Ctor;
 
-    Ctor.prototype.onAdd = function (this: any) {
+    Ctor.prototype.onAdd = function (this: SvgOverlayInstance) {
         const el = document.createElement('div');
         el.style.position = 'absolute';
         el.style.left = '0';
@@ -66,7 +71,7 @@ export function createSvgPathOverlay(
         this.getPanes().overlayLayer.appendChild(el);
     };
 
-    Ctor.prototype.draw = function (this: any) {
+    Ctor.prototype.draw = function (this: SvgOverlayInstance) {
         const proj = this.getProjection();
         if (!proj || !this._path.length || !this._el) return;
         const pxs: { x: number; y: number }[] = [];
@@ -91,12 +96,12 @@ export function createSvgPathOverlay(
             `</svg>`;
     };
 
-    Ctor.prototype.onRemove = function (this: any) {
+    Ctor.prototype.onRemove = function (this: SvgOverlayInstance) {
         if (this._el?.parentNode) this._el.parentNode.removeChild(this._el);
         this._el = null;
     };
 
-    const overlay = new (Ctor as any)();
+    const overlay = new (Ctor as unknown as new () => SvgOverlayInstance)();
     overlay.setMap(map);
     return overlay;
 }

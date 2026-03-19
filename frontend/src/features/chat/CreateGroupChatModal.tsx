@@ -69,11 +69,11 @@ const CreateGroupChatModal = ({ isOpen, onClose }: CreateGroupChatModalProps) =>
         createMutation.mutate();
     };
 
+    const keyboardDismiss = useKeyboardDismiss();
+
     if (!isOpen) return null;
 
     const selectedFriendList = mutualFriends.filter((f: Friend) => selectedFriends.has(f.id));
-
-    const keyboardDismiss = useKeyboardDismiss();
 
     return (
         <div className="group_modal_overlay" onClick={handleClose} {...keyboardDismiss}>

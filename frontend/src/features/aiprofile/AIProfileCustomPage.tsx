@@ -50,6 +50,7 @@ export default function AIProfileCustomPage() {
     const newImages: (string | null)[] = [null, null, null, null];
     petImages.slice(0, 4).forEach((url, i) => { newImages[i] = url; });
     setUploadedImages(newImages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on selectedPetId; selectedPet is derived from it and changes only when the ID changes
   }, [selectedPetId]);
 
   const { data: goldBalance } = useQuery({

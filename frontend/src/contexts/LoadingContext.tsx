@@ -31,6 +31,7 @@ export const LoadingProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- context files conventionally co-locate the Provider and its hook
 export const useLoading = () => {
   const context = useContext(LoadingContext);
   if (context === undefined) {

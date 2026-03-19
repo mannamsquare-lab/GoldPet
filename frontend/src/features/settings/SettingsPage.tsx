@@ -50,6 +50,7 @@ const SettingsPage: React.FC = () => {
       }
     };
     loadSettings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only effect; showToast from context is stable but effect is intentionally run once on mount
   }, []);
 
   const handleNotificationToggle = async (key: keyof NotificationSettings) => {

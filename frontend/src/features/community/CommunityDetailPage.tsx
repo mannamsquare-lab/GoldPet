@@ -310,6 +310,8 @@ export default function CommunityDetailPage() {
       }
   }
 
+  const keyboardDismiss = useKeyboardDismiss();
+
   if (isLoading) {
     return <div className="loading">로딩 중...</div>;
   }
@@ -317,8 +319,6 @@ export default function CommunityDetailPage() {
   if (!post) {
     return <div className="error">게시글을 찾을 수 없습니다.</div>;
   }
-
-  const keyboardDismiss = useKeyboardDismiss();
 
   return (
     <div id="communityContainer" className="community-detail-mode" {...keyboardDismiss}>

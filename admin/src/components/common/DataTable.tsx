@@ -20,9 +20,13 @@ interface DataTableProps<T> {
   rowClassName?: (row: T) => string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getNestedValue(obj: Record<string, any>, path: string): any {
-  return path.split('.').reduce((acc, part) => acc?.[part], obj);
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((acc, part) => {
+    if (acc !== null && typeof acc === 'object') {
+      return (acc as Record<string, unknown>)[part];
+    }
+    return undefined;
+  }, obj);
 }
 
 export function DataTable<T>({
@@ -124,14 +128,14 @@ export function DataTable<T>({
               )}
             >
               {columns.map((col) => {
-                const value = getNestedValue(row as Record<string, any>, col.key);
+                const value = getNestedValue(row as Record<string, unknown>, col.key);
                 return (
                   <td
                     key={col.key}
                     className={clsx('px-4 py-3 text-sm text-gray-900', alignClass(col.align), col.className)}
                     style={col.width ? { width: col.width } : undefined}
                   >
-                    {col.render ? col.render(value, row) : (value ?? '-')}
+                    {col.render ? col.render(value, row) : String(value ?? '-')}
                   </td>
                 );
               })}

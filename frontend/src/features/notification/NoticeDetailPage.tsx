@@ -12,6 +12,7 @@ const NoticeDetailPage = () => {
     useEffect(() => {
         if (!id) return;
         loadNotice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadNotice is defined in component scope without useCallback; adding it would cause infinite re-fetch loop
     }, [id]);
 
     const loadNotice = async () => {

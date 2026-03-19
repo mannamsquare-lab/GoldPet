@@ -523,11 +523,12 @@ export function CourseCreatePage() {
       cancelled = true;
       if (pollTimer) clearInterval(pollTimer);
       for (const l of clickListenerRef.current) {
-        try { (naver.maps as any).Event.removeListener(l); } catch {}
+        try { naver.maps.Event.removeListener(l); } catch (e) { console.error('CourseCreate: failed to remove listener', e); }
       }
       clickListenerRef.current = [];
       for (const m of waypointMarkersRef.current) m.setMap(null);
       waypointMarkersRef.current = [];
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- spotMarkersRef.current is populated by initMap after effect runs; capturing at effect start would miss markers
       for (const m of spotMarkersRef.current.values()) m.setMap(null);
       spotMarkersRef.current.clear();
       if (polylineRef.current) {

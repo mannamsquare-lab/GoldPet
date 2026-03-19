@@ -44,6 +44,7 @@ const NotificationPage = () => {
         } else {
             loadNotifications();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load functions defined without useCallback; adding them would cause infinite loop; activeTab is the sole trigger
     }, [activeTab]);
 
     const loadAll = async () => {

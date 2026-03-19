@@ -22,7 +22,7 @@ export const WalkMapExpandPage = () => {
     const pathOverlayRef = useRef<{ setMap: (map: naver.maps.Map | null) => void } | null>(null);
     const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
     const petMarkersRef = useRef<naver.maps.Marker[]>([]);
-    const listenersRef = useRef<any[]>([]);
+    const listenersRef = useRef<naver.maps.MapEventListener[]>([]);
     const [address, setAddress] = useState('위치 확인 중...');
     const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
@@ -135,7 +135,7 @@ export const WalkMapExpandPage = () => {
             if (resizeObserver) resizeObserver.disconnect();
             // Clean up all markers and listeners
             listenersRef.current.forEach(l => {
-                try { (naver.maps as any).Event.removeListener(l); } catch {}
+                try { naver.maps.Event.removeListener(l); } catch (e) { console.error('WalkMapExpand: failed to remove listener', e); }
             });
             listenersRef.current = [];
             spotMarkersRef.current.forEach(m => m.setMap(null));
@@ -164,7 +164,7 @@ export const WalkMapExpandPage = () => {
             }
             // Clean previous markers
             listenersRef.current.forEach(l => {
-                try { (naver.maps as any).Event.removeListener(l); } catch {}
+                try { naver.maps.Event.removeListener(l); } catch (e) { console.error('WalkMapExpand: failed to remove listener', e); }
             });
             listenersRef.current = [];
             spotMarkersRef.current.forEach(m => m.setMap(null));
@@ -232,11 +232,11 @@ export const WalkMapExpandPage = () => {
                         } as unknown as naver.maps.MarkerIcon,
                     });
                     spotMarkersRef.current.push(marker);
-                    const listener = (naver.maps as any).Event.addListener(marker, 'click', () => {
+                    const listener = naver.maps.Event.addListener(marker, 'click', () => {
                         setSelectedSpot(spot);
                         if (spot.type === 'PHOTO' && spot.imageUrl) resolvePreview(spot);
                         if (mapInstanceRef.current) {
-                            (mapInstanceRef.current as any).panTo(pos);
+                            mapInstanceRef.current.panTo(pos);
                         }
                     });
                     listenersRef.current.push(listener);
@@ -249,6 +249,7 @@ export const WalkMapExpandPage = () => {
         } catch (err) {
             console.error('WalkMapExpand: route drawing failed', err);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- map drawing effect keyed on mapReady and data; resolvePreview is a stable callback used for route rendering
     }, [mapReady, walk]);
 
     const formatDate = (dateStr?: string) => {

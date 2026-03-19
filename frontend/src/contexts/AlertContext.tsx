@@ -74,6 +74,7 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- context files conventionally co-locate the Provider and its hook
 export const useAlert = () => {
   const context = useContext(AlertContext);
   if (context === undefined) {

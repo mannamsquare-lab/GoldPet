@@ -108,6 +108,7 @@ export default function AIProfileResultPage() {
         timerRef.current = null;
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- timer should only start/stop based on isProcessing; adding tips.length would reset the interval when tips change
   }, [isProcessing]);
 
   const getProgressStep = () => {
