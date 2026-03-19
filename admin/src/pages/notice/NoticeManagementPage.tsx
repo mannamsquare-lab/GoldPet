@@ -11,6 +11,7 @@ const TYPE_LABELS: Record<string, string> = {
   POPUP_MODAL: '팝업 모달',
   MAINTENANCE: '점검 공지',
   EVENT_BANNER: '이벤트 배너',
+  NOTICE: '공지사항',
 };
 
 const SCREEN_OPTIONS = [
@@ -146,6 +147,7 @@ export default function NoticeManagementPage() {
       POPUP_MODAL: 'bg-purple-100 text-purple-800',
       MAINTENANCE: 'bg-orange-100 text-orange-800',
       EVENT_BANNER: 'bg-blue-100 text-blue-800',
+      NOTICE: 'bg-green-100 text-green-800',
     };
     return (
       <span className={`px-2 py-1 text-xs rounded-full ${styles[type] || 'bg-gray-100 text-gray-800'}`}>
@@ -249,6 +251,7 @@ export default function NoticeManagementPage() {
                 <option value="POPUP_MODAL">팝업 모달</option>
                 <option value="MAINTENANCE">점검 공지</option>
                 <option value="EVENT_BANNER">이벤트 배너</option>
+                <option value="NOTICE">공지사항</option>
               </select>
             </div>
             <div>
