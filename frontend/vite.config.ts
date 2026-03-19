@@ -18,6 +18,8 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'react-router-dom'],
           query: ['@tanstack/react-query'],
           ui: ['zustand', 'axios'],
+          chart: ['chart.js', 'react-chartjs-2'],
+          websocket: ['@stomp/stompjs', 'sockjs-client'],
         },
       },
     },
