@@ -41,6 +41,7 @@ import ProfilePetWritePage from './features/profile/ProfilePetWritePage';
 import PetRegisterPage from './features/pet/PetRegisterPage';
 import GamificationTabPage from './features/gamification/GamificationTabPage';
 import NotificationPage from './features/notification/NotificationPage';
+import NoticeDetailPage from './features/notification/NoticeDetailPage';
 import { ProfileTermsPage } from './features/profile/ProfileTermsPage';
 import ScrollToTop from './components/common/ScrollToTop';
 import { PullToRefresh } from './components/common/PullToRefresh';
@@ -189,6 +190,7 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/settings/password" element={<PasswordChangePage />} />
               <Route path="/notifications" element={<NotificationPage />} />
+              <Route path="/notices/:id" element={<NoticeDetailPage />} />
               
               <Route path="/profile/owner/edit" element={<ProfileOwnerWritePage />} />
               <Route path="/profile/pet/edit" element={<ProfilePetWritePage />} />

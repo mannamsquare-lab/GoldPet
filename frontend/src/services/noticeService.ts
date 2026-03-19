@@ -2,7 +2,7 @@ import apiClient from './api/client';
 
 export interface AppNoticeResponse {
   id: number;
-  type: 'POPUP_MODAL' | 'MAINTENANCE' | 'EVENT_BANNER';
+  type: 'POPUP_MODAL' | 'MAINTENANCE' | 'EVENT_BANNER' | 'NOTICE';
   title: string;
   content?: string;
   imageUrls: string[];
@@ -19,6 +19,11 @@ export const noticeService = {
   getActiveNotices: async (screen?: string): Promise<AppNoticeResponse[]> => {
     const params = screen ? { screen } : {};
     const response = await apiClient.get('/app/notices', { params });
+    return response.data;
+  },
+
+  getNoticesByType: async (type: string): Promise<AppNoticeResponse[]> => {
+    const response = await apiClient.get('/app/notices', { params: { type } });
     return response.data;
   },
 

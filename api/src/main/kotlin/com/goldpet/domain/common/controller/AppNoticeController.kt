@@ -20,9 +20,10 @@ class AppNoticeController(
     )
     @GetMapping
     fun getActiveNotices(
-        @RequestParam(required = false) screen: String?
+        @RequestParam(required = false) screen: String?,
+        @RequestParam(required = false) type: String?
     ): ResponseEntity<List<AppNoticeResponse>> {
-        return ResponseEntity.ok(appNoticeService.getActiveNotices(screen))
+        return ResponseEntity.ok(appNoticeService.getActiveNotices(screen, type))
     }
 
     @Operation(

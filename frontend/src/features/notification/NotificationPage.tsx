@@ -1,8 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { notificationService } from '../../services/notificationService';
 import type { Notification } from '../../services/notificationService';
+import { noticeService, type AppNoticeResponse } from '../../services/noticeService';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import './NotificationPage.css';
 
@@ -16,14 +18,30 @@ const TABS = [
     { id: 'EVENT', label: '이벤트' },
 ];
 
+const BOARD_TABS = ['NOTICE', 'EVENT'];
+
+// Map tab ID to backend AppNoticeType
+const TAB_TO_NOTICE_TYPE: Record<string, string> = {
+    NOTICE: 'NOTICE',
+    EVENT: 'EVENT_BANNER',
+};
+
 const NotificationPage = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('ALL');
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [notices, setNotices] = useState<AppNoticeResponse[]>([]);
     const [loading, setLoading] = useState(false);
 
+    const isBoardTab = BOARD_TABS.includes(activeTab);
+
     useEffect(() => {
-        loadNotifications();
+        if (isBoardTab) {
+            loadNotices();
+        } else {
+            loadNotifications();
+        }
     }, [activeTab]);
 
     const loadNotifications = async () => {
@@ -38,12 +56,26 @@ const NotificationPage = () => {
         }
     };
 
+    const loadNotices = async () => {
+        setLoading(true);
+        try {
+            const type = TAB_TO_NOTICE_TYPE[activeTab];
+            const data = await noticeService.getNoticesByType(type);
+            setNotices(data);
+        } catch {
+            // silent
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleNotificationClick = async (item: Notification) => {
         if (!item.isRead) {
             await notificationService.markAsRead(item.id);
             setNotifications(prev =>
                 prev.map(n => n.id === item.id ? { ...n, isRead: true } : n)
             );
+            queryClient.invalidateQueries({ queryKey: ['notificationUnread'] });
         }
         if (item.targetType && item.targetId) {
             switch (item.targetType) {
@@ -54,9 +86,18 @@ const NotificationPage = () => {
         }
     };
 
+    const handleNoticeClick = (item: AppNoticeResponse) => {
+        if (item.linkUrl) {
+            window.location.href = item.linkUrl;
+        } else {
+            navigate(`/notices/${item.id}`);
+        }
+    };
+
     const handleMarkAllAsRead = async () => {
         await notificationService.markAllAsRead();
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        queryClient.invalidateQueries({ queryKey: ['notificationUnread'] });
     };
 
     const formatTime = (isoString: string) => {
@@ -73,13 +114,24 @@ const NotificationPage = () => {
         return `${days}일 전`;
     };
 
+    const formatDate = (isoString: string) => {
+        const date = new Date(isoString);
+        return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const emptyMessage = isBoardTab
+        ? activeTab === 'NOTICE' ? '등록된 공지가 없습니다.' : '등록된 이벤트가 없습니다.'
+        : '새로운 알림이 없습니다.';
+
     return (
         <SubPageLayout
             title="알림"
             rightAction={
-                <button type="button" className="mark-all-read-btn" onClick={handleMarkAllAsRead}>
-                    모두 읽음
-                </button>
+                !isBoardTab ? (
+                    <button type="button" className="mark-all-read-btn" onClick={handleMarkAllAsRead}>
+                        모두 읽음
+                    </button>
+                ) : undefined
             }
         >
             <div id="notificationContainer">
@@ -100,36 +152,70 @@ const NotificationPage = () => {
                     </ul>
                 </div>
 
-                {/* List */}
-                <div className="notification_list">
-                    {loading ? (
+                {/* Content */}
+                {loading ? (
+                    <div className="notification_list">
                         <div className="loading">로딩 중...</div>
-                    ) : notifications.length === 0 ? (
-                        <div className="empty_state">
-                            <img src="/assets/images/common/comment_icon03.svg" alt="" />
-                            <p>새로운 알림이 없습니다.</p>
-                        </div>
-                    ) : (
-                        <ul>
-                            {notifications.map(item => (
-                                <li key={item.id} className="notification_item" onClick={() => handleNotificationClick(item)}>
-                                    <div className="notification_profile">
-                                        <img
-                                            src={item.senderProfileImage || '/assets/images/common/profile_none_img.svg'}
-                                            alt=""
-                                        />
-                                        {!item.isRead && <span className="unread_dot" />}
-                                    </div>
-                                    <div className="notification_content">
-                                        <strong className="notification_title">{item.title}</strong>
-                                        <p className="notification_message">{item.message}</p>
-                                        <span className="notification_time">{formatTime(item.createdAt)}</span>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                    </div>
+                ) : isBoardTab ? (
+                    /* Board-style list for NOTICE/EVENT */
+                    <div className="notice_board_list">
+                        {notices.length === 0 ? (
+                            <div className="empty_state">
+                                <img src="/assets/images/common/comment_icon03.svg" alt="" />
+                                <p>{emptyMessage}</p>
+                            </div>
+                        ) : (
+                            <ul>
+                                {notices.map(item => (
+                                    <li key={item.id} className="notice_board_item" onClick={() => handleNoticeClick(item)}>
+                                        {item.imageUrls.length > 0 && (
+                                            <div className="notice_board_thumb">
+                                                <img src={item.imageUrls[0]} alt="" />
+                                            </div>
+                                        )}
+                                        <div className="notice_board_content">
+                                            <strong className="notice_board_title">{item.title}</strong>
+                                            {item.content && (
+                                                <p className="notice_board_desc">{item.content}</p>
+                                            )}
+                                            <span className="notice_board_date">{formatDate(item.startAt)}</span>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                ) : (
+                    /* Notification list for other tabs */
+                    <div className="notification_list">
+                        {notifications.length === 0 ? (
+                            <div className="empty_state">
+                                <img src="/assets/images/common/comment_icon03.svg" alt="" />
+                                <p>{emptyMessage}</p>
+                            </div>
+                        ) : (
+                            <ul>
+                                {notifications.map(item => (
+                                    <li key={item.id} className="notification_item" onClick={() => handleNotificationClick(item)}>
+                                        <div className="notification_profile">
+                                            <img
+                                                src={item.senderProfileImage || '/assets/images/common/profile_none_img.svg'}
+                                                alt=""
+                                            />
+                                            {!item.isRead && <span className="unread_dot" />}
+                                        </div>
+                                        <div className="notification_content">
+                                            <strong className="notification_title">{item.title}</strong>
+                                            <p className="notification_message">{item.message}</p>
+                                            <span className="notification_time">{formatTime(item.createdAt)}</span>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                )}
             </div>
         </SubPageLayout>
     );

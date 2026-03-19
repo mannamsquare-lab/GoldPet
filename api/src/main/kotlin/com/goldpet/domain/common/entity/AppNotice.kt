@@ -4,7 +4,7 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 enum class AppNoticeType {
-    POPUP_MODAL, MAINTENANCE, EVENT_BANNER
+    POPUP_MODAL, MAINTENANCE, EVENT_BANNER, NOTICE
 }
 
 @Entity

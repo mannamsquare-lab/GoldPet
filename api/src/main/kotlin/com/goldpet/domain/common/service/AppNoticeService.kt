@@ -20,8 +20,17 @@ class AppNoticeService(
 ) {
     private val objectMapper = jacksonObjectMapper()
 
-    fun getActiveNotices(screen: String?): List<AppNoticeResponse> {
+    fun getActiveNotices(screen: String?, type: String? = null): List<AppNoticeResponse> {
         val now = LocalDateTime.now()
+        if (type != null) {
+            val noticeType = try {
+                AppNoticeType.valueOf(type)
+            } catch (_: IllegalArgumentException) {
+                return emptyList()
+            }
+            return appNoticeRepository.findActiveByType(noticeType, now)
+                .map { it.toResponse() }
+        }
         val targetScreen = screen ?: "ALL"
         return appNoticeRepository.findActiveNotices(now, targetScreen)
             .map { it.toResponse() }

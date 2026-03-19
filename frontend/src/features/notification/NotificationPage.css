@@ -116,6 +116,78 @@
 	font-weight: 400;
 }
 
+/* Notice Board List (공지/이벤트 게시판 스타일) */
+#notificationContainer .notice_board_list {
+	padding: 0 16px;
+}
+
+#notificationContainer .notice_board_list ul {
+	list-style: none;
+}
+
+#notificationContainer .notice_board_item {
+	display: flex;
+	gap: 16px;
+	padding: 16px 0;
+	border-bottom: 1px solid #EFE1C4;
+	cursor: pointer;
+}
+
+#notificationContainer .notice_board_item:last-child {
+	border-bottom: none;
+}
+
+#notificationContainer .notice_board_thumb {
+	width: 80px;
+	height: 80px;
+	border-radius: 12px;
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+#notificationContainer .notice_board_thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+#notificationContainer .notice_board_content {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+#notificationContainer .notice_board_title {
+	display: block;
+	font-size: 16px;
+	font-weight: 700;
+	color: #614108;
+	line-height: 1.4;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+#notificationContainer .notice_board_desc {
+	font-size: 14px;
+	font-weight: 400;
+	color: #505050;
+	line-height: 1.4;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+#notificationContainer .notice_board_date {
+	font-size: 12px;
+	color: #727272;
+	margin-top: 2px;
+}
+
 /* Loading */
 #notificationContainer .loading {
 	display: flex;
