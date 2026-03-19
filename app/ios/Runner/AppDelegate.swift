@@ -15,6 +15,9 @@ import ActivityKit
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
+    // WKWebView 키보드 위 네비게이션 바(↑↓✓) 제거 (카카오톡 스타일)
+    Self.removeWKWebViewInputAccessoryView()
+
     // Request notification permissions and register for remote notifications
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
@@ -185,6 +188,30 @@ import ActivityKit
         completionHandler([.alert, .sound, .badge])
       }
     }
+  }
+
+  // MARK: - WKWebView Keyboard Accessory Removal
+
+  /// WKContentView의 inputAccessoryView를 nil로 swizzle하여
+  /// 키보드 위 네비게이션 바(↑↓✓)를 제거합니다.
+  private static func removeWKWebViewInputAccessoryView() {
+    guard let wkContentView: AnyClass = NSClassFromString("WKContentView") else { return }
+    let original = #selector(getter: UIResponder.inputAccessoryView)
+    let swizzled = #selector(AppDelegate.nilInputAccessoryView)
+    guard let swizzledMethod = class_getInstanceMethod(AppDelegate.self, swizzled) else { return }
+    // WKContentView는 UIResponder에서 inputAccessoryView를 상속받으므로
+    // class_addMethod로 직접 메서드를 추가한 뒤, 실패하면 교체
+    if class_addMethod(wkContentView, original, method_getImplementation(swizzledMethod), method_getTypeEncoding(swizzledMethod)) {
+      // 성공: WKContentView에 직접 메서드가 추가됨
+    } else {
+      // 이미 존재: 기존 구현을 교체
+      guard let originalMethod = class_getInstanceMethod(wkContentView, original) else { return }
+      method_exchangeImplementations(originalMethod, swizzledMethod)
+    }
+  }
+
+  @objc dynamic func nilInputAccessoryView() -> UIView? {
+    return nil
   }
 
   // MARK: - APNs
