@@ -25,8 +25,12 @@ class CacheConfig {
 
         // Kotlin data class는 final이므로 NON_FINAL 대신 EVERYTHING 사용
         // (NON_FINAL은 final 타입에 @class 타입 정보를 포함하지 않아 역직렬화 실패)
+        // BasicPolymorphicTypeValidator를 명시하여 deprecated LaissezFaireSubTypeValidator 경고 제거
+        val ptv = com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder()
+            .allowIfBaseType(Any::class.java)
+            .build()
         objectMapper.activateDefaultTyping(
-            objectMapper.polymorphicTypeValidator,
+            ptv,
             com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.EVERYTHING,
             com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
         )
