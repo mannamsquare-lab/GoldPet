@@ -236,13 +236,22 @@ export const WalkPage = () => {
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        className="walk_start_btn"
-                        onClick={() => navigate('/walk/map')}
-                    >
-                        지금 바로 산책을 시작해볼까요?
-                    </button>
+                    <div className="walk_action_btns">
+                        <button
+                            type="button"
+                            className="walk_start_btn"
+                            onClick={() => navigate('/walk/map')}
+                        >
+                            산책 시작
+                        </button>
+                        <button
+                            type="button"
+                            className="walk_course_create_btn"
+                            onClick={() => navigate('/courses/create')}
+                        >
+                            코스 만들기
+                        </button>
+                    </div>
                 </div>
 
                 {/* Records / Ranking Tabs */}
