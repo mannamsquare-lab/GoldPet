@@ -68,6 +68,10 @@ class WalkCourse(
     var isPublished: Boolean = true,
 
     @Column(name = "origin_walk_id")
-    var originWalkId: Long? = null
+    var originWalkId: Long? = null,
+
+    // Must be set via NaverGeocodingService.abbreviateProvince() whenever region is set
+    @Column(length = 50)
+    var province: String? = null
 
 ) : BaseTimeEntity()

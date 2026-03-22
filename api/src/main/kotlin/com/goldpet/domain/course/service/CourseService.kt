@@ -58,13 +58,12 @@ class CourseService(
         val endCoord = path.coordinates.last()
         val startLocation = geometryFactory.createPoint(Coordinate(startCoord.x, startCoord.y))
 
-        val region = try {
-            naverGeocodingService.reverseGeocode(startCoord.y, startCoord.x)
+        val geocodeResult = try {
+            naverGeocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
         } catch (e: Exception) {
             log.warn("Reverse geocoding failed for course creation: {}", e.message)
-            "알 수 없는 위치"
+            NaverGeocodingService.ReverseGeocodeResult("알 수 없는 위치", null)
         }
-        val startAddress = try { naverGeocodingService.reverseGeocode(startCoord.y, startCoord.x) } catch (e: Exception) { null }
         val endAddress = if (path.coordinates.size > 1) {
             try { naverGeocodingService.reverseGeocode(endCoord.y, endCoord.x) } catch (e: Exception) { null }
         } else null
@@ -77,11 +76,12 @@ class CourseService(
             distanceKm = request.distanceKm,
             estimatedMinutes = request.estimatedMinutes,
             difficulty = request.difficulty,
-            region = region,
+            region = geocodeResult.fullAddress,
             startLocation = startLocation,
-            startAddress = startAddress,
+            startAddress = geocodeResult.fullAddress,
             endAddress = endAddress,
-            originWalkId = request.originWalkId
+            originWalkId = request.originWalkId,
+            province = geocodeResult.province
         )
         val savedCourse = walkCourseRepository.save(course)
 
@@ -119,17 +119,21 @@ class CourseService(
         course.path = newPath
         course.distanceKm = request.distanceKm
 
-        // Recalculate region and addresses from new path
+        // Recalculate region, province, and addresses from new path
         val startCoord = newPath.coordinates.first()
         val endCoord = newPath.coordinates.last()
         course.startLocation = geometryFactory.createPoint(Coordinate(startCoord.x, startCoord.y))
-        course.region = try {
-            naverGeocodingService.reverseGeocode(startCoord.y, startCoord.x)
+        val updateGeocodeResult = try {
+            naverGeocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
         } catch (e: Exception) {
             log.warn("Reverse geocoding failed for course update: {}", e.message)
-            course.region
+            null
         }
-        course.startAddress = try { naverGeocodingService.reverseGeocode(startCoord.y, startCoord.x) } catch (e: Exception) { course.startAddress }
+        if (updateGeocodeResult != null) {
+            course.region = updateGeocodeResult.fullAddress
+            course.startAddress = updateGeocodeResult.fullAddress
+            course.province = updateGeocodeResult.province
+        }
         course.endAddress = if (newPath.coordinates.size > 1) {
             try { naverGeocodingService.reverseGeocode(endCoord.y, endCoord.x) } catch (e: Exception) { course.endAddress }
         } else course.endAddress
@@ -226,9 +230,11 @@ class CourseService(
 
         val startCoord = walk.path.coordinates.first()
         val startLocation = geometryFactory.createPoint(Coordinate(startCoord.x, startCoord.y))
-        val region = try {
-            naverGeocodingService.reverseGeocode(startCoord.y, startCoord.x)
-        } catch (e: Exception) { "알 수 없는 위치" }
+        val walkGeocodeResult = try {
+            naverGeocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
+        } catch (e: Exception) {
+            NaverGeocodingService.ReverseGeocodeResult("알 수 없는 위치", null)
+        }
 
         val course = WalkCourse(
             author = author,
@@ -238,11 +244,12 @@ class CourseService(
             distanceKm = walk.distanceKm,
             estimatedMinutes = (walk.durationSeconds / 60).toInt(),
             difficulty = request.difficulty,
-            region = region,
+            region = walkGeocodeResult.fullAddress,
             startLocation = startLocation,
             startAddress = walk.startAddress,
             endAddress = walk.endAddress,
-            originWalkId = walkId
+            originWalkId = walkId,
+            province = walkGeocodeResult.province
         )
         val savedCourse = walkCourseRepository.save(course)
 

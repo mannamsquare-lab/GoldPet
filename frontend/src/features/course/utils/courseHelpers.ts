@@ -22,7 +22,7 @@ export const SORT_OPTIONS_WALK_TAB: { label: string; value: string }[] = [
 ];
 
 export const REGION_OPTIONS = [
-  '전체', '강원', '경기', '경북', '광주', '대구', '대전', '부산',
+  '전체', '강원', '경기', '경남', '경북', '광주', '대구', '대전', '부산',
   '서울', '세종', '울산', '인천', '전남', '전북', '제주', '충남', '충북',
 ] as const;
 
