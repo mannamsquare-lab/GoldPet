@@ -541,6 +541,18 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* 네이티브 홈 인디케이터 영역 배경색을 모달과 일치시킴 */
+.course_create_spot_modal_content::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background: var(--color-border);
+  z-index: 1;
+}
+
 .course_create_spot_modal_handle {
   width: 40px;
   height: 4px;
