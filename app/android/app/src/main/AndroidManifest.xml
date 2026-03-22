@@ -57,13 +57,7 @@
             </intent-filter>
         </activity>
 
-        <!-- UCrop activity for image_cropper -->
-        <activity
-            android:name="com.yalantis.ucrop.UCropActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/UCropTheme"/>
-
-        <!-- Walk foreground service for custom notification widget -->
+<!-- Walk foreground service for custom notification widget -->
         <service
             android:name=".WalkForegroundService"
             android:foregroundServiceType="location"

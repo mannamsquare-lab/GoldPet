@@ -7,7 +7,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
+import '../widgets/photo_crop_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/theme/app_theme.dart';
@@ -648,7 +648,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     try {
       final position = await Geolocator.getCurrentPosition();
       final picker = ImagePicker();
-      late CroppedFile finalCroppedFile;
+      late String finalCroppedPath;
       String? memoText;
 
       while (true) {
@@ -670,38 +670,28 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
           return;
         }
 
-        CroppedFile? cropped;
+        String? croppedPath;
         try {
-          cropped = await ImageCropper().cropImage(
-            sourcePath: photo.path,
-            uiSettings: [
-              AndroidUiSettings(
-                toolbarTitle: '사진 편집',
-                toolbarColor: AppColors.primary,
-                toolbarWidgetColor: Colors.white,
-                initAspectRatio: CropAspectRatioPreset.original,
-                lockAspectRatio: false,
-              ),
-              IOSUiSettings(title: '사진 편집', doneButtonTitle: '저장', cancelButtonTitle: '취소'),
-            ],
-          );
+          croppedPath = await PhotoCropScreen.show(context, photo.path);
         } catch (e) {
-          debugPrint('ImageCropper error: $e');
+          debugPrint('PhotoCropScreen error: $e');
           if (mounted) showTrackingSnackBar('사진 편집 오류가 발생했습니다.');
           return;
         }
-        if (cropped == null) return;
+        if (croppedPath == null) return;
 
         if (!mounted) return;
-        final result = await showPhotoMemoSheet(cropped.path);
+        final result = await showPhotoMemoSheet(croppedPath);
         if (!mounted) return;
 
         if (result == null) {
+          try { await File(croppedPath).delete(); } catch (_) {}
           return;
         } else if (result['retake'] == true) {
+          try { await File(croppedPath).delete(); } catch (_) {}
           continue;
         } else {
-          finalCroppedFile = cropped;
+          finalCroppedPath = croppedPath;
           memoText = result['memo'] as String?;
           break;
         }
@@ -709,14 +699,16 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
       String? imageUrl;
       try {
-        final fileName = finalCroppedFile.path.split('/').last;
+        final fileName = finalCroppedPath.split('/').last;
         final formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(finalCroppedFile.path, filename: fileName),
+          'file': await MultipartFile.fromFile(finalCroppedPath, filename: fileName),
         });
         final response = await ApiClient().dio.post('/api/v1/files/upload', data: formData);
         imageUrl = response.data['url'] as String?;
       } catch (e) {
         debugPrint('Photo upload failed: $e');
+      } finally {
+        try { await File(finalCroppedPath).delete(); } catch (_) {}
       }
 
       if (!mounted) return;
