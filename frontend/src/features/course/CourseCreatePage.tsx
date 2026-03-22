@@ -654,16 +654,6 @@ export function CourseCreatePage() {
     setSpots(prev => prev.filter(s => s.id !== spotId));
   };
 
-  // ── Clear waypoints ───────────────────────────────────────────────────────
-
-  const handleClearWaypoints = () => {
-    if (waypoints.length === 0) return;
-    showConfirm('경로를 초기화하시겠습니까?', () => {
-      setWaypoints([]);
-      setLastTapPos(null);
-    });
-  };
-
   // ── Reset all (초기화 button) ───────────────────────────────────────────
 
   const handleResetAll = () => {
@@ -805,7 +795,7 @@ export function CourseCreatePage() {
       {isFromWalk && walkDetail && (
         <div className="course_create_date_row">
           <span className="course_create_date_text">{walkDate}</span>
-          {navigator.share && (
+          {'share' in navigator && (
             <button className="course_create_share_btn" onClick={handleShare} type="button">
               <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
                 <path d="M6 1v7M6 1L3 4M6 1l3 3M2 8v2.5h8V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
