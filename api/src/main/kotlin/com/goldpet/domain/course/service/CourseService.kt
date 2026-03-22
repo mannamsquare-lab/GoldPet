@@ -199,10 +199,10 @@ class CourseService(
 
     fun getPopularCourses(region: String?, difficulty: CourseDifficulty?, sortBy: String, pageable: Pageable): Page<CourseResponse> {
         val courses = when (sortBy) {
-            "latest" -> walkCourseRepository.findLatestCourses(difficulty, pageable)
-            "distance" -> walkCourseRepository.findByDistanceCourses(difficulty, pageable)
-            "rating" -> walkCourseRepository.findByRatingCourses(difficulty, pageable)
-            else -> walkCourseRepository.findPopularCourses(difficulty, pageable)
+            "latest" -> walkCourseRepository.findLatestCourses(region, difficulty, pageable)
+            "distance" -> walkCourseRepository.findByDistanceCourses(region, difficulty, pageable)
+            "rating" -> walkCourseRepository.findByRatingCourses(region, difficulty, pageable)
+            else -> walkCourseRepository.findPopularCourses(region, difficulty, pageable)
         }
         return courses.map { course ->
             val spots = courseSpotRepository.findByCourseIdOrderByOrderIndex(course.id)

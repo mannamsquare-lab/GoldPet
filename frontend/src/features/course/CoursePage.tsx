@@ -2,16 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { courseService } from '../../services/courseService';
-import type { CourseDifficulty } from '../../services/courseService';
+import type { CourseFilters } from './utils/courseHelpers';
 import { MainHeader } from '../../components/common/MainHeader';
 import { CourseCard } from './components/CourseCard';
 import { CourseFilter } from './components/CourseFilter';
 import './CoursePage.css';
-
-interface CourseFilters {
-  difficulty?: CourseDifficulty;
-  sortBy: string;
-}
 
 export function CoursePage() {
   const navigate = useNavigate();
@@ -24,11 +19,12 @@ export function CoursePage() {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ['courses', 'popular', filters.difficulty, filters.sortBy],
+    queryKey: ['courses', 'popular', filters.difficulty, filters.sortBy, filters.region],
     queryFn: ({ pageParam = 0 }) =>
       courseService.getPopularCourses({
         difficulty: filters.difficulty,
         sortBy: filters.sortBy,
+        region: filters.region,
         page: pageParam as number,
         size: 10,
       }),

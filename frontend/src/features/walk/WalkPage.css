@@ -256,23 +256,33 @@
   padding: 16px;
 }
 
-.walk_courses_more_btn {
-  width: 100%;
-  padding: 14px;
-  background: transparent;
-  border: 1.5px solid #614108;
-  border-radius: 10px;
-  color: #614108;
-  font-size: 15px;
-  font-weight: 600;
-  font-family: Pretendard, sans-serif;
-  cursor: pointer;
-  margin-top: 4px;
-  transition: background 0.15s;
+.walk_courses_card_list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.walk_courses_more_btn:active {
-  background: #f5f0e8;
+.walk_courses_create_btn_wrap {
+  padding-top: 4px;
+}
+
+.walk_courses_create_btn {
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radius-button);
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-text-white);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  font-family: Pretendard, sans-serif;
+  letter-spacing: var(--letter-spacing);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.walk_courses_create_btn:active {
+  opacity: 0.85;
 }
 
 .walk_records_list {

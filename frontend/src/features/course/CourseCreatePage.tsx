@@ -879,7 +879,7 @@ export function CourseCreatePage() {
           <div className="course_create_field">
             <label>난이도</label>
             <div className="course_create_difficulty_chips">
-              {([['EASY', '초급'], ['MODERATE', '중급'], ['HARD', '상급']] as const).map(([value, label]) => (
+              {([['EASY', '초급'], ['MODERATE', '중급'], ['HARD', '고급']] as const).map(([value, label]) => (
                 <button
                   key={value}
                   type="button"

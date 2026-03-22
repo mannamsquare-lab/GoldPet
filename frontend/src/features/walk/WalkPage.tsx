@@ -4,8 +4,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { walkService, getTodayStats } from '../../services/walkService';
 import { courseService } from '../../services/courseService';
 import type { WalkRecord, WalkRankingEntry } from '../../services/walkService';
+import type { CourseFilters } from '../course/utils/courseHelpers';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
 import { CourseCard } from '../course/components/CourseCard';
+import { CourseFilterWalkTab } from '../course/components/CourseFilterWalkTab';
 import './WalkPage.css';
 
 function getCurrentYearMonth(): string {
@@ -15,42 +17,85 @@ function getCurrentYearMonth(): string {
 
 function CoursesTabContent() {
     const navigate = useNavigate();
-    const { data, isLoading } = useQuery({
-        queryKey: ['courses', 'popular', 'walkTab'],
-        queryFn: () => courseService.getPopularCourses({ page: 0, size: 5 }),
+    const [filters, setFilters] = useState<CourseFilters>({ sortBy: 'latest' });
+
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+    } = useInfiniteQuery({
+        queryKey: ['courses', 'popular', 'walkTab', filters.difficulty, filters.sortBy, filters.region],
+        queryFn: ({ pageParam = 0 }) =>
+            courseService.getPopularCourses({
+                difficulty: filters.difficulty,
+                sortBy: filters.sortBy,
+                region: filters.region,
+                page: pageParam as number,
+                size: 10,
+            }),
+        getNextPageParam: (lastPage) => (lastPage.last ? undefined : lastPage.number + 1),
+        initialPageParam: 0,
     });
 
-    const courses = data?.content ?? [];
+    const courses = data?.pages.flatMap((p) => p.content) ?? [];
 
-    if (isLoading) {
-        return <p style={{ textAlign: 'center', padding: '24px 0', color: '#888', fontSize: 14 }}>불러오는 중...</p>;
-    }
+    const courseSentinelRef = useRef<HTMLDivElement>(null);
+    const handleCourseIntersect = useCallback(
+        (entries: IntersectionObserverEntry[]) => {
+            if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+                fetchNextPage();
+            }
+        },
+        [hasNextPage, isFetchingNextPage, fetchNextPage]
+    );
 
-    if (courses.length === 0) {
-        return (
-            <div className="walk_empty_state">
-                <img src="/assets/images/common/comment_icon03.svg" alt="" />
-                등록된 코스가 없어요.
-            </div>
-        );
-    }
+    useEffect(() => {
+        const el = courseSentinelRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(handleCourseIntersect, { rootMargin: '200px' });
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [handleCourseIntersect]);
 
     return (
         <div className="walk_courses_list">
-            {courses.map((course) => (
-                <CourseCard
-                    key={course.id}
-                    course={course}
-                    onClick={() => navigate(`/courses/${course.id}`)}
-                />
-            ))}
-            <button
-                type="button"
-                className="walk_courses_more_btn"
-                onClick={() => navigate('/courses')}
-            >
-                더보기
-            </button>
+            <CourseFilterWalkTab filters={filters} onFilterChange={setFilters} />
+
+            {isLoading ? (
+                <p style={{ textAlign: 'center', padding: '24px 0', color: '#888', fontSize: 14 }}>불러오는 중...</p>
+            ) : courses.length === 0 ? (
+                <div className="walk_empty_state">
+                    <img src="/assets/images/common/comment_icon03.svg" alt="" />
+                    등록된 코스가 없어요.
+                </div>
+            ) : (
+                <div className="walk_courses_card_list">
+                    {courses.map((course) => (
+                        <CourseCard
+                            key={course.id}
+                            course={course}
+                            onClick={() => navigate(`/courses/${course.id}`)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {isFetchingNextPage && (
+                <p style={{ textAlign: 'center', padding: '16px 0', color: '#888', fontSize: 14 }}>불러오는 중...</p>
+            )}
+            <div ref={courseSentinelRef} style={{ height: 1 }} />
+
+            <div className="walk_courses_create_btn_wrap">
+                <button
+                    type="button"
+                    className="walk_courses_create_btn"
+                    onClick={() => navigate('/courses/create')}
+                >
+                    산책 코스 등록하기
+                </button>
+            </div>
         </div>
     );
 }
@@ -105,6 +150,7 @@ export const WalkPage = () => {
         queryFn: ({ pageParam = 0 }) => walkService.getPublicWalksPaged(pageParam, 10, yearMonth),
         getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.number + 1,
         initialPageParam: 0,
+        enabled: activeTab === 'records',
     });
 
     const walkRecords = data?.pages.flatMap(p => p.content) ?? [];

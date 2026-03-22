@@ -1,5 +1,31 @@
 import type { CourseDifficulty, CourseSpotType } from '../../../services/courseService';
 
+// ── Shared Filter Types ──
+
+export interface CourseFilters {
+  difficulty?: CourseDifficulty;
+  sortBy: string;
+  region?: string;
+}
+
+export const DIFFICULTY_OPTIONS: { label: string; value: CourseDifficulty | undefined }[] = [
+  { label: '전체', value: undefined },
+  { label: '초급', value: 'EASY' },
+  { label: '중급', value: 'MODERATE' },
+  { label: '고급', value: 'HARD' },
+];
+
+export const SORT_OPTIONS_WALK_TAB: { label: string; value: string }[] = [
+  { label: '최신순', value: 'latest' },
+  { label: '인기순', value: 'popular' },
+  { label: '거리순', value: 'distance' },
+];
+
+export const REGION_OPTIONS = [
+  '전체', '강원', '경기', '경북', '광주', '대구', '대전', '부산',
+  '서울', '세종', '울산', '인천', '전남', '전북', '제주', '충남', '충북',
+] as const;
+
 // ── Spot Types ──
 
 export const SPOT_TYPES: { type: CourseSpotType; emoji: string; label: string }[] = [
@@ -28,7 +54,7 @@ export function spotLabel(type: CourseSpotType | string): string {
 const DIFFICULTY_LABEL: Record<CourseDifficulty, string> = {
   EASY: '초급',
   MODERATE: '중급',
-  HARD: '상급',
+  HARD: '고급',
 };
 
 const DIFFICULTY_CLASS: Record<CourseDifficulty, string> = {

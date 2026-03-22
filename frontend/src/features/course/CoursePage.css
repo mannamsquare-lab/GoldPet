@@ -332,3 +332,128 @@
 .course_create_float_btn button:active {
   opacity: 0.85;
 }
+
+/* ── Walk Tab Filter (CourseFilterWalkTab) ── */
+.course_filter_wt_wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.course_filter_wt_toprow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.course_filter_wt_pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  background: #fff;
+  border: 1.5px solid var(--color-primary);
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.course_filter_wt_pill_icon {
+  transition: transform 0.25s ease;
+}
+
+.course_filter_wt_pill_icon.open {
+  transform: rotate(180deg);
+}
+
+.course_filter_wt_sorts {
+  display: flex;
+  gap: 8px;
+}
+
+.course_filter_wt_sort_chip {
+  padding: 6px 16px;
+  background: #fff;
+  border: 1.5px solid transparent;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s;
+}
+
+.course_filter_wt_sort_chip.active {
+  border-color: var(--color-primary);
+}
+
+.course_filter_wt_panel_wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.course_filter_wt_panel_wrapper.open {
+  grid-template-rows: 1fr;
+}
+
+.course_filter_wt_panel_inner {
+  overflow: hidden;
+}
+
+.course_filter_wt_panel {
+  background: var(--color-bg-warm);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.course_filter_wt_section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.course_filter_wt_label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #505050;
+}
+
+.course_filter_wt_chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.course_filter_wt_chip {
+  padding: 8px 16px;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--color-bg-warm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.course_filter_wt_chip.active {
+  background: #fff;
+  border-color: var(--color-primary);
+}
+
+.course_filter_wt_divider {
+  height: 1px;
+  width: 100%;
+  background: #E9E9E9;
+}
