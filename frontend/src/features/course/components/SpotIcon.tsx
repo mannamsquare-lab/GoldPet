@@ -11,7 +11,7 @@ import spotWaste from '../assets/spot-waste.png';
 import spotPhoto from '../assets/spot-photo.png';
 import spotMore from '../assets/spot-more.png';
 
-const SPOT_ICON_MAP: Record<CourseSpotType, string> = {
+export const SPOT_ICON_MAP: Record<CourseSpotType, string> = {
   CONVENIENCE_STORE: spotStore,
   WATER_FOUNTAIN: spotWater,
   RESTROOM: spotWc,
@@ -23,6 +23,10 @@ const SPOT_ICON_MAP: Record<CourseSpotType, string> = {
   PHOTO_SPOT: spotPhoto,
   OTHER: spotMore,
 };
+
+export function spotIconUrl(type: CourseSpotType | string): string {
+  return SPOT_ICON_MAP[type as CourseSpotType] ?? spotMore;
+}
 
 interface SpotIconProps {
   type: CourseSpotType;

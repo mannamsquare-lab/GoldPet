@@ -38,10 +38,6 @@ export const SPOT_TYPES: { type: CourseSpotType; emoji: string; label: string }[
   { type: 'OTHER',            emoji: '📍', label: '기타' },
 ];
 
-export function spotEmoji(type: CourseSpotType | string): string {
-  return SPOT_TYPES.find(s => s.type === type)?.emoji ?? '📍';
-}
-
 export function spotLabel(type: CourseSpotType | string): string {
   return SPOT_TYPES.find(s => s.type === type)?.label ?? '기타';
 }

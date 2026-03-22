@@ -6,7 +6,8 @@ import { courseService } from '../../services/courseService';
 import { useAuthStore } from '../../stores/authStore';
 import { useAlert } from '../../contexts/AlertContext';
 import { CourseMap } from './components/CourseMap';
-import { difficultyLabel, difficultyClass, spotLabel as spotTypeLabel, spotEmoji as spotTypeEmoji } from './utils/courseHelpers';
+import { difficultyLabel, difficultyClass, spotLabel as spotTypeLabel } from './utils/courseHelpers';
+import { SpotIcon } from './components/SpotIcon';
 import './CourseDetailPage.css';
 
 // ── HeartIcon ──
@@ -261,7 +262,7 @@ export const CourseDetailPage = () => {
             .map((spot) => (
               <div key={spot.id} className="course_detail_spot_item">
                 <div className="course_detail_spot_icon" role="img" aria-label={spotTypeLabel(spot.type)}>
-                  {spotTypeEmoji(spot.type)}
+                  <SpotIcon type={spot.type} size={24} />
                 </div>
                 <div className="course_detail_spot_content">
                   {spot.name ? (

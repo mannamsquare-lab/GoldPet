@@ -11,8 +11,8 @@ import {
   type CourseDifficulty,
 } from '../../services/courseService';
 import { walkService } from '../../services/walkService';
-import { SPOT_TYPES, spotEmoji, spotLabel } from './utils/courseHelpers';
-import { SpotIcon } from './components/SpotIcon';
+import { SPOT_TYPES, spotLabel } from './utils/courseHelpers';
+import { SpotIcon, spotIconUrl } from './components/SpotIcon';
 import { createSvgPathOverlay } from '../walk/utils/walkMapUtils';
 import { useAlert } from '../../contexts/AlertContext';
 import './CourseCreatePage.css';
@@ -379,13 +379,13 @@ export function CourseCreatePage() {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    const emoji = spotEmoji(spot.type);
+    const iconSrc = spotIconUrl(spot.type);
     const label = escapeHtml(spot.name || spotLabel(spot.type));
     const marker = new naver.maps.Marker({
       map,
       position: new naver.maps.LatLng(spot.lat, spot.lng),
       icon: {
-        content: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid #e0d5c8;box-shadow:0 1px 4px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center;font-size:16px;">${emoji}</div><div style="background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">${label}</div></div>`,
+        content: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid #e0d5c8;box-shadow:0 1px 4px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center;"><img src="${iconSrc}" width="20" height="20" style="display:block;" alt="" /></div><div style="background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">${label}</div></div>`,
         size: new naver.maps.Size(64, 50),
         anchor: new naver.maps.Point(32, 16),
       } as unknown as naver.maps.MarkerIcon,
