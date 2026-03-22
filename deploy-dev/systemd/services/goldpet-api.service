@@ -7,9 +7,10 @@ Type=simple
 User=dev
 WorkingDirectory=/home/dev/www/mannam/goldpet/api
 EnvironmentFile=-/home/dev/www/mannam/goldpet/api/goldpet-api.env
-ExecStart=/usr/bin/java -Duser.timezone=Asia/Seoul -jar /home/dev/www/mannam/goldpet/api/goldpet-api.jar
+ExecStart=/usr/bin/java -Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Duser.timezone=Asia/Seoul -jar /home/dev/www/mannam/goldpet/api/goldpet-api.jar
 Restart=always
 RestartSec=10
+LimitNOFILE=65536
 # 환경변수 (SPRING_PROFILES_ACTIVE는 Jenkins가 goldpet-api.env에 설정)
 Environment="SPRING_JPA_HIBERNATE_DDL_AUTO=validate"
 Environment="SERVER_PORT=8081"
