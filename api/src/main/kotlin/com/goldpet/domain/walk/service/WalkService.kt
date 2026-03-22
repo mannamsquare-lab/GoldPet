@@ -234,7 +234,7 @@ class WalkService(
         val bestCoupleEntity = bestWalkCoupleRepository.findByYearMonth(yearMonth)
         val bestCouple = bestCoupleEntity?.let { couple ->
             rankings.find { it.userId == couple.user.id }
-                ?: walkRepository.findCalendarRankingForUser(startOfMonth, startOfNextMonth, couple.user.id, province)?.let { row ->
+                ?: walkRepository.findCalendarRankingForUser(startOfMonth, startOfNextMonth, couple.user.id, province)?.takeIf { it.isNotEmpty() }?.let { row ->
                     WalkRankingResponse(
                         rank = 0,
                         userId = (row[0] as Number).toLong(),
