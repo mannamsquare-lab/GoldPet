@@ -22,9 +22,9 @@ class MapController(
     fun reverseGeocode(
         @RequestParam lat: Double,
         @RequestParam lng: Double
-    ): ResponseEntity<Map<String, String>> {
-        val address = naverGeocodingService.reverseGeocode(lat, lng)
-        return ResponseEntity.ok(mapOf("address" to address))
+    ): ResponseEntity<Map<String, String?>> {
+        val result = naverGeocodingService.reverseGeocodeStructured(lat, lng)
+        return ResponseEntity.ok(mapOf("address" to result.fullAddress, "province" to result.province))
     }
 
     @GetMapping("/geocode")

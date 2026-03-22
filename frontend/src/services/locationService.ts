@@ -19,11 +19,11 @@ export const locationService = {
   },
 
   /**
-   * Reverse geocode coordinates to address
+   * Reverse geocode coordinates to address + province
    */
-  reverseGeocode: async (lat: number, lng: number): Promise<string> => {
+  reverseGeocode: async (lat: number, lng: number): Promise<{ address: string; province: string | null }> => {
     const response = await apiClient.get(`/maps/reverse-geocode?lat=${lat}&lng=${lng}`);
-    return response.data.address;
+    return { address: response.data.address, province: response.data.province ?? null };
   },
 
   /**

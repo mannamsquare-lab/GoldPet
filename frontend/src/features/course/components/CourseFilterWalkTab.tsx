@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CourseFilters } from '../utils/courseHelpers';
-import { DIFFICULTY_OPTIONS, SORT_OPTIONS_WALK_TAB, REGION_OPTIONS } from '../utils/courseHelpers';
+import { DIFFICULTY_OPTIONS, SORT_OPTIONS_WALK_TAB } from '../utils/courseHelpers';
+import { RegionFilter } from '../../../components/common/RegionFilter';
 
 interface CourseFilterWalkTabProps {
   filters: CourseFilters;
@@ -19,7 +20,7 @@ export function CourseFilterWalkTab({ filters, onFilterChange }: CourseFilterWal
           className="course_filter_wt_pill"
           onClick={() => setIsFilterOpen(!isFilterOpen)}
         >
-          필터
+          필터{filters.region ? ` · ${filters.region}` : ''}
           <svg
             className={`course_filter_wt_pill_icon${isFilterOpen ? ' open' : ''}`}
             width="16"
@@ -70,18 +71,10 @@ export function CourseFilterWalkTab({ filters, onFilterChange }: CourseFilterWal
             {/* Region */}
             <div className="course_filter_wt_section">
               <span className="course_filter_wt_label">지역</span>
-              <div className="course_filter_wt_chips">
-                {REGION_OPTIONS.map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    className={`course_filter_wt_chip${(r === '전체' ? filters.region === undefined : filters.region === r) ? ' active' : ''}`}
-                    onClick={() => onFilterChange({ ...filters, region: r === '전체' ? undefined : r })}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
+              <RegionFilter
+                selectedRegion={filters.region}
+                onRegionChange={(region) => onFilterChange({ ...filters, region })}
+              />
             </div>
           </div>
         </div>

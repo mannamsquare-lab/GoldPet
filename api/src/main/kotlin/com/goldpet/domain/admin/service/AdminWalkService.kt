@@ -130,7 +130,7 @@ class AdminWalkService(
         val startOfMonth = ym.atDay(1).atStartOfDay()
         val startOfNextMonth = ym.plusMonths(1).atDay(1).atStartOfDay()
         val pageable = PageRequest.of(0, size)
-        val rows = walkRepository.findCalendarRankings(startOfMonth, startOfNextMonth, pageable)
+        val rows = walkRepository.findCalendarRankings(startOfMonth, startOfNextMonth, null, pageable)
         return rows.mapIndexed { index, row ->
             WalkRankingAdminResponse(
                 rank = index + 1,

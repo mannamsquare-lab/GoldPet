@@ -90,7 +90,9 @@ class WalkService(
         if (startCoord != null) {
             walk.startLocation = geometryFactory.createPoint(Coordinate(startCoord[1], startCoord[0])) // [lon, lat]
             try {
-                walk.startAddress = naverGeocodingService.reverseGeocode(startCoord[0], startCoord[1])
+                val geocodeResult = naverGeocodingService.reverseGeocodeStructured(startCoord[0], startCoord[1])
+                walk.startAddress = geocodeResult.fullAddress
+                walk.province = geocodeResult.province
             } catch (e: Exception) {
                 // Geocoding failure is non-fatal — walk save continues
                 log.warn("Reverse geocoding failed for walk start: {}", e.message)
@@ -144,17 +146,17 @@ class WalkService(
         return WalkResponse.publicFrom(walk)
     }
 
-    fun getPublicWalks(pageable: org.springframework.data.domain.Pageable, yearMonth: String? = null, userId: Long? = null): org.springframework.data.domain.Page<WalkResponse> {
+    fun getPublicWalks(pageable: org.springframework.data.domain.Pageable, yearMonth: String? = null, userId: Long? = null, province: String? = null): org.springframework.data.domain.Page<WalkResponse> {
         val walks = if (userId != null && yearMonth != null) {
             val (start, end) = parseYearMonth(yearMonth)
-            walkRepository.findPublicWalksByUserIdAndMonth(userId, start, end, pageable)
+            walkRepository.findPublicWalksByUserIdAndMonth(userId, start, end, province, pageable)
         } else if (userId != null) {
-            walkRepository.findPublicWalksByUserId(userId, pageable)
+            walkRepository.findPublicWalksByUserId(userId, province, pageable)
         } else if (yearMonth != null) {
             val (start, end) = parseYearMonth(yearMonth)
-            walkRepository.findPublicWalksByMonth(start, end, pageable)
+            walkRepository.findPublicWalksByMonth(start, end, province, pageable)
         } else {
-            walkRepository.findPublicWalks(pageable)
+            walkRepository.findPublicWalks(province, pageable)
         }
         return walks.map { WalkResponse.publicFrom(it) }
     }
@@ -184,13 +186,13 @@ class WalkService(
         return walks.map { WalkResponse.from(it) }
     }
 
-    fun getWalkRanking(period: String, pageable: org.springframework.data.domain.Pageable): List<WalkRankingResponse> {
+    fun getWalkRanking(period: String, pageable: org.springframework.data.domain.Pageable, province: String? = null): List<WalkRankingResponse> {
         val since = when (period) {
             "monthly" -> java.time.LocalDateTime.now().minusDays(30)
             else -> java.time.LocalDateTime.now().minusDays(7) // weekly default
         }
 
-        val results = walkRepository.findRankingsSince(since, pageable)
+        val results = walkRepository.findRankingsSince(since, province, pageable)
         return results.mapIndexed { index, row ->
             WalkRankingResponse(
                 rank = index + 1,
@@ -207,12 +209,12 @@ class WalkService(
         }
     }
 
-    fun getCalendarRanking(yearMonth: String, pageable: org.springframework.data.domain.Pageable): WalkCoupleRankingResponse {
+    fun getCalendarRanking(yearMonth: String, pageable: org.springframework.data.domain.Pageable, province: String? = null): WalkCoupleRankingResponse {
         val (year, month) = yearMonth.split("-").map { it.toInt() }
         val startOfMonth = java.time.LocalDateTime.of(year, month, 1, 0, 0, 0)
         val startOfNextMonth = startOfMonth.plusMonths(1)
 
-        val results = walkRepository.findCalendarRankings(startOfMonth, startOfNextMonth, pageable)
+        val results = walkRepository.findCalendarRankings(startOfMonth, startOfNextMonth, province, pageable)
         val rankings = results.mapIndexed { index, row ->
             WalkRankingResponse(
                 rank = index + 1,
@@ -232,7 +234,7 @@ class WalkService(
         val bestCoupleEntity = bestWalkCoupleRepository.findByYearMonth(yearMonth)
         val bestCouple = bestCoupleEntity?.let { couple ->
             rankings.find { it.userId == couple.user.id }
-                ?: walkRepository.findCalendarRankingForUser(startOfMonth, startOfNextMonth, couple.user.id)?.let { row ->
+                ?: walkRepository.findCalendarRankingForUser(startOfMonth, startOfNextMonth, couple.user.id, province)?.let { row ->
                     WalkRankingResponse(
                         rank = 0,
                         userId = (row[0] as Number).toLong(),

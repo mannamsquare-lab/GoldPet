@@ -57,6 +57,8 @@ class Walk(
     var isPublic: Boolean = true,
 
     @Column(name = "followed_course_id")
-    var followedCourseId: Long? = null
+    var followedCourseId: Long? = null,
+
+    var province: String? = null
 
 ) : BaseTimeEntity()

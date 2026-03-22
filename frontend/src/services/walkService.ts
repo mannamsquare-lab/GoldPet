@@ -197,9 +197,9 @@ export const walkService = {
     }
   },
 
-  getPublicWalksPaged: async (page: number, size = 10, yearMonth?: string): Promise<PageResponse<WalkRecord>> => {
+  getPublicWalksPaged: async (page: number, size = 10, yearMonth?: string, province?: string): Promise<PageResponse<WalkRecord>> => {
     try {
-      const response = await apiClient.get('/walks/public', { params: { page, size, yearMonth } });
+      const response = await apiClient.get('/walks/public', { params: { page, size, yearMonth, province } });
       const data = response.data;
       return {
         ...data,
@@ -249,9 +249,9 @@ export const walkService = {
     }
   },
 
-  getMonthlyRanking: async (yearMonth: string, size: number = 10): Promise<WalkCoupleRanking> => {
+  getMonthlyRanking: async (yearMonth: string, size: number = 10, province?: string): Promise<WalkCoupleRanking> => {
     const response = await apiClient.get('/walks/ranking', {
-      params: { mode: 'calendar', yearMonth, size },
+      params: { mode: 'calendar', yearMonth, size, province },
     });
     return response.data;
   },

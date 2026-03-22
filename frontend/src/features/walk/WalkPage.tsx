@@ -8,6 +8,8 @@ import type { CourseFilters } from '../course/utils/courseHelpers';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
 import { CourseCard } from '../course/components/CourseCard';
 import { CourseFilterWalkTab } from '../course/components/CourseFilterWalkTab';
+import { RegionFilter } from '../../components/common/RegionFilter';
+import { useDefaultProvince } from '../../hooks/useDefaultProvince';
 import '../course/CoursePage.css';
 import './WalkPage.css';
 
@@ -16,9 +18,17 @@ function getCurrentYearMonth(): string {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function CoursesTabContent() {
+function CoursesTabContent({ initialRegion }: { initialRegion: string | undefined }) {
     const navigate = useNavigate();
-    const [filters, setFilters] = useState<CourseFilters>({ sortBy: 'latest' });
+    const [filters, setFilters] = useState<CourseFilters>({ sortBy: 'latest', region: initialRegion });
+    const regionInitRef = useRef(false);
+
+    useEffect(() => {
+        if (!regionInitRef.current && initialRegion !== undefined) {
+            regionInitRef.current = true;
+            setFilters(prev => ({ ...prev, region: initialRegion }));
+        }
+    }, [initialRegion]);
 
     const {
         data,
@@ -65,11 +75,12 @@ function CoursesTabContent() {
             <CourseFilterWalkTab filters={filters} onFilterChange={setFilters} />
 
             {isLoading ? (
-                <p style={{ textAlign: 'center', padding: '24px 0', color: '#888', fontSize: 14 }}>불러오는 중...</p>
+                <p style={{ color: '#727272', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>불러오는 중...</p>
             ) : courses.length === 0 ? (
-                <div className="walk_empty_state">
-                    <img src="/assets/images/common/comment_icon03.svg" alt="" />
-                    등록된 코스가 없어요.
+                <div className="walk_records_card">
+                    <div className="walk_record_empty">
+                        등록된 코스가 없습니다.
+                    </div>
                 </div>
             ) : (
                 <div className="walk_courses_card_list">
@@ -120,10 +131,26 @@ export const WalkPage = () => {
     const currentYearMonth = getCurrentYearMonth();
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [pickerYear, setPickerYear] = useState(() => Number(yearMonth.split('-')[0]));
+    const [showRankingMonthPicker, setShowRankingMonthPicker] = useState(false);
+    const [rankingPickerYear, setRankingPickerYear] = useState(() => Number(yearMonth.split('-')[0]));
+    const [recordsFilterOpen, setRecordsFilterOpen] = useState(false);
+    const [rankingFilterOpen, setRankingFilterOpen] = useState(false);
+
+    const defaultProvince = useDefaultProvince();
+    const [recordsProvince, setRecordsProvince] = useState<string | undefined>(undefined);
+    const [rankingProvince, setRankingProvince] = useState<string | undefined>(undefined);
+    const provinceInitRef = useRef(false);
+    useEffect(() => {
+        if (!provinceInitRef.current && defaultProvince !== undefined) {
+            setRecordsProvince(defaultProvince);
+            setRankingProvince(defaultProvince);
+            provinceInitRef.current = true;
+        }
+    }, [defaultProvince]);
 
     const { data: rankingData, isLoading: rankingLoading } = useQuery({
-        queryKey: ['walk', 'monthlyRanking', yearMonth, rankingSize],
-        queryFn: () => walkService.getMonthlyRanking(yearMonth, rankingSize),
+        queryKey: ['walk', 'monthlyRanking', yearMonth, rankingSize, rankingProvince],
+        queryFn: () => walkService.getMonthlyRanking(yearMonth, rankingSize, rankingProvince),
         enabled: activeTab === 'ranking',
     });
 
@@ -149,8 +176,8 @@ export const WalkPage = () => {
         hasNextPage,
         isFetchingNextPage,
     } = useInfiniteQuery({
-        queryKey: ['walk', 'public', 'paged', yearMonth],
-        queryFn: ({ pageParam = 0 }) => walkService.getPublicWalksPaged(pageParam, 10, yearMonth),
+        queryKey: ['walk', 'public', 'paged', yearMonth, recordsProvince],
+        queryFn: ({ pageParam = 0 }) => walkService.getPublicWalksPaged(pageParam, 10, yearMonth, recordsProvince),
         getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.number + 1,
         initialPageParam: 0,
         enabled: activeTab === 'records',
@@ -309,6 +336,39 @@ export const WalkPage = () => {
                                     />
                                 )}
                             </div>
+                            <div className="course_filter_wt_wrap">
+                                <div className="course_filter_wt_toprow">
+                                    <button
+                                        type="button"
+                                        className="course_filter_wt_pill"
+                                        onClick={() => setRecordsFilterOpen(!recordsFilterOpen)}
+                                    >
+                                        필터{recordsProvince ? ` · ${recordsProvince}` : ''}
+                                        <svg
+                                            className={`course_filter_wt_pill_icon${recordsFilterOpen ? ' open' : ''}`}
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 16 16"
+                                            fill="none"
+                                        >
+                                            <path d="M4 6L8 10L12 6" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className={`course_filter_wt_panel_wrapper${recordsFilterOpen ? ' open' : ''}`}>
+                                    <div className="course_filter_wt_panel_inner">
+                                        <div className="course_filter_wt_panel">
+                                            <div className="course_filter_wt_section">
+                                                <span className="course_filter_wt_label">지역</span>
+                                                <RegionFilter
+                                                    selectedRegion={recordsProvince}
+                                                    onRegionChange={setRecordsProvince}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div className="walk_records_card">
                                 {walkRecords.map((record: WalkRecord, index: number) => (
                                     <div key={record.id}>
@@ -340,7 +400,7 @@ export const WalkPage = () => {
                     {/* Courses Tab */}
                     {activeTab === 'courses' && (
                         <div className="walk_courses_tab">
-                            <CoursesTabContent />
+                            <CoursesTabContent initialRegion={defaultProvince} />
                         </div>
                     )}
 
@@ -349,25 +409,91 @@ export const WalkPage = () => {
                         <div className="walk_ranking_wrap">
                             {/* Month Selector */}
                             <div className="walk_month_selector">
-                                <button type="button" className="walk_month_arrow" onClick={prevMonth}>
-                                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-                                        <path d="M7 1L1 7L7 13" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </button>
-                                <span className="walk_month_label">
-                                    {yearMonth.replace('-', '.')}
-                                </span>
+                                <div className="walk_month_nav">
+                                    <button type="button" className="walk_month_arrow" onClick={prevMonth}>
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M10 4L6 8L10 12" stroke="#505050" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </button>
+                                    <span className="walk_month_label">
+                                        {yearMonth.replace('-', '.')}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className="walk_month_arrow"
+                                        onClick={nextMonth}
+                                        disabled={yearMonth >= currentYearMonth}
+                                        style={{ opacity: yearMonth >= currentYearMonth ? 0.3 : 1 }}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M6 4L10 8L6 12" stroke="#505050" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <button
                                     type="button"
-                                    className="walk_month_arrow"
-                                    onClick={nextMonth}
-                                    disabled={yearMonth >= currentYearMonth}
-                                    style={{ opacity: yearMonth >= currentYearMonth ? 0.3 : 1 }}
+                                    className="walk_month_calendar_btn"
+                                    onClick={() => {
+                                        setRankingPickerYear(Number(yearMonth.split('-')[0]));
+                                        setShowRankingMonthPicker(true);
+                                    }}
                                 >
-                                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-                                        <path d="M1 1L7 7L1 13" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <rect x="2" y="3" width="12" height="11" rx="2" stroke="#614108" strokeWidth="1.2"/>
+                                        <path d="M2 7H14" stroke="#614108" strokeWidth="1.2"/>
+                                        <rect x="5" y="1" width="1.5" height="4" rx="0.75" fill="#614108"/>
+                                        <rect x="9.5" y="1" width="1.5" height="4" rx="0.75" fill="#614108"/>
                                     </svg>
                                 </button>
+                                {showRankingMonthPicker && (
+                                    <MonthPicker
+                                        selectedYearMonth={yearMonth}
+                                        currentYearMonth={currentYearMonth}
+                                        pickerYear={rankingPickerYear}
+                                        onChangePickerYear={setRankingPickerYear}
+                                        onSelect={(ym) => {
+                                            setYearMonth(ym);
+                                            setSelectedUserId(null);
+                                            setRankingSize(10);
+                                            setShowRankingMonthPicker(false);
+                                        }}
+                                        onClose={() => setShowRankingMonthPicker(false)}
+                                    />
+                                )}
+                            </div>
+
+                            <div className="course_filter_wt_wrap">
+                                <div className="course_filter_wt_toprow">
+                                    <button
+                                        type="button"
+                                        className="course_filter_wt_pill"
+                                        onClick={() => setRankingFilterOpen(!rankingFilterOpen)}
+                                    >
+                                        필터{rankingProvince ? ` · ${rankingProvince}` : ''}
+                                        <svg
+                                            className={`course_filter_wt_pill_icon${rankingFilterOpen ? ' open' : ''}`}
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 16 16"
+                                            fill="none"
+                                        >
+                                            <path d="M4 6L8 10L12 6" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className={`course_filter_wt_panel_wrapper${rankingFilterOpen ? ' open' : ''}`}>
+                                    <div className="course_filter_wt_panel_inner">
+                                        <div className="course_filter_wt_panel">
+                                            <div className="course_filter_wt_section">
+                                                <span className="course_filter_wt_label">지역</span>
+                                                <RegionFilter
+                                                    selectedRegion={rankingProvince}
+                                                    onRegionChange={(r) => { setRankingProvince(r); setSelectedUserId(null); setRankingSize(10); }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {rankingLoading ? (
@@ -375,9 +501,11 @@ export const WalkPage = () => {
                                     불러오는 중...
                                 </p>
                             ) : !rankingData || !rankingData.rankings || rankingData.rankings.length === 0 ? (
-                                <p style={{ color: '#727272', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>
-                                    이 달의 산책 기록이 없습니다.
-                                </p>
+                                <div className="walk_records_card">
+                                    <div className="walk_record_empty">
+                                        이 달의 랭킹 기록이 없습니다.
+                                    </div>
+                                </div>
                             ) : (
                                 <>
                                     {/* Best Couple Card */}

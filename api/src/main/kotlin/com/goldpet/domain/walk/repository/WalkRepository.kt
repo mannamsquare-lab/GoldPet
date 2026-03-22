@@ -9,31 +9,37 @@ interface WalkRepository : JpaRepository<Walk, Long> {
     fun findByUserIdOrderByStartTimeDesc(userId: Long): List<Walk>
     fun findByUserIdOrderByStartTimeDesc(userId: Long, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<Walk>
 
-    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true ORDER BY w.startTime DESC",
-        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true")
-    fun findPublicWalks(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<Walk>
-
-    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.user.id = :userId ORDER BY w.startTime DESC",
-        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.user.id = :userId")
-    fun findPublicWalksByUserId(
-        @Param("userId") userId: Long,
+    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND (:province IS NULL OR w.province = :province) ORDER BY w.startTime DESC",
+        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND (:province IS NULL OR w.province = :province)")
+    fun findPublicWalks(
+        @Param("province") province: String?,
         pageable: org.springframework.data.domain.Pageable
     ): org.springframework.data.domain.Page<Walk>
 
-    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.user.id = :userId AND w.startTime >= :start AND w.startTime < :end ORDER BY w.startTime DESC",
-        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.user.id = :userId AND w.startTime >= :start AND w.startTime < :end")
+    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.user.id = :userId AND (:province IS NULL OR w.province = :province) ORDER BY w.startTime DESC",
+        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.user.id = :userId AND (:province IS NULL OR w.province = :province)")
+    fun findPublicWalksByUserId(
+        @Param("userId") userId: Long,
+        @Param("province") province: String?,
+        pageable: org.springframework.data.domain.Pageable
+    ): org.springframework.data.domain.Page<Walk>
+
+    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.user.id = :userId AND w.startTime >= :start AND w.startTime < :end AND (:province IS NULL OR w.province = :province) ORDER BY w.startTime DESC",
+        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.user.id = :userId AND w.startTime >= :start AND w.startTime < :end AND (:province IS NULL OR w.province = :province)")
     fun findPublicWalksByUserIdAndMonth(
         @Param("userId") userId: Long,
         @Param("start") start: java.time.LocalDateTime,
         @Param("end") end: java.time.LocalDateTime,
+        @Param("province") province: String?,
         pageable: org.springframework.data.domain.Pageable
     ): org.springframework.data.domain.Page<Walk>
 
-    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.startTime >= :start AND w.startTime < :end ORDER BY w.startTime DESC",
-        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.startTime >= :start AND w.startTime < :end")
+    @Query("SELECT w FROM Walk w JOIN FETCH w.user WHERE w.isPublic = true AND w.startTime >= :start AND w.startTime < :end AND (:province IS NULL OR w.province = :province) ORDER BY w.startTime DESC",
+        countQuery = "SELECT COUNT(w) FROM Walk w WHERE w.isPublic = true AND w.startTime >= :start AND w.startTime < :end AND (:province IS NULL OR w.province = :province)")
     fun findPublicWalksByMonth(
         @Param("start") start: java.time.LocalDateTime,
         @Param("end") end: java.time.LocalDateTime,
+        @Param("province") province: String?,
         pageable: org.springframework.data.domain.Pageable
     ): org.springframework.data.domain.Page<Walk>
 
@@ -58,12 +64,13 @@ interface WalkRepository : JpaRepository<Walk, Long> {
         SELECT w.user.id, w.user.nickname, MAX(w.user.profileImageUrl),
                SUM(w.distanceKm), COUNT(w)
         FROM Walk w
-        WHERE w.startTime >= :since AND w.isPublic = true
+        WHERE w.startTime >= :since AND w.isPublic = true AND (:province IS NULL OR w.province = :province)
         GROUP BY w.user.id, w.user.nickname
         ORDER BY SUM(w.distanceKm) DESC
     """)
     fun findRankingsSince(
         @Param("since") since: java.time.LocalDateTime,
+        @Param("province") province: String?,
         pageable: org.springframework.data.domain.Pageable
     ): List<Array<Any>>
 
@@ -161,6 +168,7 @@ interface WalkRepository : JpaRepository<Walk, Long> {
         WHERE w.start_time >= :startOfMonth
           AND w.start_time < :startOfNextMonth
           AND w.is_public = true
+          AND (CAST(:province AS TEXT) IS NULL OR w.province = CAST(:province AS TEXT))
         GROUP BY u.id, u.nickname, u.profile_image_url,
                  pet_sub.pet_id, pet_sub.pet_name, pet_sub.pet_profile_image_url, gold_sub.total_gold
         ORDER BY total_distance_km DESC
@@ -168,6 +176,7 @@ interface WalkRepository : JpaRepository<Walk, Long> {
     fun findCalendarRankings(
         @Param("startOfMonth") startOfMonth: java.time.LocalDateTime,
         @Param("startOfNextMonth") startOfNextMonth: java.time.LocalDateTime,
+        @Param("province") province: String?,
         pageable: org.springframework.data.domain.Pageable
     ): List<Array<Any>>
 
@@ -210,12 +219,14 @@ interface WalkRepository : JpaRepository<Walk, Long> {
           AND w.start_time < :startOfNextMonth
           AND w.is_public = true
           AND w.user_id = :userId
+          AND (CAST(:province AS TEXT) IS NULL OR w.province = CAST(:province AS TEXT))
         GROUP BY u.id, u.nickname, u.profile_image_url,
                  pet_sub.pet_id, pet_sub.pet_name, pet_sub.pet_profile_image_url, gold_sub.total_gold
     """, nativeQuery = true)
     fun findCalendarRankingForUser(
         @Param("startOfMonth") startOfMonth: java.time.LocalDateTime,
         @Param("startOfNextMonth") startOfNextMonth: java.time.LocalDateTime,
-        @Param("userId") userId: Long
+        @Param("userId") userId: Long,
+        @Param("province") province: String?
     ): Array<Any>?
 }

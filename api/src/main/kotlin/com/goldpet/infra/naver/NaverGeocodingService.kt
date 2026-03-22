@@ -50,7 +50,8 @@ class NaverGeocodingService(
 
     data class ReverseGeocodeResult(
         val fullAddress: String,
-        val province: String?
+        val province: String?,
+        val district: String? = null
     )
 
     fun reverseGeocodeStructured(lat: Double, lng: Double): ReverseGeocodeResult {

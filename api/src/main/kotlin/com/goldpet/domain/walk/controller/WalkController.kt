@@ -42,9 +42,10 @@ class WalkController(
     fun getPublicWalks(
         @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable,
         @RequestParam(required = false) yearMonth: String?,
-        @RequestParam(required = false) userId: Long?
+        @RequestParam(required = false) userId: Long?,
+        @RequestParam(required = false) province: String?
     ): ResponseEntity<org.springframework.data.domain.Page<WalkResponse>> {
-        val walkResponses = walkService.getPublicWalks(pageable, yearMonth, userId)
+        val walkResponses = walkService.getPublicWalks(pageable, yearMonth, userId, province)
         return ResponseEntity.ok(walkResponses)
     }
 
@@ -82,6 +83,7 @@ class WalkController(
         @RequestParam(required = false) mode: String?,
         @RequestParam(required = false) period: String?,
         @RequestParam(required = false) yearMonth: String?,
+        @RequestParam(required = false) province: String?,
         @org.springframework.data.web.PageableDefault(size = 50) pageable: org.springframework.data.domain.Pageable
     ): ResponseEntity<Any> {
         // `mode` takes precedence; `period` is backward-compat alias
@@ -91,10 +93,10 @@ class WalkController(
             if (yearMonth.isNullOrBlank()) {
                 return ResponseEntity.badRequest().body(mapOf("error" to "yearMonth is required for mode=calendar (format: YYYY-MM)"))
             }
-            val result = walkService.getCalendarRanking(yearMonth, pageable)
+            val result = walkService.getCalendarRanking(yearMonth, pageable, province)
             ResponseEntity.ok(result)
         } else {
-            val rankings = walkService.getWalkRanking(effectiveMode, pageable)
+            val rankings = walkService.getWalkRanking(effectiveMode, pageable, province)
             ResponseEntity.ok(rankings)
         }
     }
