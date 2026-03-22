@@ -152,6 +152,7 @@ docs/기획문서/
 design-compare/
 *.png
 !frontend/public/**/*.png
+!frontend/src/**/assets/**/*.png
 !app/android/**/res/**/*.png
 !app/ios/**/*.png
 
