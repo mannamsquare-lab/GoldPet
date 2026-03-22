@@ -323,9 +323,9 @@ export const WalkPage = () => {
                                     </div>
                                 ))}
                                 {walkRecords.length === 0 && (
-                                    <p style={{ color: '#727272', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>
-                                        아직 산책 기록이 없습니다.
-                                    </p>
+                                    <div className="walk_record_empty">
+                                        산책 기록이 없습니다.
+                                    </div>
                                 )}
                             </div>
                             {isFetchingNextPage && (
