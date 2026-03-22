@@ -8,6 +8,7 @@ import type { CourseFilters } from '../course/utils/courseHelpers';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
 import { CourseCard } from '../course/components/CourseCard';
 import { CourseFilterWalkTab } from '../course/components/CourseFilterWalkTab';
+import '../course/CoursePage.css';
 import './WalkPage.css';
 
 function getCurrentYearMonth(): string {
