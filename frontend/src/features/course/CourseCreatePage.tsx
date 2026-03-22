@@ -18,6 +18,7 @@ import { useAlert } from '../../contexts/AlertContext';
 import './CourseCreatePage.css';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
+import { useOverlayColor } from '../../hooks/useOverlayColor';
 
 // ── Walk spot type → Course spot type mapping ────────────────────────────────
 
@@ -757,6 +758,7 @@ export function CourseCreatePage() {
 
   // ── Dismiss keyboard on tap outside inputs ────────────────────────────────
   const keyboardDismiss = useKeyboardDismiss();
+  useOverlayColor(showSpotModal, '#000000', '#EFE1C4');
 
   // ── Render ────────────────────────────────────────────────────────────────
 
