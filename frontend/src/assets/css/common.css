@@ -2589,6 +2589,95 @@ h6 {
 	height: 20px;
 }
 
+/* Pet Selection */
+#walkContainer .walk_pet_select {
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
+	-webkit-box-orient: vertical;
+	-webkit-box-direction: normal;
+	    -ms-flex-direction: column;
+	        flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+#walkContainer .walk_pet_select_label {
+	font-size: 14px;
+	font-weight: 500;
+	color: #505050;
+}
+
+#walkContainer .walk_pet_list_card {
+	background: #fff;
+	border-radius: 16px;
+	padding: 13px 16px;
+}
+
+#walkContainer .walk_pet_list {
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
+	gap: 16px;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+
+#walkContainer .walk_pet_list::-webkit-scrollbar {
+	display: none;
+}
+
+#walkContainer .walk_pet_item {
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
+	-webkit-box-orient: vertical;
+	-webkit-box-direction: normal;
+	    -ms-flex-direction: column;
+	        flex-direction: column;
+	-webkit-box-align: center;
+	    -ms-flex-align: center;
+	        align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	-ms-flex-negative: 0;
+	    flex-shrink: 0;
+	opacity: 0.4;
+	-webkit-transition: opacity 0.2s;
+	transition: opacity 0.2s;
+}
+
+#walkContainer .walk_pet_item.selected {
+	opacity: 1;
+}
+
+#walkContainer .walk_pet_img_wrap {
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	overflow: hidden;
+}
+
+#walkContainer .walk_pet_img {
+	width: 100%;
+	height: 100%;
+	-o-object-fit: cover;
+	   object-fit: cover;
+	display: block;
+}
+
+#walkContainer .walk_pet_img_placeholder {
+	background: #EFE1C4;
+}
+
+#walkContainer .walk_pet_name {
+	font-size: 14px;
+	font-weight: 700;
+	color: #614108;
+	white-space: nowrap;
+}
+
 #communityContainer .community_tab,
 #notificationContainer .community_tab {
 	overflow-x: auto;

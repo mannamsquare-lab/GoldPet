@@ -279,9 +279,14 @@ class NativeBridge {
             return {'success': true, 'alreadyActive': true};
           }
           final isPublic = params?['isPublic'] as bool? ?? true;
+          // CRITICAL: JS numbers are doubles, not ints. Must use (e as num).toInt()
+          // Same pattern as startCourseWalk where (p[1] as num).toDouble() is used for coordinates
+          final petIds = (params?['petIds'] as List?)
+              ?.map((e) => (e as num).toInt())
+              .toList();
           // Don't await - return immediately so bridge doesn't timeout
           rootNavigatorKey.currentState?.push(
-            MaterialPageRoute(builder: (_) => WalkScreen(isPublic: isPublic)),
+            MaterialPageRoute(builder: (_) => WalkScreen(isPublic: isPublic, petIds: petIds)),
           );
           return {'success': true};
 

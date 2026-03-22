@@ -15,6 +15,7 @@ final walkSpotActionController = StreamController<String>.broadcast();
 class WalkScreen extends ConsumerStatefulWidget {
   final String? initialSpotAction;
   final bool isPublic;
+  final List<int>? petIds;
 
   /// Singleton guard: true when a WalkScreen is on the Navigator stack.
   /// Set in initState(), cleared in dispose(). Used by hybrid_app and native_bridge
@@ -25,7 +26,7 @@ class WalkScreen extends ConsumerStatefulWidget {
   /// The auth expiry dialog is deferred until the walk ends naturally.
   static bool authExpiredDuringWalk = false;
 
-  const WalkScreen({super.key, this.initialSpotAction, this.isPublic = true});
+  const WalkScreen({super.key, this.initialSpotAction, this.isPublic = true, this.petIds});
 
   @override
   ConsumerState<WalkScreen> createState() => _WalkScreenState();
@@ -107,7 +108,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
       }
     });
 
-    initTracking(isPublic: widget.isPublic);
+    initTracking(isPublic: widget.isPublic, petIds: widget.petIds);
 
     // Handle initial spot action from deep link
     if (widget.initialSpotAction != null) {

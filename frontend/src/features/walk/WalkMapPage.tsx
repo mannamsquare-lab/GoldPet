@@ -20,6 +20,9 @@ export const WalkMapPage = () => {
     const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [stats, setStats] = useState({ totalDistanceKm: 0, totalDurationMinutes: 0, totalCalories: 0, totalGoldEarned: 0 });
     const [isPublic, setIsPublic] = useState(true);
+    const [pets, setPets] = useState<Array<{id: number, name: string, profileImageUrl?: string}>>([]);
+    const [selectedPetIds, setSelectedPetIds] = useState<Set<number>>(new Set());
+    const [petsLoading, setPetsLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
@@ -138,6 +141,31 @@ export const WalkMapPage = () => {
         };
     }, []);
 
+    // Fetch pets
+    useEffect(() => {
+        apiClient.get('/pets/my')
+            .then(res => {
+                const data = res.data as Array<{id: number, name: string, profileImageUrl?: string}>;
+                setPets(data);
+                setSelectedPetIds(new Set(data.map(p => p.id)));
+            })
+            .catch(() => {})
+            .finally(() => setPetsLoading(false));
+    }, []);
+
+    const togglePetSelection = (petId: number) => {
+        setSelectedPetIds(prev => {
+            const next = new Set(prev);
+            if (next.has(petId)) {
+                if (next.size <= 1) return prev;
+                next.delete(petId);
+            } else {
+                next.add(petId);
+            }
+            return next;
+        });
+    };
+
     // Fetch walk stats
     const fetchStats = useCallback(async () => {
         try {
@@ -193,6 +221,33 @@ export const WalkMapPage = () => {
                         </div>
                     </div>
 
+                    {/* 반려동물 선택 */}
+                    {pets.length > 0 && !petsLoading && (
+                        <div className="walk_pet_select">
+                            <p className="walk_pet_select_label">반려동물 선택</p>
+                            <div className="walk_pet_list_card">
+                                <div className="walk_pet_list">
+                                    {pets.map(pet => (
+                                        <div
+                                            key={pet.id}
+                                            className={`walk_pet_item ${selectedPetIds.has(pet.id) ? 'selected' : ''}`}
+                                            onClick={() => togglePetSelection(pet.id)}
+                                        >
+                                            <div className="walk_pet_img_wrap">
+                                                {pet.profileImageUrl ? (
+                                                    <img src={pet.profileImageUrl} alt={pet.name} className="walk_pet_img" />
+                                                ) : (
+                                                    <div className="walk_pet_img walk_pet_img_placeholder" />
+                                                )}
+                                            </div>
+                                            <span className="walk_pet_name">{pet.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* 산책 데이터 */}
                     <div className="walk_data_section">
                         <p className="walk_map_section_title">산책을 시작해보세요!</p>
@@ -227,7 +282,7 @@ export const WalkMapPage = () => {
                 <button type="button" className="walk_start_fixed_btn" onClick={async () => {
                     if (nativeBridge.isAvailable()) {
                         try {
-                            await nativeBridge.callMethod('startWalk', { isPublic });
+                            await nativeBridge.callMethod('startWalk', { isPublic, petIds: Array.from(selectedPetIds) });
                         } catch {
                             showAlert('산책 시작에 실패했습니다.');
                         }

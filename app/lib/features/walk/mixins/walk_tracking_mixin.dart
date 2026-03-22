@@ -62,6 +62,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   DateTime? _trackingLastGeocodingTime;
   String? _trackingPetImageUrl;
   List<int> _trackingPetIds = [];
+  List<int>? _externalPetIds;
   Uint8List? _trackingPetMarkerBytes;
   final Map<String, NOverlayImage> _trackingSpotMarkerImages = {};
 
@@ -95,7 +96,8 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
   // --- Initialization ---
 
-  void initTracking({bool isPublic = true}) {
+  void initTracking({bool isPublic = true, List<int>? petIds}) {
+    _externalPetIds = petIds;
     _trackingIsPublic = isPublic;
     WalkLocalStorage.initialize();
     _initializeLocation();
@@ -760,10 +762,24 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     try {
       final response = await ApiClient().dio.get('/api/v1/pets/my');
       final pets = response.data as List;
-      if (pets.isNotEmpty) {
-        _trackingPetImageUrl = pets.first['profileImageUrl'] as String?;
+      if (_externalPetIds != null && _externalPetIds!.isNotEmpty) {
+        // Use pet IDs selected by user in React WebView
+        _trackingPetIds = _externalPetIds!;
+        final selectedPets = pets.where(
+          (p) => _externalPetIds!.contains(p['id'] as int)
+        ).toList();
+        if (selectedPets.isNotEmpty) {
+          _trackingPetImageUrl = selectedPets.first['profileImageUrl'] as String?;
+        } else if (pets.isNotEmpty) {
+          _trackingPetImageUrl = pets.first['profileImageUrl'] as String?;
+        }
+      } else {
+        // Backward compatible: no petIds provided → all pets (course walk, deep-link, etc.)
+        if (pets.isNotEmpty) {
+          _trackingPetImageUrl = pets.first['profileImageUrl'] as String?;
+        }
+        _trackingPetIds = pets.map<int>((p) => p['id'] as int).toList();
       }
-      _trackingPetIds = pets.map<int>((p) => p['id'] as int).toList();
     } catch (e) {
       debugPrint('[WalkTracking] Failed to fetch pet data: $e');
     }
