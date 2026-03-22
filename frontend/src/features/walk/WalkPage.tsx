@@ -118,6 +118,8 @@ export const WalkPage = () => {
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [rankingSize, setRankingSize] = useState<number>(10);
     const currentYearMonth = getCurrentYearMonth();
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
+    const [pickerYear, setPickerYear] = useState(() => Number(yearMonth.split('-')[0]));
 
     const { data: rankingData, isLoading: rankingLoading } = useQuery({
         queryKey: ['walk', 'monthlyRanking', yearMonth, rankingSize],
@@ -231,7 +233,7 @@ export const WalkPage = () => {
                             className={activeTab === 'courses' ? 'active' : ''}
                             onClick={() => setActiveTab('courses')}
                         >
-                            인기 코스
+                            추천 코스
                         </button>
                         <button
                             type="button"
@@ -245,26 +247,67 @@ export const WalkPage = () => {
                     {/* Records Tab */}
                     {activeTab === 'records' && (
                         <div className="walk_records_list">
-                            <div className="walk_month_selector">
-                                <button type="button" className="walk_month_arrow" onClick={prevMonth}>
-                                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-                                        <path d="M7 1L1 7L7 13" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </button>
-                                <span className="walk_month_label">
-                                    {yearMonth.replace('-', '.')}
-                                </span>
+                            <div className="walk_my_record_btn_wrap">
                                 <button
                                     type="button"
-                                    className="walk_month_arrow"
-                                    onClick={nextMonth}
-                                    disabled={yearMonth >= currentYearMonth}
-                                    style={{ opacity: yearMonth >= currentYearMonth ? 0.3 : 1 }}
+                                    className="walk_my_record_btn"
+                                    onClick={() => navigate('/my-walks')}
                                 >
-                                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-                                        <path d="M1 1L7 7L1 13" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    나의 산책 기록
+                                </button>
+                            </div>
+                            <div className="walk_month_selector">
+                                <div className="walk_month_nav">
+                                    <button type="button" className="walk_month_arrow" onClick={prevMonth}>
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M10 4L6 8L10 12" stroke="#505050" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </button>
+                                    <span className="walk_month_label">
+                                        {yearMonth.replace('-', '.')}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className="walk_month_arrow"
+                                        onClick={nextMonth}
+                                        disabled={yearMonth >= currentYearMonth}
+                                        style={{ opacity: yearMonth >= currentYearMonth ? 0.3 : 1 }}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M6 4L10 8L6 12" stroke="#505050" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="walk_month_calendar_btn"
+                                    onClick={() => {
+                                        setPickerYear(Number(yearMonth.split('-')[0]));
+                                        setShowMonthPicker(true);
+                                    }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <rect x="2" y="3" width="12" height="11" rx="2" stroke="#614108" strokeWidth="1.2"/>
+                                        <path d="M2 7H14" stroke="#614108" strokeWidth="1.2"/>
+                                        <rect x="5" y="1" width="1.5" height="4" rx="0.75" fill="#614108"/>
+                                        <rect x="9.5" y="1" width="1.5" height="4" rx="0.75" fill="#614108"/>
                                     </svg>
                                 </button>
+                                {showMonthPicker && (
+                                    <MonthPicker
+                                        selectedYearMonth={yearMonth}
+                                        currentYearMonth={currentYearMonth}
+                                        pickerYear={pickerYear}
+                                        onChangePickerYear={setPickerYear}
+                                        onSelect={(ym) => {
+                                            setYearMonth(ym);
+                                            setSelectedUserId(null);
+                                            setRankingSize(10);
+                                            setShowMonthPicker(false);
+                                        }}
+                                        onClose={() => setShowMonthPicker(false)}
+                                    />
+                                )}
                             </div>
                             <div className="walk_records_card">
                                 {walkRecords.map((record: WalkRecord, index: number) => (
@@ -468,33 +511,117 @@ function RankingCard({ entry, isHighlighted, onSelect }: { entry: WalkRankingEnt
     );
 }
 
+const MONTHS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+
+function MonthPicker({
+    selectedYearMonth,
+    currentYearMonth,
+    pickerYear,
+    onChangePickerYear,
+    onSelect,
+    onClose,
+}: {
+    selectedYearMonth: string;
+    currentYearMonth: string;
+    pickerYear: number;
+    onChangePickerYear: (y: number) => void;
+    onSelect: (ym: string) => void;
+    onClose: () => void;
+}) {
+    const currentYear = Number(currentYearMonth.split('-')[0]);
+    const currentMonth = Number(currentYearMonth.split('-')[1]);
+
+    return (
+        <div className="walk_month_picker_overlay" onClick={onClose}>
+            <div className="walk_month_picker" onClick={e => e.stopPropagation()}>
+                <div className="walk_month_picker_handle" />
+                <div className="walk_month_picker_header">
+                    <button
+                        type="button"
+                        className="walk_month_picker_arrow"
+                        onClick={() => onChangePickerYear(pickerYear - 1)}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M10 4L6 8L10 12" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                    </button>
+                    <span className="walk_month_picker_year">{pickerYear}</span>
+                    <button
+                        type="button"
+                        className="walk_month_picker_arrow"
+                        onClick={() => onChangePickerYear(pickerYear + 1)}
+                        disabled={pickerYear >= currentYear}
+                        style={{ opacity: pickerYear >= currentYear ? 0.3 : 1 }}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M6 4L10 8L6 12" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div className="walk_month_picker_grid">
+                    {MONTHS.map((label, i) => {
+                        const m = String(i + 1).padStart(2, '0');
+                        const ym = `${pickerYear}-${m}`;
+                        const isFuture = pickerYear > currentYear || (pickerYear === currentYear && i + 1 > currentMonth);
+                        const isSelected = ym === selectedYearMonth;
+                        return (
+                            <button
+                                key={i}
+                                type="button"
+                                className={`walk_month_picker_item${isSelected ? ' selected' : ''}`}
+                                disabled={isFuture}
+                                onClick={() => onSelect(ym)}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 interface WalkRecordItemProps {
     record: WalkRecord;
     onClick: () => void;
 }
 
 function WalkRecordItem({ record, onClick, showUser = false }: WalkRecordItemProps & { showUser?: boolean }) {
+    const petNames = record.petNames ?? [];
+    const petImages = record.petProfileImageUrls ?? [];
+    const hasPets = petNames.length > 0;
+    const displayName = hasPets
+        ? (petNames.length > 1 ? `${petNames[0]} 외 ${petNames.length - 1}` : petNames[0])
+        : record.userNickname;
+
     return (
         <div className="walk_record_item" onClick={onClick} style={{ cursor: 'pointer' }}>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                {/* Route thumbnail */}
-                <WalkRouteThumbnail walkId={record.id} hasPath={record.hasPath ?? true} size={60} />
-
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {/* User info for community feed */}
-                    {showUser && record.userNickname && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {/* Top row: pet/user avatars + name (left), date + share (right) */}
+            {showUser && (
+                <div className="walk_record_top_row">
+                    <div className="walk_record_user_info">
+                        {hasPets ? (
+                            <div className="walk_record_avatars">
+                                {petImages.slice(0, 3).map((url, i) => (
+                                    <img
+                                        key={i}
+                                        src={url || '/assets/images/common/pet_none_img.svg'}
+                                        alt={petNames[i] || ''}
+                                        className="walk_record_avatar"
+                                    />
+                                ))}
+                            </div>
+                        ) : (
                             <img
                                 src={record.userProfileImageUrl || '/assets/images/common/profile_none_img.svg'}
-                                alt={record.userNickname}
-                                style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }}
+                                alt={record.userNickname || ''}
+                                className="walk_record_avatar"
                             />
-                            <span style={{ fontSize: 12, color: '#505050', fontWeight: 500 }}>{record.userNickname}</span>
-                        </div>
-                    )}
-                    {/* Date row + share button */}
-                    <div className="walk_record_header" style={{ justifyContent: 'space-between' }}>
+                        )}
+                        <span className="walk_record_nickname">{displayName}</span>
+                    </div>
+                    <div className="walk_record_meta">
                         <span className="walk_record_date">{record.date}</span>
                         <div className="walk_record_actions" onClick={e => e.stopPropagation()}>
                             <button type="button" className="walk_record_action_btn" title="공유">
@@ -506,8 +633,13 @@ function WalkRecordItem({ record, onClick, showUser = false }: WalkRecordItemPro
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
 
-                    {/* Stats */}
+            {/* Bottom row: map thumbnail (left), stats + location (right) */}
+            <div className="walk_record_body">
+                <WalkRouteThumbnail walkId={record.id} hasPath={record.hasPath ?? true} size={60} />
+                <div className="walk_record_info_col">
                     <div className="walk_record_stats">
                         <span>{record.distance}</span>
                         <svg width="3" height="3" viewBox="0 0 3 3">
@@ -519,8 +651,6 @@ function WalkRecordItem({ record, onClick, showUser = false }: WalkRecordItemPro
                         </svg>
                         <span>{record.points}</span>
                     </div>
-
-                    {/* Location */}
                     {record.startAddress && (
                         <span className="walk_record_location">
                             {`${record.startAddress} ~ ${record.endAddress || '미지정'}`}

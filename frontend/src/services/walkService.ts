@@ -20,6 +20,8 @@ export interface WalkRecord {
   userNickname?: string;
   userProfileImageUrl?: string;
   hasPath?: boolean;
+  petNames?: string[];
+  petProfileImageUrls?: (string | null)[];
 }
 
 export interface WalkStats {
@@ -93,6 +95,8 @@ function toWalkRecord(walk: {
   userNickname?: string;
   userProfileImageUrl?: string;
   hasPath?: boolean;
+  petNames?: string[];
+  petProfileImageUrls?: (string | null)[];
 }): WalkRecord {
   const date = new Date(walk.startTime);
   const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
@@ -115,6 +119,8 @@ function toWalkRecord(walk: {
     userNickname: walk.userNickname ?? undefined,
     userProfileImageUrl: walk.userProfileImageUrl ?? undefined,
     hasPath: walk.hasPath,
+    petNames: walk.petNames,
+    petProfileImageUrls: walk.petProfileImageUrls,
   };
 }
 

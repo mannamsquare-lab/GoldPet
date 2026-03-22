@@ -94,10 +94,10 @@
   align-items: center;
   gap: 4px;
   color: var(--color-primary);
-  font-size: 16px;
+  font-size: 18px;
   font-family: Pretendard, sans-serif;
-  font-weight: 700;
-  line-height: 16px;
+  font-weight: 600;
+  line-height: 18px;
 }
 
 .walk_today_stats {
@@ -131,10 +131,10 @@
   justify-content: center;
   flex-direction: column;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: 14px;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
-  line-height: 12px;
+  line-height: 14px;
 }
 
 .walk_stat_value {
@@ -211,14 +211,16 @@
   box-sizing: border-box;
   position: relative;
   background-color: #EFE1C4;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: #614108;
   border: none;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
   cursor: pointer;
   font-family: Pretendard, sans-serif;
+  line-height: 1.4;
+  padding-top: 2px;
 }
 
 .walk_group_tab button.active {
@@ -227,6 +229,8 @@
   border-bottom: 0;
   background-color: #FFF7E6;
   font-weight: 700;
+  height: 48px;
+  padding-top: 0;
 }
 
 .walk_empty_state {
@@ -308,7 +312,6 @@
 
 .walk_record_item {
   width: 100%;
-  padding: 4px 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -316,45 +319,79 @@
   gap: 8px;
 }
 
-.walk_record_header {
-  width: 100%;
-  padding: 4px 0;
+/* Top row: avatars + name left, date + share right */
+.walk_record_top_row {
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.walk_record_user_info {
+  display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.walk_record_icon {
-  width: 16px;
-  height: 16px;
-  position: relative;
+.walk_record_avatars {
   display: flex;
   align-items: center;
-  justify-content: center;
+  padding-right: 4px;
 }
 
-.walk_record_icon svg {
-  width: 100%;
-  height: 100%;
+.walk_record_avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.walk_record_avatars .walk_record_avatar {
+  margin-right: -4px;
+}
+
+.walk_record_avatars .walk_record_avatar:last-child {
+  margin-right: 0;
+}
+
+.walk_record_nickname {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary);
+  font-family: Pretendard, sans-serif;
+  letter-spacing: -0.28px;
+  white-space: nowrap;
+}
+
+.walk_record_meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .walk_record_date {
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
   color: var(--color-text-secondary);
   font-size: 14px;
   font-family: Pretendard, sans-serif;
   font-weight: 500;
   line-height: 14px;
+  letter-spacing: -0.28px;
 }
 
-.walk_record_info {
-  width: 100%;
+/* Bottom row: map + stats */
+.walk_record_body {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 16px;
+}
+
+.walk_record_info_col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
@@ -366,14 +403,13 @@
 }
 
 .walk_record_stats > span {
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
   color: var(--color-primary);
   font-size: 16px;
   font-family: Pretendard, sans-serif;
   font-weight: 700;
   line-height: 16px;
+  letter-spacing: -0.32px;
+  white-space: nowrap;
 }
 
 .walk_record_stats svg {
@@ -389,6 +425,7 @@
   font-family: Pretendard, sans-serif;
   font-weight: 500;
   line-height: 14px;
+  letter-spacing: -0.28px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -440,31 +477,173 @@
   background: var(--color-border);
 }
 
-/* Month Selector */
-.walk_month_selector {
+/* "나의 산책 기록" Tag Button */
+.walk_my_record_btn_wrap {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0;
+}
+
+.walk_my_record_btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 12px 0;
+  height: 36px;
+  padding: 0 16px;
+  background: #614108;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: Pretendard, sans-serif;
+  line-height: 1.4;
+  letter-spacing: -0.26px;
+  white-space: nowrap;
+  border: none;
+  border-radius: 800px;
+  cursor: pointer;
+}
+
+/* Month Selector */
+.walk_month_selector {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 0 16px;
+}
+
+.walk_month_nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .walk_month_label {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-primary);
-  min-width: 80px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  min-width: 120px;
   text-align: center;
+  letter-spacing: -0.28px;
 }
 
 .walk_month_arrow {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.walk_month_calendar_btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Month Picker Bottom Sheet */
+.walk_month_picker_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.walk_month_picker {
+  background: var(--color-bg);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding: 16px 24px calc(32px + 80px);
+  width: 100%;
+  max-width: 480px;
+  animation: walk_month_picker_slide_up 0.25s ease-out;
+}
+
+.walk_month_picker_handle {
+  width: 40px;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+@keyframes walk_month_picker_slide_up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.walk_month_picker_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.walk_month_picker_year {
+  font-size: var(--font-size-sub-heading);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  font-family: var(--font-family);
+}
+
+.walk_month_picker_arrow {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.walk_month_picker_grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.walk_month_picker_item {
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-bg-white);
+  color: var(--color-primary);
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.walk_month_picker_item:disabled {
+  color: var(--color-text-disabled);
+  cursor: default;
+}
+
+.walk_month_picker_item.selected {
+  background: var(--color-primary);
+  color: var(--color-text-white);
+  font-weight: var(--font-weight-bold);
+}
+
+.walk_month_picker_item:not(:disabled):not(.selected):active {
+  background: var(--color-border);
 }
 
 .walk_ranking_placeholder {
