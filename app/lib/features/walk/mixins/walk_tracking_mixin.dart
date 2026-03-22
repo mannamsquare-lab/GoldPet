@@ -415,11 +415,12 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       final keepWalking = await showGoldPetConfirm(
         context,
         message: '산책 기록을 저장할 수 없습니다.\n\n'
-            '최소 조건: $minDuration초 이상, ${minDistanceM.toInt()}m 이상\n'
-            '현재 기록: $durationSeconds초, ${distanceMeters.toInt()}m\n\n'
+            '최소 조건 : ${minDuration}초 이상, ${minDistanceM.toInt()}m 이상\n'
+            '현재 기록 : ${durationSeconds}초, ${distanceMeters.toInt()}m\n\n'
             '산책을 계속하시겠습니까?',
-        confirmText: '산책 계속하기',
-        cancelText: '기록 삭제',
+        messageAlign: TextAlign.left,
+        confirmText: '산책 계속',
+        cancelText: '삭제',
       );
       if (keepWalking) {
         // "산책 계속하기" — 일시정지 상태 복원 후 재개

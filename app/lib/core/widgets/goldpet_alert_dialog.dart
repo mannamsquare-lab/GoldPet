@@ -8,6 +8,7 @@ class GoldPetAlertDialog extends StatelessWidget {
   final String? cancelText;
   final VoidCallback onConfirm;
   final VoidCallback? onCancel;
+  final TextAlign messageAlign;
 
   const GoldPetAlertDialog({
     super.key,
@@ -16,6 +17,7 @@ class GoldPetAlertDialog extends StatelessWidget {
     this.cancelText,
     required this.onConfirm,
     this.onCancel,
+    this.messageAlign = TextAlign.center,
   });
 
   @override
@@ -40,7 +42,7 @@ class GoldPetAlertDialog extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
                   message,
-                  textAlign: TextAlign.center,
+                  textAlign: messageAlign,
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
@@ -161,6 +163,7 @@ Future<bool> showGoldPetConfirm(
   String confirmText = '확인',
   String cancelText = '취소',
   bool barrierDismissible = false,
+  TextAlign messageAlign = TextAlign.center,
 }) async {
   return await showDialog<bool>(
         context: context,
@@ -170,6 +173,7 @@ Future<bool> showGoldPetConfirm(
           message: message,
           confirmText: confirmText,
           cancelText: cancelText,
+          messageAlign: messageAlign,
           onConfirm: () => Navigator.pop(context, true),
           onCancel: () => Navigator.pop(context, false),
         ),
