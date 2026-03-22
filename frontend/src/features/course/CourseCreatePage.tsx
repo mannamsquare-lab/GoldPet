@@ -12,6 +12,7 @@ import {
 } from '../../services/courseService';
 import { walkService } from '../../services/walkService';
 import { SPOT_TYPES, spotEmoji, spotLabel } from './utils/courseHelpers';
+import { SpotIcon } from './components/SpotIcon';
 import { createSvgPathOverlay } from '../walk/utils/walkMapUtils';
 import { useAlert } from '../../contexts/AlertContext';
 import './CourseCreatePage.css';
@@ -34,6 +35,16 @@ function walkSpotTypeToCourseSpotType(
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ── Gold reward calculation — mirrors backend: WalkService.kt:283-291 ────────
+
+function calculateWalkGold(distanceKm: number): number {
+  if (distanceKm < 0.5) return 0;
+  if (distanceKm < 1.0) return 1;
+  if (distanceKm < 3.0) return 3;
+  if (distanceKm < 5.0) return 5;
+  return 10;
 }
 
 // ── Haversine distance (km) between two [lat,lng] points ─────────────────────
@@ -77,9 +88,10 @@ interface SpotModalProps {
   onConfirm: (type: CourseSpotType, name: string, description: string) => void;
   onClose: () => void;
   editSpot?: LocalSpot;
+  spots: LocalSpot[];
 }
 
-function SpotModal({ onConfirm, onClose, editSpot }: SpotModalProps) {
+function SpotModal({ onConfirm, onClose, editSpot, spots }: SpotModalProps) {
   const [selectedType, setSelectedType] = useState<CourseSpotType | null>(editSpot?.type ?? null);
   const [name, setName] = useState(editSpot?.name ?? '');
   const [description, setDescription] = useState(editSpot?.description ?? '');
@@ -97,30 +109,38 @@ function SpotModal({ onConfirm, onClose, editSpot }: SpotModalProps) {
         <p className="course_create_spot_modal_title">{editSpot ? '스팟 수정' : '스팟 추가'}</p>
 
         <div className="course_create_spot_types">
-          {SPOT_TYPES.map(s => (
-            <button
-              key={s.type}
-              className={`course_create_spot_type_btn${selectedType === s.type ? ' selected' : ''}`}
-              onClick={() => setSelectedType(s.type)}
-              type="button"
-            >
-              <span>{s.emoji}</span>
-              <span>{s.label}</span>
-            </button>
-          ))}
+          {SPOT_TYPES.map(s => {
+            const count = spots.filter(sp => sp.type === s.type).length;
+            return (
+              <button
+                key={s.type}
+                className={`course_create_spot_type_btn${selectedType === s.type ? ' selected' : ''}`}
+                onClick={() => setSelectedType(s.type)}
+                type="button"
+              >
+                <div className="course_create_spot_type_icon">
+                  <SpotIcon type={s.type} size={28} />
+                  {count > 0 && (
+                    <span className="course_create_spot_type_count">{count}</span>
+                  )}
+                </div>
+                <span className="course_create_spot_type_label">{s.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="course_create_spot_modal_fields">
           <input
             className="course_create_input"
-            placeholder="이름 (선택)"
+            placeholder="이름을 적어주세요"
             value={name}
             onChange={e => setName(e.target.value)}
             maxLength={50}
           />
           <input
             className="course_create_input"
-            placeholder="설명 (선택)"
+            placeholder="설명을 적어주세요"
             value={description}
             onChange={e => setDescription(e.target.value)}
             maxLength={200}
@@ -644,6 +664,21 @@ export function CourseCreatePage() {
     });
   };
 
+  // ── Reset all (초기화 button) ───────────────────────────────────────────
+
+  const handleResetAll = () => {
+    showConfirm('모든 입력을 초기화하시겠습니까?', () => {
+      setWaypoints([]);
+      setSpots([]);
+      setTitle('');
+      setDesc('');
+      setDifficulty('EASY');
+      setEstimatedMinutes('');
+      setDistanceKm(0);
+      setLastTapPos(null);
+    });
+  };
+
   // ── Submit ────────────────────────────────────────────────────────────────
 
   const createMutation = useMutation({
@@ -745,15 +780,42 @@ export function CourseCreatePage() {
     );
   }
 
-  const formattedDistance = distanceKm > 0 ? `${distanceKm.toFixed(2)} km` : '-';
-  const formattedMinutes = estimatedMinutes ? `${estimatedMinutes}분` : '-';
+  // Format walk date for display
+  const walkDate = walkDetail?.startTime
+    ? new Date(walkDetail.startTime).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')
+    : '';
+  const walkMinutes = walkDetail?.durationSeconds ? Math.round(walkDetail.durationSeconds / 60) : 0;
+  const walkCalories = walkDetail?.calories ?? 0;
+  const walkGold = walkDetail ? calculateWalkGold(walkDetail.distance) : 0;
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: title || '산책 코스', text: `${walkDate} 산책 코스` });
+      } catch { /* user cancelled */ }
+    }
+  };
 
   return (
     <div className="course_create_page" {...keyboardDismiss}>
       {/* Header */}
       <MainHeader variant="back-only" className="intro_header" />
 
-      {/* Map */}
+      {/* Date row — from-walk mode */}
+      {isFromWalk && walkDetail && (
+        <div className="course_create_date_row">
+          <span className="course_create_date_text">{walkDate}</span>
+          {navigator.share && (
+            <button className="course_create_share_btn" onClick={handleShare} type="button">
+              <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 1v7M6 1L3 4M6 1l3 3M2 8v2.5h8V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Map — rounded corners */}
       <div className="course_create_map_wrap">
         {mapLoadFailed ? (
           <div className="course_create_map_no_load">지도를 불러올 수 없습니다</div>
@@ -766,38 +828,105 @@ export function CourseCreatePage() {
             {isEditMode ? '경로가 초기화되었습니다. 지도를 탭하여 새 경로를 그려보세요' : '지도를 탭하여 경로를 그려보세요'}
           </div>
         )}
+
+        {/* Expand icon overlay */}
+        {!mapLoadFailed && (
+          <button className="course_create_map_expand" type="button" onClick={() => {
+            const map = mapInstanceRef.current;
+            if (map && waypoints.length >= 2) {
+              const pts = waypoints.map(([lat, lng]) => new naver.maps.LatLng(lat, lng));
+              const bounds = new naver.maps.LatLngBounds(pts[0], pts[0]);
+              for (const pt of pts) bounds.extend(pt);
+              map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
+            }
+          }}>
+            <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 8V3h5M17 8V3h-5M3 12v5h5M17 12v5h-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Scrollable body */}
       <div className="course_create_body">
-        {/* Path controls — outside map for WebView touch compatibility */}
-        {waypoints.length > 0 && (
-          <div className="course_create_path_bar">
-            <span className="course_create_path_bar_count">{waypoints.length}개 지점</span>
-            <button
-              className="course_create_path_bar_reset"
-              onClick={handleClearWaypoints}
-              type="button"
-            >
-              경로 초기화
-            </button>
+        {/* Stats bar — "총 N개 지점  스팟 N" + "스팟 추가" */}
+        <div className="course_create_stats_bar">
+          <div className="course_create_stats_text">
+            <span>총 <strong>{waypoints.length}</strong>개 지점</span>
+            <span>스팟 <strong>{spots.length}</strong></span>
+          </div>
+          <button
+            className="course_create_add_spot_btn"
+            onClick={handleAddSpot}
+            type="button"
+          >
+            스팟 추가
+          </button>
+        </div>
+
+        {/* Spot summary grid */}
+        {spots.length > 0 && (
+          <div className="course_create_spot_summary">
+            {SPOT_TYPES.map(s => {
+              const count = spots.filter(sp => sp.type === s.type).length;
+              return (
+                <div className="course_create_spot_summary_item" key={s.type}>
+                  <div className="course_create_spot_summary_icon">
+                    <SpotIcon type={s.type} size={32} />
+                    <span className="course_create_spot_summary_badge">{count}</span>
+                  </div>
+                  <span className="course_create_spot_summary_label">{s.label}</span>
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* Spots section */}
-        <div className="course_create_spots_section">
-          <div className="course_create_spots_header">
-            <span>스팟 ({spots.length})</span>
-            <button
-              className="course_create_add_spot_btn"
-              onClick={handleAddSpot}
-              type="button"
-            >
-              + 스팟 추가
-            </button>
-          </div>
+        {/* 코스 정보 label */}
+        <p className="course_create_section_label">코스 정보</p>
 
-          {spots.length > 0 && (
+        {/* Data card — 2x2 grid (from-walk mode) */}
+        {isFromWalk && walkDetail ? (
+          <div className="course_create_data_card">
+            <div className="course_create_data_row">
+              <div className="course_create_data_item">
+                <span className="course_create_data_label">거리(km)</span>
+                <span className="course_create_data_value">{walkDetail.distance.toFixed(1)}</span>
+              </div>
+              <div className="course_create_data_item">
+                <span className="course_create_data_label">시간(분)</span>
+                <span className="course_create_data_value">{walkMinutes}</span>
+              </div>
+            </div>
+            <div className="course_create_data_row">
+              <div className="course_create_data_item">
+                <span className="course_create_data_label">칼로리(Kcal)</span>
+                <span className="course_create_data_value">{walkCalories.toFixed(3)}</span>
+              </div>
+              <div className="course_create_data_item">
+                <span className="course_create_data_label">적립(Gold)</span>
+                <span className="course_create_data_value">{walkGold}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="course_create_data_card">
+            <div className="course_create_data_row">
+              <div className="course_create_data_item">
+                <span className="course_create_data_label">거리(km)</span>
+                <span className="course_create_data_value">{distanceKm > 0 ? distanceKm.toFixed(2) : '-'}</span>
+              </div>
+              <div className="course_create_data_item">
+                <span className="course_create_data_label">지점 수</span>
+                <span className="course_create_data_value">{waypoints.length}개</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Spots list */}
+        {spots.length > 0 && (
+          <div className="course_create_spots_section">
             <div className="course_create_spots_list">
               {spots.map(s => (
                 <div
@@ -809,7 +938,9 @@ export function CourseCreatePage() {
                     setShowSpotModal(true);
                   }}
                 >
-                  <div className="course_create_spot_emoji">{spotEmoji(s.type)}</div>
+                  <div className="course_create_spot_emoji">
+                    <SpotIcon type={s.type} size={20} />
+                  </div>
                   <div className="course_create_spot_info">
                     <div className="course_create_spot_name">
                       {s.name || spotLabel(s.type)}
@@ -826,34 +957,18 @@ export function CourseCreatePage() {
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Form */}
         <div className="course_create_form">
-          {/* Distance / minutes info */}
-          <div className="course_create_info_box">
-            <div className="course_create_info_item">
-              <span>거리</span>
-              <span>{formattedDistance}</span>
-            </div>
-            <div className="course_create_info_item">
-              <span>예상 시간</span>
-              <span>{formattedMinutes}</span>
-            </div>
-            <div className="course_create_info_item">
-              <span>지점 수</span>
-              <span>{waypoints.length}개</span>
-            </div>
-          </div>
-
           {/* Title */}
           <div className="course_create_field">
-            <label htmlFor="course_title">코스 이름 *</label>
+            <label htmlFor="course_title">코스 이름</label>
             <input
               id="course_title"
               className="course_create_input"
-              placeholder="예: 한강 공원 산책로"
+              placeholder="예: 한강 난지도 산책로"
               value={title}
               onChange={e => setTitle(e.target.value)}
               onFocus={handleInputFocus}
@@ -864,22 +979,26 @@ export function CourseCreatePage() {
           {/* Description */}
           <div className="course_create_field">
             <label htmlFor="course_desc">설명</label>
-            <textarea
-              id="course_desc"
-              className="course_create_input textarea"
-              placeholder="코스에 대한 설명을 적어주세요"
-              value={desc}
-              onChange={e => setDesc(e.target.value)}
-              onFocus={handleInputFocus}
-              rows={3}
-            />
+            <div className="course_create_desc_wrap">
+              <textarea
+                id="course_desc"
+                className="course_create_input textarea"
+                placeholder="코스에 대한 설명을 적어주세요"
+                value={desc}
+                onChange={e => setDesc(e.target.value)}
+                onFocus={handleInputFocus}
+                rows={3}
+                maxLength={500}
+              />
+              <div className="course_create_desc_counter">{desc.length}/500자</div>
+            </div>
           </div>
 
           {/* Difficulty */}
           <div className="course_create_field">
             <label>난이도</label>
             <div className="course_create_difficulty_chips">
-              {([['EASY', '초급'], ['MODERATE', '중급'], ['HARD', '고급']] as const).map(([value, label]) => (
+              {([['EASY', '초급'], ['MODERATE', '중급'], ['HARD', '상급']] as const).map(([value, label]) => (
                 <button
                   key={value}
                   type="button"
@@ -894,13 +1013,13 @@ export function CourseCreatePage() {
 
           {/* Estimated minutes */}
           <div className="course_create_field">
-            <label htmlFor="course_minutes">예상 소요(분)</label>
+            <label htmlFor="course_minutes">예상 시간(분)</label>
             <input
               id="course_minutes"
               className="course_create_input"
               type="number"
               inputMode="numeric"
-              placeholder="30"
+              placeholder="38"
               min={1}
               max={9999}
               value={estimatedMinutes}
@@ -912,25 +1031,32 @@ export function CourseCreatePage() {
 
       </div>
 
-      {/* Submit — fixed outside scrollable body */}
+      {/* Bottom buttons — dual half buttons with shadow */}
       <div className="course_create_submit_wrap">
         <button
-          className="course_create_submit_btn"
+          className="course_create_btn_reset"
+          onClick={handleResetAll}
+          type="button"
+        >
+          초기화
+        </button>
+        <button
+          className="course_create_btn_submit"
           onClick={handleSubmit}
           disabled={activeMutation.isPending}
           type="button"
         >
           {activeMutation.isPending
             ? (isEditMode ? '수정 중...' : '등록 중...')
-            : (isEditMode ? '코스 수정' : '코스 등록')}
+            : (isEditMode ? '코스 수정' : '산책 코스 등록하기')}
         </button>
-        {activeMutation.isError && (
-          <p className="course_create_error_text">
-            {(activeMutation.error as Error & { response?: { data?: { message?: string } } })?.response?.data?.message
-              ?? (isEditMode ? '수정에 실패했습니다. 다시 시도해주세요.' : '등록에 실패했습니다. 다시 시도해주세요.')}
-          </p>
-        )}
       </div>
+      {activeMutation.isError && (
+        <p className="course_create_error_text">
+          {(activeMutation.error as Error & { response?: { data?: { message?: string } } })?.response?.data?.message
+            ?? (isEditMode ? '수정에 실패했습니다. 다시 시도해주세요.' : '등록에 실패했습니다. 다시 시도해주세요.')}
+        </p>
+      )}
 
       {/* Spot modal */}
       {showSpotModal && (
@@ -939,6 +1065,7 @@ export function CourseCreatePage() {
           onConfirm={handleSpotConfirm}
           onClose={closeModal}
           editSpot={editingSpot ?? undefined}
+          spots={spots}
         />
       )}
     </div>
