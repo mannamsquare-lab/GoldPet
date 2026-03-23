@@ -217,6 +217,14 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* === Google Maps Control Override === */
+.gm-control-active,
+.gm-fullscreen-control,
+.gm-bundled-control,
+.gm-svpc {
+  display: none !important;
+}
+
 /* === Alert Modal === */
 
 .gp-alert-overlay {

@@ -72,17 +72,9 @@
   white-space: nowrap;
 }
 
-/* Hide Google Maps default controls that overlap with custom UI */
-.course_create_map .gm-control-active,
-.course_create_map .gm-fullscreen-control,
-.course_create_map .gm-bundled-control,
-.course_create_map .gm-svpc {
-  display: none !important;
-}
-
 .course_create_map_expand {
   position: absolute;
-  bottom: 8px;
+  bottom: 48px;
   right: 8px;
   width: 40px;
   height: 40px;
