@@ -15,7 +15,8 @@ interface CourseMapProps {
 }
 
 // We need a factory that only works after google.maps is loaded
-let HtmlMarkerOverlayClass: typeof HtmlMarkerOverlay | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let HtmlMarkerOverlayClass: any = null;
 
 function getHtmlMarkerOverlayClass() {
   if (HtmlMarkerOverlayClass) return HtmlMarkerOverlayClass;

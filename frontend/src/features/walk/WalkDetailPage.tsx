@@ -270,10 +270,13 @@ export const WalkDetailPage = () => {
                 });
                 // Use label with custom HTML via OverlayView is complex; use a simple marker with custom icon
                 // For pet circle markers, we create a transparent marker and overlay HTML
-                const startOverlay = new google.maps.marker.AdvancedMarkerElement?.({
-                    map: mapInstanceRef.current,
-                    position: new google.maps.LatLng(points[0].lat, points[0].lng),
-                }) ?? startMarker;
+                const AdvancedMarker = google.maps.marker?.AdvancedMarkerElement;
+                const startOverlay = AdvancedMarker
+                    ? new AdvancedMarker({
+                        map: mapInstanceRef.current,
+                        position: new google.maps.LatLng(points[0].lat, points[0].lng),
+                    })
+                    : startMarker;
                 void startOverlay;
                 // Fallback: use content-based markers via a helper div
                 const startDiv = document.createElement('div');

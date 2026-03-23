@@ -33,12 +33,6 @@ function walkSpotTypeToCourseSpotType(
   }
 }
 
-// ── HTML escape utility ───────────────────────────────────────────────────────
-
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
 // ── Gold reward calculation — mirrors backend: WalkService.kt:283-291 ────────
 
 function calculateWalkGold(distanceKm: number): number {
