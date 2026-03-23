@@ -2,8 +2,11 @@ package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.controller.*
 import com.goldpet.domain.common.exception.*
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.course.entity.CourseDifficulty
 import com.goldpet.domain.course.repository.*
+import com.goldpet.domain.course.service.CourseService
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -16,8 +19,11 @@ class AdminCourseService(
     private val spotRepository: CourseSpotRepository,
     private val commentRepository: CourseCommentRepository,
     private val likeRepository: CourseLikeRepository,
-    private val commentLikeRepository: CourseCommentLikeRepository
+    private val commentLikeRepository: CourseCommentLikeRepository,
+    private val courseService: CourseService,
+    private val systemSettingService: SystemSettingService
 ) {
+    private val log = LoggerFactory.getLogger(AdminCourseService::class.java)
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
     @Transactional(readOnly = true)
@@ -146,5 +152,38 @@ class AdminCourseService(
         }
         commentLikeRepository.deleteAllByCommentId(commentId)
         commentRepository.deleteById(commentId)
+    }
+
+    @Transactional
+    fun regenerateAllThumbnails(): Map<String, Any> {
+        if (systemSettingService.getString("thumbnail.migration.completed", "false") == "true") {
+            return mapOf("message" to "Thumbnail migration already completed", "skipped" to true)
+        }
+
+        val courses = courseRepository.findAll().filter { it.path != null && it.path.coordinates.size >= 2 }
+        var success = 0
+        var failed = 0
+        val failedIds = mutableListOf<Long>()
+
+        for (course in courses) {
+            try {
+                courseService.regenerateThumbnail(course.id)
+                success++
+            } catch (e: Exception) {
+                log.warn("Failed to regenerate thumbnail for courseId={}: {}", course.id, e.message)
+                failed++
+                failedIds.add(course.id)
+            }
+        }
+
+        systemSettingService.setValue("thumbnail.migration.completed", "true")
+        log.info("Thumbnail migration complete: total={}, success={}, failed={}", courses.size, success, failed)
+
+        return mapOf(
+            "total" to courses.size,
+            "success" to success,
+            "failed" to failed,
+            "failedIds" to failedIds
+        )
     }
 }

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,8 +40,12 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   bool trackingIsInitializing = true;
   bool trackingIsPaused = false;
 
-  NaverMapController? trackingMapController;
-  NLatLng? trackingInitialPosition;
+  GoogleMapController? trackingMapController;
+  LatLng? trackingInitialPosition;
+
+  /// Follow-mode state: when true, camera follows the user's location.
+  /// Set to false when user manually drags the map.
+  bool trackingIsFollowing = true;
 
   DateTime? _trackingStartTime;
   Timer? _trackingTimer;
@@ -51,9 +55,12 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   final ValueNotifier<int> trackingDurationNotifier = ValueNotifier(0);
   final ValueNotifier<double> trackingDistanceNotifier = ValueNotifier(0.0);
 
-  List<NLatLng> trackingPath = [];
+  List<LatLng> trackingPath = [];
   final List<WalkSpotDto> trackingSpots = [];
-  final Set<NMarker> trackingMarkers = {};
+
+  /// Declarative marker/polyline sets for GoogleMap widget.
+  Set<Marker> trackingMarkers = {};
+  Set<Polyline> trackingPolylines = {};
 
   StreamSubscription<Position>? _trackingPositionSub;
   Position? _trackingLastAccepted;
@@ -64,7 +71,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   List<int> _trackingPetIds = [];
   List<int>? _externalPetIds;
   Uint8List? _trackingPetMarkerBytes;
-  final Map<String, NOverlayImage> _trackingSpotMarkerImages = {};
+  final Map<String, BitmapDescriptor> _trackingSpotMarkerImages = {};
 
   bool _trackingIsPublic = true;
 
@@ -89,7 +96,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
   /// Optional: called on each GPS update with the new position.
   /// CourseWalkScreen uses this for deviation detection.
-  void onLocationUpdate(Position position, NLatLng latLng) {}
+  void onLocationUpdate(Position position, LatLng latLng) {}
 
   /// Optional: the courseId being followed (null for free walk).
   int? get followedCourseId => null;
@@ -156,7 +163,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(timeLimit: Duration(seconds: 5)),
       );
-      trackingInitialPosition = NLatLng(position.latitude, position.longitude);
+      trackingInitialPosition = LatLng(position.latitude, position.longitude);
     } catch (e) {
       debugPrint('[WalkTracking] Error getting location: $e');
     } finally {
@@ -233,14 +240,15 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     trackingDistanceNotifier.value = 0.0;
     trackingPath = [];
     trackingSpots.clear();
-    trackingMarkers.clear();
+    trackingMarkers = {};
+    trackingPolylines = {};
     _trackingLastAccepted = null;
-    trackingMapController?.clearOverlays();
     _trackingStartTime = DateTime.now();
 
     trackingIsPaused = false;
     _trackingPauseStartTime = null;
     _trackingTotalPauseDuration = Duration.zero;
+    trackingIsFollowing = true;
 
     setState(() {
       trackingIsWalking = true;
@@ -300,7 +308,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       return;
     }
 
-    final latLng = NLatLng(position.latitude, position.longitude);
+    final latLng = LatLng(position.latitude, position.longitude);
 
     if (trackingPath.isNotEmpty && _trackingLastAccepted != null) {
       final last = _trackingLastAccepted!;
@@ -332,7 +340,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       updatePolyline();
     }
 
-    trackingMapController?.updateCamera(NCameraUpdate.scrollAndZoomTo(target: latLng));
+    // Follow mode: animate camera to current position
+    if (trackingIsFollowing) {
+      trackingMapController?.animateCamera(CameraUpdate.newLatLng(latLng));
+    }
     _updateAddress(position.latitude, position.longitude);
 
     // Notify subclass (e.g. CourseWalkScreen for deviation detection)
@@ -340,14 +351,29 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   }
 
   void updatePolyline({Color? color}) {
-    if (trackingMapController == null || trackingPath.length < 2) return;
-    final pathOverlay = NPathOverlay(
-      id: 'walk_path',
-      coords: trackingPath,
+    if (trackingPath.length < 2) return;
+    final polyline = Polyline(
+      polylineId: const PolylineId('walk_path'),
+      points: List<LatLng>.from(trackingPath),
       color: color ?? AppColors.primary,
       width: 5,
     );
-    trackingMapController!.addOverlay(pathOverlay);
+    setState(() {
+      trackingPolylines = {...trackingPolylines.where((p) => p.polylineId.value != 'walk_path'), polyline};
+    });
+  }
+
+  /// Called when user manually drags the map. Disables follow mode.
+  void onCameraMoveStartedByUser() {
+    trackingIsFollowing = false;
+  }
+
+  /// Recenters camera to current position and re-enables follow mode.
+  void recenterCamera() {
+    trackingIsFollowing = true;
+    if (trackingPath.isNotEmpty) {
+      trackingMapController?.animateCamera(CameraUpdate.newLatLng(trackingPath.last));
+    }
   }
 
   // --- Pause / Resume ---
@@ -458,12 +484,12 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         final pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(timeLimit: Duration(seconds: 3)),
         );
-        final currentLatLng = NLatLng(pos.latitude, pos.longitude);
+        final currentLatLng = LatLng(pos.latitude, pos.longitude);
         if (trackingPath.isEmpty) trackingPath.add(currentLatLng);
         if (trackingPath.length < 2) trackingPath.add(trackingPath.first);
       } catch (e) {
         if (trackingPath.isEmpty) {
-          final fallback = trackingInitialPosition ?? const NLatLng(37.5665, 126.9780);
+          final fallback = trackingInitialPosition ?? const LatLng(37.5665, 126.9780);
           trackingPath.add(fallback);
           trackingPath.add(fallback);
         } else {
@@ -617,7 +643,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
     try {
       final position = await Geolocator.getCurrentPosition();
-      final latLng = NLatLng(position.latitude, position.longitude);
+      final latLng = LatLng(position.latitude, position.longitude);
 
       final spot = WalkSpotDto(
         latitude: position.latitude,
@@ -628,15 +654,15 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       trackingSpots.add(spot);
 
       final spotIcon = await _getSpotMarkerImage(type);
-      final marker = NMarker(
-        id: 'spot_${trackingSpots.length}',
+      final marker = Marker(
+        markerId: MarkerId('spot_${trackingSpots.length}'),
         position: latLng,
         icon: spotIcon,
-        size: const Size(32, 32),
-        anchor: const NPoint(0.5, 0.5),
+        anchor: const Offset(0.5, 0.5),
       );
-      trackingMarkers.add(marker);
-      trackingMapController?.addOverlay(marker);
+      setState(() {
+        trackingMarkers = {...trackingMarkers, marker};
+      });
 
       if (mounted) showTrackingSnackBar('${_getSpotLabel(type)} 스팟이 기록되었습니다!');
     } catch (e) {
@@ -713,7 +739,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
       if (!mounted) return;
 
-      final latLng = NLatLng(position.latitude, position.longitude);
+      final latLng = LatLng(position.latitude, position.longitude);
       final spot = WalkSpotDto(
         latitude: position.latitude,
         longitude: position.longitude,
@@ -725,15 +751,15 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       trackingSpots.add(spot);
 
       final spotIcon = await _getSpotMarkerImage('PHOTO');
-      final marker = NMarker(
-        id: 'spot_${trackingSpots.length}',
+      final marker = Marker(
+        markerId: MarkerId('spot_${trackingSpots.length}'),
         position: latLng,
         icon: spotIcon,
-        size: const Size(32, 32),
-        anchor: const NPoint(0.5, 0.5),
+        anchor: const Offset(0.5, 0.5),
       );
-      trackingMarkers.add(marker);
-      trackingMapController?.addOverlay(marker);
+      setState(() {
+        trackingMarkers = {...trackingMarkers, marker};
+      });
 
       if (mounted) showTrackingSnackBar('사진이 저장되었습니다!');
     } catch (e) {
@@ -851,16 +877,18 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   Future<void> addPetStartMarker() async {
     if (_trackingPetMarkerBytes == null || trackingInitialPosition == null) return;
     try {
-      final overlayImage = await NOverlayImage.fromByteArray(_trackingPetMarkerBytes!);
-      final marker = NMarker(
-        id: 'pet_start',
+      final overlayImage = BitmapDescriptor.bytes(_trackingPetMarkerBytes!,
+        width: 60, height: 80,
+      );
+      final marker = Marker(
+        markerId: const MarkerId('pet_start'),
         position: trackingInitialPosition!,
         icon: overlayImage,
-        size: const Size(60, 80),
-        anchor: const NPoint(0.5, 1.0),
+        anchor: const Offset(0.5, 1.0),
       );
-      marker.setOnTapListener((_) {});
-      trackingMapController?.addOverlay(marker);
+      setState(() {
+        trackingMarkers = {...trackingMarkers.where((m) => m.markerId.value != 'pet_start'), marker};
+      });
     } catch (e) {
       debugPrint('[WalkTracking] Failed to add pet marker: $e');
     }
@@ -868,7 +896,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
   // --- Helpers ---
 
-  Future<NOverlayImage> _getSpotMarkerImage(String type) async {
+  Future<BitmapDescriptor> _getSpotMarkerImage(String type) async {
     if (_trackingSpotMarkerImages.containsKey(type)) return _trackingSpotMarkerImages[type]!;
     final pngAsset = switch (type) {
       'POOP' => 'assets/images/walk/marker_poop.png',
@@ -876,9 +904,13 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       'PHOTO' => 'assets/images/walk/marker_camera.png',
       _ => 'assets/images/walk/marker_poop.png',
     };
-    final overlayImage = NOverlayImage.fromAssetImage(pngAsset);
-    _trackingSpotMarkerImages[type] = overlayImage;
-    return overlayImage;
+    final overlayImage = BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(32, 32)),
+      pngAsset,
+    );
+    final descriptor = await overlayImage;
+    _trackingSpotMarkerImages[type] = descriptor;
+    return descriptor;
   }
 
   Future<void> _updateAddress(double lat, double lng) async {

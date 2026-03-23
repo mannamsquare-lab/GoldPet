@@ -18,8 +18,8 @@ import com.goldpet.domain.course.repository.WalkCourseRepository
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.entity.WalkSpotType
 import com.goldpet.domain.walk.repository.WalkRepository
-import com.goldpet.infra.naver.NaverGeocodingService
-import com.goldpet.infra.naver.NaverStaticMapService
+import com.goldpet.infra.GeocodingService
+import com.goldpet.infra.StaticMapService
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
@@ -40,8 +40,8 @@ class CourseService(
     private val courseSpotRepository: CourseSpotRepository,
     private val userRepository: UserRepository,
     private val walkRepository: WalkRepository,
-    private val naverGeocodingService: NaverGeocodingService,
-    private val naverStaticMapService: NaverStaticMapService,
+    private val geocodingService: GeocodingService,
+    private val staticMapService: StaticMapService,
     private val amazonS3: AmazonS3,
     @Value("\${S3_PUBLIC_BUCKET_NAME:goldpet-public}") private val publicBucketName: String,
     @Value("\${S3_PUBLIC_ENDPOINT:http://localhost:9100}") private val publicEndpoint: String
@@ -59,13 +59,13 @@ class CourseService(
         val startLocation = geometryFactory.createPoint(Coordinate(startCoord.x, startCoord.y))
 
         val geocodeResult = try {
-            naverGeocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
+            geocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
         } catch (e: Exception) {
             log.warn("Reverse geocoding failed for course creation: {}", e.message)
-            NaverGeocodingService.ReverseGeocodeResult("알 수 없는 위치", null)
+            GeocodingService.ReverseGeocodeResult("알 수 없는 위치", null)
         }
         val endAddress = if (path.coordinates.size > 1) {
-            try { naverGeocodingService.reverseGeocode(endCoord.y, endCoord.x) } catch (e: Exception) { null }
+            try { geocodingService.reverseGeocode(endCoord.y, endCoord.x) } catch (e: Exception) { null }
         } else null
 
         val course = WalkCourse(
@@ -124,7 +124,7 @@ class CourseService(
         val endCoord = newPath.coordinates.last()
         course.startLocation = geometryFactory.createPoint(Coordinate(startCoord.x, startCoord.y))
         val updateGeocodeResult = try {
-            naverGeocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
+            geocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
         } catch (e: Exception) {
             log.warn("Reverse geocoding failed for course update: {}", e.message)
             null
@@ -135,7 +135,7 @@ class CourseService(
             course.province = updateGeocodeResult.province
         }
         course.endAddress = if (newPath.coordinates.size > 1) {
-            try { naverGeocodingService.reverseGeocode(endCoord.y, endCoord.x) } catch (e: Exception) { course.endAddress }
+            try { geocodingService.reverseGeocode(endCoord.y, endCoord.x) } catch (e: Exception) { course.endAddress }
         } else course.endAddress
 
         // Regenerate thumbnail
@@ -231,9 +231,9 @@ class CourseService(
         val startCoord = walk.path.coordinates.first()
         val startLocation = geometryFactory.createPoint(Coordinate(startCoord.x, startCoord.y))
         val walkGeocodeResult = try {
-            naverGeocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
+            geocodingService.reverseGeocodeStructured(startCoord.y, startCoord.x)
         } catch (e: Exception) {
-            NaverGeocodingService.ReverseGeocodeResult("알 수 없는 위치", null)
+            GeocodingService.ReverseGeocodeResult("알 수 없는 위치", null)
         }
 
         val course = WalkCourse(
@@ -298,9 +298,22 @@ class CourseService(
         }
     }
 
+    @Transactional
+    fun regenerateThumbnail(courseId: Long) {
+        val course = walkCourseRepository.findById(courseId)
+            .orElseThrow { NotFoundException("Course not found: $courseId") }
+        val coordinates = course.path?.coordinates ?: return
+        if (coordinates.size < 2) return
+        val thumbnailUrl = generateAndUploadThumbnail(courseId, coordinates)
+        if (thumbnailUrl != null) {
+            course.thumbnailUrl = thumbnailUrl
+            walkCourseRepository.save(course)
+        }
+    }
+
     private fun generateAndUploadThumbnail(courseId: Long, coordinates: Array<Coordinate>): String? {
         return try {
-            val imageBytes = naverStaticMapService.getStaticMapImage(coordinates, 600, 400) ?: return null
+            val imageBytes = staticMapService.getStaticMapImage(coordinates, 600, 400) ?: return null
             val key = "courses/thumbnails/${courseId}_${UUID.randomUUID()}.png"
             val metadata = ObjectMetadata().apply {
                 contentType = "image/png"

@@ -145,4 +145,11 @@ class AdminCourseController(
         courseService.deleteComment(commentId)
         return ResponseEntity.noContent().build()
     }
+
+    @Operation(summary = "코스 썸네일 일괄 재생성 (Google Maps 마이그레이션용)")
+    @PostMapping("/regenerate-thumbnails")
+    fun regenerateThumbnails(): ResponseEntity<Map<String, Any>> {
+        val result = courseService.regenerateAllThumbnails()
+        return ResponseEntity.ok(result)
+    }
 }

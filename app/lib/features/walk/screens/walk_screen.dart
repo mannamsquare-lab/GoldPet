@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/webview/hybrid_webview.dart';
@@ -213,25 +213,24 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
                 Positioned.fill(
                   child: trackingIsInitializing
                       ? const Center(child: CircularProgressIndicator())
-                      : NaverMap(
+                      : GoogleMap(
                           key: _mapKey,
-                          options: NaverMapViewOptions(
-                            initialCameraPosition: trackingInitialPosition != null
-                                ? NCameraPosition(target: trackingInitialPosition!, zoom: 16)
-                                : const NCameraPosition(
-                                    target: NLatLng(37.5665, 126.9780),
-                                    zoom: 16,
-                                  ),
-                            locationButtonEnable: true,
-                            logoClickEnable: false,
-                            consumeSymbolTapEvents: false,
+                          initialCameraPosition: CameraPosition(
+                            target: trackingInitialPosition ?? const LatLng(37.5665, 126.9780),
+                            zoom: 16,
                           ),
-                          onMapReady: (controller) {
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: false,
+                          zoomControlsEnabled: false,
+                          mapToolbarEnabled: false,
+                          onMapCreated: (controller) {
                             trackingMapController = controller;
-                            controller.setLocationTrackingMode(
-                              NLocationTrackingMode.follow,
-                            );
                           },
+                          onCameraMoveStarted: () {
+                            onCameraMoveStartedByUser();
+                          },
+                          markers: trackingMarkers,
+                          polylines: trackingPolylines,
                         ),
                 ),
 

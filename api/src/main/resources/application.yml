@@ -117,8 +117,7 @@ S3_SECRET_KEY: ${MINIO_SECRET_KEY:goldpet-s3-secret-key}
 S3_PUBLIC_BUCKET_NAME: ${MINIO_PUBLIC_BUCKET:goldpet-public}
 S3_PRIVATE_BUCKET_NAME: ${MINIO_PRIVATE_BUCKET:goldpet-private}
 
-# Naver Cloud Platform Maps API
-ncp:
+# Google Maps Platform API
+google:
   maps:
-    client-id: ${NCP_MAPS_CLIENT_ID:your-ncp-maps-client-id}
-    client-secret: ${NCP_MAPS_CLIENT_SECRET:your-ncp-maps-client-secret}
+    api-key: ${GOOGLE_MAPS_API_KEY:}

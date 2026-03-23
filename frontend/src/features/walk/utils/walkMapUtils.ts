@@ -36,74 +36,22 @@ export function petCircleMarkerHtml(variant: 'start' | 'end', imageUrl?: string 
     return `<div class="walk_pet_circle walk_pet_circle--${variant}"><img src="${imgSrc}" alt="" /></div>`;
 }
 
-interface SvgOverlayInstance extends naver.maps.OverlayView {
-    _path: naver.maps.LatLng[];
-    _el: HTMLElement | null;
-}
-
-/** Create an SVG-based path overlay using OverlayView.
- *  Uses DOM rendering (same as Marker) so the path stays aligned with
- *  markers at all zoom levels. SVG is sized to its bounding box to avoid
- *  Chromium clipping zero-dimension elements. */
-export function createSvgPathOverlay(
-    map: naver.maps.Map,
-    path: naver.maps.LatLng[],
-    options: { strokeColor?: string; strokeWeight?: number; strokeOpacity?: number } = {},
-): { setMap: (map: naver.maps.Map | null) => void } {
-    const color = options.strokeColor || '#6B9A2B';
-    const weight = options.strokeWeight || 4;
-    const opacity = options.strokeOpacity || 0.9;
-
-    const Ctor = function (this: SvgOverlayInstance) {
-        this._path = path;
-        this._el = null;
-    };
-    Ctor.prototype = new naver.maps.OverlayView();
-    Ctor.prototype.constructor = Ctor;
-
-    Ctor.prototype.onAdd = function (this: SvgOverlayInstance) {
-        const el = document.createElement('div');
-        el.style.position = 'absolute';
-        el.style.left = '0';
-        el.style.top = '0';
-        el.style.pointerEvents = 'none';
-        this._el = el;
-        this.getPanes().overlayLayer.appendChild(el);
-    };
-
-    Ctor.prototype.draw = function (this: SvgOverlayInstance) {
-        const proj = this.getProjection();
-        if (!proj || !this._path.length || !this._el) return;
-        const pxs: { x: number; y: number }[] = [];
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        for (let i = 0; i < this._path.length; i++) {
-            const px = proj.fromCoordToOffset(this._path[i]);
-            pxs.push(px);
-            if (px.x < minX) minX = px.x;
-            if (px.y < minY) minY = px.y;
-            if (px.x > maxX) maxX = px.x;
-            if (px.y > maxY) maxY = px.y;
-        }
-        const pad = weight + 2;
-        const svgW = maxX - minX + pad * 2;
-        const svgH = maxY - minY + pad * 2;
-        const svgPoints = pxs.map(p => `${p.x - minX + pad},${p.y - minY + pad}`).join(' ');
-        this._el.style.left = (minX - pad) + 'px';
-        this._el.style.top = (minY - pad) + 'px';
-        this._el.innerHTML =
-            `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">` +
-            `<polyline points="${svgPoints}" fill="none" stroke="${color}" stroke-width="${weight}" stroke-opacity="${opacity}" stroke-linecap="round" stroke-linejoin="round"/>` +
-            `</svg>`;
-    };
-
-    Ctor.prototype.onRemove = function (this: SvgOverlayInstance) {
-        if (this._el?.parentNode) this._el.parentNode.removeChild(this._el);
-        this._el = null;
-    };
-
-    const overlay = new (Ctor as unknown as new () => SvgOverlayInstance)();
-    overlay.setMap(map);
-    return overlay;
+/** Create a Google Maps Polyline from an array of lat/lng points. */
+export function createPolylinePath(
+    map: google.maps.Map,
+    points: Array<{lat: number, lng: number}>,
+    options?: { strokeColor?: string; strokeWeight?: number; strokeOpacity?: number }
+): google.maps.Polyline {
+    const { strokeColor = '#6B9A2B', strokeWeight = 4, strokeOpacity = 0.9 } = options || {};
+    const path = points.map(p => new google.maps.LatLng(p.lat, p.lng));
+    const polyline = new google.maps.Polyline({
+        path,
+        strokeColor,
+        strokeWeight,
+        strokeOpacity,
+        map,
+    });
+    return polyline;
 }
 
 /** Snap a point to the nearest position on a polyline path.

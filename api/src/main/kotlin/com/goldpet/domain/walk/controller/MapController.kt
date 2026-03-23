@@ -2,8 +2,8 @@ package com.goldpet.domain.walk.controller
 
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.walk.repository.WalkRepository
-import com.goldpet.infra.naver.NaverGeocodingService
-import com.goldpet.infra.naver.NaverStaticMapService
+import com.goldpet.infra.GeocodingService
+import com.goldpet.infra.StaticMapService
 import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit
 @RestController
 @RequestMapping("/api/v1/maps")
 class MapController(
-    private val naverGeocodingService: NaverGeocodingService,
-    private val naverStaticMapService: NaverStaticMapService,
+    private val geocodingService: GeocodingService,
+    private val staticMapService: StaticMapService,
     private val walkRepository: WalkRepository
 ) {
     @GetMapping("/reverse-geocode")
@@ -23,15 +23,15 @@ class MapController(
         @RequestParam lat: Double,
         @RequestParam lng: Double
     ): ResponseEntity<Map<String, String?>> {
-        val result = naverGeocodingService.reverseGeocodeStructured(lat, lng)
+        val result = geocodingService.reverseGeocodeStructured(lat, lng)
         return ResponseEntity.ok(mapOf("address" to result.fullAddress, "province" to result.province))
     }
 
     @GetMapping("/geocode")
     fun geocode(
         @RequestParam address: String
-    ): ResponseEntity<Map<String, List<NaverGeocodingService.GeocodeResult>>> {
-        val results = naverGeocodingService.geocode(address)
+    ): ResponseEntity<Map<String, List<GeocodingService.GeocodeResult>>> {
+        val results = geocodingService.geocode(address)
         return ResponseEntity.ok(mapOf("results" to results))
     }
 
@@ -63,7 +63,7 @@ class MapController(
         val width = w.coerceIn(60, 600)
         val height = h.coerceIn(60, 600)
 
-        val imageBytes = naverStaticMapService.getStaticMapImage(coordinates, width, height)
+        val imageBytes = staticMapService.getStaticMapImage(coordinates, width, height)
             ?: return ResponseEntity.status(502).build()
 
         return ResponseEntity.ok()

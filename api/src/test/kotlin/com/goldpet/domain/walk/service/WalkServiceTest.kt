@@ -13,7 +13,7 @@ import com.goldpet.domain.walk.entity.Walk
 import com.goldpet.domain.walk.repository.BestWalkCoupleRepository
 import com.goldpet.domain.walk.repository.WalkRepository
 import com.goldpet.domain.pet.repository.PetRepository
-import com.goldpet.infra.naver.NaverGeocodingService
+import com.goldpet.infra.GeocodingService
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.context.ApplicationEventPublisher
 import org.junit.jupiter.api.BeforeEach
@@ -51,7 +51,7 @@ class WalkServiceTest {
     private lateinit var petRepository: PetRepository
 
     @Mock
-    private lateinit var naverGeocodingService: NaverGeocodingService
+    private lateinit var geocodingService: GeocodingService
 
     @Mock
     private lateinit var applicationEventPublisher: ApplicationEventPublisher
@@ -67,8 +67,8 @@ class WalkServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        walkService = WalkService(walkRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, naverGeocodingService, applicationEventPublisher, systemSettingService)
-        whenever(naverGeocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
+        walkService = WalkService(walkRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, geocodingService, applicationEventPublisher, systemSettingService)
+        whenever(geocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
     }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { loadMapsApi } from '../../hooks/useGoogleMap';
 import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
@@ -9,7 +10,7 @@ import { WalkChart, aggregateDaily, aggregateWeekly, aggregateMonthly } from './
 import type { WalkDataPoint } from './components/WalkChart';
 import { useAuthStore } from '../../stores/authStore';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
-import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, createSvgPathOverlay } from './utils/walkMapUtils';
+import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, createPolylinePath } from './utils/walkMapUtils';
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
 import './WalkDetail.css';
 
@@ -124,20 +125,19 @@ export const WalkDetailPage = () => {
         enabled: walkOwnerId != null,
     });
 
-    // Direct map initialization (same pattern as WalkMapExpandPage)
+    // Direct map initialization
     const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<naver.maps.Map | null>(null);
-    const pathOverlayRef = useRef<{ setMap: (map: naver.maps.Map | null) => void } | null>(null);
-    const spotMarkersRef = useRef<naver.maps.Marker[]>([]);
-    const petMarkersRef = useRef<naver.maps.Marker[]>([]);
-    const listenersRef = useRef<naver.maps.MapEventListener[]>([]);
+    const mapInstanceRef = useRef<google.maps.Map | null>(null);
+    const polylineRef = useRef<google.maps.Polyline | null>(null);
+    const spotMarkersRef = useRef<google.maps.Marker[]>([]);
+    const petMarkersRef = useRef<google.maps.Marker[]>([]);
+    const listenersRef = useRef<google.maps.MapsEventListener[]>([]);
     const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
 
     // Init map
     useEffect(() => {
         let cancelled = false;
-        let pollTimer: ReturnType<typeof setInterval>;
         let resizeObserver: ResizeObserver | null = null;
 
         const initMap = (lat: number, lng: number) => {
@@ -148,24 +148,27 @@ export const WalkDetailPage = () => {
                 return;
             }
             try {
-                const center = new naver.maps.LatLng(lat, lng);
-                mapInstanceRef.current = new naver.maps.Map(el, {
+                const center = new google.maps.LatLng(lat, lng);
+                mapInstanceRef.current = new google.maps.Map(el, {
                     center,
                     zoom: 15,
                     mapTypeControl: false,
                     zoomControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
                     scaleControl: false,
-                    mapDataControl: false,
+                    rotateControl: false,
+                    keyboardShortcuts: false,
+                    gestureHandling: 'greedy',
                 });
                 setMapReady(true);
-                // Track container resizes and sync map internal size via setSize()
-                // Naver Maps v3 does NOT auto-update internal size on CSS changes
+                // Track container resizes and trigger Google Maps resize
                 const syncMapSize = () => {
                     if (mapInstanceRef.current && mapRef.current) {
                         const w = mapRef.current.clientWidth;
                         const h = mapRef.current.clientHeight;
                         if (w > 0 && h > 0) {
-                            mapInstanceRef.current.setSize(new naver.maps.Size(w, h));
+                            google.maps.event.trigger(mapInstanceRef.current, 'resize');
                         }
                     }
                 };
@@ -178,12 +181,6 @@ export const WalkDetailPage = () => {
                 // Keep synced on future resizes (orientation change, etc.)
                 resizeObserver = new ResizeObserver(() => syncMapSize());
                 resizeObserver.observe(el);
-                setTimeout(() => {
-                    if (cancelled) return;
-                    if (!mapInstanceRef.current || (mapRef.current && mapRef.current.querySelectorAll('img').length === 0)) {
-                        setMapLoadFailed(true);
-                    }
-                }, 3000);
             } catch {
                 setMapLoadFailed(true);
             }
@@ -196,42 +193,32 @@ export const WalkDetailPage = () => {
             setTimeout(() => { if (!cancelled) initMap(lat, lng); }, 100);
         };
 
-        if (window.naver?.maps) {
-            setup();
-        } else {
-            let attempts = 0;
-            pollTimer = setInterval(() => {
-                attempts++;
-                if (window.naver?.maps) {
-                    clearInterval(pollTimer);
-                    setup();
-                } else if (attempts >= 50) {
-                    clearInterval(pollTimer);
-                    setMapLoadFailed(true);
-                }
-            }, 200);
-        }
+        loadMapsApi()
+            .then(() => {
+                if (!cancelled) setup();
+            })
+            .catch((e) => {
+                console.error('[WalkDetail] Failed to load Google Maps API:', e);
+                if (!cancelled) setMapLoadFailed(true);
+            });
 
         return () => {
             cancelled = true;
-            if (pollTimer) clearInterval(pollTimer);
             if (resizeObserver) resizeObserver.disconnect();
             listenersRef.current.forEach(l => {
-                try { naver.maps.Event.removeListener(l); } catch (e) { console.error('WalkDetail: failed to remove listener', e); }
+                try { google.maps.event.removeListener(l); } catch (e) { console.error('WalkDetail: failed to remove listener', e); }
             });
             listenersRef.current = [];
             spotMarkersRef.current.forEach(m => m.setMap(null));
             spotMarkersRef.current = [];
             petMarkersRef.current.forEach(m => m.setMap(null));
             petMarkersRef.current = [];
-            if (pathOverlayRef.current) {
-                pathOverlayRef.current.setMap(null);
-                pathOverlayRef.current = null;
+            if (polylineRef.current) {
+                polylineRef.current.setMap(null);
+                polylineRef.current = null;
             }
-            if (mapInstanceRef.current) {
-                mapInstanceRef.current.destroy();
-                mapInstanceRef.current = null;
-            }
+            // Google Maps has no destroy() — null the reference for GC
+            mapInstanceRef.current = null;
             setMapReady(false);
         };
     }, [walkDetail?.startLatitude, walkDetail?.startLongitude]);
@@ -241,11 +228,11 @@ export const WalkDetailPage = () => {
         if (!mapReady || !mapInstanceRef.current || !walkDetail?.pathPoints?.length) return;
         try {
             // Clean up previous drawings
-            if (pathOverlayRef.current) {
-                pathOverlayRef.current.setMap(null);
+            if (polylineRef.current) {
+                polylineRef.current.setMap(null);
             }
             listenersRef.current.forEach(l => {
-                try { naver.maps.Event.removeListener(l); } catch (e) { console.error('WalkDetail: failed to remove listener', e); }
+                try { google.maps.event.removeListener(l); } catch (e) { console.error('WalkDetail: failed to remove listener', e); }
             });
             listenersRef.current = [];
             spotMarkersRef.current.forEach(m => m.setMap(null));
@@ -255,65 +242,121 @@ export const WalkDetailPage = () => {
 
             const points = walkDetail.pathPoints
                 .filter((p: { lat: number; lng: number }) => p.lat != null && p.lng != null)
-                .map((p: { lat: number; lng: number }) => new naver.maps.LatLng(p.lat, p.lng));
+                .map((p: { lat: number; lng: number }) => ({ lat: p.lat, lng: p.lng }));
             if (points.length === 0) return;
 
-            // Use SVG OverlayView instead of Polyline to avoid canvas-DOM
-            // coordinate divergence at high zoom in WebView
-            pathOverlayRef.current = createSvgPathOverlay(mapInstanceRef.current, points, {
+            // Use Google Maps Polyline
+            polylineRef.current = createPolylinePath(mapInstanceRef.current, points, {
                 strokeColor: '#6B9A2B',
                 strokeWeight: 4,
                 strokeOpacity: 0.9,
             });
 
             // Fit bounds (include path + spots)
-            const bounds = points.length > 1
-                ? new naver.maps.LatLngBounds(points[0], points[0])
-                : null;
-            if (bounds) points.forEach(p => bounds.extend(p));
+            const bounds = new google.maps.LatLngBounds();
+            points.forEach(p => bounds.extend(new google.maps.LatLng(p.lat, p.lng)));
 
             // Pet profile markers at start and end
             if (points.length > 0) {
                 const petImg = walkDetail.petProfileImageUrls?.[0];
-                const startMarker = new naver.maps.Marker({
+                const startMarker = new google.maps.Marker({
                     map: mapInstanceRef.current,
-                    position: points[0],
+                    position: new google.maps.LatLng(points[0].lat, points[0].lng),
                     icon: {
-                        content: petCircleMarkerHtml('start', petImg),
-                        size: new naver.maps.Size(52, 52),
-                        anchor: new naver.maps.Point(26, 26),
-                    } as unknown as naver.maps.MarkerIcon,
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>'),
+                        scaledSize: new google.maps.Size(52, 52),
+                        anchor: new google.maps.Point(26, 26),
+                    },
                 });
-                const endMarker = new naver.maps.Marker({
+                // Use label with custom HTML via OverlayView is complex; use a simple marker with custom icon
+                // For pet circle markers, we create a transparent marker and overlay HTML
+                const startOverlay = new google.maps.marker.AdvancedMarkerElement?.({
                     map: mapInstanceRef.current,
-                    position: points[points.length - 1],
-                    icon: {
-                        content: petCircleMarkerHtml('end', petImg),
-                        size: new naver.maps.Size(52, 52),
-                        anchor: new naver.maps.Point(26, 26),
-                    } as unknown as naver.maps.MarkerIcon,
-                });
-                petMarkersRef.current.push(startMarker, endMarker);
+                    position: new google.maps.LatLng(points[0].lat, points[0].lng),
+                }) ?? startMarker;
+                void startOverlay;
+                // Fallback: use content-based markers via a helper div
+                const startDiv = document.createElement('div');
+                startDiv.innerHTML = petCircleMarkerHtml('start', petImg);
+                const endDiv = document.createElement('div');
+                endDiv.innerHTML = petCircleMarkerHtml('end', petImg);
+
+                // Google Maps Marker doesn't support HTML content directly like Naver.
+                // Use a simple transparent icon marker as a positional anchor.
+                // The pet circle overlay approach: create custom OverlayView
+                startMarker.setMap(null); // remove the placeholder
+
+                const PetOverlay = class extends google.maps.OverlayView {
+                    private pos: google.maps.LatLng;
+                    private div: HTMLDivElement | null = null;
+                    private html: string;
+                    constructor(pos: google.maps.LatLng, html: string) {
+                        super();
+                        this.pos = pos;
+                        this.html = html;
+                    }
+                    onAdd() {
+                        this.div = document.createElement('div');
+                        this.div.style.position = 'absolute';
+                        this.div.style.pointerEvents = 'none';
+                        this.div.innerHTML = this.html;
+                        this.getPanes()!.overlayLayer.appendChild(this.div);
+                    }
+                    draw() {
+                        if (!this.div) return;
+                        const proj = this.getProjection();
+                        const px = proj.fromLatLngToDivPixel(this.pos);
+                        if (px) {
+                            this.div.style.left = (px.x - 26) + 'px';
+                            this.div.style.top = (px.y - 26) + 'px';
+                        }
+                    }
+                    onRemove() {
+                        if (this.div?.parentNode) this.div.parentNode.removeChild(this.div);
+                        this.div = null;
+                    }
+                    remove() {
+                        this.setMap(null);
+                    }
+                };
+
+                const startPetOverlay = new PetOverlay(
+                    new google.maps.LatLng(points[0].lat, points[0].lng),
+                    petCircleMarkerHtml('start', petImg),
+                );
+                startPetOverlay.setMap(mapInstanceRef.current);
+
+                const endPetOverlay = new PetOverlay(
+                    new google.maps.LatLng(points[points.length - 1].lat, points[points.length - 1].lng),
+                    petCircleMarkerHtml('end', petImg),
+                );
+                endPetOverlay.setMap(mapInstanceRef.current);
+
+                // Store as markers with setMap interface for cleanup
+                petMarkersRef.current.push(
+                    { setMap: (m: google.maps.Map | null) => { if (m === null) startPetOverlay.setMap(null); } } as unknown as google.maps.Marker,
+                    { setMap: (m: google.maps.Map | null) => { if (m === null) endPetOverlay.setMap(null); } } as unknown as google.maps.Marker,
+                );
             }
 
             // Draw spot markers with click listeners
             if (walkDetail.spots?.length) {
                 walkDetail.spots.forEach((spot: WalkSpot) => {
                     if (spot.latitude == null || spot.longitude == null) return;
-                    const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
-                    if (bounds) bounds.extend(pos);
+                    const pos = new google.maps.LatLng(spot.latitude, spot.longitude);
+                    bounds.extend(pos);
                     const imgSrc = spotMarkerImage(spot.type ?? 'OTHER');
-                    const marker = new naver.maps.Marker({
+                    const marker = new google.maps.Marker({
                         map: mapInstanceRef.current!,
                         position: pos,
                         icon: {
-                            content: `<img src="${imgSrc}" width="32" height="32" style="display:block;" alt="${spot.type}" />`,
-                            size: new naver.maps.Size(32, 32),
-                            anchor: new naver.maps.Point(16, 16),
-                        } as unknown as naver.maps.MarkerIcon,
+                            url: imgSrc,
+                            scaledSize: new google.maps.Size(32, 32),
+                            anchor: new google.maps.Point(16, 16),
+                        },
                     });
                     spotMarkersRef.current.push(marker);
-                    const listener = naver.maps.Event.addListener(marker, 'click', () => {
+                    const listener = google.maps.event.addListener(marker, 'click', () => {
                         setSelectedSpot(spot);
                         if (spot.type === 'PHOTO' && spot.imageUrl) resolvePreview(spot);
                         if (mapInstanceRef.current) {
@@ -324,10 +367,10 @@ export const WalkDetailPage = () => {
                 });
             }
 
-            if (bounds) {
+            if (points.length > 1) {
                 mapInstanceRef.current.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 20 });
             } else if (points.length === 1) {
-                mapInstanceRef.current.setCenter(points[0]);
+                mapInstanceRef.current.setCenter(new google.maps.LatLng(points[0].lat, points[0].lng));
                 mapInstanceRef.current.setZoom(16);
             }
         } catch (err) {

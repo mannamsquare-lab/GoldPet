@@ -2,6 +2,7 @@ import Flutter
 import UIKit
 import UserNotifications
 import ActivityKit
+import GoogleMaps
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -13,6 +14,7 @@ import ActivityKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    GMSServices.provideAPIKey("AIzaSyBCsxN4ucISDFjks0gnrqRPbl6fTgQ85a0")
     GeneratedPluginRegistrant.register(with: self)
 
     // WKWebView 키보드 위 네비게이션 바(↑↓✓) 제거 (카카오톡 스타일)

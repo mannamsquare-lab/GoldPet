@@ -22,9 +22,6 @@
 -keep class com.nhn.android.naverlogin.** { *; }
 -keep class com.example.flutter_naver_login.** { *; }
 
-# Naver Maps
--keep class com.naver.maps.** { *; }
-
 # AndroidX Browser (CustomTabs - used by Naver Login)
 -keep class androidx.browser.** { *; }
 

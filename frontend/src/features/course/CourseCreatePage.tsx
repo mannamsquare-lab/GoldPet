@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { loadMapsApi } from '../../hooks/useGoogleMap';
 import { MainHeader } from '../../components/common/MainHeader';
 import {
   courseService,
@@ -13,7 +14,7 @@ import {
 import { walkService } from '../../services/walkService';
 import { SPOT_TYPES, spotLabel } from './utils/courseHelpers';
 import { SpotIcon, spotIconUrl } from './components/SpotIcon';
-import { createSvgPathOverlay } from '../walk/utils/walkMapUtils';
+import { createPolylinePath } from '../walk/utils/walkMapUtils';
 import { useAlert } from '../../contexts/AlertContext';
 import './CourseCreatePage.css';
 import { nativeBridge } from '../../bridge/nativeBridge';
@@ -68,6 +69,13 @@ function calcTotalDistance(waypoints: [number, number][]): number {
     total += haversine(waypoints[i - 1][0], waypoints[i - 1][1], waypoints[i][0], waypoints[i][1]);
   }
   return Math.round(total * 100) / 100;
+}
+
+// ── SVG circle icon as data URI for Google Maps Marker ───────────────────────
+
+function circleIconUrl(color: string, size: number): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${color}" stroke="#fff" stroke-width="2"/></svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 // ── Local spot type (before saving) ─────────────────────────────────────────
@@ -175,12 +183,11 @@ export function CourseCreatePage() {
 
   // Map refs
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<naver.maps.Map | null>(null);
-  const polylineRef = useRef<{ setMap: (map: naver.maps.Map | null) => void } | null>(null);
-  const waypointMarkersRef = useRef<naver.maps.Marker[]>([]);
-  const spotMarkersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const clickListenerRef = useRef<any[]>([]);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const polylineRef = useRef<google.maps.Polyline | null>(null);
+  const waypointMarkersRef = useRef<google.maps.Marker[]>([]);
+  const spotMarkersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const clickListenerRef = useRef<google.maps.MapsEventListener[]>([]);
   const [mapReady, setMapReady] = useState(false);
 
   // State
@@ -316,8 +323,8 @@ export function CourseCreatePage() {
     }
     if (pts.length < 2) return;
 
-    const path = pts.map(([lat, lng]) => new naver.maps.LatLng(lat, lng));
-    polylineRef.current = createSvgPathOverlay(map, path, {
+    const path = pts.map(([lat, lng]) => ({ lat, lng }));
+    polylineRef.current = createPolylinePath(map, path, {
       strokeColor: '#614108',
       strokeWeight: 4,
       strokeOpacity: 0.85,
@@ -334,29 +341,32 @@ export function CourseCreatePage() {
     pts.forEach((pt, idx) => {
       const isFirst = idx === 0;
       const isLast = idx === pts.length - 1 && pts.length > 1;
-      let content: string;
+      let color: string;
+      let size: number;
       if (isFirst) {
-        content = '<div style="width:14px;height:14px;border-radius:50%;background:#614108;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>';
+        color = '#614108';
+        size = 14;
       } else if (isLast) {
-        content = '<div style="width:14px;height:14px;border-radius:50%;background:#E74C3C;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>';
+        color = '#E74C3C';
+        size = 14;
       } else {
-        content = `<div style="width:10px;height:10px;border-radius:50%;background:#c8a96e;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>`;
+        color = '#c8a96e';
+        size = 10;
       }
 
-      const marker = new naver.maps.Marker({
+      const marker = new google.maps.Marker({
         map,
-        position: new naver.maps.LatLng(pt[0], pt[1]),
+        position: new google.maps.LatLng(pt[0], pt[1]),
         icon: {
-          content,
-          size: new naver.maps.Size(14, 14),
-          anchor: new naver.maps.Point(7, 7),
-        } as unknown as naver.maps.MarkerIcon,
+          url: circleIconUrl(color, size),
+          scaledSize: new google.maps.Size(size, size),
+          anchor: new google.maps.Point(size / 2, size / 2),
+        },
         draggable: true,
       });
 
-      // Tap marker to remove it (consistent with map 'tap' event)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (naver.maps as any).Event.addListener(marker, 'tap', () => {
+      // Tap marker to remove it
+      google.maps.event.addListener(marker, 'click', () => {
         setWaypoints(prev => {
           const next = prev.filter((_, i) => i !== idx);
           return next;
@@ -364,10 +374,11 @@ export function CourseCreatePage() {
       });
 
       // Drag marker to update coordinates
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (naver.maps as any).Event.addListener(marker, 'dragend', (e: { coord: naver.maps.LatLng }) => {
+      google.maps.event.addListener(marker, 'dragend', () => {
+        const pos = marker.getPosition();
+        if (!pos) return;
         setWaypoints(prev => prev.map((p, i) =>
-          i === idx ? [e.coord.lat(), e.coord.lng()] as [number, number] : p
+          i === idx ? [pos.lat(), pos.lng()] as [number, number] : p
         ));
       });
 
@@ -380,23 +391,23 @@ export function CourseCreatePage() {
     if (!map) return;
 
     const iconSrc = spotIconUrl(spot.type);
-    const label = escapeHtml(spot.name || spotLabel(spot.type));
-    const marker = new naver.maps.Marker({
+    const marker = new google.maps.Marker({
       map,
-      position: new naver.maps.LatLng(spot.lat, spot.lng),
+      position: new google.maps.LatLng(spot.lat, spot.lng),
       icon: {
-        content: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid #e0d5c8;box-shadow:0 1px 4px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center;"><img src="${iconSrc}" width="20" height="20" style="display:block;" alt="" /></div><div style="background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">${label}</div></div>`,
-        size: new naver.maps.Size(64, 50),
-        anchor: new naver.maps.Point(32, 16),
-      } as unknown as naver.maps.MarkerIcon,
+        url: iconSrc,
+        scaledSize: new google.maps.Size(32, 32),
+        anchor: new google.maps.Point(16, 16),
+      },
       draggable: true,
     });
 
     // Drag marker to update spot coordinates
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (naver.maps as any).Event.addListener(marker, 'dragend', (e: { coord: naver.maps.LatLng }) => {
+    google.maps.event.addListener(marker, 'dragend', () => {
+      const pos = marker.getPosition();
+      if (!pos) return;
       setSpots(prev => prev.map(s =>
-        s.id === spot.id ? { ...s, lat: e.coord.lat(), lng: e.coord.lng() } : s
+        s.id === spot.id ? { ...s, lat: pos.lat(), lng: pos.lng() } : s
       ));
     });
 
@@ -423,9 +434,8 @@ export function CourseCreatePage() {
       initialFitDoneRef.current = true;
       const map = mapInstanceRef.current;
       if (map) {
-        const pts = waypoints.map(([lat, lng]) => new naver.maps.LatLng(lat, lng));
-        const bounds = new naver.maps.LatLngBounds(pts[0], pts[0]);
-        for (const pt of pts) bounds.extend(pt);
+        const bounds = new google.maps.LatLngBounds();
+        for (const [lat, lng] of waypoints) bounds.extend({ lat, lng });
         map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
       }
     }
@@ -439,55 +449,55 @@ export function CourseCreatePage() {
       return;
     }
 
-    const defaultCenter = new naver.maps.LatLng(37.5665, 126.9780);
+    const defaultCenter = new google.maps.LatLng(37.5665, 126.9780);
     try {
-      mapInstanceRef.current = new naver.maps.Map(el, {
+      mapInstanceRef.current = new google.maps.Map(el, {
         center: defaultCenter,
         zoom: 15,
         mapTypeControl: false,
         zoomControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
         scaleControl: false,
-        mapDataControl: false,
+        rotateControl: false,
+        keyboardShortcuts: false,
+        gestureHandling: 'greedy',
       });
 
       setMapReady(true);
 
       // Track pinch-to-zoom via zoom_changed to filter gesture-related events
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const zoomListener = (naver.maps as any).Event.addListener(
+      const zoomListener = google.maps.event.addListener(
         mapInstanceRef.current, 'zoom_changed', () => {
           lastPinchTimeRef.current = Date.now();
         },
       );
 
-      // Map tap/click handler — add waypoint or open spot modal
-      const handleMapTap = (e: { coord: naver.maps.LatLng }) => {
-        // Ignore taps while modal is open (Android leaks tap events through modal)
+      // Map click handler — add waypoint or open spot modal
+      const handleMapClick = (e: google.maps.MapMouseEvent) => {
+        // Ignore clicks while modal is open (Android leaks tap events through modal)
         if (modalOpenRef.current) return;
         // Debounce: prevent double-fire
         const now = Date.now();
         if (now - lastClickTimeRef.current < 300) return;
-        // Ignore taps during/after pinch-to-zoom gesture
+        // Ignore clicks during/after pinch-to-zoom gesture
         if (now - lastPinchTimeRef.current < 400) return;
         lastClickTimeRef.current = now;
 
-        const lat = e.coord.lat();
-        const lng = e.coord.lng();
+        if (!e.latLng) return;
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
         setLastTapPos({ lat, lng });
         setWaypoints(prev => [...prev, [lat, lng]]);
       };
 
-      // Use 'tap' for map — Android WebView only fires 'click' on long press.
-      // Both map and marker handlers must use the same event type ('tap') to
-      // prevent cross-event interference (tap adds → click removes).
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tapL = (naver.maps as any).Event.addListener(mapInstanceRef.current, 'tap', handleMapTap);
-      clickListenerRef.current = [tapL, zoomListener];
+      const clickL = google.maps.event.addListener(mapInstanceRef.current, 'click', handleMapClick);
+      clickListenerRef.current = [clickL, zoomListener];
 
       // Try to get current position
       const setCenter = (lat: number, lng: number) => {
         if (!mapInstanceRef.current) return;
-        mapInstanceRef.current.setCenter(new naver.maps.LatLng(lat, lng));
+        mapInstanceRef.current.setCenter(new google.maps.LatLng(lat, lng));
       };
 
       const getLocation = async () => {
@@ -517,34 +527,22 @@ export function CourseCreatePage() {
 
   useEffect(() => {
     let cancelled = false;
-    let pollTimer: ReturnType<typeof setInterval>;
 
-    const tryInit = () => {
-      if (cancelled) return;
-      setTimeout(() => { if (!cancelled) initMap(); }, 100);
-    };
-
-    if (window.naver?.maps) {
-      tryInit();
-    } else {
-      let attempts = 0;
-      pollTimer = setInterval(() => {
-        attempts++;
-        if (window.naver?.maps) {
-          clearInterval(pollTimer);
-          tryInit();
-        } else if (attempts >= 50) {
-          clearInterval(pollTimer);
-          setMapLoadFailed(true);
+    loadMapsApi()
+      .then(() => {
+        if (!cancelled) {
+          setTimeout(() => { if (!cancelled) initMap(); }, 100);
         }
-      }, 200);
-    }
+      })
+      .catch((e) => {
+        console.error('[CourseCreatePage] Failed to load Google Maps API:', e);
+        if (!cancelled) setMapLoadFailed(true);
+      });
 
     return () => {
       cancelled = true;
-      if (pollTimer) clearInterval(pollTimer);
       for (const l of clickListenerRef.current) {
-        try { naver.maps.Event.removeListener(l); } catch (e) { console.error('CourseCreate: failed to remove listener', e); }
+        try { google.maps.event.removeListener(l); } catch (e) { console.error('CourseCreate: failed to remove listener', e); }
       }
       clickListenerRef.current = [];
       for (const m of waypointMarkersRef.current) m.setMap(null);
@@ -556,10 +554,8 @@ export function CourseCreatePage() {
         polylineRef.current.setMap(null);
         polylineRef.current = null;
       }
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.destroy();
-        mapInstanceRef.current = null;
-      }
+      // Google Maps has no destroy() — null the reference for GC
+      mapInstanceRef.current = null;
       setMapReady(false);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -584,7 +580,7 @@ export function CourseCreatePage() {
         if (prev && (prev.lat !== spot.lat || prev.lng !== spot.lng)) {
           const marker = spotMarkersRef.current.get(spot.id);
           if (marker) {
-            marker.setPosition(new naver.maps.LatLng(spot.lat, spot.lng));
+            marker.setPosition(new google.maps.LatLng(spot.lat, spot.lng));
           }
         }
       }
@@ -609,7 +605,9 @@ export function CourseCreatePage() {
       pos = lastTapPos;
     } else if (mapInstanceRef.current) {
       const center = mapInstanceRef.current.getCenter();
-      pos = { lat: center.lat(), lng: center.lng() };
+      if (center) {
+        pos = { lat: center.lat(), lng: center.lng() };
+      }
     }
     if (pos) {
       setLastTapPos(pos);
@@ -826,9 +824,8 @@ export function CourseCreatePage() {
           <button className="course_create_map_expand" type="button" onClick={() => {
             const map = mapInstanceRef.current;
             if (map && waypoints.length >= 2) {
-              const pts = waypoints.map(([lat, lng]) => new naver.maps.LatLng(lat, lng));
-              const bounds = new naver.maps.LatLngBounds(pts[0], pts[0]);
-              for (const pt of pts) bounds.extend(pt);
+              const bounds = new google.maps.LatLngBounds();
+              for (const [lat, lng] of waypoints) bounds.extend({ lat, lng });
               map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
             }
           }}>

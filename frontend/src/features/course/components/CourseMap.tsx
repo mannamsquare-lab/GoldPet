@@ -1,8 +1,9 @@
 import { useRef, useEffect, useCallback } from 'react';
+import { loadMapsApi } from '../../../hooks/useGoogleMap';
 import type { CourseSpotResponse } from '../../../services/courseService';
 import { spotLabel } from '../utils/courseHelpers';
 import { spotIconUrl } from './SpotIcon';
-import { createSvgPathOverlay } from '../../walk/utils/walkMapUtils';
+import { createPolylinePath } from '../../walk/utils/walkMapUtils';
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -13,11 +14,63 @@ interface CourseMapProps {
   spots: CourseSpotResponse[];
 }
 
+// We need a factory that only works after google.maps is loaded
+let HtmlMarkerOverlayClass: typeof HtmlMarkerOverlay | null = null;
+
+function getHtmlMarkerOverlayClass() {
+  if (HtmlMarkerOverlayClass) return HtmlMarkerOverlayClass;
+
+  HtmlMarkerOverlayClass = class extends google.maps.OverlayView {
+    private position: google.maps.LatLng;
+    private html: string;
+    private div: HTMLDivElement | null = null;
+    private anchorX: number;
+    private anchorY: number;
+
+    constructor(map: google.maps.Map, position: google.maps.LatLng, html: string, anchor?: { x: number; y: number }) {
+      super();
+      this.position = position;
+      this.html = html;
+      this.anchorX = anchor?.x ?? 0.5;
+      this.anchorY = anchor?.y ?? 0.5;
+      this.setMap(map);
+    }
+
+    onAdd() {
+      this.div = document.createElement('div');
+      this.div.style.position = 'absolute';
+      this.div.innerHTML = this.html;
+      const panes = this.getPanes();
+      panes?.overlayMouseTarget.appendChild(this.div);
+    }
+
+    draw() {
+      if (!this.div) return;
+      const proj = this.getProjection();
+      if (!proj) return;
+      const point = proj.fromLatLngToDivPixel(this.position);
+      if (!point) return;
+      this.div.style.left = `${point.x}px`;
+      this.div.style.top = `${point.y}px`;
+      this.div.style.transform = `translate(-${this.anchorX * 100}%, -${this.anchorY * 100}%)`;
+    }
+
+    onRemove() {
+      if (this.div?.parentNode) {
+        this.div.parentNode.removeChild(this.div);
+        this.div = null;
+      }
+    }
+  };
+
+  return HtmlMarkerOverlayClass;
+}
+
 export function CourseMap({ path, spots }: CourseMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<naver.maps.Map | null>(null);
-  const polylineRef = useRef<{ setMap: (map: naver.maps.Map | null) => void } | null>(null);
-  const markersRef = useRef<naver.maps.Marker[]>([]);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const polylineRef = useRef<google.maps.Polyline | null>(null);
+  const overlaysRef = useRef<google.maps.OverlayView[]>([]);
   const initializedRef = useRef(false);
 
   const drawCourse = useCallback(() => {
@@ -29,7 +82,7 @@ export function CourseMap({ path, spots }: CourseMapProps) {
       // Build LatLng points from [[lat, lng], ...]
       const points = path
         .filter((p) => p.length >= 2 && p[0] != null && p[1] != null)
-        .map((p) => new naver.maps.LatLng(p[0], p[1]));
+        .map((p) => ({ lat: p[0], lng: p[1] }));
 
       if (points.length === 0) return;
 
@@ -37,61 +90,51 @@ export function CourseMap({ path, spots }: CourseMapProps) {
       if (polylineRef.current) {
         polylineRef.current.setMap(null);
       }
-      polylineRef.current = createSvgPathOverlay(map, points, {
+      polylineRef.current = createPolylinePath(map, points, {
         strokeColor: '#614108',
         strokeWeight: 4,
         strokeOpacity: 0.85,
       });
 
       // Compute bounds
-      const bounds = new naver.maps.LatLngBounds(points[0], points[0]);
+      const bounds = new google.maps.LatLngBounds();
       for (const pt of points) bounds.extend(pt);
 
+      const Overlay = getHtmlMarkerOverlayClass();
+
       // Start marker
-      markersRef.current.push(
-        new naver.maps.Marker({
+      overlaysRef.current.push(
+        new Overlay(
           map,
-          position: points[0],
-          icon: {
-            content: '<div style="width:14px;height:14px;border-radius:50%;background:#614108;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>',
-            size: new naver.maps.Size(14, 14),
-            anchor: new naver.maps.Point(7, 7),
-          } as unknown as naver.maps.MarkerIcon,
-        })
+          new google.maps.LatLng(points[0].lat, points[0].lng),
+          '<div style="width:14px;height:14px;border-radius:50%;background:#614108;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>',
+        )
       );
 
       // End marker
       if (points.length > 1) {
-        markersRef.current.push(
-          new naver.maps.Marker({
+        const last = points[points.length - 1];
+        overlaysRef.current.push(
+          new Overlay(
             map,
-            position: points[points.length - 1],
-            icon: {
-              content: '<div style="width:14px;height:14px;border-radius:50%;background:#E74C3C;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>',
-              size: new naver.maps.Size(14, 14),
-              anchor: new naver.maps.Point(7, 7),
-            } as unknown as naver.maps.MarkerIcon,
-          })
+            new google.maps.LatLng(last.lat, last.lng),
+            '<div style="width:14px;height:14px;border-radius:50%;background:#E74C3C;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>',
+          )
         );
       }
 
       // Spot markers
       for (const spot of spots) {
         if (spot.latitude == null || spot.longitude == null) continue;
-        const pos = new naver.maps.LatLng(spot.latitude, spot.longitude);
-        bounds.extend(pos);
+        bounds.extend({ lat: spot.latitude, lng: spot.longitude });
         const iconSrc = spotIconUrl(spot.type);
         const label = escapeHtml(spot.name || spotLabel(spot.type));
-        markersRef.current.push(
-          new naver.maps.Marker({
+        overlaysRef.current.push(
+          new Overlay(
             map,
-            position: pos,
-            icon: {
-              content: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid #e0d5c8;box-shadow:0 1px 4px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center;"><img src="${iconSrc}" width="20" height="20" style="display:block;" alt="" /></div><div style="background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">${label}</div></div>`,
-              size: new naver.maps.Size(64, 50),
-              anchor: new naver.maps.Point(32, 16),
-            } as unknown as naver.maps.MarkerIcon,
-          })
+            new google.maps.LatLng(spot.latitude, spot.longitude),
+            `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid #e0d5c8;box-shadow:0 1px 4px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center;"><img src="${iconSrc}" width="20" height="20" style="display:block;" alt="" /></div><div style="background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">${label}</div></div>`,
+          )
         );
       }
 
@@ -104,7 +147,6 @@ export function CourseMap({ path, spots }: CourseMapProps) {
 
   useEffect(() => {
     let cancelled = false;
-    let pollTimer: ReturnType<typeof setInterval>;
 
     const initMap = () => {
       if (!mapRef.current || mapInstanceRef.current) return;
@@ -116,17 +158,21 @@ export function CourseMap({ path, spots }: CourseMapProps) {
 
       // Determine initial center from path
       const center = path.length > 0
-        ? new naver.maps.LatLng(path[0][0], path[0][1])
-        : new naver.maps.LatLng(37.5665, 126.9780);
+        ? new google.maps.LatLng(path[0][0], path[0][1])
+        : new google.maps.LatLng(37.5665, 126.9780);
 
       try {
-        mapInstanceRef.current = new naver.maps.Map(el, {
+        mapInstanceRef.current = new google.maps.Map(el, {
           center,
           zoom: 15,
           mapTypeControl: false,
           zoomControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
           scaleControl: false,
-          mapDataControl: false,
+          rotateControl: false,
+          keyboardShortcuts: false,
+          gestureHandling: 'greedy',
         });
         drawCourse();
       } catch (e) {
@@ -134,34 +180,26 @@ export function CourseMap({ path, spots }: CourseMapProps) {
       }
     };
 
-    if (window.naver?.maps) {
-      setTimeout(() => { if (!cancelled) initMap(); }, 100);
-    } else {
-      let attempts = 0;
-      pollTimer = setInterval(() => {
-        attempts++;
-        if (window.naver?.maps) {
-          clearInterval(pollTimer);
-          initMap();
-        } else if (attempts >= 50) {
-          clearInterval(pollTimer);
+    loadMapsApi()
+      .then(() => {
+        if (!cancelled) {
+          setTimeout(() => { if (!cancelled) initMap(); }, 100);
         }
-      }, 200);
-    }
+      })
+      .catch((e) => {
+        console.error('[CourseMap] Failed to load Google Maps API:', e);
+      });
 
     return () => {
       cancelled = true;
-      if (pollTimer) clearInterval(pollTimer);
-      for (const m of markersRef.current) m.setMap(null);
-      markersRef.current = [];
+      for (const o of overlaysRef.current) o.setMap(null);
+      overlaysRef.current = [];
       if (polylineRef.current) {
         polylineRef.current.setMap(null);
         polylineRef.current = null;
       }
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.destroy();
-        mapInstanceRef.current = null;
-      }
+      // Google Maps has no destroy() — null the reference for GC
+      mapInstanceRef.current = null;
       initializedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -42,14 +42,10 @@ S3_SECRET_KEY: goldpet-s3-secret-key
 S3_PUBLIC_BUCKET_NAME: goldpet-public
 S3_PRIVATE_BUCKET_NAME: goldpet-private
 
-# NCP Maps API
-ncp:
-  maps:
-    client-id: ex0an0bs06
-    client-secret: QA9LJNOB6JI7R7e4QN86Cm6oJCBr653o0tEFe5uA
-
-# Google AI (Imagen)
+# Google Maps Platform + AI
 google:
+  maps:
+    api-key: AIzaSyDKzJWAKYzLbq5ioILENkscpJNSem8MRDE
   ai:
     api-key: AIzaSyBRpIPAYmGHogqxpGjmLspslPhaEKUZuPQ
 

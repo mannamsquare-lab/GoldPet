@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loadMapsApi } from '../../hooks/useGoogleMap';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import apiClient from '../../services/api/client';
 import { useAlert } from '../../contexts/AlertContext';
@@ -14,8 +15,8 @@ export const WalkMapPage = () => {
     const navigate = useNavigate();
     const { showAlert } = useAlert();
     const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<naver.maps.Map | null>(null);
-    const markerRef = useRef<naver.maps.Marker | null>(null);
+    const mapInstanceRef = useRef<google.maps.Map | null>(null);
+    const markerRef = useRef<google.maps.Marker | null>(null);
     const [address, setAddress] = useState('위치 확인 중...');
     const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [stats, setStats] = useState({ totalDistanceKm: 0, totalDurationMinutes: 0, totalCalories: 0, totalGoldEarned: 0 });
@@ -26,7 +27,6 @@ export const WalkMapPage = () => {
 
     useEffect(() => {
         let cancelled = false;
-        let pollTimer: ReturnType<typeof setInterval>;
 
         const initMap = (lat: number, lng: number) => {
             if (!mapRef.current || mapInstanceRef.current) return;
@@ -39,29 +39,24 @@ export const WalkMapPage = () => {
                     return;
                 }
                 console.log('[WalkMap] Creating map in container:', el.clientWidth, 'x', el.clientHeight);
-                const center = new naver.maps.LatLng(lat, lng);
-                mapInstanceRef.current = new naver.maps.Map(el, {
+                const center = new google.maps.LatLng(lat, lng);
+                mapInstanceRef.current = new google.maps.Map(el, {
                     center,
                     zoom: 16,
                     mapTypeControl: false,
                     zoomControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
                     scaleControl: false,
-                    mapDataControl: false,
+                    rotateControl: false,
+                    keyboardShortcuts: false,
+                    gestureHandling: 'greedy',
                 });
-                markerRef.current = new naver.maps.Marker({
+                markerRef.current = new google.maps.Marker({
                     position: center,
                     map: mapInstanceRef.current,
                 });
                 console.log('[WalkMap] Map created successfully');
-                // Check 3 seconds after creation that tiles actually loaded
-                setTimeout(() => {
-                    if (cancelled) return;
-                    const container = mapRef.current;
-                    if (!mapInstanceRef.current || (container && container.querySelectorAll('img').length === 0)) {
-                        console.warn('[WalkMap] No tiles loaded 3s after creation, marking as failed');
-                        setMapLoadFailed(true);
-                    }
-                }, 3000);
             } catch (e) {
                 console.error('[WalkMap] Map creation error:', e);
                 setMapLoadFailed(true);
@@ -70,7 +65,7 @@ export const WalkMapPage = () => {
 
         const moveToLocation = (lat: number, lng: number) => {
             if (!mapInstanceRef.current) return;
-            const pos = new naver.maps.LatLng(lat, lng);
+            const pos = new google.maps.LatLng(lat, lng);
             mapInstanceRef.current.setCenter(pos);
             markerRef.current?.setPosition(pos);
             // Reverse geocode to get address
@@ -106,38 +101,25 @@ export const WalkMapPage = () => {
             getLocation();
         };
 
-        console.log('[WalkMap] naver available:', !!window.naver, 'maps available:', !!window.naver?.maps);
-        if (window.naver?.maps) {
-            console.log('[WalkMap] Maps ready, initializing with delay for WebView...');
-            // WebView에서 DOM 레이아웃이 완료될 시간을 줌
-            setTimeout(() => { if (!cancelled) setupMap(); }, 100);
-        } else {
-            let attempts = 0;
-            pollTimer = setInterval(() => {
-                attempts++;
-                if (window.naver?.maps) {
-                    console.log('[WalkMap] Maps ready after', attempts, 'attempts');
-                    clearInterval(pollTimer);
-                    setupMap();
-                } else if (attempts >= 50) {
-                    console.log('[WalkMap] Maps NOT available after 50 attempts. naver:', !!window.naver, 'maps:', !!window.naver?.maps);
-                    clearInterval(pollTimer);
-                    setMapLoadFailed(true);
-                }
-            }, 200);
-        }
+        loadMapsApi()
+            .then(() => {
+                console.log('[WalkMap] Google Maps API ready, initializing with delay for WebView...');
+                // WebView에서 DOM 레이아웃이 완료될 시간을 줌
+                setTimeout(() => { if (!cancelled) setupMap(); }, 100);
+            })
+            .catch((e) => {
+                console.error('[WalkMap] Failed to load Google Maps API:', e);
+                if (!cancelled) setMapLoadFailed(true);
+            });
 
         return () => {
             cancelled = true;
-            if (pollTimer) clearInterval(pollTimer);
             if (markerRef.current) {
                 markerRef.current.setMap(null);
                 markerRef.current = null;
             }
-            if (mapInstanceRef.current) {
-                mapInstanceRef.current.destroy();
-                mapInstanceRef.current = null;
-            }
+            // Google Maps has no destroy() — null the reference for GC
+            mapInstanceRef.current = null;
         };
     }, []);
 

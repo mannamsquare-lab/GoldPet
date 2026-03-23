@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_theme.dart';
@@ -80,8 +80,8 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   int _progressWaypointIndex = 0; // Sequential waypoint tracker for progress
   bool _completionShown = false;
 
-  // Course path as NLatLng for map overlay
-  late final List<NLatLng> _coursePathLatLng;
+  // Course path as LatLng for map overlay
+  late final List<LatLng> _coursePathLatLng;
 
   // Design colors
   static const Color _panelBg = Color(0xFFEFE1C4);
@@ -127,7 +127,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   }
 
   @override
-  void onLocationUpdate(Position position, NLatLng latLng) {
+  void onLocationUpdate(Position position, LatLng latLng) {
     _checkDeviation(position);
     _updateProgress(latLng);
   }
@@ -153,9 +153,9 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
       }
     });
 
-    // Convert course path to NLatLng
+    // Convert course path to LatLng
     _coursePathLatLng = widget.coursePath
-        .map((p) => NLatLng(p[0], p[1]))
+        .map((p) => LatLng(p[0], p[1]))
         .toList();
 
     initTracking(isPublic: true);
@@ -198,55 +198,67 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   void _addCourseOverlay() {
     if (trackingMapController == null || _coursePathLatLng.length < 2) return;
 
-    // Course path polyline (blue, dashed effect via wider line)
-    final courseOverlay = NPathOverlay(
-      id: 'course_path',
-      coords: _coursePathLatLng,
+    // Course path polyline (blue, dashed)
+    final coursePolyline = Polyline(
+      polylineId: const PolylineId('course_path'),
+      points: _coursePathLatLng,
       color: _courseColor.withValues(alpha: 0.6),
       width: 8,
+      patterns: [PatternItem.dash(20), PatternItem.gap(10)],
     );
-    trackingMapController!.addOverlay(courseOverlay);
 
     // Course start marker
-    final startMarker = NMarker(
-      id: 'course_start',
+    final startMarker = Marker(
+      markerId: const MarkerId('course_start'),
       position: _coursePathLatLng.first,
-      icon: const NOverlayImage.fromAssetImage('assets/images/walk/marker_camera.png'),
-      size: const Size(24, 24),
-      caption: const NOverlayCaption(text: '출발', textSize: 10, color: _courseColor),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+      infoWindow: const InfoWindow(title: '출발'),
     );
-    trackingMapController!.addOverlay(startMarker);
 
     // Course end marker
-    final endMarker = NMarker(
-      id: 'course_end',
+    final endMarker = Marker(
+      markerId: const MarkerId('course_end'),
       position: _coursePathLatLng.last,
-      icon: const NOverlayImage.fromAssetImage('assets/images/walk/marker_camera.png'),
-      size: const Size(24, 24),
-      caption: const NOverlayCaption(text: '도착', textSize: 10, color: Colors.red),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      infoWindow: const InfoWindow(title: '도착'),
     );
-    trackingMapController!.addOverlay(endMarker);
 
     // Course spot markers
+    final spotMarkers = <Marker>[];
     for (var i = 0; i < widget.courseSpots.length; i++) {
       final spot = widget.courseSpots[i];
-      final marker = NMarker(
-        id: 'course_spot_$i',
-        position: NLatLng(spot.latitude, spot.longitude),
-        size: const Size(20, 20),
-        caption: NOverlayCaption(
-          text: spot.name ?? _getSpotEmoji(spot.type),
-          textSize: 9,
-        ),
-      );
-      trackingMapController!.addOverlay(marker);
+      spotMarkers.add(Marker(
+        markerId: MarkerId('course_spot_$i'),
+        position: LatLng(spot.latitude, spot.longitude),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+        infoWindow: InfoWindow(title: spot.name ?? _getSpotEmoji(spot.type)),
+      ));
     }
+
+    setState(() {
+      trackingPolylines = {...trackingPolylines, coursePolyline};
+      trackingMarkers = {...trackingMarkers, startMarker, endMarker, ...spotMarkers};
+    });
 
     // Fit camera to show course path
     if (_coursePathLatLng.length >= 2) {
-      final bounds = NLatLngBounds.from(_coursePathLatLng);
-      trackingMapController!.updateCamera(
-        NCameraUpdate.fitBounds(bounds, padding: const EdgeInsets.all(60)),
+      // Compute bounds manually
+      double minLat = _coursePathLatLng.first.latitude;
+      double maxLat = _coursePathLatLng.first.latitude;
+      double minLng = _coursePathLatLng.first.longitude;
+      double maxLng = _coursePathLatLng.first.longitude;
+      for (final p in _coursePathLatLng) {
+        if (p.latitude < minLat) minLat = p.latitude;
+        if (p.latitude > maxLat) maxLat = p.latitude;
+        if (p.longitude < minLng) minLng = p.longitude;
+        if (p.longitude > maxLng) maxLng = p.longitude;
+      }
+      final bounds = LatLngBounds(
+        southwest: LatLng(minLat, minLng),
+        northeast: LatLng(maxLat, maxLng),
+      );
+      trackingMapController!.animateCamera(
+        CameraUpdate.newLatLngBounds(bounds, 60),
       );
     }
   }
@@ -327,7 +339,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
 
   // --- Progress tracking (segment projection) ---
 
-  void _updateProgress(NLatLng latLng) {
+  void _updateProgress(LatLng latLng) {
     if (_coursePathLatLng.length < 2) return;
 
     // Don't update progress when significantly off course (>200m)
@@ -458,28 +470,29 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
                   Positioned.fill(
                     child: trackingIsInitializing
                         ? const Center(child: CircularProgressIndicator())
-                        : NaverMap(
+                        : GoogleMap(
                             key: _mapKey,
-                            options: NaverMapViewOptions(
-                              initialCameraPosition: trackingInitialPosition != null
-                                  ? NCameraPosition(target: trackingInitialPosition!, zoom: 16)
-                                  : const NCameraPosition(
-                                      target: NLatLng(37.5665, 126.9780),
-                                      zoom: 16,
-                                    ),
-                              locationButtonEnable: true,
-                              logoClickEnable: false,
-                              consumeSymbolTapEvents: false,
+                            initialCameraPosition: CameraPosition(
+                              target: trackingInitialPosition ?? const LatLng(37.5665, 126.9780),
+                              zoom: 16,
                             ),
-                            onMapReady: (controller) {
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: false,
+                            zoomControlsEnabled: false,
+                            mapToolbarEnabled: false,
+                            onMapCreated: (controller) {
                               trackingMapController = controller;
-                              controller.setLocationTrackingMode(NLocationTrackingMode.follow);
                               // Course overlay may have been skipped if startWalk()
                               // ran before the map was ready — add it now.
                               if (trackingIsWalking) {
                                 _addCourseOverlay();
                               }
                             },
+                            onCameraMoveStarted: () {
+                              onCameraMoveStartedByUser();
+                            },
+                            markers: trackingMarkers,
+                            polylines: trackingPolylines,
                           ),
                   ),
 

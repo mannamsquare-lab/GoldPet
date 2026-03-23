@@ -21,7 +21,7 @@ import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
 import com.goldpet.domain.walk.event.WalkCompletedEvent
 import com.goldpet.domain.common.service.SystemSettingService
-import com.goldpet.infra.naver.NaverGeocodingService
+import com.goldpet.infra.GeocodingService
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -36,7 +36,7 @@ class WalkService(
     private val petRepository: PetRepository,
     private val goldService: GoldService,
     private val badgeAwardService: BadgeAwardService,
-    private val naverGeocodingService: NaverGeocodingService,
+    private val geocodingService: GeocodingService,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val systemSettingService: SystemSettingService
 ) {
@@ -90,7 +90,7 @@ class WalkService(
         if (startCoord != null) {
             walk.startLocation = geometryFactory.createPoint(Coordinate(startCoord[1], startCoord[0])) // [lon, lat]
             try {
-                val geocodeResult = naverGeocodingService.reverseGeocodeStructured(startCoord[0], startCoord[1])
+                val geocodeResult = geocodingService.reverseGeocodeStructured(startCoord[0], startCoord[1])
                 walk.startAddress = geocodeResult.fullAddress
                 walk.province = geocodeResult.province
             } catch (e: Exception) {
@@ -101,7 +101,7 @@ class WalkService(
         if (endCoord != null) {
             walk.endLocation = geometryFactory.createPoint(Coordinate(endCoord[1], endCoord[0])) // [lon, lat]
             try {
-                walk.endAddress = naverGeocodingService.reverseGeocode(endCoord[0], endCoord[1])
+                walk.endAddress = geocodingService.reverseGeocode(endCoord[0], endCoord[1])
             } catch (e: Exception) {
                 log.warn("Reverse geocoding failed for walk end: {}", e.message)
             }

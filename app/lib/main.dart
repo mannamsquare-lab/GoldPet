@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:goldpet_app/hybrid_app.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
-
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -39,12 +37,6 @@ void main() async {
       'KAKAO_APP_KEY',
       defaultValue: '0d1faed93f83b48a4c1ce04f8583d345',
     ),
-  );
-
-  // Naver Map SDK 초기화
-  await FlutterNaverMap().init(
-    clientId: 'ex0an0bs06',
-    onAuthFailed: (ex) => debugPrint('네이버맵 인증 오류: $ex'),
   );
 
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
