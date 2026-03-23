@@ -38,14 +38,10 @@ S3_SECRET_KEY: ${MINIO_SECRET_KEY}
 S3_PUBLIC_BUCKET_NAME: ${MINIO_PUBLIC_BUCKET:goldpet-public}
 S3_PRIVATE_BUCKET_NAME: ${MINIO_PRIVATE_BUCKET:goldpet-private}
 
-# Naver Maps API (for geocoding location addresses)
-ncp:
-  maps:
-    client-id: ex0an0bs06
-    client-secret: QA9LJNOB6JI7R7e4QN86Cm6oJCBr653o0tEFe5uA
-
-# Google AI (Imagen)
+# Google Maps Platform + AI
 google:
+  maps:
+    api-key: AIzaSyDKzJWAKYzLbq5ioILENkscpJNSem8MRDE
   ai:
     api-key: ${GOOGLE_AI_API_KEY:AIzaSyBRpIPAYmGHogqxpGjmLspslPhaEKUZuPQ}
 
