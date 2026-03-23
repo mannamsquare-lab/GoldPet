@@ -160,7 +160,7 @@ class AdminCourseService(
             return mapOf("message" to "Thumbnail migration already completed", "skipped" to true)
         }
 
-        val courses = courseRepository.findAll().filter { it.path != null && it.path.coordinates.size >= 2 }
+        val courses = courseRepository.findAll().filter { it.path.coordinates.size >= 2 }
         var success = 0
         var failed = 0
         val failedIds = mutableListOf<Long>()
