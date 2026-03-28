@@ -1191,7 +1191,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
             .toList();
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: Color(0xFFFFF7E6),
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
@@ -1202,14 +1202,14 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
+                  color: const Color(0xFF614108).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
                 '어떤 반려동물인가요?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF614108)),
               ),
               const SizedBox(height: 8),
               ...selectablePets.map((pet) {
@@ -1227,7 +1227,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
                   ),
                   title: Text(
                     pet['name'] as String? ?? '반려동물',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: const TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF1A1A1A)),
                   ),
                   onTap: () => Navigator.of(ctx).pop(pet['id'] as int),
                 );
@@ -1248,7 +1248,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       builder: (ctx) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: Color(0xFFFFF7E6),
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
@@ -1259,14 +1259,14 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
+                  color: const Color(0xFF614108).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
                 '건강 분석을 위해 사진을 찍으시겠습니까?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF614108)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -1293,9 +1293,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text(
+                  child: Text(
                     '건너뛰기',
-                    style: TextStyle(color: Color(0xFF727272), fontSize: 16),
+                    style: TextStyle(color: const Color(0xFF614108).withValues(alpha: 0.5), fontSize: 16),
                   ),
                 ),
               ),
@@ -1414,73 +1414,147 @@ class _AnalysisResultDialogState extends State<_AnalysisResultDialog> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 5), () {
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
     });
   }
 
+  Color _scoreColor(int score) {
+    if (score <= 1) return const Color(0xFFFF3B30);
+    if (score == 2) return const Color(0xFFFF9500);
+    if (score == 3) return const Color(0xFFFDCB6E);
+    if (score == 4) return const Color(0xFF34C759);
+    return const Color(0xFF34C759);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final score = widget.result['overallScore'] as int?;
+    final score = widget.result['overallScore'] as int? ?? 0;
     final summary = widget.result['healthSummary'] as String?;
     final disclaimer = widget.result['disclaimer'] as String? ??
         'AI 분석은 참고용이며, 정확한 진단은 수의사와 상담하세요.';
+    final colorScore = widget.result['colorScore'] as int? ?? 0;
+    final consistencyScore = widget.result['consistencyScore'] as int? ?? 0;
+    final coatingScore = widget.result['coatingScore'] as int? ?? 0;
+    final contentsScore = widget.result['contentsScore'] as int? ?? 0;
 
     return GestureDetector(
       onTap: () => Navigator.of(context, rootNavigator: true).pop(),
       child: Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFFFFF7E6),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '건강 분석 결과',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF614108),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  '건강 분석 결과',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                ),
               ),
-              const SizedBox(height: 16),
-              if (score != null) ...[
-                Text(
-                  '$score',
-                  style: const TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF614108),
+              const SizedBox(height: 20),
+              if (score > 0) ...[
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _scoreColor(score).withValues(alpha: 0.15),
+                    border: Border.all(color: _scoreColor(score), width: 3),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$score',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: _scoreColor(score),
+                      ),
+                    ),
                   ),
                 ),
-                const Text(
-                  '/ 100',
-                  style: TextStyle(fontSize: 16, color: Color(0xFF727272)),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
+                const Text('/ 5', style: TextStyle(fontSize: 13, color: Color(0xFF614108))),
+                const SizedBox(height: 16),
+                _buildScoreBar('색상', colorScore),
+                const SizedBox(height: 8),
+                _buildScoreBar('농도', consistencyScore),
+                const SizedBox(height: 8),
+                _buildScoreBar('코팅', coatingScore),
+                const SizedBox(height: 8),
+                _buildScoreBar('내용물', contentsScore),
+                const SizedBox(height: 16),
               ],
               if (summary != null) ...[
-                Text(
-                  summary,
-                  style: const TextStyle(fontSize: 14, height: 1.5),
-                  textAlign: TextAlign.center,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    summary,
+                    style: const TextStyle(fontSize: 13, height: 1.5, color: Color(0xFF1A1A1A)),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
                 const SizedBox(height: 12),
               ],
               Text(
                 disclaimer,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFF9E9E9E),
-                  height: 1.4,
-                ),
+                style: const TextStyle(fontSize: 10, color: Color(0xFF9E9E9E), height: 1.4),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               const Text(
                 '탭하면 닫힙니다',
-                style: TextStyle(fontSize: 11, color: Color(0xFFBDBDBD)),
+                style: TextStyle(fontSize: 10, color: Color(0xFFBDBDBD)),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildScoreBar(String label, int score) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 48,
+          child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF614108), fontWeight: FontWeight.w500)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Container(
+            height: 8,
+            decoration: BoxDecoration(
+              color: const Color(0xFF614108).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: score / 5.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _scoreColor(score),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text('$score', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _scoreColor(score))),
+      ],
     );
   }
 }
