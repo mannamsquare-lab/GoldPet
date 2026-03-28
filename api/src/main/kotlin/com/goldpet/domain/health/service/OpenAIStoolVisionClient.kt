@@ -39,7 +39,7 @@ class OpenAIStoolVisionClient(
         val userPrompt = promptBuilder.buildUserPrompt()
 
         val requestBody = mapOf(
-            "model" to "gpt-4o",
+            "model" to "gpt-4o-mini",
             "max_tokens" to 1000,
             "messages" to listOf(
                 mapOf(
