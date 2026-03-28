@@ -25,6 +25,7 @@ Environment="MINIO_ENDPOINT=http://localhost:9000"
 Environment="MINIO_PUBLIC_ENDPOINT=https://s3.mannamsquare.com"
 Environment="MINIO_ACCESS_KEY=minioadmin"
 Environment="MINIO_SECRET_KEY=RSMVMnhzAVWPQkItTyV6QyJuA4OmJVL6tZ74V1i6De0="
+Environment="OPENAI_API_KEY=${OPENAI_API_KEY}"
 # 로그
 StandardOutput=append:/home/dev/www/mannam/goldpet/api/logs/api.log
 StandardError=append:/home/dev/www/mannam/goldpet/api/logs/error.log
