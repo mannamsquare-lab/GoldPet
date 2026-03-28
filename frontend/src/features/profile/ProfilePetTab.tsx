@@ -283,9 +283,30 @@ const ProfilePetTab: React.FC = () => {
                 {renderAttributeSection('ALLERGY', 'blue_color')}
             </div>
             
-            <ProfileSettingsSection 
-                onEdit={handleEdit} 
-                idPrefix="pet" 
+            {pet && (
+                <button
+                    type="button"
+                    onClick={() => navigate(`/health?petId=${pet.id}`)}
+                    style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: '100%', padding: '14px 16px', marginBottom: 8,
+                        background: '#fff', border: '1px solid #EFE1C4', borderRadius: 14,
+                        color: '#614108', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+                    }}
+                >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 18 }}>💩</span>
+                        건강 분석 기록
+                    </span>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+                        <path d="M1 1l6 6-6 6" stroke="#AAAAAA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </button>
+            )}
+
+            <ProfileSettingsSection
+                onEdit={handleEdit}
+                idPrefix="pet"
                 isNotificationEnabled={user?.isNotificationEnabled}
                 onNotificationChange={handleNotificationChange}
             />

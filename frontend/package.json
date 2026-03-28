@@ -29,6 +29,7 @@
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.6",
     "react-spinners": "^0.17.0",
+    "recharts": "^3.8.1",
     "sockjs-client": "^1.6.1",
     "swiper": "^12.1.2",
     "zustand": "^5.0.8"

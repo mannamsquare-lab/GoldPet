@@ -34,3 +34,6 @@ S3_PRIVATE_BUCKET_NAME: ${MINIO_PRIVATE_BUCKET}
 # DeepL Translation
 deepl:
   api-key: ${DEEPL_API_KEY}
+
+openai:
+  api-key: ${OPENAI_API_KEY}

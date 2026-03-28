@@ -81,6 +81,7 @@ const GoldPurchasePage = lazy(() => import('./features/gold/GoldPurchasePage'));
 const GoldHistoryPage = lazy(() => import('./features/gold/GoldHistoryPage'));
 const LocationSettingPage = lazy(() => import('./features/location/LocationSettingPage'));
 const CourseDetailPage = lazy(() => import('./features/course/CourseDetailPage'));
+const HealthHistoryPage = lazy(() => import('./features/health/HealthHistoryPage'));
 
 // queryClient is imported from './lib/queryClient'
 
@@ -146,6 +147,9 @@ function App() {
               <Route path="/gold" element={<Suspense fallback={null}><GoldMainPage /></Suspense>} />
               <Route path="/gold/purchase" element={<Suspense fallback={null}><GoldPurchasePage /></Suspense>} />
               <Route path="/gold/history" element={<Suspense fallback={null}><GoldHistoryPage /></Suspense>} />
+
+              {/* Health */}
+              <Route path="/health" element={<Suspense fallback={null}><HealthHistoryPage /></Suspense>} />
 
               {/* No Layout: Custom header pages */}
               <Route path="/location/setting" element={<Suspense fallback={null}><LocationSettingPage /></Suspense>} />

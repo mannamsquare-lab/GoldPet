@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  MessageSquare, 
-  MessageCircle, 
-  Megaphone, 
-  AlertTriangle, 
-  Coins, 
-  Map, 
+import {
+  LayoutDashboard,
+  Users,
+  MessageSquare,
+  MessageCircle,
+  Megaphone,
+  AlertTriangle,
+  Coins,
+  Map,
   Trophy,
   Award,
   Database,
@@ -20,7 +20,8 @@ import {
   Sparkles,
   BellRing,
   Smile,
-  MapPin
+  MapPin,
+  Microscope
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
@@ -42,6 +43,7 @@ const NAVIGATION = [
   { name: '게이미피케이션', path: '/gamification', icon: Trophy },
   { name: '코드/데이터', path: '/data', icon: Database },
   { name: '공지/팝업 관리', path: '/notices', icon: BellRing },
+  { name: '배변 건강 분석', path: '/stool-analysis', icon: Microscope },
   { name: '시스템 관리', path: '/system', icon: Settings },
 ];
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { loadMapsApi } from '../../hooks/useGoogleMap';
@@ -6,6 +6,9 @@ import { MainHeader } from '../../components/common/MainHeader';
 import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkSpot } from '../../services/walkService';
+import { stoolAnalysisService } from '../../services/stoolAnalysisService';
+import type { StoolAnalysisResponse } from '../../services/stoolAnalysisService';
+import { HealthDetailModal } from '../health/HealthDetailModal';
 import { WalkChart, aggregateDaily, aggregateWeekly, aggregateMonthly } from './components/WalkChart';
 import type { WalkDataPoint } from './components/WalkChart';
 import { useAuthStore } from '../../stores/authStore';
@@ -55,6 +58,7 @@ export const WalkDetailPage = () => {
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
     const chartDateSynced = useRef(false);
     const [selectedSpot, setSelectedSpot] = useState<WalkSpot | null>(null);
+    const [selectedAnalysis, setSelectedAnalysis] = useState<StoolAnalysisResponse | null>(null);
 
     // Sync chart date to viewed walk's date and cross-sync on period change
     const handlePeriodChange = (newPeriod: Period) => {
@@ -124,6 +128,19 @@ export const WalkDetailPage = () => {
         },
         enabled: walkOwnerId != null,
     });
+
+    // Fetch stool analyses for POOP spots - match by imageUrl
+    const hasPoopSpotsWithImage = walkDetail?.spots?.some(s => s.type === 'POOP' && s.imageUrl);
+    const { data: poopAnalysesPage } = useQuery({
+        queryKey: ['health', 'poop-spots', walkDetail?.petIds?.[0]],
+        queryFn: () => stoolAnalysisService.getAnalysisHistory(walkDetail!.petIds![0], 0),
+        enabled: !!(hasPoopSpotsWithImage && walkDetail?.petIds?.length),
+    });
+    const analysisMap = useMemo(() => {
+        const map = new Map<string, StoolAnalysisResponse>();
+        poopAnalysesPage?.content.forEach(a => { if (a.imageUrl) map.set(a.imageUrl, a); });
+        return map;
+    }, [poopAnalysesPage]);
 
     // Direct map initialization
     const mapRef = useRef<HTMLDivElement>(null);
@@ -647,6 +664,48 @@ export const WalkDetailPage = () => {
                                 <p>{selectedSpot.note}</p>
                             </div>
                         )}
+                        {/* POOP spots: show analysis badge if available */}
+                        {selectedSpot.type === 'POOP' && selectedSpot.imageUrl && (() => {
+                            const analysis = analysisMap.get(selectedSpot.imageUrl!);
+                            if (!analysis || analysis.status !== 'COMPLETED') return null;
+                            const color = analysis.overallScore != null
+                                ? (analysis.overallScore <= 2 ? '#FF5005' : analysis.overallScore === 3 ? '#F5A623' : '#4CAF50')
+                                : '#AAAAAA';
+                            return (
+                                <div style={{ padding: '12px 16px 0' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSelectedSpot(null); setSelectedAnalysis(analysis); }}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 10,
+                                            width: '100%', padding: '12px', borderRadius: 12,
+                                            background: '#FFF7E6', border: '1.5px solid #EFE1C4',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <span style={{
+                                            width: 36, height: 36, borderRadius: '50%', background: color,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#fff', fontWeight: 700, fontSize: 15, flexShrink: 0,
+                                        }}>
+                                            {analysis.overallScore}
+                                        </span>
+                                        <span style={{ flex: 1, textAlign: 'left' }}>
+                                            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#614108' }}>AI 건강 분석 결과 보기</span>
+                                            {analysis.healthSummary && (
+                                                <span style={{ display: 'block', fontSize: 12, color: '#A58A54', marginTop: 2,
+                                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
+                                                    {analysis.healthSummary}
+                                                </span>
+                                            )}
+                                        </span>
+                                        <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+                                            <path d="M1 1l5 5-5 5" stroke="#AAAAAA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            );
+                        })()}
                         {/* PHOTO spots: photo first, then note below */}
                         {selectedSpot.type === 'PHOTO' && selectedSpot.imageUrl && (
                             <div className="walk_spot_sheet_photo">
@@ -686,6 +745,14 @@ export const WalkDetailPage = () => {
                     images={galleryUrls}
                     initialIndex={initialIndex}
                     onClose={closeGallery}
+                />
+            )}
+
+            {/* Health detail modal from POOP spot analysis */}
+            {selectedAnalysis && (
+                <HealthDetailModal
+                    analysis={selectedAnalysis}
+                    onClose={() => setSelectedAnalysis(null)}
                 />
             )}
 

@@ -54,3 +54,6 @@ ai:
   profile:
     daily-limit: 5
     placeholder-url: "https://placehold.co/512x512/png?text=AI+Profile"
+
+openai:
+  api-key: ${OPENAI_API_KEY}

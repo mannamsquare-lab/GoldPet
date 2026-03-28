@@ -29,6 +29,7 @@ import EmoticonManagementPage from './pages/emoticon/EmoticonManagementPage';
 import WalkRankingManagementPage from './pages/walk/WalkRankingManagementPage';
 import CoursePage from './pages/course/CoursePage';
 import CourseDetailPage from './pages/course/CourseDetailPage';
+import StoolAnalysisStatsPage from './pages/stool-analysis/StoolAnalysisStatsPage';
 
 
 function App() {
@@ -69,6 +70,7 @@ function App() {
             <Route path="reports/:reportId" element={<ReportDetailPage />} />
             <Route path="courses" element={<CoursePage />} />
             <Route path="courses/:courseId" element={<CourseDetailPage />} />
+            <Route path="stool-analysis" element={<StoolAnalysisStatsPage />} />
           </Route>
 
           {/* Fallback */}

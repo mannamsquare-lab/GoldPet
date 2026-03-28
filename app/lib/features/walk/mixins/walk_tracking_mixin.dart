@@ -69,6 +69,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   DateTime? _trackingLastGeocodingTime;
   String? _trackingPetImageUrl;
   List<int> _trackingPetIds = [];
+  List<Map<String, dynamic>> _trackingPets = [];
   List<int>? _externalPetIds;
   Uint8List? _trackingPetMarkerBytes;
   final Map<String, BitmapDescriptor> _trackingSpotMarkerImages = {};
@@ -641,6 +642,11 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       return;
     }
 
+    if (type == 'POOP') {
+      await _addPoopSpot();
+      return;
+    }
+
     try {
       final position = await Geolocator.getCurrentPosition();
       final latLng = LatLng(position.latitude, position.longitude);
@@ -792,12 +798,14 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         } else if (pets.isNotEmpty) {
           _trackingPetImageUrl = pets.first['profileImageUrl'] as String?;
         }
+        _trackingPets = selectedPets.cast<Map<String, dynamic>>();
       } else {
         // Backward compatible: no petIds provided → all pets (course walk, deep-link, etc.)
         if (pets.isNotEmpty) {
           _trackingPetImageUrl = pets.first['profileImageUrl'] as String?;
         }
         _trackingPetIds = pets.map<int>((p) => p['id'] as int).toList();
+        _trackingPets = pets.cast<Map<String, dynamic>>();
       }
     } catch (e) {
       debugPrint('[WalkTracking] Failed to fetch pet data: $e');
@@ -1085,6 +1093,392 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         padding: const EdgeInsets.all(16),
         elevation: 8,
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // --- POOP spot with optional health analysis ---
+
+  Future<void> _addPoopSpot() async {
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      final latLng = LatLng(position.latitude, position.longitude);
+
+      // Always record the POOP spot
+      final spot = WalkSpotDto(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        type: 'POOP',
+        timestamp: DateTime.now(),
+      );
+      trackingSpots.add(spot);
+
+      final spotIcon = await _getSpotMarkerImage('POOP');
+      final marker = Marker(
+        markerId: MarkerId('spot_${trackingSpots.length}'),
+        position: latLng,
+        icon: spotIcon,
+        anchor: const Offset(0.5, 0.5),
+      );
+      setState(() {
+        trackingMarkers = {...trackingMarkers, marker};
+      });
+      if (mounted) showTrackingSnackBar('응가 스팟이 기록되었습니다!');
+
+      // Pick pet for analysis
+      if (!mounted) return;
+      int? selectedPetId;
+      if (_trackingPetIds.length == 1) {
+        selectedPetId = _trackingPetIds.first;
+      } else if (_trackingPetIds.length > 1) {
+        selectedPetId = await _showPetSelectorSheet();
+      }
+      if (selectedPetId == null) return;
+
+      // Photo option
+      if (!mounted) return;
+      final takePhoto = await _showPoopPhotoSheet();
+      if (takePhoto != true) return;
+
+      // Take photo
+      final picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+      if (photo == null) return;
+      if (!mounted) return;
+
+      // Upload photo
+      String? imageUrl;
+      try {
+        final fileName = photo.path.split('/').last;
+        final formData = FormData.fromMap({
+          'file': await MultipartFile.fromFile(photo.path, filename: fileName),
+        });
+        final response = await ApiClient().dio.post('/api/v1/files/upload', data: formData);
+        imageUrl = response.data['url'] as String?;
+      } catch (e) {
+        debugPrint('[WalkTracking] Stool photo upload failed: $e');
+        if (mounted) showTrackingSnackBar('사진 업로드에 실패했습니다.');
+        return;
+      } finally {
+        try { await File(photo.path).delete(); } catch (_) {}
+      }
+
+      if (imageUrl == null || imageUrl.isEmpty) {
+        if (mounted) showTrackingSnackBar('사진 업로드에 실패했습니다.');
+        return;
+      }
+
+      if (!mounted) return;
+      await _runStoolAnalysis(petId: selectedPetId, imageUrl: imageUrl);
+    } catch (e) {
+      debugPrint('[WalkTracking] Error in _addPoopSpot: $e');
+    }
+  }
+
+  Future<int?> _showPetSelectorSheet() {
+    return showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final selectablePets = _trackingPets
+            .where((p) => _trackingPetIds.contains(p['id'] as int))
+            .toList();
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                '어떤 반려동물인가요?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              ...selectablePets.map((pet) {
+                final profileUrl = pet['profileImageUrl'] as String?;
+                return ListTile(
+                  leading: CircleAvatar(
+                    radius: 24,
+                    backgroundImage: profileUrl != null
+                        ? NetworkImage(profileUrl)
+                        : null,
+                    backgroundColor: const Color(0xFFF5E6C8),
+                    child: profileUrl == null
+                        ? const Icon(Icons.pets, color: Color(0xFF614108))
+                        : null,
+                  ),
+                  title: Text(
+                    pet['name'] as String? ?? '반려동물',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  onTap: () => Navigator.of(ctx).pop(pet['id'] as int),
+                );
+              }),
+              const SizedBox(height: 8),
+              SafeArea(child: const SizedBox.shrink()),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool?> _showPoopPhotoSheet() {
+    return showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                '건강 분석을 위해 사진을 찍으시겠습니까?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF614108),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    '사진 찍기',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text(
+                    '건너뛰기',
+                    style: TextStyle(color: Color(0xFF727272), fontSize: 16),
+                  ),
+                ),
+              ),
+              SafeArea(child: const SizedBox.shrink()),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _runStoolAnalysis({
+    required int petId,
+    required String imageUrl,
+  }) async {
+    if (!mounted) return;
+
+    // Show analyzing overlay
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _AnalyzingDialog(),
+    );
+
+    try {
+      final response = await ApiClient().dio.post(
+        '/api/v1/health/stool-analyses',
+        data: {'petId': petId, 'imageUrl': imageUrl},
+      );
+      final analysisId = response.data['id'] as int;
+
+      // Poll every 2 seconds, max 30 attempts (60s)
+      Map<String, dynamic>? result;
+      for (var i = 0; i < 30; i++) {
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+
+        try {
+          final poll = await ApiClient().dio.get('/api/v1/health/stool-analyses/$analysisId');
+          final data = poll.data as Map<String, dynamic>;
+          final status = data['status'] as String;
+          if (status == 'COMPLETED') {
+            result = data;
+            break;
+          } else if (status == 'FAILED') {
+            break;
+          }
+        } catch (e) {
+          debugPrint('[WalkTracking] Poll error: $e');
+        }
+      }
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // close analyzing dialog
+
+      if (result != null) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: true,
+            builder: (_) => _AnalysisResultDialog(result: result!),
+          );
+        }
+      } else {
+        if (mounted) showTrackingSnackBar('분석에 실패했습니다. 다시 시도해주세요.');
+      }
+    } catch (e) {
+      debugPrint('[WalkTracking] Analysis error: $e');
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // close analyzing dialog
+        showTrackingSnackBar('분석 요청에 실패했습니다.');
+      }
+    }
+  }
+}
+
+// --- Analysis overlay dialogs ---
+
+class _AnalyzingDialog extends StatelessWidget {
+  const _AnalyzingDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: Color(0xFF614108)),
+          SizedBox(height: 16),
+          Text(
+            '분석 중...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.none,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnalysisResultDialog extends StatefulWidget {
+  final Map<String, dynamic> result;
+  const _AnalysisResultDialog({required this.result});
+
+  @override
+  State<_AnalysisResultDialog> createState() => _AnalysisResultDialogState();
+}
+
+class _AnalysisResultDialogState extends State<_AnalysisResultDialog> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final score = widget.result['overallScore'] as int?;
+    final summary = widget.result['healthSummary'] as String?;
+    final disclaimer = widget.result['disclaimer'] as String? ??
+        'AI 분석은 참고용이며, 정확한 진단은 수의사와 상담하세요.';
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context, rootNavigator: true).pop(),
+      child: Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '건강 분석 결과',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              if (score != null) ...[
+                Text(
+                  '$score',
+                  style: const TextStyle(
+                    fontSize: 56,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF614108),
+                  ),
+                ),
+                const Text(
+                  '/ 100',
+                  style: TextStyle(fontSize: 16, color: Color(0xFF727272)),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (summary != null) ...[
+                Text(
+                  summary,
+                  style: const TextStyle(fontSize: 14, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+              ],
+              Text(
+                disclaimer,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF9E9E9E),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '탭하면 닫힙니다',
+                style: TextStyle(fontSize: 11, color: Color(0xFFBDBDBD)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
