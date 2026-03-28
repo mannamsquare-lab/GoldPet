@@ -4,6 +4,8 @@ import com.goldpet.domain.common.entity.BaseTimeEntity
 import com.goldpet.domain.pet.entity.Pet
 import com.goldpet.domain.user.entity.User
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.LocalDateTime
 
 @Entity
@@ -42,9 +44,11 @@ class StoolAnalysis(
     @Column(columnDefinition = "TEXT")
     var healthSummary: String? = null,
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     var healthTips: String? = null,
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     var warnings: String? = null,
 
