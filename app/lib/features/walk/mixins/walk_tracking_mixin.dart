@@ -1157,6 +1157,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         final fileName = photo.path.split('/').last;
         final formData = FormData.fromMap({
           'file': await MultipartFile.fromFile(photo.path, filename: fileName),
+          'category': 'pet',
         });
         final response = await ApiClient().dio.post('/api/v1/files/upload', data: formData);
         imageUrl = response.data['url'] as String?;
