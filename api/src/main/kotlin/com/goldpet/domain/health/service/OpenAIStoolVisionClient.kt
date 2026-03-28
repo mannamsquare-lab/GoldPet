@@ -19,6 +19,8 @@ import org.springframework.web.client.RestTemplate
 class OpenAIStoolVisionClient(
     @Qualifier("openaiRestTemplate") private val restTemplate: RestTemplate,
     @Value("\${openai.api-key:}") private val apiKey: String,
+    @Value("\${S3_PUBLIC_ENDPOINT:http://localhost:9100}") private val publicEndpoint: String,
+    @Value("\${S3_PUBLIC_BUCKET_NAME:goldpet-public}") private val publicBucketName: String,
     private val promptBuilder: StoolAnalysisPromptBuilder,
     private val objectMapper: ObjectMapper
 ) : StoolVisionClient {
@@ -34,7 +36,13 @@ class OpenAIStoolVisionClient(
         }
     }
 
+    private fun resolveImageUrl(imageUrl: String): String {
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) return imageUrl
+        return "$publicEndpoint/$publicBucketName/$imageUrl"
+    }
+
     private fun callOpenAI(imageUrl: String, petInfo: PetContextDto): StoolAnalysisResult {
+        val fullImageUrl = resolveImageUrl(imageUrl)
         val systemPrompt = promptBuilder.buildSystemPrompt(petInfo)
         val userPrompt = promptBuilder.buildUserPrompt()
 
@@ -52,7 +60,7 @@ class OpenAIStoolVisionClient(
                         mapOf("type" to "text", "text" to userPrompt),
                         mapOf(
                             "type" to "image_url",
-                            "image_url" to mapOf("url" to imageUrl, "detail" to "high")
+                            "image_url" to mapOf("url" to fullImageUrl, "detail" to "high")
                         )
                     )
                 )
