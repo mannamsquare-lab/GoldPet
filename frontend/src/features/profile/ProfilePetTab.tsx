@@ -289,7 +289,7 @@ const ProfilePetTab: React.FC = () => {
                     onClick={() => navigate(`/health?petId=${pet.id}`)}
                     style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        width: '100%', padding: '14px 16px', marginBottom: 8,
+                        width: '100%', padding: '14px 16px', marginTop: 24, marginBottom: 8,
                         background: '#fff', border: '1px solid #EFE1C4', borderRadius: 14,
                         color: '#614108', fontSize: 15, fontWeight: 600, cursor: 'pointer',
                     }}
