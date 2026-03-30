@@ -499,17 +499,9 @@ export function CourseCreatePage() {
           try {
             const loc = await nativeBridge.callMethod('getCurrentLocation') as { latitude: number; longitude: number };
             setCenter(loc.latitude, loc.longitude);
-            return;
           } catch {
-            // fall through to web geolocation
+            // native bridge failed — keep default location
           }
-        }
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            pos => setCenter(pos.coords.latitude, pos.coords.longitude),
-            () => {},
-            { timeout: 5000 },
-          );
         }
       };
       getLocation();

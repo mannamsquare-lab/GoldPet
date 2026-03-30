@@ -99,8 +99,8 @@ class PushNotificationService {
       },
     );
 
-    // 알림 권한 요청
-    await requestPermission();
+    // 알림 권한은 PermissionService.requestAllPermissions()에서 일괄 요청
+    // 여기서는 채널/리스너 설정만 수행
 
     // 리스너 설정
     _setupListeners();

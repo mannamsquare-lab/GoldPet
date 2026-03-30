@@ -1151,12 +1151,24 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       if (photo == null) return;
       if (!mounted) return;
 
+      // Crop/rotate photo (same as walk photo flow)
+      String? croppedPath;
+      try {
+        croppedPath = await PhotoCropScreen.show(context, photo.path);
+      } catch (e) {
+        debugPrint('PhotoCropScreen error: $e');
+        if (mounted) showTrackingSnackBar('사진 편집 오류가 발생했습니다.');
+        return;
+      }
+      if (croppedPath == null) return;
+      if (!mounted) return;
+
       // Upload photo
       String? imageUrl;
       try {
-        final fileName = photo.path.split('/').last;
+        final fileName = croppedPath.split('/').last;
         final formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(photo.path, filename: fileName),
+          'file': await MultipartFile.fromFile(croppedPath, filename: fileName),
           'category': 'pet',
         });
         final response = await ApiClient().dio.post('/api/v1/files/upload', data: formData);
@@ -1166,6 +1178,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         if (mounted) showTrackingSnackBar('사진 업로드에 실패했습니다.');
         return;
       } finally {
+        try { await File(croppedPath).delete(); } catch (_) {}
         try { await File(photo.path).delete(); } catch (_) {}
       }
 

@@ -70,6 +70,16 @@ export const PermissionsPage = () => {
               <p>앨범에서 사진을 선택하여 업로드할 때 필요합니다.</p>
             </div>
           </div>
+
+          <div className="permission-item">
+            <div className="permission-icon-wrap">
+              <img src="/assets/images/permissions/icon_notification.png" alt="알림" />
+            </div>
+            <div className="permission-text">
+              <h3>알림</h3>
+              <p>채팅, 친구 요청 등 주요 소식을 받을 때 필요합니다.</p>
+            </div>
+          </div>
         </div>
       </div>
 

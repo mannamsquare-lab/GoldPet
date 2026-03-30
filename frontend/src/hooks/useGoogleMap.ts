@@ -117,17 +117,9 @@ export function useGoogleMap(options: UseGoogleMapOptions = {}): UseGoogleMapRes
                     try {
                         const loc = await nativeBridge.callMethod('getCurrentLocation') as { latitude: number; longitude: number };
                         if (!cancelled) moveToLocation(loc.latitude, loc.longitude);
-                        return;
                     } catch {
-                        // fall through to web geolocation
+                        // native bridge failed — keep default location
                     }
-                }
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => { if (!cancelled) moveToLocation(pos.coords.latitude, pos.coords.longitude); },
-                        () => { /* keep default */ },
-                        { timeout: 5000 }
-                    );
                 }
             };
             if (!skipGeolocation) {

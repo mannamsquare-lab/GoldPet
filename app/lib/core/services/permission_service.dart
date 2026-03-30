@@ -11,11 +11,13 @@ class AllPermissionsResult {
   final PermissionResult location;
   final PermissionResult camera;
   final PermissionResult photo;
+  final PermissionResult notification;
 
   const AllPermissionsResult({
     required this.location,
     required this.camera,
     required this.photo,
+    required this.notification,
   });
 
   Map<String, dynamic> toJson() => {
@@ -31,6 +33,10 @@ class AllPermissionsResult {
           'granted': photo == PermissionResult.granted ||
               photo == PermissionResult.limited,
           'status': photo.name,
+        },
+        'notification': {
+          'granted': notification == PermissionResult.granted,
+          'status': notification.name,
         },
       };
 }
@@ -62,6 +68,7 @@ class PermissionService {
     PermissionResult locationResult;
     PermissionResult cameraResult;
     PermissionResult photoResult;
+    PermissionResult notificationResult;
 
     try {
       locationResult = _mapStatus(await Permission.location.status);
@@ -82,10 +89,17 @@ class PermissionService {
       photoResult = PermissionResult.denied;
     }
 
+    try {
+      notificationResult = _mapStatus(await Permission.notification.status);
+    } catch (_) {
+      notificationResult = PermissionResult.denied;
+    }
+
     return AllPermissionsResult(
       location: locationResult,
       camera: cameraResult,
       photo: photoResult,
+      notification: notificationResult,
     );
   }
 
@@ -95,6 +109,7 @@ class PermissionService {
     PermissionResult locationResult;
     PermissionResult cameraResult;
     PermissionResult photoResult;
+    PermissionResult notificationResult;
 
     // 1. Location
     try {
@@ -136,10 +151,24 @@ class PermissionService {
       photoResult = PermissionResult.denied;
     }
 
+    // 4. Notification
+    try {
+      final status = await Permission.notification.status;
+      if (status.isGranted) {
+        notificationResult = PermissionResult.granted;
+      } else {
+        notificationResult = _mapStatus(await Permission.notification.request());
+      }
+    } catch (e) {
+      debugPrint('[PermissionService] Notification permission error: $e');
+      notificationResult = PermissionResult.denied;
+    }
+
     return AllPermissionsResult(
       location: locationResult,
       camera: cameraResult,
       photo: photoResult,
+      notification: notificationResult,
     );
   }
 
