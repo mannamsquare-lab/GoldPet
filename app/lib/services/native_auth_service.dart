@@ -52,10 +52,11 @@ class NativeAuthService {
   Future<String?> loginWithNaver() async {
     try {
       final NaverLoginResult result = await FlutterNaverLogin.logIn();
+      debugPrint('Naver login result - status: ${result.status}, errorMessage: ${result.errorMessage}');
       if (result.status == NaverLoginStatus.loggedIn) {
         final NaverToken accessToken =
             await FlutterNaverLogin.getCurrentAccessToken();
-        debugPrint('Logged in with Naver');
+        debugPrint('Logged in with Naver, token: ${accessToken.accessToken.substring(0, 10)}...');
         return accessToken.accessToken;
       }
     } catch (e) {
