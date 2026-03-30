@@ -22,7 +22,7 @@ export const SignupCompletePage = () => {
     <div>
       <div className="signup-complete-content">
         <img
-          src="/assets/images/logo.png"
+          src="/assets/images/common/logo.svg"
           alt="Gold Pet Logo"
           className="signup-complete-logo"
         />
