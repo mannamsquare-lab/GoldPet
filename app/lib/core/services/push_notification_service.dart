@@ -100,9 +100,13 @@ class PushNotificationService {
     );
 
     // 알림 권한은 PermissionService.requestAllPermissions()에서 일괄 요청
-    // 여기서는 채널/리스너 설정만 수행
+    // 리스너/초기 메시지는 권한 부여 후 setupAfterPermission()에서 설정
+  }
 
-    // 리스너 설정
+  /// 알림 권한 부여 후 리스너 및 초기 메시지 설정
+  Future<void> setupAfterPermission() async {
+    // APNs 자동 등록 재활성화 (iOS)
+    await FirebaseMessaging.instance.setAutoInitEnabled(true);
     _setupListeners();
 
     // Cold start: 앱 종료 상태에서 알림 클릭으로 열린 경우

@@ -162,6 +162,8 @@ class NativeBridge {
         // 전체 권한 일괄 요청
         case BridgeProtocol.requestAllPermissions:
           final result = await permissionService.requestAllPermissions();
+          // 알림 권한 부여 후 FCM 리스너 설정
+          await pushNotificationService.setupAfterPermission();
           return result.toJson();
 
         // 위치

@@ -24,12 +24,21 @@ void main() async {
   // Firebase 초기화
   await Firebase.initializeApp();
 
+  // iOS: APNs 자동 등록 방지 (권한 설정 화면 전에 알림 다이얼로그 표시 방지)
+  await FirebaseMessaging.instance.setAutoInitEnabled(false);
+
   // FCM 백그라운드 메시지 핸들러 등록
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // 푸시 알림 서비스 초기화 (권한 요청 + 알림 채널 생성)
+  // 푸시 알림 서비스 초기화 (채널 생성만, 권한 요청은 PermissionsPage에서)
   final pushService = PushNotificationService();
   await pushService.initialize();
+  // 이미 알림 권한이 있는 기존 사용자: 리스너 즉시 설정
+  final notificationStatus = await FirebaseMessaging.instance.getNotificationSettings();
+  if (notificationStatus.authorizationStatus == AuthorizationStatus.authorized ||
+      notificationStatus.authorizationStatus == AuthorizationStatus.provisional) {
+    await pushService.setupAfterPermission();
+  }
 
   // Kakao SDK 초기화
   KakaoSdk.init(

@@ -20,21 +20,9 @@ import GoogleMaps
     // WKWebView 키보드 위 네비게이션 바(↑↓✓) 제거 (카카오톡 스타일)
     Self.removeWKWebViewInputAccessoryView()
 
-    // Request notification permissions and register for remote notifications
-    if #available(iOS 10.0, *) {
-      UNUserNotificationCenter.current().delegate = self
-      let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-      UNUserNotificationCenter.current().requestAuthorization(
-        options: authOptions,
-        completionHandler: { _, _ in }
-      )
-    } else {
-      let settings: UIUserNotificationSettings =
-        UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
-      application.registerUserNotificationSettings(settings)
-    }
-
-    application.registerForRemoteNotifications()
+    // 알림 권한은 Flutter PermissionService.requestAllPermissions()에서 일괄 요청
+    // 여기서는 delegate만 설정 (권한 요청 제거)
+    UNUserNotificationCenter.current().delegate = self
 
     let controller = window?.rootViewController as! FlutterViewController
 
