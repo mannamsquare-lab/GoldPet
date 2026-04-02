@@ -2,6 +2,7 @@ package com.goldpet.domain.auth.controller
 
 import com.goldpet.domain.auth.dto.AuthResponse
 import com.goldpet.domain.auth.service.AuthService
+import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.springframework.context.annotation.Profile
@@ -21,7 +22,7 @@ class DevAuthController(
         val testNickname = body?.get("nickname") ?: "테스트유저"
         val oauthId = "dev-user-${testEmail.hashCode()}"
         val existingUser = userRepository.findByOauthProviderAndOauthId("dev", oauthId).orElse(null)
-            ?: userRepository.findByEmailHash(testEmail).orElse(null)
+            ?: userRepository.findByEmailHash(BlindIndexUtil.hash(testEmail)!!).orElse(null)
 
         val user = if (existingUser == null) {
             val newUser = User(
@@ -29,7 +30,7 @@ class DevAuthController(
                 oauthId = "dev-user-${testEmail.hashCode()}",
                 nickname = testNickname,
                 email = testEmail,
-                emailHash = testEmail,
+                emailHash = BlindIndexUtil.hash(testEmail),
                 gender = null,
                 birthYear = null,
                 mainLocationText = null,

@@ -29,6 +29,7 @@ import org.springframework.web.client.RestTemplate
 import java.math.BigInteger
 import java.security.KeyFactory
 import java.security.spec.RSAPublicKeySpec
+import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.domain.common.util.toHttps
 import java.time.LocalDateTime
 import java.util.Base64
@@ -252,7 +253,7 @@ class SocialLoginService(
 
         // 2. Email match check
         val emailMatchedUser = if (!skipEmailMatch && email != null) {
-            userRepository.findByEmailHash(email).orElse(null)
+            userRepository.findByEmailHash(BlindIndexUtil.hash(email)!!).orElse(null)
         } else null
 
         if (emailMatchedUser != null) {
@@ -284,7 +285,7 @@ class SocialLoginService(
             oauthProvider = provider,
             oauthId = oauthId,
             email = email,
-            emailHash = email,
+            emailHash = BlindIndexUtil.hash(email),
             nickname = nickname ?: if (provider == "apple") "Apple User" else null,
             profileImageUrl = profileImage,
             username = null,
@@ -341,14 +342,14 @@ class SocialLoginService(
     ): AuthResponse {
         var user = userRepository.findByOauthProviderAndOauthId(provider, oauthId).orElse(null)
         if (user == null && email != null) {
-            user = userRepository.findByEmailHash(email).orElse(null)
+            user = userRepository.findByEmailHash(BlindIndexUtil.hash(email)!!).orElse(null)
         }
         if (user == null) {
             user = User(
                 oauthProvider = provider,
                 oauthId = oauthId,
                 email = email,
-                emailHash = email,
+                emailHash = BlindIndexUtil.hash(email),
                 nickname = nickname ?: if (provider == "apple") "Apple User" else null,
                 profileImageUrl = profileImage,
                 username = null,
@@ -389,7 +390,7 @@ class SocialLoginService(
 
     private fun syncUserFields(user: User, provider: String, oauthId: String, email: String?, nickname: String?, profileImage: String?) {
         var changed = false
-        if (email != null && user.email != email) { user.email = email; user.emailHash = email; changed = true }
+        if (email != null && user.email != email) { user.email = email; user.emailHash = BlindIndexUtil.hash(email); changed = true }
         if (nickname != null && user.nickname == null) { user.nickname = nickname; changed = true }
         if (profileImage != null && user.profileImages.isEmpty() && user.profileImageUrl != profileImage) {
             user.profileImageUrl = profileImage

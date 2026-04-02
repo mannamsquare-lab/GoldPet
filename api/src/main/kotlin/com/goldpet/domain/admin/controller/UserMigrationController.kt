@@ -1,5 +1,6 @@
 package com.goldpet.domain.admin.controller
 
+import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
@@ -14,6 +15,41 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/admin/migration")
 class UserMigrationController(private val userRepository: UserRepository) {
     private val log = LoggerFactory.getLogger(UserMigrationController::class.java)
+
+    /**
+     * Re-compute emailHash for ALL users from their decrypted email.
+     * Fixes double-hashing corruption caused by the old BlindIndexConverter.
+     */
+    @PostMapping("/email-hash/rehash")
+    @Transactional
+    fun rehashAllEmailHashes(): ResponseEntity<Map<String, Any>> {
+        val users = userRepository.findAll()
+        var fixedCount = 0
+        var skippedCount = 0
+
+        for (user in users) {
+            val email = user.email
+            if (email == null || user.status == UserStatus.WITHDRAWN) {
+                skippedCount++
+                continue
+            }
+            val correctHash = BlindIndexUtil.hash(email)
+            if (user.emailHash != correctHash) {
+                log.info("Fixing emailHash for user ${user.id} (${user.nickname}): ${user.emailHash} -> $correctHash")
+                user.emailHash = correctHash
+                userRepository.save(user)
+                fixedCount++
+            } else {
+                skippedCount++
+            }
+        }
+
+        return ResponseEntity.ok(mapOf(
+            "totalUsers" to users.size,
+            "fixed" to fixedCount,
+            "skipped" to skippedCount
+        ))
+    }
 
     @PostMapping("/email-hash")
     @Transactional
@@ -64,7 +100,7 @@ class UserMigrationController(private val userRepository: UserRepository) {
                 log.info("Duplicate found for email: $email. Keeping User ID: ${mainUser.id}")
 
                 // Update main user hash
-                mainUser.emailHash = email
+                mainUser.emailHash = BlindIndexUtil.hash(email)
                 userRepository.save(mainUser)
                 updatedCount++
 
@@ -92,7 +128,7 @@ class UserMigrationController(private val userRepository: UserRepository) {
             } else {
                 // Single user
                 val user = userList[0]
-                user.emailHash = email
+                user.emailHash = BlindIndexUtil.hash(email)
                 userRepository.save(user)
                 updatedCount++
             }

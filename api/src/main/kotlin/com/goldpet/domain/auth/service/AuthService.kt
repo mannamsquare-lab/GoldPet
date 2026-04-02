@@ -16,6 +16,7 @@ import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.config.crypto.BlindIndexUtil
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -42,7 +43,7 @@ class AuthService(
         val user =
                 User(
                         email = request.email,
-                        emailHash = request.email,
+                        emailHash = BlindIndexUtil.hash(request.email),
                         oauthProvider = "LOCAL",
                         oauthId = "LOCAL_${request.username}",
                         username = request.username,
@@ -165,7 +166,7 @@ class AuthService(
 
     @Transactional(readOnly = true)
     fun findUsername(request: FindUsernameRequest): FindUsernameResponse {
-        val user = userRepository.findByEmailHash(request.email).orElse(null)
+        val user = userRepository.findByEmailHash(BlindIndexUtil.hash(request.email)!!).orElse(null)
             ?: throw NotFoundException("해당 이메일로 가입된 계정을 찾을 수 없습니다.")
         val username = user.username ?: throw NotFoundException("해당 이메일로 가입된 계정을 찾을 수 없습니다.")
         val snsProvider = if (user.oauthProvider != "LOCAL") user.oauthProvider else null

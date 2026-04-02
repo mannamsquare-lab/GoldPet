@@ -1,6 +1,5 @@
 package com.goldpet.domain.user.entity
 
-import com.goldpet.config.crypto.BlindIndexConverter
 import com.goldpet.config.crypto.EncryptionConverter
 import com.goldpet.config.crypto.LocalDateEncryptionConverter
 import com.goldpet.domain.common.entity.BaseTimeEntity
@@ -16,8 +15,7 @@ class User(
         @Convert(converter = EncryptionConverter::class)
         @Column(unique = false) // Removed unique constraint as encryption is random IV
         var email: String?,
-        @Convert(converter = BlindIndexConverter::class)
-        @Column(name = "email_hash", unique = true) // Hash is unique
+        @Column(name = "email_hash", unique = true)
         var emailHash: String? = null,
         var oauthProvider: String,
         var oauthId: String,

@@ -4,6 +4,7 @@ import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserProfileImage
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.domain.common.util.toHttps
 import com.nimbusds.jwt.JWTParser
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -146,7 +147,7 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
             // Check if a user with this email hash already exists (from a different OAuth provider)
             if (email != null) {
                 // Determine existing user by email hash (blind index)
-                val existingUser = userRepository.findByEmailHash(email).orElse(null)
+                val existingUser = userRepository.findByEmailHash(BlindIndexUtil.hash(email)!!).orElse(null)
                 if (existingUser != null) {
                     // Email already registered with a different OAuth provider
                     val providerName =
@@ -169,7 +170,7 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
                             oauthProvider = registrationId,
                             oauthId = oauth2Id,
                             email = email,
-                            emailHash = email, // The converter will hash this value automatically
+                            emailHash = BlindIndexUtil.hash(email),
                             nickname = nickname,
                             gender = null,
                             birthYear = null,
@@ -191,7 +192,7 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
             // Update user details if necessary (protect user-customized data)
             var changed = false
             if (email != null && user.email != email) {
-                user.email = email; user.emailHash = email; changed = true
+                user.email = email; user.emailHash = BlindIndexUtil.hash(email); changed = true
             }
             if (nickname != null && user.nickname == null) {
                 user.nickname = nickname; changed = true
