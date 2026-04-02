@@ -26,28 +26,53 @@ class UserMigrationController(private val userRepository: UserRepository) {
         val users = userRepository.findAll()
         var fixedCount = 0
         var skippedCount = 0
+        var duplicateCount = 0
+        val usedHashes = mutableSetOf<String>()
 
+        // First pass: collect currently correct hashes to detect collisions
+        for (user in users) {
+            val email = user.email
+            if (email == null || user.status == UserStatus.WITHDRAWN) continue
+            val correctHash = BlindIndexUtil.hash(email) ?: continue
+            if (user.emailHash == correctHash) {
+                usedHashes.add(correctHash)
+            }
+        }
+
+        // Second pass: fix corrupted hashes, handle duplicates
         for (user in users) {
             val email = user.email
             if (email == null || user.status == UserStatus.WITHDRAWN) {
                 skippedCount++
                 continue
             }
-            val correctHash = BlindIndexUtil.hash(email)
-            if (user.emailHash != correctHash) {
-                log.info("Fixing emailHash for user ${user.id} (${user.nickname}): ${user.emailHash} -> $correctHash")
+            val correctHash = BlindIndexUtil.hash(email) ?: continue
+            if (user.emailHash == correctHash) {
+                usedHashes.add(correctHash)
+                skippedCount++
+                continue
+            }
+            if (usedHashes.contains(correctHash)) {
+                // Another user already has this hash - suffix with user id
+                val dedupHash = "${correctHash}-dup-${user.id}"
+                log.warn("Duplicate email detected for user ${user.id} (${user.nickname}). Using dedup hash.")
+                user.emailHash = dedupHash
+                userRepository.save(user)
+                duplicateCount++
+            } else {
+                log.info("Fixing emailHash for user ${user.id} (${user.nickname})")
                 user.emailHash = correctHash
+                usedHashes.add(correctHash)
                 userRepository.save(user)
                 fixedCount++
-            } else {
-                skippedCount++
             }
         }
 
         return ResponseEntity.ok(mapOf(
             "totalUsers" to users.size,
             "fixed" to fixedCount,
-            "skipped" to skippedCount
+            "skipped" to skippedCount,
+            "duplicates" to duplicateCount
         ))
     }
 
