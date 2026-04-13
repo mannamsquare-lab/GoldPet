@@ -21,6 +21,7 @@ import { LoadingProvider } from './contexts/LoadingContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { useAppHeight } from './hooks/useAppHeight';
 import MaintenanceGuard from './components/common/MaintenancePage';
+import { ShareRedirectBridge } from './features/share/ShareRedirect';
 
 // Named-export pages (adapter pattern)
 const OnboardingPage = lazy(() => import('./features/onboarding/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
@@ -226,6 +227,13 @@ function App() {
               <Route path="/pet/edit/:petId" element={<Suspense fallback={null}><PetRegisterPage /></Suspense>} />
               <Route path="/my-badges" element={<Suspense fallback={null}><GamificationTabPage /></Suspense>} />
               <Route path="/missions" element={<Suspense fallback={null}><GamificationTabPage /></Suspense>} />
+
+              {/* Share short-link routes */}
+              <Route path="/w/:walkId" element={<ShareRedirectBridge to={(p) => `/walk/detail/${p.walkId}`} />} />
+              <Route path="/c/:courseId" element={<ShareRedirectBridge to={(p) => `/courses/${p.courseId}`} />} />
+              <Route path="/pet/:petId/health" element={<ShareRedirectBridge to={() => '/health'} searchFn={(p) => `?pet=${p.petId}`} />} />
+              <Route path="/health/:healthId" element={<ShareRedirectBridge to={() => '/health'} searchFn={(p) => `?focus=${p.healthId}`} />} />
+              <Route path="/post/:postId" element={<ShareRedirectBridge to={(p) => `/community/${p.postId}`} />} />
 
               <Route path="/" element={<Navigate to="/splash" replace />} />
             </Routes>

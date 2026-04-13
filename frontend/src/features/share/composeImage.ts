@@ -207,13 +207,21 @@ async function composeWalkSummary(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable');
 
-  // ── Background ──
+  // ── Layout constants ──
+  const IMG_H = 1620;         // full-bleed image area
+  const POLY_Y = IMG_H;       // 1620
+  const POLY_H = 40;          // 1620–1660
+  const OVERLAY_Y = 1660;     // bottom overlay strip start
+  const OVERLAY_H = 260;      // 1660–1920
+  const PAD = 60;
+
+  // ── Background image (full-bleed, top 1620px) ──
   const bgUrl = target.session.petProfileImageUrls?.[0];
   let bgLoaded = false;
   if (bgUrl) {
     try {
       const img = await loadImage(bgUrl);
-      drawImageCover(ctx, img, 0, 0, CANVAS_W, Math.round(CANVAS_H * 0.6));
+      drawImageCover(ctx, img, 0, 0, CANVAS_W, IMG_H);
       bgLoaded = true;
     } catch {
       // fallback to gradient below
@@ -223,54 +231,57 @@ async function composeWalkSummary(
     drawGradientBackground(ctx);
   }
 
-  // Dark overlay for legibility
-  const topFade = ctx.createLinearGradient(0, 0, 0, CANVAS_H * 0.35);
-  topFade.addColorStop(0, 'rgba(0,0,0,0.65)');
-  topFade.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = topFade;
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H * 0.35);
+  // ── Top header overlay (logo + date) ──
+  // Semi-transparent gradient behind top text
+  const topHeaderGrad = ctx.createLinearGradient(0, 0, 0, 140);
+  topHeaderGrad.addColorStop(0, 'rgba(0,0,0,0.55)');
+  topHeaderGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = topHeaderGrad;
+  ctx.fillRect(0, 0, CANVAS_W, 140);
 
-  const bottomFade = ctx.createLinearGradient(0, CANVAS_H * 0.45, 0, CANVAS_H);
-  bottomFade.addColorStop(0, 'rgba(15,15,15,0)');
-  bottomFade.addColorStop(1, 'rgba(15,15,15,0.92)');
-  ctx.fillStyle = bottomFade;
-  ctx.fillRect(0, CANVAS_H * 0.45, CANVAS_W, CANVAS_H * 0.55);
-
-  const PAD = 60;
-
-  // ── GoldPet logo (top-left) ──
+  // GoldPet logo — top-left
   ctx.save();
-  ctx.font = `bold 52px ${font}`;
+  ctx.font = `bold 44px ${font}`;
   ctx.fillStyle = '#FFFFFF';
   ctx.textBaseline = 'top';
   ctx.textAlign = 'left';
-  ctx.fillText('GoldPet', PAD, PAD);
+  ctx.fillText('GoldPet', PAD, 48);
 
-  // ── Date (top-right) ──
+  // Date — top-right
   const dateStr = target.session.startTime ? formatDate(target.session.startTime) : '';
-  ctx.font = `500 40px ${font}`;
+  ctx.font = `500 32px ${font}`;
   ctx.textAlign = 'right';
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillText(`${dateStr} · 산책 기록`, CANVAS_W - PAD, PAD + 8);
+  ctx.fillText(`${dateStr} · 산책 기록`, CANVAS_W - PAD, 56);
   ctx.restore();
 
-  // ── Path polyline (§5.5.1) ──
-  const polyAreaY = Math.round(CANVAS_H * 0.55);
-  const polyAreaH = Math.round(CANVAS_H * 0.18);
+  // ── Polyline strip (y=1620–1660, 40px height) ──
   if (target.session.pathPoints && target.session.pathPoints.length >= 2) {
     drawPathPolyline(
       ctx,
       target.session.pathPoints,
       PAD,
-      polyAreaY,
+      POLY_Y,
       CANVAS_W - PAD * 2,
-      polyAreaH,
-      20,
+      POLY_H,
+      4,
     );
   }
 
-  // ── Stats row ──
-  const statsBaseY = Math.round(CANVAS_H * 0.775);
+  // ── Bottom overlay strip (y=1660–1920) ──
+  // Feather gradient (12px) at top of strip
+  const featherGrad = ctx.createLinearGradient(0, OVERLAY_Y, 0, OVERLAY_Y + 12);
+  featherGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  featherGrad.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = featherGrad;
+  ctx.fillRect(0, OVERLAY_Y, CANVAS_W, 12);
+
+  // Solid overlay remainder
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, OVERLAY_Y + 12, CANVAS_W, OVERLAY_H - 12);
+
+  // ── Stats row (y≈1760) ──
+  const statsBaseY = 1760;
   const colW = CANVAS_W / 3;
   const stats = [
     {
@@ -298,24 +309,23 @@ async function composeWalkSummary(
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
 
-    ctx.font = `bold 96px ${font}`;
+    ctx.font = `bold 64px ${font}`;
     ctx.fillStyle = '#FFFFFF';
     ctx.fillText(stat.value, cx, statsBaseY);
 
     if (stat.unit) {
-      ctx.font = `500 44px ${font}`;
+      ctx.font = `500 28px ${font}`;
       ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      ctx.fillText(stat.unit, cx, statsBaseY + 64);
+      ctx.fillText(stat.unit, cx, statsBaseY + 42);
     }
 
-    ctx.font = `400 36px ${font}`;
+    ctx.font = `400 24px ${font}`;
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillText(stat.label, cx, statsBaseY + (stat.unit ? 120 : 64));
+    ctx.fillText(stat.label, cx, statsBaseY + (stat.unit ? 80 : 42));
     ctx.restore();
   });
 
-  // ── Pet name + address ──
-  const petInfoY = Math.round(CANVAS_H * 0.905);
+  // ── Pet name + address (y≈1840) ──
   const petNames = target.session.petNames?.join(', ') ?? '';
   const address = target.session.startAddress
     ? formatAddressForShare(target.session.startAddress)
@@ -325,14 +335,14 @@ async function composeWalkSummary(
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  ctx.font = `500 38px ${font}`;
+  ctx.font = `500 26px ${font}`;
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.fillText(petInfo, CANVAS_W / 2, petInfoY);
+  ctx.fillText(petInfo, CANVAS_W / 2, 1840);
 
-  // ── Domain watermark ──
-  ctx.font = `400 30px ${font}`;
+  // ── Domain watermark (y≈1880) ──
+  ctx.font = `400 22px ${font}`;
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.fillText('goldpet.com', CANVAS_W / 2, petInfoY + 54);
+  ctx.fillText('goldpet.com', CANVAS_W / 2, 1880);
   ctx.restore();
 
   return canvasToBlob(canvas, quality);

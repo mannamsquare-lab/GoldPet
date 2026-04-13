@@ -58,6 +58,12 @@ export const LoginSuccessPage = () => {
                             navigate('/signup', { state: { isSns: true, provider: user.oauthProvider } });
                         } else {
                             login(token, refreshToken, user);
+                            const redirect = sessionStorage.getItem('postLoginRedirect');
+                            if (redirect) {
+                                sessionStorage.removeItem('postLoginRedirect');
+                                navigate(redirect, { replace: true });
+                                return;
+                            }
                             navigate('/home', { replace: true });
                         }
                     }
