@@ -168,7 +168,7 @@ export default function MyPostsPage() {
                     </div>
 
                     <div className="mp-post-txt">
-                      <p className="mp-post-title">{(comment as Record<string, unknown>).postTitle as string || '게시글'}</p>
+                      <p className="mp-post-title">{(comment as unknown as Record<string, unknown>).postTitle as string || '게시글'}</p>
                       <p className="mp-post-body">{comment.content}</p>
                     </div>
 
