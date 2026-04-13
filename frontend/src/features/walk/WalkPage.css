@@ -327,6 +327,23 @@
   gap: 16px;
 }
 
+.walk_records_more_btn {
+  width: 100%;
+  padding: 14px 0;
+  background: white;
+  border: 1px solid var(--color-border, #efe1c4);
+  border-radius: 12px;
+  color: var(--color-text-primary, #614108);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: var(--letter-spacing, -0.02em);
+}
+
+.walk_records_more_btn:active {
+  background: var(--color-bg-warm, #efe1c4);
+}
+
 .walk_photo_collection {
   width: 100%;
   padding: 20px 16px;

@@ -171,40 +171,16 @@ export const WalkPage = () => {
         setRankingSize(10);
     }
 
-    const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-    } = useInfiniteQuery({
-        queryKey: ['walk', 'public', 'paged', yearMonth, recordsProvince],
-        queryFn: ({ pageParam = 0 }) => walkService.getPublicWalksPaged(pageParam, 10, yearMonth, recordsProvince),
-        getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.number + 1,
-        initialPageParam: 0,
+    const RECORDS_PREVIEW_SIZE = 10;
+    const { data: recordsPage } = useQuery({
+        queryKey: ['walk', 'public', 'paged', yearMonth, recordsProvince, 'preview'],
+        queryFn: () => walkService.getPublicWalksPaged(0, RECORDS_PREVIEW_SIZE, yearMonth, recordsProvince),
         enabled: activeTab === 'records',
     });
 
-    const walkRecords = data?.pages.flatMap(p => p.content) ?? [];
+    const walkRecords = recordsPage?.content ?? [];
+    const hasMoreRecords = recordsPage ? !recordsPage.last : false;
     const todayStats = getTodayStats(walkRecords);
-
-    // IntersectionObserver for infinite scroll
-    const sentinelRef = useRef<HTMLDivElement>(null);
-    const handleIntersect = useCallback(
-        (entries: IntersectionObserverEntry[]) => {
-            if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-                fetchNextPage();
-            }
-        },
-        [hasNextPage, isFetchingNextPage, fetchNextPage]
-    );
-
-    useEffect(() => {
-        const el = sentinelRef.current;
-        if (!el) return;
-        const observer = new IntersectionObserver(handleIntersect, { rootMargin: '200px' });
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, [handleIntersect]);
 
     return (
         <div id="walkContainer">
@@ -413,12 +389,19 @@ export const WalkPage = () => {
                                     </div>
                                 )}
                             </div>
-                            {isFetchingNextPage && (
-                                <p style={{ color: '#727272', fontSize: 14, textAlign: 'center', padding: '16px 0' }}>
-                                    불러오는 중...
-                                </p>
+                            {hasMoreRecords && (
+                                <button
+                                    type="button"
+                                    className="walk_records_more_btn"
+                                    onClick={() => {
+                                        const params = new URLSearchParams({ yearMonth });
+                                        if (recordsProvince) params.set('province', recordsProvince);
+                                        navigate(`/walks?${params.toString()}`);
+                                    }}
+                                >
+                                    더보기
+                                </button>
                             )}
-                            <div ref={sentinelRef} style={{ height: 1 }} />
                             <WalkPhotoCollection />
                         </div>
                     )}
@@ -741,7 +724,7 @@ interface WalkRecordItemProps {
     onClick: () => void;
 }
 
-function WalkRecordItem({ record, onClick, showUser = false }: WalkRecordItemProps & { showUser?: boolean }) {
+export function WalkRecordItem({ record, onClick, showUser = false }: WalkRecordItemProps & { showUser?: boolean }) {
     const petNames = record.petNames ?? [];
     const petImages = record.petProfileImageUrls ?? [];
     const hasPets = petNames.length > 0;

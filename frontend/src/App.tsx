@@ -88,6 +88,7 @@ const WalkPhotoGalleryPage = lazy(() => import('./features/walk/WalkPhotoGallery
 const WalkPhotoDetailPage = lazy(() => import('./features/walk/WalkPhotoDetailPage'));
 const WalkSharedPhotoListPage = lazy(() => import('./features/walk/WalkSharedPhotoListPage'));
 const WalkSharedPhotoDetailPage = lazy(() => import('./features/walk/WalkSharedPhotoDetailPage'));
+const WalkPublicListPage = lazy(() => import('./features/walk/WalkPublicListPage'));
 
 // queryClient is imported from './lib/queryClient'
 
@@ -162,6 +163,7 @@ function App() {
               {/* Walk Photos */}
               <Route path="/walk-photos" element={<Suspense fallback={null}><WalkPhotoGalleryPage /></Suspense>} />
               <Route path="/walk-photos/:walkId/:spotId" element={<Suspense fallback={null}><WalkPhotoDetailPage /></Suspense>} />
+              <Route path="/walks" element={<Suspense fallback={null}><WalkPublicListPage /></Suspense>} />
               <Route path="/walk-shared-photos" element={<Suspense fallback={null}><WalkSharedPhotoListPage /></Suspense>} />
               <Route path="/walk-shared-photos/:walkId/:spotId" element={<Suspense fallback={null}><WalkSharedPhotoDetailPage /></Suspense>} />
 
