@@ -5,11 +5,13 @@ import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
 import { resolvePhotoUrl, getCachedPhotoUrl } from './utils/photoUrlCache';
+import { useAlert } from '../../contexts/AlertContext';
 import './WalkPhotoDetail.css';
 
 export default function WalkPhotoDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showAlert, showConfirm } = useAlert();
   const { walkId, spotId } = useParams<{ walkId: string; spotId: string }>();
   const location = useLocation();
 
@@ -75,13 +77,8 @@ export default function WalkPhotoDetailPage() {
     }
   };
 
-  const handleToggleVisibility = async () => {
-    if (!walkId || !spotId || togglingVisibility) return;
-    const next = !hiddenFromPublic;
-    const confirmMsg = next
-      ? '이 사진을 공개 갤러리에서 숨길까요?\n다른 사용자에게 더 이상 노출되지 않습니다.'
-      : '이 사진을 다시 공개할까요?';
-    if (!window.confirm(confirmMsg)) return;
+  const applyVisibility = async (next: boolean) => {
+    if (!walkId || !spotId) return;
     setTogglingVisibility(true);
     try {
       await walkService.updateSpotVisibility(Number(walkId), Number(spotId), next);
@@ -90,10 +87,24 @@ export default function WalkPhotoDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['walk', 'my', 'photos'] });
       queryClient.invalidateQueries({ queryKey: ['walk', 'public', 'photos', 'collection'] });
     } catch {
-      window.alert('처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      showAlert('처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setTogglingVisibility(false);
     }
+  };
+
+  const handleToggleVisibility = () => {
+    if (!walkId || !spotId || togglingVisibility) return;
+    const next = !hiddenFromPublic;
+    const confirmMsg = next
+      ? '이 사진을 공개 갤러리에서 숨길까요?\n다른 사용자에게 더 이상 노출되지 않습니다.'
+      : '이 사진을 다시 공개할까요?';
+    showConfirm(
+      confirmMsg,
+      () => { void applyVisibility(next); },
+      undefined,
+      { confirmText: '확인', cancelText: '취소' }
+    );
   };
 
   return (
