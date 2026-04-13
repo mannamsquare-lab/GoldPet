@@ -56,7 +56,7 @@ export function WalkPhotoCollection() {
       <button
         type="button"
         className="walk_photo_collection_title"
-        onClick={() => navigate('/walk-photos')}
+        onClick={() => navigate('/walk-shared-photos')}
       >
         <span>산책 사진 모아보기</span>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -71,7 +71,7 @@ export function WalkPhotoCollection() {
               key={photo.id}
               type="button"
               className="walk_photo_collection_item"
-              onClick={() => navigate(`/walk-photos/${photo.walkId}/${photo.id}`)}
+              onClick={() => navigate(`/walk-shared-photos/${photo.walkId}/${photo.id}`)}
             >
               {src ? (
                 <img src={src} alt="" loading="lazy" />
