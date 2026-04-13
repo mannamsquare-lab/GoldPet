@@ -1,11 +1,13 @@
 package com.goldpet.domain.walk.controller
 
 import com.goldpet.domain.walk.dto.CreateWalkRequest
+import com.goldpet.domain.walk.dto.WalkPhotoResponse
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.dto.WalkCoupleRankingResponse
 import com.goldpet.domain.walk.dto.WalkStatsResponse
+import com.goldpet.domain.walk.dto.UpdateSpotNoteRequest
 import com.goldpet.domain.walk.service.WalkService
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -76,6 +78,39 @@ class WalkController(
     ): ResponseEntity<List<WalkResponse>> {
         val walkResponses = walkService.findWalksInArea(request)
         return ResponseEntity.ok(walkResponses)
+    }
+
+    @GetMapping("/my/photos")
+    fun getMyPhotos(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
+        @org.springframework.data.web.PageableDefault(size = 20) pageable: org.springframework.data.domain.Pageable,
+        @RequestParam(required = false) yearMonth: String?
+    ): ResponseEntity<org.springframework.data.domain.Page<WalkPhotoResponse>> {
+        if (userDetails == null) return ResponseEntity.status(401).build()
+        val photos = walkService.getMyPhotos(userDetails.id, yearMonth, pageable)
+        return ResponseEntity.ok(photos)
+    }
+
+    @PatchMapping("/{walkId}/spots/{spotId}")
+    fun updateSpotNote(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
+        @PathVariable walkId: Long,
+        @PathVariable spotId: Long,
+        @RequestBody request: UpdateSpotNoteRequest
+    ): ResponseEntity<WalkPhotoResponse> {
+        if (userDetails == null) return ResponseEntity.status(401).build()
+        val photo = walkService.updateSpotNote(userDetails.id, walkId, spotId, request.note)
+        return ResponseEntity.ok(photo)
+    }
+
+    @GetMapping("/public/photos")
+    fun getPublicPhotos(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
+        @org.springframework.data.web.PageableDefault(size = 20) pageable: org.springframework.data.domain.Pageable
+    ): ResponseEntity<org.springframework.data.domain.Page<WalkPhotoResponse>> {
+        if (userDetails == null) return ResponseEntity.status(401).build()
+        val photos = walkService.getPublicPhotos(userDetails.id, pageable)
+        return ResponseEntity.ok(photos)
     }
 
     @GetMapping("/ranking")

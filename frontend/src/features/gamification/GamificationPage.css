@@ -1,313 +1,382 @@
-/* Gamification Pages Styles */
+/* Gamification Pages */
 
-#gamificationTabPage,
-#badgesPage,
-#missionsPage {
-  padding-bottom: 80px;
-}
-
-/* Tab Menu */
-.gamification_tabs {
+/* Tab bar */
+.gm_tab_bar {
+  position: relative;
   display: flex;
-  border-bottom: 1px solid #EFE1C4;
-  margin: 0 16px;
-  gap: 0;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 24px 16px 0;
+  background: var(--color-bg, #FFF7E6);
 }
 
-.gamification_tab {
-  flex: 1;
-  padding: 14px 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #999;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  text-align: center;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.gamification_tab.active {
-  color: #614108;
-  border-bottom-color: #614108;
-}
-
-/* Progress Summary */
-.progress_summary {
-  background: #FFF7E6;
-  padding: 24px;
-  text-align: center;
-  margin: 16px 16px;
-  border-radius: 16px;
-  border: 1px solid #EFE1C4;
-}
-
-.progress_circle {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #C49A3C 0%, #614108 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 12px;
-  color: #FFF;
-}
-
-.progress_value {
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.progress_label {
-  font-size: 12px;
-}
-
-.progress_text {
-  font-size: 14px;
-  color: #666;
-}
-
-/* Badges Section */
-.badges_section {
-  padding: 16px;
-}
-
-.badges_section h2 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
-.badges_grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.badge_card {
-  background: #FFF;
-  border-radius: 12px;
-  padding: 16px 12px;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.badge_card.locked {
-  opacity: 0.5;
-}
-
-.badge_icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.badge_icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.locked_icon,
-.fallback_icon {
-  font-size: 32px;
-}
-
-.badge_name {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #333;
-}
-
-.badge_description {
-  font-size: 11px;
-  color: #999;
-  margin-bottom: 4px;
-  line-height: 1.3;
-}
-
-.badge_date {
-  font-size: 10px;
-  color: #C49A3C;
-}
-
-/* Challenges Section */
-.challenges_section {
-  padding: 16px;
-}
-
-.challenges_section h2 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
-.challenges_list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.challenge_card {
-  background: #FFF;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.challenge_card.completed {
-  opacity: 0.7;
-}
-
-.challenge_header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.challenge_header h3 {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.challenge_status {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.challenge_description {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 12px;
-}
-
-/* Progress Bar */
-.progress_container {
-  margin-bottom: 12px;
-}
-
-.progress_bar {
-  height: 8px;
-  background: #F0F0F0;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 4px;
-}
-
-.progress_fill {
-  height: 100%;
-  background: linear-gradient(90deg, #C49A3C 0%, #614108 100%);
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.progress_container .progress_text {
-  font-size: 12px;
-  color: #666;
-  text-align: right;
-}
-
-/* Challenge Footer */
-.challenge_footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.reward_info {
-  display: flex;
-  gap: 8px;
-}
-
-.reward_gold,
-.reward_badge {
-  font-size: 12px;
-  padding: 4px 8px;
-  background: #FFF7E6;
-  border-radius: 12px;
-  color: #C49A3C;
-}
-
-.reward_badge {
-  background: #FFF7E6;
-  color: #614108;
-}
-
-.days_remaining {
-  font-size: 12px;
-  color: #999;
-}
-
-/* Join Button */
-.join_btn {
+.gm_tab_bar_line {
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 2px;
   background: #614108;
-  color: #FFF;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 600;
+  z-index: 0;
 }
 
-/* Completed Badge */
-.completed_badge {
-  font-size: 12px;
+.gm_tab_btn {
+  flex: 1;
+  height: 46px;
+  border-radius: 16px 16px 0 0;
+  background: #EFE1C4;
+  border: 2px solid transparent;
+  border-bottom: none;
+  font-size: 16px;
+  font-weight: 500;
   color: #614108;
-  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
 }
 
-/* Mission Type Badge */
-.mission_type_badge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 10px;
-  background: #FFF7E6;
-  color: #C49A3C;
-  white-space: nowrap;
+.gm_tab_btn.active {
+  height: 48px;
+  background: var(--color-bg, #FFF7E6);
+  border-color: #614108;
+  border-bottom: 2px solid var(--color-bg, #FFF7E6);
+  font-weight: 700;
+  z-index: 2;
+  /* Extend down to cover the tab_bar_line under active tab */
+  margin-bottom: -2px;
 }
 
-/* Mission Condition */
-.mission_condition {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #F9F5ED;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  font-size: 13px;
-}
-
-.condition_label {
-  color: #614108;
-  font-weight: 600;
-}
-
-.condition_value {
-  color: #999;
-}
-
-/* Empty State */
-.empty_text {
-  text-align: center;
-  padding: 24px;
-  color: #999;
-  font-size: 14px;
-}
-
-.loading {
+/* Loading */
+.gm_loading {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 50vh;
   color: #999;
+}
+
+/* Empty */
+.gm_empty_text {
+  text-align: center;
+  padding: 48px 16px;
+  color: #999;
+  font-size: 14px;
+}
+
+/* ── Badges Tab ── */
+
+.gm_badges_page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 16px 80px;
+}
+
+/* Progress card */
+.gm_progress_card {
+  background: #614108;
+  border-radius: 16px;
+  padding: 16px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.gm_progress_circle_wrap {
+  position: relative;
+  height: 90px;
+  width: 80px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.gm_progress_circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, #FFF0AA, #F9E586 50%, #F3DA62);
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gm_progress_count {
+  display: flex;
+  align-items: baseline;
+  color: #614108;
+}
+
+.gm_progress_earned {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.gm_progress_denom {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.gm_progress_desc {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin: 0;
+}
+
+/* Section label */
+.gm_section_label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #505050;
+  margin: 0 0 8px;
+}
+
+/* Badges section */
+.gm_badges_section {
+  display: flex;
+  flex-direction: column;
+}
+
+.gm_badges_grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.gm_badge_card {
+  background: #F9ECD2;
+  border-radius: 16px;
+  padding: 16px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.gm_badge_icon_wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #EFE1C4;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gm_badge_img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.gm_badge_placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gm_badge_info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.gm_badge_name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #614108;
+  text-align: center;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.gm_badge_desc {
+  font-size: 12px;
+  color: #505050;
+  text-align: center;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.gm_badge_date {
+  font-size: 10px;
+  color: #C49A3C;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Missions Tab ── */
+
+.gm_missions_page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 16px 80px;
+}
+
+.gm_section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mission card container */
+.gm_mission_card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.gm_mission_card--completed {
+  background: #F9ECD2;
+}
+
+.gm_mission_divider {
+  height: 1px;
+  background: #EFE1C4;
+  margin: 24px 0;
+}
+
+/* Mission item */
+.gm_mission_item {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gm_mission_title_row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gm_mission_icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #F9ECD2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.gm_mission_icon.completed {
+  background: #fff;
+}
+
+.gm_mission_icon_img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.gm_mission_icon_emoji {
+  font-size: 20px;
+}
+
+.gm_mission_text_wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.gm_mission_name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #614108;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.gm_mission_desc {
+  font-size: 14px;
+  color: #505050;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.gm_mission_date {
+  font-size: 12px;
+  color: #727272;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Gold reward */
+.gm_gold_reward {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  background: #FFF7E6;
+  border: 1.5px solid #C49A3C;
+  border-radius: 8px;
+  padding: 6px 8px;
+  min-width: 40px;
+}
+
+.gm_gold_reward.dimmed {
+  background: #f1f1f1;
+  border-color: #ccc;
+}
+
+.gm_gold_amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #614108;
+  line-height: 1;
+}
+
+.gm_gold_reward.dimmed .gm_gold_amount {
+  color: #505050;
+}
+
+/* Mission progress bar */
+.gm_mission_progress_wrap {
+  width: 100%;
+}
+
+.gm_mission_progress_bg {
+  position: relative;
+  height: 17px;
+  border-radius: 1000px;
+  background: #f1f1f1;
+  overflow: hidden;
+}
+
+.gm_mission_progress_fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 1000px;
+  background: #a5eccd;
+  transition: width 0.3s ease;
+}
+
+.gm_mission_progress_text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: 500;
+  color: #505050;
+  white-space: nowrap;
+  line-height: 1;
 }

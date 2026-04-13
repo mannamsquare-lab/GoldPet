@@ -87,6 +87,18 @@
   letter-spacing: -0.32px;
 }
 
+.mypage-nickname.mypage-nickname-selectable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.mypage-pet-arrow {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
 /* Stats Card */
 .mypage-stats {
   display: flex;

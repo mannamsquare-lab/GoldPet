@@ -11,6 +11,7 @@ import { TAB_DURATION, TAB_EASING } from '../../config/cardFlipAnimation';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
+import { PetSelectBottomSheet } from '../../components/common/PetSelectBottomSheet';
 import './MyPage.css';
 
 const ChevronRight = () => (
@@ -29,6 +30,8 @@ const MyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'owner' | 'pet'>('owner');
   const isAnimatingRef = useRef(false);
   const [galleryState, setGalleryState] = useState<{ open: boolean; images: string[]; index: number }>({ open: false, images: [], index: 0 });
+  const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
+  const [petSelectOpen, setPetSelectOpen] = useState(false);
 
   const { data: apiUser } = useQuery({
     queryKey: ['users', 'me'],
@@ -72,10 +75,11 @@ const MyPage: React.FC = () => {
     : [user?.profileImageUrl || '/assets/images/common/profile_none_img.svg'];
 
   const firstPet = myPets && myPets.length > 0 ? myPets[0] : null;
-  const petImages = firstPet?.profileImageUrls?.length
-    ? firstPet.profileImageUrls
-    : firstPet?.profileImageUrl
-      ? [firstPet.profileImageUrl]
+  const selectedPet = myPets?.find(p => p.id === selectedPetId) ?? firstPet;
+  const petImages = selectedPet?.profileImageUrls?.length
+    ? selectedPet.profileImageUrls
+    : selectedPet?.profileImageUrl
+      ? [selectedPet.profileImageUrl]
       : ['/assets/images/common/pet_none_img.svg'];
 
   const ownerHasProfile = (user?.profileImageUrls?.length ?? 0) > 0;
@@ -251,8 +255,16 @@ const MyPage: React.FC = () => {
                 />
               </div>
 
-              <div className="mypage-nickname">
-                {firstPet?.name || '이름'}
+              <div
+                className={`mypage-nickname${myPets && myPets.length > 1 ? ' mypage-nickname-selectable' : ''}`}
+                onClick={() => myPets && myPets.length > 1 && setPetSelectOpen(true)}
+              >
+                {selectedPet?.name || '이름'}
+                {myPets && myPets.length > 1 && (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="mypage-pet-arrow" aria-hidden="true">
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
               </div>
 
               {!firstPet && (
@@ -282,6 +294,16 @@ const MyPage: React.FC = () => {
           {hasProfile ? '프로필 보기' : '프로필 등록'}
         </button>
       </div>
+
+      {myPets && myPets.length > 1 && (
+        <PetSelectBottomSheet
+          isOpen={petSelectOpen}
+          pets={myPets}
+          selectedPetId={selectedPetId ?? firstPet?.id}
+          onSelect={(id) => setSelectedPetId(id)}
+          onClose={() => setPetSelectOpen(false)}
+        />
+      )}
     </SubPageLayout>
   );
 };

@@ -82,6 +82,10 @@ const GoldHistoryPage = lazy(() => import('./features/gold/GoldHistoryPage'));
 const LocationSettingPage = lazy(() => import('./features/location/LocationSettingPage'));
 const CourseDetailPage = lazy(() => import('./features/course/CourseDetailPage'));
 const HealthHistoryPage = lazy(() => import('./features/health/HealthHistoryPage'));
+const WalkPhotoGalleryPage = lazy(() => import('./features/walk/WalkPhotoGalleryPage'));
+const WalkPhotoDetailPage = lazy(() => import('./features/walk/WalkPhotoDetailPage'));
+const WalkSharedPhotoListPage = lazy(() => import('./features/walk/WalkSharedPhotoListPage'));
+const WalkSharedPhotoDetailPage = lazy(() => import('./features/walk/WalkSharedPhotoDetailPage'));
 
 // queryClient is imported from './lib/queryClient'
 
@@ -150,6 +154,12 @@ function App() {
 
               {/* Health */}
               <Route path="/health" element={<Suspense fallback={null}><HealthHistoryPage /></Suspense>} />
+
+              {/* Walk Photos */}
+              <Route path="/walk-photos" element={<Suspense fallback={null}><WalkPhotoGalleryPage /></Suspense>} />
+              <Route path="/walk-photos/:walkId/:spotId" element={<Suspense fallback={null}><WalkPhotoDetailPage /></Suspense>} />
+              <Route path="/walk-shared-photos" element={<Suspense fallback={null}><WalkSharedPhotoListPage /></Suspense>} />
+              <Route path="/walk-shared-photos/:walkId/:spotId" element={<Suspense fallback={null}><WalkSharedPhotoDetailPage /></Suspense>} />
 
               {/* No Layout: Custom header pages */}
               <Route path="/location/setting" element={<Suspense fallback={null}><LocationSettingPage /></Suspense>} />

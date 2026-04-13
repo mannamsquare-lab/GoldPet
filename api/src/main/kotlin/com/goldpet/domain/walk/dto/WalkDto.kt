@@ -34,11 +34,26 @@ data class CreateWalkRequest(
 }
 
 data class WalkSpotDto(
+    val id: Long? = null,
     val latitude: Double,
     val longitude: Double,
     val type: String,
     val timestamp: LocalDateTime,
     val imageUrl: String?,
+    val note: String?
+)
+
+data class WalkPhotoResponse(
+    val id: Long,
+    val imageUrl: String?,
+    val note: String?,
+    val walkDate: LocalDateTime,
+    val walkId: Long,
+    val petName: String?,
+    val petImageUrl: String?
+)
+
+data class UpdateSpotNoteRequest(
     val note: String?
 )
 
@@ -80,6 +95,7 @@ data class WalkResponse(
                 path = pathCoordinates,
                 spots = walk.spots.map { spot ->
                     WalkSpotDto(
+                        id = spot.id,
                         latitude = spot.location.y,
                         longitude = spot.location.x,
                         type = spot.type.name,
@@ -118,6 +134,7 @@ data class WalkResponse(
                 path = pathCoordinates,
                 spots = walk.spots.map { spot ->
                     WalkSpotDto(
+                        id = spot.id,
                         latitude = spot.location.y,
                         longitude = spot.location.x,
                         type = spot.type.name,

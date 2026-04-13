@@ -6,7 +6,9 @@ import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
+import com.goldpet.domain.walk.dto.WalkPhotoResponse
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
 import com.goldpet.domain.common.util.toHttps
@@ -15,6 +17,7 @@ import com.goldpet.domain.walk.dto.WalkCoupleRankingResponse
 import com.goldpet.domain.walk.entity.Walk
 import com.goldpet.domain.walk.entity.WalkPet
 import com.goldpet.domain.walk.repository.WalkRepository
+import com.goldpet.domain.walk.repository.WalkSpotRepository
 import com.goldpet.domain.walk.repository.BestWalkCoupleRepository
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
@@ -31,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class WalkService(
     private val walkRepository: WalkRepository,
+    private val walkSpotRepository: WalkSpotRepository,
     private val bestWalkCoupleRepository: BestWalkCoupleRepository,
     private val userRepository: UserRepository,
     private val petRepository: PetRepository,
@@ -38,7 +42,8 @@ class WalkService(
     private val badgeAwardService: BadgeAwardService,
     private val geocodingService: GeocodingService,
     private val applicationEventPublisher: ApplicationEventPublisher,
-    private val systemSettingService: SystemSettingService
+    private val systemSettingService: SystemSettingService,
+    private val userBlockRepository: UserBlockRepository
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
 
@@ -270,6 +275,46 @@ class WalkService(
             totalCalories = totalCalories,
             totalGoldEarned = totalGold,
             totalWalks = totalWalks
+        )
+    }
+
+    fun getMyPhotos(userId: Long, yearMonth: String?, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<WalkPhotoResponse> {
+        val spots = if (yearMonth != null) {
+            val (start, end) = parseYearMonth(yearMonth)
+            walkSpotRepository.findPhotoSpotsByUserIdAndMonth(userId, start, end, pageable)
+        } else {
+            walkSpotRepository.findPhotoSpotsByUserId(userId, pageable)
+        }
+        return spots.map { spot -> toWalkPhotoResponse(spot) }
+    }
+
+    @Transactional
+    fun updateSpotNote(userId: Long, walkId: Long, spotId: Long, note: String?): WalkPhotoResponse {
+        val walk = walkRepository.findById(walkId).orElseThrow { NotFoundException("Walk not found") }
+        if (walk.user.id != userId) throw ForbiddenException("Not the owner of this walk")
+        val spot = walkSpotRepository.findById(spotId).orElseThrow { NotFoundException("Spot not found") }
+        if (spot.walk.id != walkId) throw ForbiddenException("Spot does not belong to this walk")
+        spot.note = note
+        return toWalkPhotoResponse(spot)
+    }
+
+    fun getPublicPhotos(userId: Long, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<WalkPhotoResponse> {
+        val blockedUserIds = userBlockRepository.findBlockedUserIds(userId)
+        val effectiveBlockedIds = if (blockedUserIds.isEmpty()) listOf(-1L) else blockedUserIds
+        return walkSpotRepository.findPublicPhotoSpots(effectiveBlockedIds, pageable)
+            .map { spot -> toWalkPhotoResponse(spot) }
+    }
+
+    private fun toWalkPhotoResponse(spot: com.goldpet.domain.walk.entity.WalkSpot): WalkPhotoResponse {
+        val firstPet = spot.walk.walkPets.firstOrNull()?.pet
+        return WalkPhotoResponse(
+            id = spot.id,
+            imageUrl = spot.imageUrl,
+            note = spot.note,
+            walkDate = spot.walk.startTime,
+            walkId = spot.walk.id,
+            petName = firstPet?.name,
+            petImageUrl = firstPet?.profileImageUrl
         )
     }
 

@@ -1278,7 +1278,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
               ),
               const SizedBox(height: 20),
               const Text(
-                '건강 분석을 위해 사진을 찍으시겠습니까?',
+                '건강 분석을 위해 사진 촬영하시겠습니까?',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF614108)),
                 textAlign: TextAlign.center,
               ),
@@ -1296,7 +1296,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
                     ),
                   ),
                   child: const Text(
-                    '사진 찍기',
+                    '사진 촬영',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -1304,11 +1304,19 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
               const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
-                child: TextButton(
+                child: OutlinedButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: Text(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF614108),
+                    side: const BorderSide(color: Color(0xFF614108)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
                     '건너뛰기',
-                    style: TextStyle(color: const Color(0xFF614108).withValues(alpha: 0.5), fontSize: 16),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -1365,12 +1373,24 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       Navigator.of(context, rootNavigator: true).pop(); // close analyzing dialog
 
       if (result != null) {
-        if (mounted) {
-          showDialog(
-            context: context,
-            barrierDismissible: true,
-            builder: (_) => _AnalysisResultDialog(result: result!),
-          );
+        final overallScore = result['overallScore'] as int? ?? 0;
+        if (overallScore == 0) {
+          // AI determined the image is not poop
+          if (mounted) {
+            await showGoldPetAlert(
+              context,
+              message: '응가 이미지가 아닙니다.',
+              confirmText: '확인',
+            );
+          }
+        } else {
+          if (mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (_) => _AnalysisResultDialog(result: result!),
+            );
+          }
         }
       } else {
         if (mounted) showTrackingSnackBar('분석에 실패했습니다. 다시 시도해주세요.');

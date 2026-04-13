@@ -352,7 +352,7 @@ export const WalkPage = () => {
                                         className="course_filter_wt_pill"
                                         onClick={() => setRecordsFilterOpen(!recordsFilterOpen)}
                                     >
-                                        필터{recordsProvince ? ` · ${recordsProvince}` : ''}
+                                        필터
                                         <svg
                                             className={`course_filter_wt_pill_icon${recordsFilterOpen ? ' open' : ''}`}
                                             width="16"
@@ -364,6 +364,21 @@ export const WalkPage = () => {
                                         </svg>
                                     </button>
                                 </div>
+                                {recordsProvince && (
+                                    <div className="walk_filter_chips_row">
+                                        <button
+                                            type="button"
+                                            className="walk_filter_chip"
+                                            onClick={() => setRecordsProvince(undefined)}
+                                        >
+                                            <span>지역</span>
+                                            <span className="walk_filter_chip_value">{recordsProvince}</span>
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                <path d="M11 5L5 11M5 5l6 6" stroke="#614108" strokeWidth="1.5" strokeLinecap="round"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
                                 <div className={`course_filter_wt_panel_wrapper${recordsFilterOpen ? ' open' : ''}`}>
                                     <div className="course_filter_wt_panel_inner">
                                         <div className="course_filter_wt_panel">

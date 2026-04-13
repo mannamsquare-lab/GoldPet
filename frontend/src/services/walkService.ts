@@ -41,6 +41,16 @@ export interface WalkSpot {
   note?: string;
 }
 
+export interface WalkPhotoItem {
+  id: number;
+  imageUrl: string | null;
+  note: string | null;
+  walkDate: string;
+  walkId: number;
+  petName: string | null;
+  petImageUrl: string | null;
+}
+
 export interface WalkSession {
   id: number;
   userId?: number;
@@ -253,6 +263,21 @@ export const walkService = {
     const response = await apiClient.get('/walks/ranking', {
       params: { mode: 'calendar', yearMonth, size, province },
     });
+    return response.data;
+  },
+
+  getMyPhotos: async (params: { yearMonth?: string; page: number; size: number }): Promise<PageResponse<WalkPhotoItem>> => {
+    const response = await apiClient.get('/walks/my/photos', { params });
+    return response.data;
+  },
+
+  getPublicPhotos: async (params: { page: number; size: number }): Promise<PageResponse<WalkPhotoItem>> => {
+    const response = await apiClient.get('/walks/public/photos', { params });
+    return response.data;
+  },
+
+  updateSpotNote: async (walkId: number, spotId: number, note: string | null): Promise<WalkPhotoItem> => {
+    const response = await apiClient.patch(`/walks/${walkId}/spots/${spotId}`, { note });
     return response.data;
   },
 

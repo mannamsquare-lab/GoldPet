@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { communityService } from '../../services/communityService';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
-import '../community/CommunityPage.css';
+import { EmptyState } from '../../components/common/EmptyState';
 import './MyPostsPage.css';
 
 type Tab = 'posts' | 'comments';
@@ -18,6 +18,36 @@ const formatDate = (dateString: string) => {
   if (hours < 24) return `${hours}시간 전`;
   return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 };
+
+const getImageUrl = (url: string) =>
+  url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${url}`;
+
+const ProhibitionIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" strokeWidth="1.5">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M4.93 4.93l14.14 14.14" />
+  </svg>
+);
+
+const HeartIcon = ({ filled }: { filled?: boolean }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+      fill={filled ? 'var(--color-primary)' : 'none'}
+      stroke="var(--color-primary)"
+      strokeWidth="1.5"
+    />
+  </svg>
+);
+
+const CommentIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="var(--color-primary)" />
+    <line x1="7" y1="9" x2="17" y2="9" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="7" y1="12" x2="14" y2="12" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="7" y1="15" x2="11" y2="15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
 
 export default function MyPostsPage() {
   const navigate = useNavigate();
@@ -38,18 +68,19 @@ export default function MyPostsPage() {
   return (
     <SubPageLayout title="내가 쓴 글" onBack={() => navigate('/mypage')}>
       <div id="myPostsContainer">
-        {/* Tab menu - same as #friendFind .group_tab */}
-        <div className="group_tab">
+        {/* Tabs */}
+        <div className="mp-tabs">
+          <div className="mp-tabs-underline" />
           <button
             type="button"
-            className={activeTab === 'posts' ? 'active' : ''}
+            className={`mp-tab${activeTab === 'posts' ? ' active' : ''}`}
             onClick={() => setActiveTab('posts')}
           >
             작성한 글
           </button>
           <button
             type="button"
-            className={activeTab === 'comments' ? 'active' : ''}
+            className={`mp-tab${activeTab === 'comments' ? ' active' : ''}`}
             onClick={() => setActiveTab('comments')}
           >
             작성한 댓글
@@ -58,81 +89,98 @@ export default function MyPostsPage() {
 
         {/* Posts Tab */}
         {activeTab === 'posts' && (
-          <div className="my-posts-content">
-            <div className="post_list">
-              {postsLoading ? (
-                <div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>
-              ) : postsData?.posts.length === 0 ? (
-                <div className="my-posts-empty">
-                  <img src="/assets/images/common/comment_icon03.svg" alt="" />
-                  작성한 글이 없습니다
-                </div>
-              ) : (
-                <ul className="community_list">
-                  {postsData?.posts.map((post) => (
-                    <li key={post.id} onClick={() => navigate(`/community/${post.id}`)}>
-                      <div className="list_profile">
-                        <div className="profile_img">
-                          <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
-                        </div>
-                        <div className="txt_wrap">
-                          <strong>{post.authorNickname}</strong>
-                          <p>{formatDate(post.createdAt)}</p>
-                        </div>
+          <div className="mp-content">
+            {postsLoading ? (
+              <div className="mp-loading">로딩 중...</div>
+            ) : !postsData?.posts.length ? (
+              <EmptyState icon={<ProhibitionIcon />} text="작성한 글이 없어요" />
+            ) : (
+              <ul className="mp-post-list">
+                {postsData.posts.map((post) => (
+                  <li key={post.id} className="mp-post-item" onClick={() => navigate(`/community/${post.id}`)}>
+                    <div className="mp-post-profile">
+                      <img
+                        className="mp-post-profile-img"
+                        src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'}
+                        alt=""
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }}
+                      />
+                      <div className="mp-post-profile-txt">
+                        <strong>{post.authorNickname}</strong>
+                        <span>{formatDate(post.createdAt)}</span>
                       </div>
+                    </div>
 
-                      <strong className="list_tit">{post.title}</strong>
-                      <p className="list_txt">{post.content}</p>
+                    <div className="mp-post-txt">
+                      <p className="mp-post-title">{post.title}</p>
+                      <p className="mp-post-body">{post.content}</p>
+                    </div>
 
-                      {post.imageUrls && post.imageUrls.length > 0 && (
-                        <div className="list_img">
-                          <img src={post.imageUrls[0].startsWith('http') ? post.imageUrls[0] : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${post.imageUrls[0]}`} alt="" />
-                        </div>
-                      )}
-
-                      <div className="like_comment_count">
-                        <div className="count_wrap">
-                          <div className={`icon_img like_icon ${post.isLiked ? 'active' : ''}`}></div>
-                          {post.likeCount}
-                        </div>
-                        <div className="count_wrap">
-                          <div className="icon_img comment_icon"></div>
-                          {post.commentCount}
-                        </div>
+                    {post.imageUrls && post.imageUrls.length > 0 && (
+                      <div className="mp-post-img">
+                        <img src={getImageUrl(post.imageUrls[0])} alt="" />
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                    )}
+
+                    <div className="mp-post-reactions">
+                      <div className="mp-reaction-item">
+                        <HeartIcon filled={post.isLiked} />
+                        <span>{post.likeCount}</span>
+                      </div>
+                      <div className="mp-reaction-item">
+                        <CommentIcon />
+                        <span>{post.commentCount}</span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
         {/* Comments Tab */}
         {activeTab === 'comments' && (
-          <div className="my-posts-content">
+          <div className="mp-content">
             {commentsLoading ? (
-              <div style={{ padding: '20px', textAlign: 'center' }}>로딩 중...</div>
-            ) : commentsData?.comments.length === 0 ? (
-              <div className="my-posts-empty">
-                <img src="/assets/images/common/comment_icon03.svg" alt="" />
-                작성한 댓글이 없습니다
-              </div>
+              <div className="mp-loading">로딩 중...</div>
+            ) : !commentsData?.comments.length ? (
+              <EmptyState icon={<ProhibitionIcon />} text="작성한 댓글이 없어요" />
             ) : (
-              <ul className="my-comment-list">
-                {commentsData?.comments.map((comment) => (
+              <ul className="mp-post-list">
+                {commentsData.comments.map((comment) => (
                   <li
                     key={comment.id}
-                    className="my-comment-item"
+                    className="mp-post-item"
                     onClick={() => navigate(`/community/${comment.postId}`)}
                   >
-                    <div className="my-comment-content">{comment.content}</div>
-                    <div className="my-comment-meta">
-                      <span className="my-comment-post-title">원글: {comment.postTitle}</span>
-                      <span className="my-comment-date">{formatDate(comment.createdAt)}</span>
-                      {comment.likeCount > 0 && (
-                        <span className="my-comment-likes">♥ {comment.likeCount}</span>
-                      )}
+                    <div className="mp-post-profile">
+                      <img
+                        className="mp-post-profile-img"
+                        src={comment.authorProfileUrl || '/assets/images/common/profile_none_img.svg'}
+                        alt=""
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }}
+                      />
+                      <div className="mp-post-profile-txt">
+                        <strong>{comment.authorNickname}</strong>
+                        <span>{formatDate(comment.createdAt)}</span>
+                      </div>
+                    </div>
+
+                    <div className="mp-post-txt">
+                      <p className="mp-post-title">{(comment as Record<string, unknown>).postTitle as string || '게시글'}</p>
+                      <p className="mp-post-body">{comment.content}</p>
+                    </div>
+
+                    <div className="mp-post-reactions">
+                      <div className="mp-reaction-item">
+                        <HeartIcon filled={comment.isLikedByMe} />
+                        <span>{comment.likeCount}</span>
+                      </div>
+                      <div className="mp-reaction-item">
+                        <CommentIcon />
+                        <span>{comment.replyCount}</span>
+                      </div>
                     </div>
                   </li>
                 ))}

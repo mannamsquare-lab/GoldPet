@@ -6,7 +6,15 @@ import type { BlockedUser } from '../../services/blockService';
 import { useAlert } from '../../contexts/AlertContext';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
+import { EmptyState } from '../../components/common/EmptyState';
 import './BlockManagementPage.css';
+
+const ProhibitionIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" strokeWidth="1.5">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M4.93 4.93l14.14 14.14" />
+  </svg>
+);
 
 const BlockManagementPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,51 +45,47 @@ const BlockManagementPage: React.FC = () => {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '';
-    return dateStr.substring(0, 10);
+    return dateStr.substring(0, 10).replace(/-/g, '.');
   };
 
   return (
     <SubPageLayout title="차단 관리" onBack={() => navigate('/mypage')}>
       <div className="block-management">
         {isLoading ? (
-          <div className="block-empty">
-            <span className="block-empty-text">로딩 중...</span>
-          </div>
+          <div className="block-loading">로딩 중...</div>
         ) : blockedUsers.length === 0 ? (
-          <div className="block-empty">
-            <svg className="block-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M4.93 4.93l14.14 14.14" />
-            </svg>
-            <span className="block-empty-text">차단한 사용자가 없어요</span>
-          </div>
+          <EmptyState icon={<ProhibitionIcon />} text="차단한 사용자가 없어요" />
         ) : (
-          <div className="block-list">
+          <ul className="block-list">
             {blockedUsers.map((user) => (
-              <div key={user.blockId} className="block-item">
+              <li key={user.blockId} className="block-item">
                 <img
                   className="block-item-photo"
                   src={user.blockedProfileImageUrl || '/assets/images/common/profile_none_img.svg'}
                   alt={user.blockedNickname || '사용자'}
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }}
                 />
                 <div className="block-item-info">
                   <div className="block-item-nickname">{user.blockedNickname || '사용자'}</div>
-                  <div className="block-item-detail">
-                    {user.blockedPetName && <span>{user.blockedPetName}</span>}
-                    {user.blockedPetName && user.blockedAt && <span> · </span>}
-                    {user.blockedAt && <span>{formatDate(user.blockedAt)}</span>}
-                  </div>
+                  {user.blockedPetName && (
+                    <div className="block-item-pet">{user.blockedPetName}</div>
+                  )}
                 </div>
-                <button
-                  className="block-item-unblock"
-                  onClick={() => handleUnblock(user)}
-                  disabled={unblockMutation.isPending}
-                >
-                  해제
-                </button>
-              </div>
+                <div className="block-item-right">
+                  <button
+                    className="block-item-unblock"
+                    onClick={() => handleUnblock(user)}
+                    disabled={unblockMutation.isPending}
+                  >
+                    해제
+                  </button>
+                  {user.blockedAt && (
+                    <span className="block-item-date">{formatDate(user.blockedAt)}</span>
+                  )}
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </SubPageLayout>

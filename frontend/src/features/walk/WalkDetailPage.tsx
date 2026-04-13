@@ -752,6 +752,8 @@ export const WalkDetailPage = () => {
             {selectedAnalysis && (
                 <HealthDetailModal
                     analysis={selectedAnalysis}
+                    petName={walkDetail?.petNames?.[0] ?? ''}
+                    petImageUrl={walkDetail?.petProfileImageUrls?.[0] ?? null}
                     onClose={() => setSelectedAnalysis(null)}
                 />
             )}
