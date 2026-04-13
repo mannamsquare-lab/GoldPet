@@ -33,6 +33,21 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="goldpet" />
             </intent-filter>
+            <!-- Android App Link: 공유 URL (HTTPS) 자동 앱 오픈 -->
+            <!-- autoVerify=true 는 assetlinks.json + SHA256 검증 통과 시 적용 -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="app.mannamsquare.com" />
+                <data android:host="app.goldpet.com" />
+                <data android:pathPattern="/w/.*" />
+                <data android:pathPattern="/c/.*" />
+                <data android:pathPattern="/pet/.*/health" />
+                <data android:pathPattern="/health/.*" />
+                <data android:pathPattern="/post/.*" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
