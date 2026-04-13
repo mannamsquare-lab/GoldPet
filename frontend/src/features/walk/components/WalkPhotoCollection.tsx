@@ -19,11 +19,13 @@ export function WalkPhotoCollection() {
   const blobUrlsRef = useRef<string[]>([]);
 
   const { data } = useQuery({
-    queryKey: ['walk', 'my', 'photos', 'collection', MAX_PHOTOS],
-    queryFn: () => walkService.getMyPhotos({ page: 0, size: MAX_PHOTOS }),
+    queryKey: ['walk', 'my', 'photos', 'collection'],
+    queryFn: () => walkService.getMyPhotos({ page: 0, size: 32 }),
   });
 
-  const photos: WalkPhotoItem[] = (data?.content ?? []).slice(0, MAX_PHOTOS);
+  const photos: WalkPhotoItem[] = (data?.content ?? [])
+    .filter((p) => !!p.imageUrl)
+    .slice(0, MAX_PHOTOS);
 
   useEffect(() => {
     photos.forEach((photo) => {
