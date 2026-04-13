@@ -117,6 +117,18 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   }
 
   @override
+  void onWalkComplete(int walkId) async {
+    if (CourseWalkScreen.authExpiredDuringWalk) {
+      onWalkSaved();
+      return;
+    }
+    await HybridWebView.ensureContentAlive?.call();
+    HybridWebView.sendEventToReact?.call('walkCompleted', {'walkId': walkId});
+    if (!mounted) return;
+    Navigator.of(context).pop();
+  }
+
+  @override
   Future<Map<String, dynamic>?> showPhotoMemoSheet(String photoPath) {
     return showModalBottomSheet<Map<String, dynamic>>(
       context: context,

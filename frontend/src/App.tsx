@@ -14,6 +14,7 @@ import ScrollToTop from './components/common/ScrollToTop';
 import { PullToRefresh } from './components/common/PullToRefresh';
 import { PushNotificationHandler } from './components/common/PushNotificationHandler';
 import { AuthExpiredHandler } from './components/common/AuthExpiredHandler';
+import { WalkCompletedHandler } from './components/common/WalkCompletedHandler';
 import { TypeALayout } from './components/layout/TypeALayout';
 import { TypeBLayout } from './components/layout/TypeBLayout';
 import { LoadingProvider } from './contexts/LoadingContext';
@@ -47,6 +48,7 @@ const ChatDetailPage = lazy(() => import('./features/chat/ChatDetailPage'));
 const WalkPage = lazy(() => import('./features/walk/WalkPage'));
 const WalkMapPage = lazy(() => import('./features/walk/WalkMapPage'));
 const WalkDetailPage = lazy(() => import('./features/walk/WalkDetailPage'));
+const WalkCompletePage = lazy(() => import('./features/walk/WalkCompletePage'));
 const WalkRankingPage = lazy(() => import('./features/walk/WalkRankingPage'));
 const WalkMapExpandPage = lazy(() => import('./features/walk/WalkMapExpandPage'));
 const CommunityListPage = lazy(() => import('./features/community/CommunityListPage'));
@@ -105,6 +107,7 @@ function App() {
             <ScrollToTop />
             <PushNotificationHandler />
             <AuthExpiredHandler />
+            <WalkCompletedHandler />
             <PullToRefresh />
             <Routes>
               {/* Entry point - stays static to avoid blank screen */}
@@ -145,6 +148,7 @@ function App() {
               <Route path="/walk/ranking" element={<Suspense fallback={null}><WalkRankingPage /></Suspense>} />
               <Route path="/walk/map" element={<Suspense fallback={null}><WalkMapPage /></Suspense>} />
               <Route path="/walk/detail/:walkId" element={<Suspense fallback={null}><WalkDetailPage /></Suspense>} />
+              <Route path="/walk/complete/:walkId" element={<Suspense fallback={null}><WalkCompletePage /></Suspense>} />
               <Route path="/walk/map-expand/:walkId" element={<Suspense fallback={null}><WalkMapExpandPage /></Suspense>} />
 
               {/* No Layout: Gold pages */}

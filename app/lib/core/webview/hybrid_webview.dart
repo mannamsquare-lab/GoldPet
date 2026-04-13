@@ -29,6 +29,11 @@ class HybridWebView extends StatefulWidget {
   /// (e.g., during walk tracking), resulting in a blank page on return.
   static Future<void> Function()? ensureContentAlive;
 
+  /// Static reference for sending an arbitrary native event to the React app.
+  /// Set by HybridWebView after bridge setup; used by native screens (e.g., walk)
+  /// to notify React of state changes (e.g., walk completion).
+  static void Function(String type, Map<String, dynamic> data)? sendEventToReact;
+
   @override
   State<HybridWebView> createState() => _HybridWebViewState();
 }
@@ -286,6 +291,11 @@ class _HybridWebViewState extends State<HybridWebView> {
     // Bridge Controller 초기화 (JavaScript Channel 등록)
     _bridgeController = BridgeMessageHandler(_controller, _bridge);
     await _bridgeController.setup();
+
+    // Register event forwarder so native screens can post events to React
+    HybridWebView.sendEventToReact = (type, data) {
+      _bridge.sendEventToReact(type, data);
+    };
 
     // Register content-alive check for native screen return
     HybridWebView.ensureContentAlive = () async {

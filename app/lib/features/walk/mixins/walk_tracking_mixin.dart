@@ -91,6 +91,11 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   /// Implementors should handle navigation (e.g. Navigator.pop).
   void onWalkSaved();
 
+  /// Called after a successful server save with the new walk ID.
+  /// Default implementation falls back to [onWalkSaved]; screens that need
+  /// the walk ID (e.g. to navigate React to a completion page) should override.
+  void onWalkComplete(int walkId) => onWalkSaved();
+
   /// Provide the Riverpod WidgetRef for repository access.
   /// Return null if not using Riverpod (CourseWalkScreen uses ApiClient directly).
   dynamic get walkRef;
@@ -439,15 +444,11 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
     if (durationSeconds < minDuration || distanceMeters < minDistanceM) {
       if (!mounted) return;
-      final keepWalking = await showGoldPetConfirm(
-        context,
-        message: '산책 기록을 저장할 수 없습니다.\n\n'
-            '최소 조건 : ${minDuration}초 이상, ${minDistanceM.toInt()}m 이상\n'
-            '현재 기록 : ${durationSeconds}초, ${distanceMeters.toInt()}m\n\n'
-            '산책을 계속하시겠습니까?',
-        messageAlign: TextAlign.left,
-        confirmText: '산책 계속',
-        cancelText: '삭제',
+      final keepWalking = await _showWalkSaveAlert(
+        minDuration: minDuration,
+        minDistance: minDistanceM.toInt(),
+        currentDuration: durationSeconds,
+        currentDistance: distanceMeters.toInt(),
       );
       if (keepWalking) {
         // "산책 계속하기" — 일시정지 상태 복원 후 재개
@@ -507,12 +508,18 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     });
 
     try {
+      int? savedWalkId;
       final repo = walkRef?.read(walkRepositoryProvider);
       if (repo != null) {
-        await repo.createWalk(request);
+        final walk = await repo.createWalk(request);
+        savedWalkId = walk.id as int?;
       } else {
         // Fallback: direct API call
-        await ApiClient().dio.post('/api/v1/walks', data: request.toJson());
+        final response = await ApiClient().dio.post('/api/v1/walks', data: request.toJson());
+        final data = response.data;
+        if (data is Map && data['id'] is num) {
+          savedWalkId = (data['id'] as num).toInt();
+        }
       }
       await WalkLocalStorage.clearWalkData();
 
@@ -520,7 +527,12 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         setState(() => trackingIsSaving = false);
         showTrackingSnackBar('산책이 저장되었습니다!');
         await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) onWalkSaved();
+        if (!mounted) return;
+        if (savedWalkId != null) {
+          onWalkComplete(savedWalkId);
+        } else {
+          onWalkSaved();
+        }
       }
     } catch (e) {
       debugPrint('[WalkTracking] Walk save error: $e');
@@ -1261,10 +1273,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       builder: (ctx) {
         return Container(
           decoration: const BoxDecoration(
-            color: Color(0xFFFFF7E6),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            color: Color(0xFFEFE1C4),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
           ),
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1272,60 +1284,233 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF614108).withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+                  color: const Color(0xFFA58A54),
+                  borderRadius: BorderRadius.circular(100),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               const Text(
                 '건강 분석을 위해 사진 촬영하시겠습니까?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF614108)),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF505050),
+                  letterSpacing: -0.28,
+                  height: 1.4,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF614108),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFF7E6),
+                          foregroundColor: const Color(0xFF614108),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(1000),
+                          ),
+                        ),
+                        child: const Text(
+                          '건너뛰기',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: -0.32,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    '사진 촬영',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(ctx).pop(false),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF614108),
-                    side: const BorderSide(color: Color(0xFF614108)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF614108),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(1000),
+                          ),
+                        ),
+                        child: const Text(
+                          '사진 촬영',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: -0.32,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    '건너뛰기',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
+                ],
               ),
-              SafeArea(child: const SizedBox.shrink()),
+              SafeArea(top: false, child: const SizedBox.shrink()),
             ],
           ),
         );
       },
     );
+  }
+
+  Future<bool> _showWalkSaveAlert({
+    required int minDuration,
+    required int minDistance,
+    required int currentDuration,
+    required int currentDistance,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      barrierDismissible: false,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            width: 320,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7E6),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 40, 12, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      '산책 기록을 저장할 수 없습니다.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF505050),
+                        letterSpacing: -0.28,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 204,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9ECD2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '최소 조건 : $minDuration초이상, ${minDistance}m 이상',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF505050),
+                              letterSpacing: -0.28,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '현재 기록 : $currentDuration초, ${currentDistance}m',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF505050),
+                              letterSpacing: -0.28,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '산책을 계속하시겠습니까?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF505050),
+                        letterSpacing: -0.28,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEFE1C4),
+                            foregroundColor: const Color(0xFF614108),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(1000),
+                            ),
+                          ),
+                          child: const Text(
+                            '삭제',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: -0.32,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF614108),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(1000),
+                            ),
+                          ),
+                          child: const Text(
+                            '산책 계속',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: -0.32,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    return result ?? false;
   }
 
   Future<void> _runStoolAnalysis({
@@ -1444,149 +1629,183 @@ class _AnalysisResultDialog extends StatefulWidget {
 }
 
 class _AnalysisResultDialogState extends State<_AnalysisResultDialog> {
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) Navigator.of(context, rootNavigator: true).pop();
-    });
-  }
-
-  Color _scoreColor(int score) {
-    if (score <= 1) return const Color(0xFFFF3B30);
-    if (score == 2) return const Color(0xFFFF9500);
-    if (score == 3) return const Color(0xFFFDCB6E);
-    if (score == 4) return const Color(0xFF34C759);
+  Color _barFillColor(int score) {
+    if (score <= 2) return const Color(0xFFFF7F0F);
+    if (score == 3) return const Color(0xFFFFE30F);
+    if (score == 4) return const Color(0xFF0F97FF);
     return const Color(0xFF34C759);
   }
 
   @override
   Widget build(BuildContext context) {
-    final score = widget.result['overallScore'] as int? ?? 0;
-    final summary = widget.result['healthSummary'] as String?;
-    final disclaimer = widget.result['disclaimer'] as String? ??
-        'AI 분석은 참고용이며, 정확한 진단은 수의사와 상담하세요.';
     final colorScore = widget.result['colorScore'] as int? ?? 0;
     final consistencyScore = widget.result['consistencyScore'] as int? ?? 0;
     final coatingScore = widget.result['coatingScore'] as int? ?? 0;
     final contentsScore = widget.result['contentsScore'] as int? ?? 0;
+    final colorAssessment = widget.result['colorAssessment'] as String? ?? '';
+    final consistencyAssessment = widget.result['consistencyAssessment'] as String? ?? '';
+    final coatingAssessment = widget.result['coatingAssessment'] as String? ?? '';
+    final contentsAssessment = widget.result['contentsAssessment'] as String? ?? '';
 
-    return GestureDetector(
-      onTap: () => Navigator.of(context, rootNavigator: true).pop(),
-      child: Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: const Color(0xFFFFF7E6),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF614108),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  '건강 분석 결과',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: const Color(0xFFFFF7E6),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context, rootNavigator: true).pop(),
+                child: const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Icon(Icons.close, size: 20, color: Color(0xFF614108)),
                 ),
               ),
-              const SizedBox(height: 20),
-              if (score > 0) ...[
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _scoreColor(score).withValues(alpha: 0.15),
-                    border: Border.all(color: _scoreColor(score), width: 3),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$score',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        color: _scoreColor(score),
-                      ),
-                    ),
-                  ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 0),
+              child: Text(
+                '건강 분석 결과',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF614108),
+                  letterSpacing: -0.32,
+                  height: 1.4,
                 ),
-                const SizedBox(height: 4),
-                const Text('/ 5', style: TextStyle(fontSize: 13, color: Color(0xFF614108))),
-                const SizedBox(height: 16),
-                _buildScoreBar('색상', colorScore),
-                const SizedBox(height: 8),
-                _buildScoreBar('농도', consistencyScore),
-                const SizedBox(height: 8),
-                _buildScoreBar('코팅', coatingScore),
-                const SizedBox(height: 8),
-                _buildScoreBar('내용물', contentsScore),
-                const SizedBox(height: 16),
+              ),
+            ),
+            const SizedBox(height: 25),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _buildCategoryCard('색상(Color)', colorScore, colorAssessment)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildCategoryCard('농도(Consistency)', consistencyScore, consistencyAssessment)),
               ],
-              if (summary != null) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    summary,
-                    style: const TextStyle(fontSize: 13, height: 1.5, color: Color(0xFF1A1A1A)),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 12),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _buildCategoryCard('코팅(Coating)', coatingScore, coatingAssessment)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildCategoryCard('내용물(Contents)', contentsScore, contentsAssessment)),
               ],
-              Text(
-                disclaimer,
-                style: const TextStyle(fontSize: 10, color: Color(0xFF9E9E9E), height: 1.4),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                '탭하면 닫힙니다',
-                style: TextStyle(fontSize: 10, color: Color(0xFFBDBDBD)),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildScoreBar(String label, int score) {
-    return Row(
+  Widget _buildCategoryCard(String label, int score, String description) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 48,
-          child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF614108), fontWeight: FontWeight.w500)),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Container(
-            height: 8,
-            decoration: BoxDecoration(
-              color: const Color(0xFF614108).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: score / 5.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: _scoreColor(score),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF614108),
+              letterSpacing: -0.28,
+              height: 1.0,
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Text('$score', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _scoreColor(score))),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF1F1F1), width: 2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 34,
+                child: Center(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '$score',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF614108),
+                            letterSpacing: -0.32,
+                            height: 1.0,
+                          ),
+                        ),
+                        const TextSpan(
+                          text: '/5',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF614108),
+                            letterSpacing: -0.32,
+                            height: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: 50,
+                height: 8,
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFAAAAAA),
+                        borderRadius: BorderRadius.circular(1000),
+                      ),
+                    ),
+                    FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: (score.clamp(0, 5)) / 5.0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _barFillColor(score),
+                          borderRadius: BorderRadius.circular(1000),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF505050),
+                  letterSpacing: -0.24,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

@@ -28,7 +28,8 @@ export type NativeEventType =
   | 'permissionStatusChanged'
   | 'appStateChanged'
   | 'authExpired'
-  | 'tokenSync';
+  | 'tokenSync'
+  | 'walkCompleted';
 
 export type NativeMethod =
   // 푸시 알림
