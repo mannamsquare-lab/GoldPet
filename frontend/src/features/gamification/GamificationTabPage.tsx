@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { gamificationService } from '../../services/gamificationService';
 import type { Badge } from '../../services/gamificationService';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
+import { getBadgeIcon } from './badgeIcons';
 import './GamificationPage.css';
 
 type Tab = 'badges' | 'missions';
@@ -38,7 +39,6 @@ export default function GamificationTabPage() {
   const location = useLocation();
   const initialTab: Tab = location.pathname === '/missions' ? 'missions' : 'badges';
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
-  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
 
   const { data: badges, isLoading } = useQuery({
     queryKey: ['badges', 'all'],
@@ -96,41 +96,33 @@ export default function GamificationTabPage() {
           <div className="gm_badges_section">
             <p className="gm_section_label">전체 뱃지</p>
             <div className="gm_badges_grid">
-              {badges?.map((badge) => (
-                <div key={badge.id} className="gm_badge_card">
-                  <div className="gm_badge_icon_wrap">
-                    {badge.acquiredAt && !failedImages.has(badge.id) ? (
-                      <img
-                        src={badge.imageUrl}
-                        alt={badge.name}
-                        className="gm_badge_img"
-                        onError={() => setFailedImages(prev => new Set(prev).add(badge.id))}
-                      />
-                    ) : (
-                      <div className="gm_badge_placeholder">
+              {badges?.map((badge) => {
+                const acquired = !!badge.acquiredAt;
+                const icon = getBadgeIcon(badge.name);
+                return (
+                  <div key={badge.id} className={`gm_badge_card${acquired ? ' acquired' : ''}`}>
+                    <div className={`gm_badge_icon_wrap${acquired ? ' acquired' : ''}`}>
+                      {icon ? (
+                        <img src={icon} alt={badge.name} className="gm_badge_icon_svg" />
+                      ) : (
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
                           <circle cx="12" cy="10" r="4" stroke="#A58A54" strokeWidth="1.5" />
-                          <path
-                            d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6"
-                            stroke="#A58A54"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          />
+                          <path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#A58A54" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                    <div className="gm_badge_info">
+                      <p className="gm_badge_name">{badge.name}</p>
+                      <p className="gm_badge_desc">{badge.description}</p>
+                      {acquired && (
+                        <p className="gm_badge_date_pill">
+                          {new Date(badge.acquiredAt!).toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '')} 획득
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="gm_badge_info">
-                    <p className="gm_badge_name">{badge.name}</p>
-                    <p className="gm_badge_desc">{badge.description}</p>
-                    {badge.acquiredAt && (
-                      <p className="gm_badge_date">
-                        {new Date(badge.acquiredAt).toLocaleDateString('ko-KR')} 획득
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
