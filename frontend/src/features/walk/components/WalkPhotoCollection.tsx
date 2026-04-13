@@ -19,8 +19,8 @@ export function WalkPhotoCollection() {
   const blobUrlsRef = useRef<string[]>([]);
 
   const { data } = useQuery({
-    queryKey: ['walk', 'my', 'photos', 'collection'],
-    queryFn: () => walkService.getMyPhotos({ page: 0, size: 32 }),
+    queryKey: ['walk', 'public', 'photos', 'collection'],
+    queryFn: () => walkService.getPublicPhotos({ page: 0, size: 32 }),
   });
 
   const photos: WalkPhotoItem[] = (data?.content ?? [])
