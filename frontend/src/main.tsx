@@ -8,7 +8,9 @@ import 'swiper/css/navigation';
 import './assets/css/common.css';
 import './styles/styleguide.css';
 import './styles/page-layout.css';
+import { installGlobalErrorReporter } from './lib/clientErrorReporter';
 
+installGlobalErrorReporter();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
