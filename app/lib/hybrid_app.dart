@@ -179,10 +179,32 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
     }
   }
 
+  // Allowed Universal Link paths for the React SPA.
+  // Anything outside this list is silently ignored.
+  static final _universalLinkPathPattern = RegExp(
+    r'^/(w|c|pet|health|post)/[a-zA-Z0-9_\-]+(/[a-zA-Z0-9_\-]+)?$',
+  );
+
   void _handleDeepLink(String uriString) {
     debugPrint('[DL] _handleDeepLink: $uriString');
     final uri = Uri.tryParse(uriString);
-    if (uri == null || uri.scheme != 'goldpet') return;
+    if (uri == null) return;
+
+    // Universal Link (https://app.mannamsquare.com/… or https://app.goldpet.com/…)
+    if (uri.scheme == 'https' &&
+        (uri.host == 'app.mannamsquare.com' || uri.host == 'app.goldpet.com')) {
+      final path = uri.path;
+      if (_universalLinkPathPattern.hasMatch(path)) {
+        final fullPath = path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
+        debugPrint('[DL] Universal Link → WebView path: $fullPath');
+        HybridWebView.navigateTo?.call(fullPath);
+      } else {
+        debugPrint('[DL] Universal Link path not in allowlist, ignoring: $path');
+      }
+      return;
+    }
+
+    if (uri.scheme != 'goldpet') return;
 
     final host = uri.host;
     String? spotAction;

@@ -92,13 +92,22 @@ class MainActivity : FlutterFragmentActivity() {
         handleDeepLinkIntent(intent, isColdStart = true)
     }
 
+    private fun isOurDeepLink(uri: android.net.Uri?): Boolean {
+        if (uri == null) return false
+        if (uri.scheme == "goldpet") return true
+        if (uri.scheme == "https") {
+            val host = uri.host ?: return false
+            return host == "app.mannamsquare.com" || host == "app.goldpet.com"
+        }
+        return false
+    }
+
     override fun onNewIntent(intent: Intent) {
-        // For goldpet:// deep links, skip FlutterActivity.onNewIntent() which
+        // For our deep links, skip FlutterActivity.onNewIntent() which
         // triggers Flutter's navigation system and pushes '/' on the Navigator,
         // covering the current screen. We handle these via MethodChannel only.
         setIntent(intent)
-        val isOurDeepLink = intent.data?.scheme == "goldpet"
-        if (!isOurDeepLink) {
+        if (!isOurDeepLink(intent.data)) {
             super.onNewIntent(intent)
         }
         handleDeepLinkIntent(intent, isColdStart = false)
@@ -106,10 +115,13 @@ class MainActivity : FlutterFragmentActivity() {
 
     private fun handleDeepLinkIntent(intent: Intent, isColdStart: Boolean) {
         val uri = intent.data ?: return
-        if (uri.scheme != "goldpet") return
-        val host = uri.host ?: return
-        // Only handle walk/spot deep links (not Naver OAuth callbacks)
-        if (host != "walk" && host != "spot") return
+        if (!isOurDeepLink(uri)) return
+
+        // For goldpet:// scheme, only handle walk/spot hosts (not Naver OAuth callbacks)
+        if (uri.scheme == "goldpet") {
+            val host = uri.host ?: return
+            if (host != "walk" && host != "spot") return
+        }
 
         val uriString = uri.toString()
         // Always buffer as fallback — handles Activity recreation where

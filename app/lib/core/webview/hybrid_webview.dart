@@ -34,6 +34,12 @@ class HybridWebView extends StatefulWidget {
   /// to notify React of state changes (e.g., walk completion).
   static void Function(String type, Map<String, dynamic> data)? sendEventToReact;
 
+  /// Navigate the React SPA to the given path (e.g. '/w/123').
+  /// Uses window.location.replace so no full reload occurs.
+  /// Only alphanumeric, '/', '-', '_', '.', '?', '=', '&', '%' are allowed
+  /// in [path] to prevent JS injection.
+  static Future<void> Function(String path)? navigateTo;
+
   @override
   State<HybridWebView> createState() => _HybridWebViewState();
 }
@@ -295,6 +301,24 @@ class _HybridWebViewState extends State<HybridWebView> {
     // Register event forwarder so native screens can post events to React
     HybridWebView.sendEventToReact = (type, data) {
       _bridge.sendEventToReact(type, data);
+    };
+
+    // Register WebView SPA navigator for Universal Link routing
+    HybridWebView.navigateTo = (path) async {
+      // Whitelist: only safe URL path/query characters allowed (XSS prevention)
+      final safePathPattern = RegExp(r"^[a-zA-Z0-9/\-_.?=&%]+$");
+      if (!safePathPattern.hasMatch(path)) {
+        debugPrint('[NavTo] Rejected unsafe path: $path');
+        return;
+      }
+      // Escape single quotes as a final safety measure
+      final escaped = path.replaceAll("'", "%27");
+      try {
+        await _controller.runJavaScript("window.location.replace('$escaped')");
+        debugPrint('[NavTo] Navigated to: $escaped');
+      } catch (e) {
+        debugPrint('[NavTo] Failed to navigate: $e');
+      }
     };
 
     // Register content-alive check for native screen return

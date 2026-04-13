@@ -42,8 +42,16 @@ import GoogleMaps
       }
     }
 
-    // Cold start: check if launched via deep link URL
+    // Cold start: check if launched via custom-scheme deep link URL
     if let url = launchOptions?[.url] as? URL {
+      handleDeepLink(url, isColdStart: true)
+    }
+
+    // Cold start: check if launched via Universal Link (NSUserActivity)
+    if let activityDict = launchOptions?[.userActivityDictionary] as? [UIApplication.LaunchOptionsKey: Any],
+       let activity = activityDict[.userActivityType] as? NSUserActivity,
+       activity.activityType == NSUserActivityTypeBrowsingWeb,
+       let url = activity.webpageURL {
       handleDeepLink(url, isColdStart: true)
     }
 
@@ -82,10 +90,28 @@ import GoogleMaps
     return super.application(app, open: url, options: options)
   }
 
+  // Universal Link warm/hot start entry point
+  override func application(_ application: UIApplication,
+                             continue userActivity: NSUserActivity,
+                             restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+    if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+       let url = userActivity.webpageURL {
+      return handleDeepLink(url, isColdStart: false)
+    }
+    return false
+  }
+
   @discardableResult
   private func handleDeepLink(_ url: URL, isColdStart: Bool) -> Bool {
-    guard url.scheme == "goldpet" else { return false }
-    guard let host = url.host, host == "walk" || host == "spot" else { return false }
+    let isCustomScheme = url.scheme == "goldpet"
+    let isUniversalLink = url.scheme == "https" &&
+      (url.host == "app.mannamsquare.com" || url.host == "app.goldpet.com")
+    guard isCustomScheme || isUniversalLink else { return false }
+
+    // For goldpet:// scheme, only handle walk/spot hosts (not Naver OAuth callbacks)
+    if isCustomScheme {
+      guard let host = url.host, host == "walk" || host == "spot" else { return false }
+    }
 
     let urlString = url.absoluteString
     if isColdStart {

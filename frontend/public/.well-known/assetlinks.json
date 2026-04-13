@@ -3,10 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.goldpet.app",
+      "package_name": "com.mannam.goldpet",
       "sha256_cert_fingerprints": [
-        "PLACEHOLDER_DEV_SHA256",
-        "PLACEHOLDER_PROD_SHA256"
+        "DA:9E:AA:4C:41:FD:3C:F4:7B:F3:7A:48:2A:A6:EA:B7:01:09:40:1D:B7:DC:39:67:84:9B:FC:3C:C7:25:28:22"
       ]
     }
   }
