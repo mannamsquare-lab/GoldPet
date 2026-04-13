@@ -5,6 +5,8 @@ import { gamificationService } from '../../services/gamificationService';
 import type { Badge } from '../../services/gamificationService';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { getBadgeIcon } from './badgeIcons';
+import rewardBubbleActive from '../../assets/badges/reward-bubble-active.svg';
+import rewardBubbleDone from '../../assets/badges/reward-bubble-done.svg';
 import './GamificationPage.css';
 
 type Tab = 'badges' | 'missions';
@@ -15,25 +17,6 @@ function getConditionUnit(type?: string | null): string {
     default: return '회';
   }
 }
-
-const GoldReward = ({ amount, dimmed }: { amount: number; dimmed?: boolean }) => (
-  <div className={`gm_gold_reward${dimmed ? ' dimmed' : ''}`}>
-    <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="9" fill={dimmed ? '#ccc' : '#C49A3C'} />
-      <text
-        x="10"
-        y="14"
-        textAnchor="middle"
-        fontSize="10"
-        fontWeight="bold"
-        fill="#fff"
-      >
-        G
-      </text>
-    </svg>
-    <span className="gm_gold_amount">{amount}</span>
-  </div>
-);
 
 export default function GamificationTabPage() {
   const location = useLocation();
@@ -138,11 +121,8 @@ export default function GamificationTabPage() {
                 <div className="gm_section">
                   <p className="gm_section_label">진행 가능한 미션</p>
                   <div className="gm_mission_card">
-                    {activeMissions.map((badge, idx) => (
-                      <div key={badge.id}>
-                        {idx > 0 && <div className="gm_mission_divider" />}
-                        <MissionItem badge={badge} completed={false} />
-                      </div>
+                    {activeMissions.map((badge) => (
+                      <MissionItem key={badge.id} badge={badge} completed={false} />
                     ))}
                   </div>
                 </div>
@@ -153,11 +133,8 @@ export default function GamificationTabPage() {
                 <div className="gm_section">
                   <p className="gm_section_label">완료한 미션</p>
                   <div className="gm_mission_card gm_mission_card--completed">
-                    {completedMissions.map((badge, idx) => (
-                      <div key={badge.id}>
-                        {idx > 0 && <div className="gm_mission_divider" />}
-                        <MissionItem badge={badge} completed />
-                      </div>
+                    {completedMissions.map((badge) => (
+                      <MissionItem key={badge.id} badge={badge} completed />
                     ))}
                   </div>
                 </div>
@@ -174,13 +151,16 @@ function MissionItem({ badge, completed }: { badge: Badge; completed: boolean })
   const total = badge.conditionValue ?? 0;
   const current = completed ? total : 0;
   const pct = total > 0 ? (current / total) * 100 : 0;
+  const icon = getBadgeIcon(badge.name);
+  const rewardGold = badge.rewardGold ?? 0;
+  const hasReward = rewardGold > 0;
 
   return (
     <div className="gm_mission_item">
       <div className="gm_mission_title_row">
         <div className={`gm_mission_icon${completed ? ' completed' : ''}`}>
-          {badge.imageUrl ? (
-            <img src={badge.imageUrl} alt={badge.name} className="gm_mission_icon_img" />
+          {icon ? (
+            <img src={icon} alt={badge.name} className="gm_mission_icon_img" />
           ) : (
             <span className="gm_mission_icon_emoji">🏆</span>
           )}
@@ -190,12 +170,25 @@ function MissionItem({ badge, completed }: { badge: Badge; completed: boolean })
           <p className="gm_mission_desc">{badge.description}</p>
           {completed && badge.acquiredAt && (
             <p className="gm_mission_date">
-              {new Date(badge.acquiredAt).toLocaleDateString('ko-KR')} 달성
+              {new Date(badge.acquiredAt).toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '')} 달성
             </p>
           )}
         </div>
-        {badge.rewardGold != null && badge.rewardGold > 0 && (
-          <GoldReward amount={badge.rewardGold} dimmed={completed} />
+        {hasReward && (
+          <div className={`gm_mission_reward${completed ? ' completed' : ''}`}>
+            <img
+              src={completed ? rewardBubbleDone : rewardBubbleActive}
+              alt=""
+              className="gm_mission_reward_bubble"
+            />
+            <div className="gm_mission_reward_inner">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <circle cx="6" cy="6" r="5.5" fill={completed ? '#AAAAAA' : '#C49A3C'} stroke="#614108" strokeWidth="1" />
+                <text x="6" y="8.5" textAnchor="middle" fontSize="7" fontWeight="700" fill="#614108">G</text>
+              </svg>
+              <span className="gm_mission_reward_num">{rewardGold}</span>
+            </div>
+          </div>
         )}
       </div>
 

@@ -186,7 +186,7 @@
 }
 
 .gm_badge_card:not(.acquired) .gm_badge_icon_svg {
-  filter: brightness(0) saturate(100%) invert(29%) sepia(22%) saturate(1500%) hue-rotate(11deg) brightness(95%) contrast(88%) opacity(0.45);
+  opacity: 0.7;
 }
 
 .gm_badge_info {
@@ -250,16 +250,11 @@
   padding: 24px 16px;
   display: flex;
   flex-direction: column;
+  gap: 40px;
 }
 
 .gm_mission_card--completed {
   background: #F9ECD2;
-}
-
-.gm_mission_divider {
-  height: 1px;
-  background: #EFE1C4;
-  margin: 24px 0;
 }
 
 /* Mission item */
@@ -267,6 +262,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: relative;
 }
 
 .gm_mission_title_row {
@@ -278,7 +274,7 @@
 .gm_mission_icon {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: 16px;
   background: #F9ECD2;
   flex-shrink: 0;
   display: flex;
@@ -287,7 +283,7 @@
   overflow: hidden;
 }
 
-.gm_mission_icon.completed {
+.gm_mission_card--completed .gm_mission_icon.completed {
   background: #fff;
 }
 
@@ -314,7 +310,8 @@
   font-weight: 700;
   color: #614108;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1;
+  letter-spacing: -0.36px;
 }
 
 .gm_mission_desc {
@@ -322,6 +319,7 @@
   color: #505050;
   margin: 0;
   line-height: 1.4;
+  letter-spacing: -0.28px;
 }
 
 .gm_mission_date {
@@ -329,35 +327,47 @@
   color: #727272;
   margin: 0;
   line-height: 1.4;
+  letter-spacing: -0.24px;
 }
 
-/* Gold reward */
-.gm_gold_reward {
+/* Reward bubble */
+.gm_mission_reward {
+  position: relative;
+  width: 44px;
+  height: 50px;
+  flex-shrink: 0;
+}
+
+.gm_mission_reward_bubble {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.gm_mission_reward.completed .gm_mission_reward_bubble {
+  filter: grayscale(1) brightness(1.2);
+}
+
+.gm_mission_reward_inner {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-  background: #FFF7E6;
-  border: 1.5px solid #C49A3C;
-  border-radius: 8px;
-  padding: 6px 8px;
-  min-width: 40px;
+  gap: 0;
 }
 
-.gm_gold_reward.dimmed {
-  background: #f1f1f1;
-  border-color: #ccc;
-}
-
-.gm_gold_amount {
+.gm_mission_reward_num {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: #614108;
+  letter-spacing: -0.32px;
   line-height: 1;
 }
 
-.gm_gold_reward.dimmed .gm_gold_amount {
+.gm_mission_reward.completed .gm_mission_reward_num {
   color: #505050;
 }
 
