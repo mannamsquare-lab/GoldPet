@@ -1,12 +1,101 @@
-import { useRef, useEffect, useCallback } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useRef, useEffect, useCallback, useState } from 'react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walkService } from '../../services/walkService';
-import type { WalkRecord } from '../../services/walkService';
+import type { WalkRecord, WalkPhotoItem } from '../../services/walkService';
 import { WalkRouteThumbnail } from '../walk/components/WalkRouteThumbnail';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { useMonthNavigation } from '../../hooks/useMonthNavigation';
 import './MyWalkPage.css';
+
+async function resolvePhotoUrl(imageUrl: string): Promise<string> {
+    if (imageUrl.startsWith('http')) return imageUrl;
+    const { default: apiClient } = await import('../../services/api/client');
+    const res = await apiClient.get(`/files/${imageUrl}/content`, { responseType: 'blob' });
+    return URL.createObjectURL(res.data);
+}
+
+function PhotoCollection() {
+    const navigate = useNavigate();
+    const [resolved, setResolved] = useState<Record<string, string>>({});
+    const blobUrlsRef = useRef<string[]>([]);
+
+    const { data } = useQuery({
+        queryKey: ['walk', 'my', 'photos', 'mywalk-collection'],
+        queryFn: () => walkService.getMyPhotos({ page: 0, size: 32 }),
+    });
+
+    const photos: WalkPhotoItem[] = (data?.content ?? [])
+        .filter((p) => !!p.imageUrl)
+        .slice(0, 8);
+
+    useEffect(() => {
+        photos.forEach((photo) => {
+            if (!photo.imageUrl) return;
+            const key = photo.imageUrl;
+            if (resolved[key] !== undefined) return;
+            resolvePhotoUrl(key)
+                .then((url) => {
+                    if (url.startsWith('blob:')) blobUrlsRef.current.push(url);
+                    setResolved((prev) => ({ ...prev, [key]: url }));
+                })
+                .catch(() => setResolved((prev) => ({ ...prev, [key]: '' })));
+        });
+    }, [photos]);
+
+    useEffect(() => {
+        return () => {
+            blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+        };
+    }, []);
+
+    if (photos.length === 0) return null;
+
+    const rows = [photos.slice(0, 4), photos.slice(4, 8)];
+
+    return (
+        <div className="mywalk_photo_section">
+            <div
+                className="mywalk_photo_title_row"
+                onClick={() => navigate('/walk-photos')}
+                style={{ cursor: 'pointer' }}
+            >
+                <span className="mywalk_photo_title">산책 사진 모아보기</span>
+                <span className="mywalk_photo_arrow">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 4L10 8L6 12" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </span>
+            </div>
+            <div className="mywalk_photo_grid">
+                {rows.map((row, rowIdx) => (
+                    <div key={rowIdx} className="mywalk_photo_row">
+                        {row.map((photo) => {
+                            const src = photo.imageUrl ? resolved[photo.imageUrl] : '';
+                            return (
+                                <div
+                                    key={photo.id}
+                                    className="mywalk_photo_item"
+                                    onClick={() => navigate(`/walk-photos/${photo.walkId}/${photo.id}`)}
+                                    style={{ cursor: 'pointer', overflow: 'hidden' }}
+                                >
+                                    {src && (
+                                        <img
+                                            src={src}
+                                            alt=""
+                                            loading="lazy"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                        />
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 export const MyWalkPage = () => {
     const navigate = useNavigate();
@@ -119,31 +208,7 @@ export const MyWalkPage = () => {
                     <div ref={sentinelRef} style={{ height: 1 }} />
 
                     {/* 산책 사진 모아보기 section */}
-                    {!isEmpty && (
-                        <div className="mywalk_photo_section">
-                            <div className="mywalk_photo_title_row">
-                                <span className="mywalk_photo_title">산책 사진 모아보기</span>
-                                <span className="mywalk_photo_arrow">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M6 4L10 8L6 12" stroke="#614108" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </span>
-                            </div>
-                            {/* Placeholder photo grid - backend API pending (Task #5) */}
-                            <div className="mywalk_photo_grid">
-                                <div className="mywalk_photo_row">
-                                    {[0, 1, 2, 3].map(i => (
-                                        <div key={i} className="mywalk_photo_item" />
-                                    ))}
-                                </div>
-                                <div className="mywalk_photo_row">
-                                    {[4, 5, 6, 7].map(i => (
-                                        <div key={i} className="mywalk_photo_item" />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {!isEmpty && <PhotoCollection />}
 
                     {/* Empty state CTA */}
                     {isEmpty && (
