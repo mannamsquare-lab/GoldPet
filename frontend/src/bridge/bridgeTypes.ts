@@ -51,7 +51,9 @@ export type NativeMethod =
   | 'getAppVersion'
   | 'getDeviceInfo'
   // 권한 일괄 요청
-  | 'requestAllPermissions';
+  | 'requestAllPermissions'
+  // 공유
+  | 'shareContent';
 
 export interface Location {
   latitude: number;

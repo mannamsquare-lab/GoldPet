@@ -16,6 +16,7 @@ import { SPOT_TYPES, spotLabel } from './utils/courseHelpers';
 import { SpotIcon, spotIconUrl } from './components/SpotIcon';
 import { createPolylinePath } from '../walk/utils/walkMapUtils';
 import { useAlert } from '../../contexts/AlertContext';
+import { useShare } from '../share';
 import './CourseCreatePage.css';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
@@ -169,6 +170,7 @@ export function CourseCreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showAlert, showConfirm } = useAlert();
+  const { share } = useShare();
   const { walkId: walkIdParam, courseId: courseIdParam } = useParams<{ walkId: string; courseId: string }>();
   const walkId = walkIdParam ? parseInt(walkIdParam, 10) : undefined;
   const isFromWalk = walkId != null && !isNaN(walkId);
@@ -765,11 +767,13 @@ export function CourseCreatePage() {
   const walkGold = walkDetail ? calculateWalkGold(walkDetail.distance) : 0;
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: title || '산책 코스', text: `${walkDate} 산책 코스` });
-      } catch { /* user cancelled */ }
-    }
+    const resolvedCourseId = courseId ?? walkId;
+    if (resolvedCourseId == null) return;
+    await share({
+      kind: 'course',
+      courseId: resolvedCourseId,
+      title: title || '산책 코스',
+    });
   };
 
   return (
@@ -781,13 +785,11 @@ export function CourseCreatePage() {
       {isFromWalk && walkDetail && (
         <div className="course_create_date_row">
           <span className="course_create_date_text">{walkDate}</span>
-          {'share' in navigator && (
-            <button className="course_create_share_btn" onClick={handleShare} type="button">
-              <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 1v7M6 1L3 4M6 1l3 3M2 8v2.5h8V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </svg>
-            </button>
-          )}
+          <button className="course_create_share_btn" onClick={() => void handleShare()} type="button">
+            <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 1v7M6 1L3 4M6 1l3 3M2 8v2.5h8V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+          </button>
         </div>
       )}
 

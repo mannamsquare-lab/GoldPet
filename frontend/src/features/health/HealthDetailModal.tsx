@@ -1,5 +1,6 @@
 import React from 'react';
 import type { StoolAnalysisResponse } from '../../services/stoolAnalysisService';
+import { useShare } from '../share';
 
 interface Props {
   analysis: StoolAnalysisResponse;
@@ -93,6 +94,7 @@ export const HealthDetailModal: React.FC<Props> = ({
   petImageUrl,
   onClose,
 }) => {
+  const { share } = useShare();
   const tips = parseJsonArray(analysis.healthTips);
   const warnings = parseJsonArray(analysis.warnings);
   const overallPct =
@@ -127,7 +129,17 @@ export const HealthDetailModal: React.FC<Props> = ({
           </div>
           <div className="hd_header_right">
             <span className="hd_date">{formatDate(analysis.createdAt)}</span>
-            <button type="button" className="hd_share_btn" aria-label="공유">
+            <button
+              type="button"
+              className="hd_share_btn"
+              aria-label="공유"
+              onClick={() => void share({
+                kind: 'health-detail',
+                healthId: analysis.id,
+                petName,
+                summary: analysis.healthSummary ?? '',
+              })}
+            >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path
                   d="M6 8V1M3 3.5L6 1l3 2.5M2 9.5h8"

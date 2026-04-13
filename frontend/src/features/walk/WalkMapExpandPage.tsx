@@ -9,6 +9,7 @@ import { BottomNav } from '../../components/common/BottomNav';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp, petCircleMarkerHtml, createPolylinePath } from './utils/walkMapUtils';
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
+import { useShare } from '../share';
 import './WalkMapExpand.css';
 
 const DEFAULT_LAT = 37.5665;
@@ -27,6 +28,7 @@ export const WalkMapExpandPage = () => {
     const [mapLoadFailed, setMapLoadFailed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
     const [selectedSpot, setSelectedSpot] = useState<WalkSpot | null>(null);
+    const { share } = useShare();
 
     // Load walk data (shares cache with WalkDetailPage)
     const { data: walk } = useQuery({
@@ -297,7 +299,16 @@ export const WalkMapExpandPage = () => {
             {walk && (
                 <div className="walk_map_expand_date_row">
                     <span className="walk_detail_date">{formatDate(walk.startTime)}</span>
-                    <button type="button" className="walk_detail_share_btn" aria-label="공유">
+                    <button
+                        type="button"
+                        className="walk_detail_share_btn"
+                        aria-label="공유"
+                        onClick={() => {
+                            if (walk) {
+                                void share({ kind: 'walk-summary', walkId: Number(walkId), session: walk, watermark: true });
+                            }
+                        }}
+                    >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                             <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
                             <path d="M6 13.5V16C6 17.1046 6.89543 18 8 18H16C17.1046 18 18 17.1046 18 16V13.5" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>

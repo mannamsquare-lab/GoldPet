@@ -1,0 +1,385 @@
+/**
+ * Canvas-based watermark image composition (§5.5, §5.5.1)
+ * - walk-summary: 1080×1920 fixed (9:16 Instagram Story format)
+ * - walk-photo:   longest side 1920px resize, ratio preserved
+ * Output: JPEG Blob (default quality 0.85)
+ */
+
+import type { ShareTarget } from './types';
+import { formatAddressForShare } from './formatAddressForShare';
+
+const CANVAS_W = 1080;
+const CANVAS_H = 1920;
+const DEFAULT_QUALITY = 0.85;
+
+// ─── Image loading ────────────────────────────────────────────────────────────
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// ─── Canvas helpers ───────────────────────────────────────────────────────────
+
+function drawImageCover(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  destX: number,
+  destY: number,
+  destW: number,
+  destH: number,
+): void {
+  const srcRatio = img.naturalWidth / img.naturalHeight;
+  const dstRatio = destW / destH;
+  let srcX = 0;
+  let srcY = 0;
+  let srcW = img.naturalWidth;
+  let srcH = img.naturalHeight;
+  if (srcRatio > dstRatio) {
+    srcW = img.naturalHeight * dstRatio;
+    srcX = (img.naturalWidth - srcW) / 2;
+  } else {
+    srcH = img.naturalWidth / dstRatio;
+    srcY = (img.naturalHeight - srcH) / 2;
+  }
+  ctx.drawImage(img, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+}
+
+function drawGradientBackground(ctx: CanvasRenderingContext2D): void {
+  const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+  gradient.addColorStop(0, '#FF8C42');
+  gradient.addColorStop(1, '#FFD166');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+}
+
+// ─── Path polyline (§5.5.1) ───────────────────────────────────────────────────
+
+function drawPathPolyline(
+  ctx: CanvasRenderingContext2D,
+  pathPoints: { lat: number; lng: number }[],
+  areaX: number,
+  areaY: number,
+  areaW: number,
+  areaH: number,
+  padding: number,
+): void {
+  if (pathPoints.length < 2) return;
+
+  const lats = pathPoints.map((p) => p.lat);
+  const lngs = pathPoints.map((p) => p.lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const latRange = maxLat - minLat || 0.001;
+  const lngRange = maxLng - minLng || 0.001;
+
+  const drawW = areaW - padding * 2;
+  const drawH = areaH - padding * 2;
+
+  const toX = (lng: number): number => areaX + padding + ((lng - minLng) / lngRange) * drawW;
+  // lat increases northward → invert Y
+  const toY = (lat: number): number => areaY + padding + (1 - (lat - minLat) / latRange) * drawH;
+
+  ctx.save();
+
+  // Polyline
+  ctx.strokeStyle = '#FF6B35';
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(toX(pathPoints[0].lng), toY(pathPoints[0].lat));
+  for (let i = 1; i < pathPoints.length; i++) {
+    ctx.lineTo(toX(pathPoints[i].lng), toY(pathPoints[i].lat));
+  }
+  ctx.stroke();
+
+  // Start marker — green circle
+  const sx = toX(pathPoints[0].lng);
+  const sy = toY(pathPoints[0].lat);
+  ctx.beginPath();
+  ctx.arc(sx, sy, 16, 0, Math.PI * 2);
+  ctx.fillStyle = '#22C55E';
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // End marker — red circle
+  const last = pathPoints[pathPoints.length - 1];
+  const ex = toX(last.lng);
+  const ey = toY(last.lat);
+  ctx.beginPath();
+  ctx.arc(ex, ey, 16, 0, Math.PI * 2);
+  ctx.fillStyle = '#EF4444';
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// ─── Formatters ───────────────────────────────────────────────────────────────
+
+function formatDistance(meters: number): string {
+  return (meters / 1000).toFixed(2);
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatCalories(kcal: number): string {
+  return Math.round(kcal).toString();
+}
+
+function formatDate(isoString: string): string {
+  const d = new Date(isoString);
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const dy = String(d.getDate()).padStart(2, '0');
+  return `${y}.${mo}.${dy}`;
+}
+
+// ─── Font loading ─────────────────────────────────────────────────────────────
+
+async function waitForFonts(): Promise<void> {
+  if (typeof document === 'undefined') return;
+  try {
+    await Promise.race([
+      document.fonts.ready,
+      new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error('font timeout')), 2000),
+      ),
+    ]);
+  } catch {
+    // fall through — system font will be used
+  }
+}
+
+function resolveFontFamily(): string {
+  if (typeof document === 'undefined') return 'sans-serif';
+  const loaded = [...document.fonts].some(
+    (f) => f.family.includes('Pretendard') && f.status === 'loaded',
+  );
+  return loaded ? 'Pretendard' : "-apple-system, 'Apple SD Gothic Neo', sans-serif";
+}
+
+// ─── canvas → Blob ────────────────────────────────────────────────────────────
+
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('canvas.toBlob returned null'));
+      },
+      'image/jpeg',
+      quality,
+    );
+  });
+}
+
+// ─── walk-summary compositor ──────────────────────────────────────────────────
+
+async function composeWalkSummary(
+  target: Extract<ShareTarget, { kind: 'walk-summary' }>,
+  quality: number,
+): Promise<Blob> {
+  await waitForFonts();
+  const font = resolveFontFamily();
+
+  const canvas = document.createElement('canvas');
+  // Fix pixel dimensions — do NOT multiply by devicePixelRatio
+  canvas.width = CANVAS_W;
+  canvas.height = CANVAS_H;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+  // ── Background ──
+  const bgUrl = target.session.petProfileImageUrls?.[0];
+  let bgLoaded = false;
+  if (bgUrl) {
+    try {
+      const img = await loadImage(bgUrl);
+      drawImageCover(ctx, img, 0, 0, CANVAS_W, Math.round(CANVAS_H * 0.6));
+      bgLoaded = true;
+    } catch {
+      // fallback to gradient below
+    }
+  }
+  if (!bgLoaded) {
+    drawGradientBackground(ctx);
+  }
+
+  // Dark overlay for legibility
+  const topFade = ctx.createLinearGradient(0, 0, 0, CANVAS_H * 0.35);
+  topFade.addColorStop(0, 'rgba(0,0,0,0.65)');
+  topFade.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = topFade;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H * 0.35);
+
+  const bottomFade = ctx.createLinearGradient(0, CANVAS_H * 0.45, 0, CANVAS_H);
+  bottomFade.addColorStop(0, 'rgba(15,15,15,0)');
+  bottomFade.addColorStop(1, 'rgba(15,15,15,0.92)');
+  ctx.fillStyle = bottomFade;
+  ctx.fillRect(0, CANVAS_H * 0.45, CANVAS_W, CANVAS_H * 0.55);
+
+  const PAD = 60;
+
+  // ── GoldPet logo (top-left) ──
+  ctx.save();
+  ctx.font = `bold 52px ${font}`;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.fillText('GoldPet', PAD, PAD);
+
+  // ── Date (top-right) ──
+  const dateStr = target.session.startTime ? formatDate(target.session.startTime) : '';
+  ctx.font = `500 40px ${font}`;
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillText(`${dateStr} · 산책 기록`, CANVAS_W - PAD, PAD + 8);
+  ctx.restore();
+
+  // ── Path polyline (§5.5.1) ──
+  const polyAreaY = Math.round(CANVAS_H * 0.55);
+  const polyAreaH = Math.round(CANVAS_H * 0.18);
+  if (target.session.pathPoints && target.session.pathPoints.length >= 2) {
+    drawPathPolyline(
+      ctx,
+      target.session.pathPoints,
+      PAD,
+      polyAreaY,
+      CANVAS_W - PAD * 2,
+      polyAreaH,
+      20,
+    );
+  }
+
+  // ── Stats row ──
+  const statsBaseY = Math.round(CANVAS_H * 0.775);
+  const colW = CANVAS_W / 3;
+  const stats = [
+    {
+      value: formatDistance(target.session.distance),
+      unit: 'km',
+      label: '거리',
+    },
+    {
+      value: target.session.durationSeconds != null
+        ? formatDuration(target.session.durationSeconds)
+        : '--:--',
+      unit: '',
+      label: '시간',
+    },
+    {
+      value: formatCalories(target.session.calories),
+      unit: 'kcal',
+      label: '칼로리',
+    },
+  ];
+
+  stats.forEach((stat, i) => {
+    const cx = colW * i + colW / 2;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+
+    ctx.font = `bold 96px ${font}`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(stat.value, cx, statsBaseY);
+
+    if (stat.unit) {
+      ctx.font = `500 44px ${font}`;
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillText(stat.unit, cx, statsBaseY + 64);
+    }
+
+    ctx.font = `400 36px ${font}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(stat.label, cx, statsBaseY + (stat.unit ? 120 : 64));
+    ctx.restore();
+  });
+
+  // ── Pet name + address ──
+  const petInfoY = Math.round(CANVAS_H * 0.905);
+  const petNames = target.session.petNames?.join(', ') ?? '';
+  const address = target.session.startAddress
+    ? formatAddressForShare(target.session.startAddress)
+    : '';
+  const petInfo = [petNames, address].filter(Boolean).join(' · ');
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `500 38px ${font}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillText(petInfo, CANVAS_W / 2, petInfoY);
+
+  // ── Domain watermark ──
+  ctx.font = `400 30px ${font}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('goldpet.com', CANVAS_W / 2, petInfoY + 54);
+  ctx.restore();
+
+  return canvasToBlob(canvas, quality);
+}
+
+// ─── walk-photo compositor ────────────────────────────────────────────────────
+
+async function composeWalkPhoto(
+  target: Extract<ShareTarget, { kind: 'walk-photo' }>,
+  quality: number,
+): Promise<Blob> {
+  const img = await loadImage(target.photoUrl);
+  const isLandscape = img.naturalWidth >= img.naturalHeight;
+  const scale = 1920 / (isLandscape ? img.naturalWidth : img.naturalHeight);
+  const w = Math.round(img.naturalWidth * scale);
+  const h = Math.round(img.naturalHeight * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvasToBlob(canvas, quality);
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Compose a shareable image from a ShareTarget.
+ *
+ * Fallback policy (§5.7):
+ *   1. Background image load fails → drawGradientBackground (handled inline)
+ *   2. Any other failure → throws → useShare.tryComposeImage retries at 0.7 quality
+ *   3. Second failure → throws → useShare falls back to text-only sharing
+ */
+export async function composeImage(target: ShareTarget, quality?: number): Promise<Blob> {
+  const q = quality ?? DEFAULT_QUALITY;
+  switch (target.kind) {
+    case 'walk-summary':
+      return composeWalkSummary(target, q);
+    case 'walk-photo':
+      return composeWalkPhoto(target, q);
+    default:
+      // Phase 2+ kinds not yet implemented — throws so useShare falls back to text
+      throw new Error(`composeImage: "${target.kind}" not yet implemented`);
+  }
+}

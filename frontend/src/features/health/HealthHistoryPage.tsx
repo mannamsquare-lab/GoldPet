@@ -16,6 +16,7 @@ import type { Pet } from '../../services/petService';
 import { stoolAnalysisService } from '../../services/stoolAnalysisService';
 import type { StoolAnalysisResponse } from '../../services/stoolAnalysisService';
 import { HealthDetailModal } from './HealthDetailModal';
+import { useShare } from '../share';
 import './HealthHistoryPage.css';
 
 function formatDate(iso: string | null): string {
@@ -47,8 +48,8 @@ function scoreLabel(score: number | null): string {
   return '매우 건강';
 }
 
-const ShareBtn = () => (
-  <button type="button" className="hh_share_btn" aria-label="공유">
+const ShareBtn = ({ onClick }: { onClick: (e: React.MouseEvent) => void }) => (
+  <button type="button" className="hh_share_btn" aria-label="공유" onClick={onClick}>
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
       <path d="M6 8V1M3 3.5L6 1l3 2.5M2 9.5h8" stroke="#8A497D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -84,6 +85,7 @@ const HealthHistoryPage = () => {
   const paramPetId = searchParams.get('petId') ? Number(searchParams.get('petId')) : null;
 
   const { pets, selectedPet, setSelectedPet } = usePetSelector();
+  const { share } = useShare();
   const [showPetDropdown, setShowPetDropdown] = useState(false);
   const [page, setPage] = useState(0);
   const [allAnalyses, setAllAnalyses] = useState<StoolAnalysisResponse[]>([]);
@@ -300,7 +302,10 @@ const HealthHistoryPage = () => {
                           <span className="hh_list_item_date">
                             {formatDate(analysis.createdAt)}
                           </span>
-                          <ShareBtn />
+                          <ShareBtn onClick={e => {
+                            e.stopPropagation();
+                            void share({ kind: 'health-history', petId: selectedPet?.id ?? 0, petName: selectedPet?.name ?? '' });
+                          }} />
                         </div>
                       </div>
 

@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "TEAMID.com.goldpet.app"
+        ],
+        "paths": [
+          "/w/*",
+          "/c/*",
+          "/pet/*/health",
+          "/health/*",
+          "/post/*"
+        ]
+      }
+    ]
+  }
+}

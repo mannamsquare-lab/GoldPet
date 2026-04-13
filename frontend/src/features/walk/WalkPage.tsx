@@ -3,7 +3,8 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { walkService, getTodayStats } from '../../services/walkService';
 import { courseService } from '../../services/courseService';
-import type { WalkRecord, WalkRankingEntry } from '../../services/walkService';
+import type { WalkRecord, WalkRankingEntry, WalkSession } from '../../services/walkService';
+import { useShare } from '../share';
 import type { CourseFilters } from '../course/utils/courseHelpers';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
 import { WalkPhotoCollection } from './components/WalkPhotoCollection';
@@ -725,6 +726,7 @@ interface WalkRecordItemProps {
 }
 
 export function WalkRecordItem({ record, onClick, showUser = false }: WalkRecordItemProps & { showUser?: boolean }) {
+    const { share } = useShare();
     const petNames = record.petNames ?? [];
     const petImages = record.petProfileImageUrls ?? [];
     const hasPets = petNames.length > 0;
@@ -761,7 +763,24 @@ export function WalkRecordItem({ record, onClick, showUser = false }: WalkRecord
                     <div className="walk_record_meta">
                         <span className="walk_record_date">{record.date}</span>
                         <div className="walk_record_actions" onClick={e => e.stopPropagation()}>
-                            <button type="button" className="walk_record_action_btn" title="공유">
+                            <button
+                                type="button"
+                                className="walk_record_action_btn"
+                                title="공유"
+                                onClick={() => {
+                                    const session: WalkSession = {
+                                        id: record.id,
+                                        startTime: record.startTime ?? '',
+                                        distance: (record.distanceKm ?? 0) * 1000,
+                                        calories: record.caloriesBurned ?? 0,
+                                        durationSeconds: record.durationSeconds,
+                                        startAddress: record.startAddress,
+                                        petNames: record.petNames,
+                                        petProfileImageUrls: record.petProfileImageUrls,
+                                    };
+                                    void share({ kind: 'walk-summary', walkId: record.id, session, watermark: true });
+                                }}
+                            >
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                                     <rect width="24" height="24" rx="12" fill="#FFE5FA"/>
                                     <path d="M6 13.5V16C6 17.1046 6.89543 18 8 18H16C17.1046 18 18 17.1046 18 16V13.5" stroke="#8A497D" strokeWidth="2" strokeLinecap="round"/>

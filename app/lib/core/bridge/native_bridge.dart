@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
@@ -369,6 +370,62 @@ class NativeBridge {
         case BridgeProtocol.clearOverlayColor:
           onOverlayColorChange?.call(null, null);
           return {'success': true};
+
+        // 콘텐츠 공유 (OS 네이티브 공유 시트)
+        case 'shareContent':
+          final imageBase64 = params?['imageBase64'] as String?;
+          final text = params?['text'] as String? ?? '';
+          final subject = params?['subject'] as String?;
+          final fileName = params?['fileName'] as String? ??
+              'goldpet_share_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+          final xfiles = <XFile>[];
+          if (imageBase64 != null && imageBase64.isNotEmpty) {
+            // data URI prefix 제거 ("data:image/jpeg;base64,..." → raw base64)
+            final rawBase64 = imageBase64.contains(',')
+                ? imageBase64.split(',').last
+                : imageBase64;
+
+            // payload 크기 제한: base64 문자열 길이 > ~2MB ≈ 디코딩 후 1.5MB
+            if (rawBase64.length > 2 * 1024 * 1024) {
+              throw PlatformException(
+                code: 'SHARE_INVALID_PARAMS',
+                message: 'Image payload exceeds 1.5MB limit',
+              );
+            }
+
+            final bytes = base64Decode(rawBase64);
+            final tmpDir = await getTemporaryDirectory();
+            final file = File('${tmpDir.path}/$fileName');
+            await file.writeAsBytes(bytes);
+            xfiles.add(XFile(file.path, mimeType: 'image/jpeg'));
+
+            // 5분 후 임시 파일 자동 삭제
+            Timer(const Duration(minutes: 5), () {
+              file.delete().catchError((_) => file);
+            });
+          }
+
+          if (xfiles.isEmpty && text.isEmpty) {
+            throw PlatformException(
+              code: 'SHARE_INVALID_PARAMS',
+              message: 'Either imageBase64 or text is required',
+            );
+          }
+
+          final shareParams = ShareParams(
+            text: text.isNotEmpty ? text : null,
+            subject: subject,
+            files: xfiles.isEmpty ? null : xfiles,
+            // iPad popover: 화면 우상단 기본값
+            sharePositionOrigin: const Rect.fromLTWH(0, 0, 100, 40),
+          );
+          final shareResult = await SharePlus.instance.share(shareParams);
+          // ShareResultStatus.success → 'shared' (plan 스펙 매핑)
+          final statusStr = shareResult.status == ShareResultStatus.success
+              ? 'shared'
+              : shareResult.status.name;
+          return {'status': statusStr, 'channel': shareResult.raw};
 
         default:
           throw PlatformException(

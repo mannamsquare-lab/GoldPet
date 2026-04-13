@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { BottomNav } from '../../components/common/BottomNav';
@@ -6,6 +6,7 @@ import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
 import { resolvePhotoUrl, getCachedPhotoUrl } from './utils/photoUrlCache';
 import { useAlert } from '../../contexts/AlertContext';
+import { useShare } from '../share';
 import './WalkPhotoDetail.css';
 
 export default function WalkPhotoDetailPage() {
@@ -25,6 +26,9 @@ export default function WalkPhotoDetailPage() {
   const [saving, setSaving] = useState(false);
   const [hiddenFromPublic, setHiddenFromPublic] = useState(photoFromState?.hiddenFromPublic ?? false);
   const [togglingVisibility, setTogglingVisibility] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { share } = useShare();
 
   // Format date from ISO string
   function formatDate(isoStr: string): string {
@@ -93,6 +97,29 @@ export default function WalkPhotoDetailPage() {
     }
   };
 
+  // Close overflow menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  const handleSharePhoto = async () => {
+    setMenuOpen(false);
+    if (!photo?.imageUrl || !walkId) return;
+    await share({
+      kind: 'walk-photo',
+      photoUrl: photo.imageUrl,
+      walkId: Number(walkId),
+      watermark: false,
+    });
+  };
+
   const handleToggleVisibility = () => {
     if (!walkId || !spotId || togglingVisibility) return;
     const next = !hiddenFromPublic;
@@ -123,11 +150,39 @@ export default function WalkPhotoDetailPage() {
         {/* Date row */}
         <div className="wpd_date_row">
           <span className="wpd_date">{photo ? formatDate(photo.walkDate) : ''}</span>
-          <button type="button" className="wpd_share_btn" onClick={handleSave} disabled={saving}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" stroke="#8A497D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          <div className="wpd_menu_wrap" ref={menuRef}>
+            <button
+              type="button"
+              className="wpd_share_btn"
+              onClick={() => setMenuOpen(v => !v)}
+              aria-label="더보기"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="5" cy="12" r="1.5" fill="#8A497D" />
+                <circle cx="12" cy="12" r="1.5" fill="#8A497D" />
+                <circle cx="19" cy="12" r="1.5" fill="#8A497D" />
+              </svg>
+            </button>
+            {menuOpen && (
+              <div className="wpd_menu_dropdown">
+                <button
+                  type="button"
+                  className="wpd_menu_item"
+                  onClick={() => { setMenuOpen(false); void handleSave(); }}
+                  disabled={saving}
+                >
+                  저장
+                </button>
+                <button
+                  type="button"
+                  className="wpd_menu_item"
+                  onClick={() => { void handleSharePhoto(); }}
+                >
+                  공유
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Photo */}
