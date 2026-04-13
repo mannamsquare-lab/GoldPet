@@ -443,7 +443,7 @@ class _HybridWebViewState extends State<HybridWebView> {
   // TypeB prefix 매칭이지만 상단은 TypeA인 라우트 (투명 헤더 사용)
   // 하단 BottomNav가 있는 경우 bottom SafeArea는 #EFE1C4 유지
   static const _typeAOverridePrefixes = ['/walk/detail', '/walk/map-expand', '/walk/ranking'];
-  static const _hasBottomNavPrefixes = ['/walk/detail', '/walk/map-expand'];
+  static const _hasBottomNavPrefixes = ['/walk/detail', '/walk/map-expand', '/walk-photos', '/walk-shared-photos'];
   static const Color _colorEFE1C4 = Color(0xFFEFE1C4);
   static const Color _colorFFF7E6 = Color(0xFFFFF7E6);
   static const Color _colorF9ECD2 = Color(0xFFF9ECD2);
