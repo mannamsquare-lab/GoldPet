@@ -314,8 +314,19 @@ class WalkService(
             walkDate = spot.walk.startTime,
             walkId = spot.walk.id,
             petName = firstPet?.name,
-            petImageUrl = firstPet?.profileImageUrl
+            petImageUrl = firstPet?.profileImageUrl,
+            hiddenFromPublic = spot.hiddenFromPublic
         )
+    }
+
+    @Transactional
+    fun updateSpotVisibility(userId: Long, walkId: Long, spotId: Long, hiddenFromPublic: Boolean): WalkPhotoResponse {
+        val walk = walkRepository.findById(walkId).orElseThrow { NotFoundException("Walk not found") }
+        if (walk.user.id != userId) throw ForbiddenException("Not the owner of this walk")
+        val spot = walkSpotRepository.findById(spotId).orElseThrow { NotFoundException("Spot not found") }
+        if (spot.walk.id != walkId) throw ForbiddenException("Spot does not belong to this walk")
+        spot.hiddenFromPublic = hiddenFromPublic
+        return toWalkPhotoResponse(spot)
     }
 
     private fun parseYearMonth(yearMonth: String): Pair<java.time.LocalDateTime, java.time.LocalDateTime> {

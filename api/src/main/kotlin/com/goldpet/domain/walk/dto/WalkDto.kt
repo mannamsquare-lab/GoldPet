@@ -40,7 +40,8 @@ data class WalkSpotDto(
     val type: String,
     val timestamp: LocalDateTime,
     val imageUrl: String?,
-    val note: String?
+    val note: String?,
+    val hiddenFromPublic: Boolean = false
 )
 
 data class WalkPhotoResponse(
@@ -50,11 +51,16 @@ data class WalkPhotoResponse(
     val walkDate: LocalDateTime,
     val walkId: Long,
     val petName: String?,
-    val petImageUrl: String?
+    val petImageUrl: String?,
+    val hiddenFromPublic: Boolean = false
 )
 
 data class UpdateSpotNoteRequest(
     val note: String?
+)
+
+data class UpdateSpotVisibilityRequest(
+    val hiddenFromPublic: Boolean
 )
 
 data class WalkResponse(
@@ -101,7 +107,8 @@ data class WalkResponse(
                         type = spot.type.name,
                         timestamp = spot.timestamp,
                         imageUrl = spot.imageUrl,
-                        note = spot.note
+                        note = spot.note,
+                        hiddenFromPublic = spot.hiddenFromPublic
                     )
                 },
                 caloriesBurned = walk.caloriesBurned,
@@ -132,17 +139,20 @@ data class WalkResponse(
                 distanceKm = walk.distanceKm,
                 durationSeconds = walk.durationSeconds,
                 path = pathCoordinates,
-                spots = walk.spots.map { spot ->
-                    WalkSpotDto(
-                        id = spot.id,
-                        latitude = spot.location.y,
-                        longitude = spot.location.x,
-                        type = spot.type.name,
-                        timestamp = spot.timestamp,
-                        imageUrl = spot.imageUrl,
-                        note = spot.note
-                    )
-                },
+                spots = walk.spots
+                    .filter { !it.hiddenFromPublic }
+                    .map { spot ->
+                        WalkSpotDto(
+                            id = spot.id,
+                            latitude = spot.location.y,
+                            longitude = spot.location.x,
+                            type = spot.type.name,
+                            timestamp = spot.timestamp,
+                            imageUrl = spot.imageUrl,
+                            note = spot.note,
+                            hiddenFromPublic = false
+                        )
+                    },
                 caloriesBurned = walk.caloriesBurned,
                 notes = null,
                 startAddress = walk.startAddress,

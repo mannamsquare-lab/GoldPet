@@ -8,6 +8,7 @@ import com.goldpet.domain.walk.dto.WalkRankingResponse
 import com.goldpet.domain.walk.dto.WalkCoupleRankingResponse
 import com.goldpet.domain.walk.dto.WalkStatsResponse
 import com.goldpet.domain.walk.dto.UpdateSpotNoteRequest
+import com.goldpet.domain.walk.dto.UpdateSpotVisibilityRequest
 import com.goldpet.domain.walk.service.WalkService
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -100,6 +101,18 @@ class WalkController(
     ): ResponseEntity<WalkPhotoResponse> {
         if (userDetails == null) return ResponseEntity.status(401).build()
         val photo = walkService.updateSpotNote(userDetails.id, walkId, spotId, request.note)
+        return ResponseEntity.ok(photo)
+    }
+
+    @PatchMapping("/{walkId}/spots/{spotId}/visibility")
+    fun updateSpotVisibility(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
+        @PathVariable walkId: Long,
+        @PathVariable spotId: Long,
+        @RequestBody request: UpdateSpotVisibilityRequest
+    ): ResponseEntity<WalkPhotoResponse> {
+        if (userDetails == null) return ResponseEntity.status(401).build()
+        val photo = walkService.updateSpotVisibility(userDetails.id, walkId, spotId, request.hiddenFromPublic)
         return ResponseEntity.ok(photo)
     }
 

@@ -16,10 +16,6 @@ interface WalkSpotRepository : JpaRepository<WalkSpot, Long> {
         WHERE w.user.id = :userId
         AND ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO
         AND ws.imageUrl IS NOT NULL
-        AND NOT EXISTS (
-            SELECT 1 FROM com.goldpet.domain.walk.entity.StoolAnalysis sa
-            WHERE sa.imageUrl = ws.imageUrl
-        )
         ORDER BY ws.timestamp DESC
     """)
     fun findPhotoSpotsByUserId(
@@ -34,10 +30,6 @@ interface WalkSpotRepository : JpaRepository<WalkSpot, Long> {
         AND ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO
         AND ws.imageUrl IS NOT NULL
         AND ws.timestamp >= :start AND ws.timestamp < :end
-        AND NOT EXISTS (
-            SELECT 1 FROM com.goldpet.domain.walk.entity.StoolAnalysis sa
-            WHERE sa.imageUrl = ws.imageUrl
-        )
         ORDER BY ws.timestamp DESC
     """)
     fun findPhotoSpotsByUserIdAndMonth(
@@ -53,11 +45,8 @@ interface WalkSpotRepository : JpaRepository<WalkSpot, Long> {
         WHERE w.isPublic = true
         AND ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO
         AND ws.imageUrl IS NOT NULL
+        AND ws.hiddenFromPublic = false
         AND w.user.id NOT IN :blockedUserIds
-        AND NOT EXISTS (
-            SELECT 1 FROM com.goldpet.domain.walk.entity.StoolAnalysis sa
-            WHERE sa.imageUrl = ws.imageUrl
-        )
         ORDER BY ws.timestamp DESC
     """)
     fun findPublicPhotoSpots(

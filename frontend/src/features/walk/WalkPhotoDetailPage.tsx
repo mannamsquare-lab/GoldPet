@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
@@ -8,6 +9,7 @@ import './WalkPhotoDetail.css';
 
 export default function WalkPhotoDetailPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { walkId, spotId } = useParams<{ walkId: string; spotId: string }>();
   const location = useLocation();
 
@@ -19,6 +21,8 @@ export default function WalkPhotoDetailPage() {
   );
   const [caption, setCaption] = useState(photoFromState?.note ?? '');
   const [saving, setSaving] = useState(false);
+  const [hiddenFromPublic, setHiddenFromPublic] = useState(photoFromState?.hiddenFromPublic ?? false);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
 
   // Format date from ISO string
   function formatDate(isoStr: string): string {
@@ -30,7 +34,7 @@ export default function WalkPhotoDetailPage() {
   useEffect(() => {
     if (photo || !walkId) return;
     walkService.getWalkDetail(Number(walkId)).then(walk => {
-      const spot = walk.spots?.find(s => s.type === 'PHOTO');
+      const spot = walk.spots?.find(s => s.id === Number(spotId)) ?? walk.spots?.find(s => s.type === 'PHOTO');
       if (spot && spot.imageUrl) {
         const item: WalkPhotoItem = {
           id: Number(spotId),
@@ -40,9 +44,11 @@ export default function WalkPhotoDetailPage() {
           walkId: Number(walkId),
           petName: walk.petNames?.[0] ?? null,
           petImageUrl: walk.petProfileImageUrls?.[0] ?? null,
+          hiddenFromPublic: spot.hiddenFromPublic ?? false,
         };
         setPhoto(item);
         setCaption(spot.note ?? '');
+        setHiddenFromPublic(spot.hiddenFromPublic ?? false);
       }
     }).catch(() => {});
   }, [walkId, spotId, photo]);
@@ -66,6 +72,27 @@ export default function WalkPhotoDetailPage() {
       await walkService.updateSpotNote(Number(walkId), Number(spotId), caption || null);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleVisibility = async () => {
+    if (!walkId || !spotId || togglingVisibility) return;
+    const next = !hiddenFromPublic;
+    const confirmMsg = next
+      ? '이 사진을 공개 갤러리에서 숨길까요?\n다른 사용자에게 더 이상 노출되지 않습니다.'
+      : '이 사진을 다시 공개할까요?';
+    if (!window.confirm(confirmMsg)) return;
+    setTogglingVisibility(true);
+    try {
+      await walkService.updateSpotVisibility(Number(walkId), Number(spotId), next);
+      setHiddenFromPublic(next);
+      queryClient.invalidateQueries({ queryKey: ['walk', 'public', 'photos'] });
+      queryClient.invalidateQueries({ queryKey: ['walk', 'my', 'photos'] });
+      queryClient.invalidateQueries({ queryKey: ['walk', 'public', 'photos', 'collection'] });
+    } catch {
+      window.alert('처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setTogglingVisibility(false);
     }
   };
 
@@ -113,6 +140,19 @@ export default function WalkPhotoDetailPage() {
           />
           <span className="wpd_caption_counter">{caption.length}/100자</span>
         </div>
+
+        {/* Visibility toggle */}
+        <button
+          type="button"
+          className="wpd_visibility_btn"
+          onClick={handleToggleVisibility}
+          disabled={togglingVisibility}
+        >
+          {hiddenFromPublic ? '공개 갤러리에 다시 공개' : '공개 갤러리에서 숨기기'}
+        </button>
+        {hiddenFromPublic && (
+          <p className="wpd_visibility_hint">이 사진은 공개 갤러리와 다른 사용자에게 노출되지 않습니다.</p>
+        )}
       </div>
 
       <BottomNav />

@@ -33,12 +33,14 @@ export interface WalkStats {
 }
 
 export interface WalkSpot {
+  id?: number;
   latitude: number;
   longitude: number;
   type: 'PEE' | 'POOP' | 'PHOTO' | 'PROBLEM' | 'OTHER';
   timestamp: string;
   imageUrl?: string;
   note?: string;
+  hiddenFromPublic?: boolean;
 }
 
 export interface WalkPhotoItem {
@@ -49,6 +51,7 @@ export interface WalkPhotoItem {
   walkId: number;
   petName: string | null;
   petImageUrl: string | null;
+  hiddenFromPublic?: boolean;
 }
 
 export interface WalkSession {
@@ -278,6 +281,11 @@ export const walkService = {
 
   updateSpotNote: async (walkId: number, spotId: number, note: string | null): Promise<WalkPhotoItem> => {
     const response = await apiClient.patch(`/walks/${walkId}/spots/${spotId}`, { note });
+    return response.data;
+  },
+
+  updateSpotVisibility: async (walkId: number, spotId: number, hiddenFromPublic: boolean): Promise<WalkPhotoItem> => {
+    const response = await apiClient.patch(`/walks/${walkId}/spots/${spotId}/visibility`, { hiddenFromPublic });
     return response.data;
   },
 

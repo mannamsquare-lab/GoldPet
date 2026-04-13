@@ -29,7 +29,10 @@ class WalkSpot(
     var imageUrl: String? = null,
 
     @Column(columnDefinition = "TEXT")
-    var note: String? = null
+    var note: String? = null,
+
+    @Column(nullable = false)
+    var hiddenFromPublic: Boolean = false
 
 ) : BaseTimeEntity()
 
