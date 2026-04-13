@@ -4,21 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { walkService } from '../../services/walkService';
 import type { WalkRecord, WalkPhotoItem } from '../../services/walkService';
 import { WalkRouteThumbnail } from '../walk/components/WalkRouteThumbnail';
+import { resolvePhotoUrl, getCachedPhotoUrl } from '../walk/utils/photoUrlCache';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { useMonthNavigation } from '../../hooks/useMonthNavigation';
 import './MyWalkPage.css';
 
-async function resolvePhotoUrl(imageUrl: string): Promise<string> {
-    if (imageUrl.startsWith('http')) return imageUrl;
-    const { default: apiClient } = await import('../../services/api/client');
-    const res = await apiClient.get(`/files/${imageUrl}/content`, { responseType: 'blob' });
-    return URL.createObjectURL(res.data);
-}
-
 function PhotoCollection() {
     const navigate = useNavigate();
     const [resolved, setResolved] = useState<Record<string, string>>({});
-    const blobUrlsRef = useRef<string[]>([]);
 
     const { data } = useQuery({
         queryKey: ['walk', 'my', 'photos', 'mywalk-collection'],
@@ -30,24 +23,24 @@ function PhotoCollection() {
         .slice(0, 8);
 
     useEffect(() => {
+        const seedFromCache: Record<string, string> = {};
         photos.forEach((photo) => {
             if (!photo.imageUrl) return;
             const key = photo.imageUrl;
             if (resolved[key] !== undefined) return;
+            const cached = getCachedPhotoUrl(key);
+            if (cached) {
+                seedFromCache[key] = cached;
+                return;
+            }
             resolvePhotoUrl(key)
-                .then((url) => {
-                    if (url.startsWith('blob:')) blobUrlsRef.current.push(url);
-                    setResolved((prev) => ({ ...prev, [key]: url }));
-                })
+                .then((url) => setResolved((prev) => ({ ...prev, [key]: url })))
                 .catch(() => setResolved((prev) => ({ ...prev, [key]: '' })));
         });
+        if (Object.keys(seedFromCache).length > 0) {
+            setResolved((prev) => ({ ...seedFromCache, ...prev }));
+        }
     }, [photos]);
-
-    useEffect(() => {
-        return () => {
-            blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
-        };
-    }, []);
 
     if (photos.length === 0) return null;
 

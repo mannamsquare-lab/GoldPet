@@ -4,6 +4,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
+import { resolvePhotoUrl, getCachedPhotoUrl } from './utils/photoUrlCache';
 import './WalkPhotoGallery.css';
 
 type ViewMode = 'month' | 'day' | 'year';
@@ -24,20 +25,12 @@ function getGroupKey(date: string, mode: ViewMode): string {
   return `${year}.${month}.${day}`;
 }
 
-async function resolvePhotoUrl(imageUrl: string): Promise<string> {
-  if (imageUrl.startsWith('http')) return imageUrl;
-  const { default: apiClient } = await import('../../services/api/client');
-  const res = await apiClient.get(`/files/${imageUrl}/content`, { responseType: 'blob' });
-  return URL.createObjectURL(res.data);
-}
-
 export default function WalkPhotoGalleryPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<ViewMode>('month');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const blobUrlsRef = useRef<string[]>([]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['walk', 'my', 'photos'],
@@ -48,29 +41,25 @@ export default function WalkPhotoGalleryPage() {
 
   const photos = data?.pages.flatMap(p => p.content) ?? [];
 
-  // Resolve photo URLs (blob or http)
   useEffect(() => {
+    const seedFromCache: Record<string, string> = {};
     photos.forEach((photo: WalkPhotoItem) => {
       if (!photo.imageUrl) return;
       const key = photo.imageUrl;
       if (resolvedUrls[key] !== undefined) return;
+      const cached = getCachedPhotoUrl(key);
+      if (cached) {
+        seedFromCache[key] = cached;
+        return;
+      }
       resolvePhotoUrl(key)
-        .then(url => {
-          if (url.startsWith('blob:')) blobUrlsRef.current.push(url);
-          setResolvedUrls(prev => ({ ...prev, [key]: url }));
-        })
-        .catch(() => {
-          setResolvedUrls(prev => ({ ...prev, [key]: '' }));
-        });
+        .then(url => setResolvedUrls(prev => ({ ...prev, [key]: url })))
+        .catch(() => setResolvedUrls(prev => ({ ...prev, [key]: '' })));
     });
+    if (Object.keys(seedFromCache).length > 0) {
+      setResolvedUrls(prev => ({ ...seedFromCache, ...prev }));
+    }
   }, [photos]);
-
-  // Cleanup blob URLs on unmount
-  useEffect(() => {
-    return () => {
-      blobUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, []);
 
   // Group photos by selected mode
   const groups = useMemo(() => {

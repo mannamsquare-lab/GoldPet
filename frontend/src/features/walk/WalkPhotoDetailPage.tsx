@@ -1,16 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
+import { resolvePhotoUrl, getCachedPhotoUrl } from './utils/photoUrlCache';
 import './WalkPhotoDetail.css';
-
-async function resolvePhotoUrl(imageUrl: string): Promise<string> {
-  if (imageUrl.startsWith('http')) return imageUrl;
-  const { default: apiClient } = await import('../../services/api/client');
-  const res = await apiClient.get(`/files/${imageUrl}/content`, { responseType: 'blob' });
-  return URL.createObjectURL(res.data);
-}
 
 export default function WalkPhotoDetailPage() {
   const navigate = useNavigate();
@@ -20,10 +14,11 @@ export default function WalkPhotoDetailPage() {
   const photoFromState = location.state as WalkPhotoItem | null;
 
   const [photo, setPhoto] = useState<WalkPhotoItem | null>(photoFromState);
-  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(
+    photoFromState?.imageUrl ? getCachedPhotoUrl(photoFromState.imageUrl) ?? null : null
+  );
   const [caption, setCaption] = useState(photoFromState?.note ?? '');
   const [saving, setSaving] = useState(false);
-  const blobRef = useRef<string | null>(null);
 
   // Format date from ISO string
   function formatDate(isoStr: string): string {
@@ -52,21 +47,17 @@ export default function WalkPhotoDetailPage() {
     }).catch(() => {});
   }, [walkId, spotId, photo]);
 
-  // Resolve photo URL
   useEffect(() => {
     if (!photo?.imageUrl) return;
-    resolvePhotoUrl(photo.imageUrl).then(url => {
-      if (url.startsWith('blob:')) blobRef.current = url;
-      setResolvedUrl(url);
-    }).catch(() => setResolvedUrl(null));
+    const cached = getCachedPhotoUrl(photo.imageUrl);
+    if (cached) {
+      setResolvedUrl(cached);
+      return;
+    }
+    resolvePhotoUrl(photo.imageUrl)
+      .then(setResolvedUrl)
+      .catch(() => setResolvedUrl(null));
   }, [photo]);
-
-  // Cleanup blob URL
-  useEffect(() => {
-    return () => {
-      if (blobRef.current) URL.revokeObjectURL(blobRef.current);
-    };
-  }, []);
 
   const handleSave = async () => {
     if (!walkId || !spotId) return;

@@ -1,16 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
+import { resolvePhotoUrl, getCachedPhotoUrl } from './utils/photoUrlCache';
 import './WalkPhotoDetail.css';
-
-async function resolvePhotoUrl(imageUrl: string): Promise<string> {
-  if (imageUrl.startsWith('http')) return imageUrl;
-  const { default: apiClient } = await import('../../services/api/client');
-  const res = await apiClient.get(`/files/${imageUrl}/content`, { responseType: 'blob' });
-  return URL.createObjectURL(res.data);
-}
 
 export default function WalkSharedPhotoDetailPage() {
   const navigate = useNavigate();
@@ -19,8 +13,9 @@ export default function WalkSharedPhotoDetailPage() {
 
   const photoFromState = location.state as WalkPhotoItem | null;
   const [photo, setPhoto] = useState<WalkPhotoItem | null>(photoFromState);
-  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
-  const blobRef = useRef<string | null>(null);
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(
+    photoFromState?.imageUrl ? getCachedPhotoUrl(photoFromState.imageUrl) ?? null : null
+  );
 
   function formatDate(isoStr: string): string {
     const d = new Date(isoStr);
@@ -46,21 +41,17 @@ export default function WalkSharedPhotoDetailPage() {
     }).catch(() => {});
   }, [walkId, photo]);
 
-  // Resolve photo URL
   useEffect(() => {
     if (!photo?.imageUrl) return;
-    resolvePhotoUrl(photo.imageUrl).then(url => {
-      if (url.startsWith('blob:')) blobRef.current = url;
-      setResolvedUrl(url);
-    }).catch(() => setResolvedUrl(null));
+    const cached = getCachedPhotoUrl(photo.imageUrl);
+    if (cached) {
+      setResolvedUrl(cached);
+      return;
+    }
+    resolvePhotoUrl(photo.imageUrl)
+      .then(setResolvedUrl)
+      .catch(() => setResolvedUrl(null));
   }, [photo]);
-
-  // Cleanup blob URL
-  useEffect(() => {
-    return () => {
-      if (blobRef.current) URL.revokeObjectURL(blobRef.current);
-    };
-  }, []);
 
   return (
     <div className="wpd_page">
