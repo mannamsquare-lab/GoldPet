@@ -6,6 +6,7 @@ import { courseService } from '../../services/courseService';
 import type { WalkRecord, WalkRankingEntry } from '../../services/walkService';
 import type { CourseFilters } from '../course/utils/courseHelpers';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
+import { WalkPhotoCollection } from './components/WalkPhotoCollection';
 import { CourseCard } from '../course/components/CourseCard';
 import { CourseFilterWalkTab } from '../course/components/CourseFilterWalkTab';
 import { RegionFilter } from '../../components/common/RegionFilter';
@@ -418,6 +419,7 @@ export const WalkPage = () => {
                                 </p>
                             )}
                             <div ref={sentinelRef} style={{ height: 1 }} />
+                            <WalkPhotoCollection />
                         </div>
                     )}
 
