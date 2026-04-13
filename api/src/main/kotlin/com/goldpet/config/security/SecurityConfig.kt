@@ -72,6 +72,8 @@ class SecurityConfig(
                             .permitAll() // Allow public settings
                             .requestMatchers("/api/v1/app/**")
                             .permitAll() // Allow app version check (no auth required)
+                            .requestMatchers("/api/v1/client-logs/**")
+                            .permitAll() // Allow client-side runtime error reporting
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
                             .permitAll() // Allow Swagger
                             .requestMatchers("/error")

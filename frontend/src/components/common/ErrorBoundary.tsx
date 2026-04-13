@@ -23,6 +23,30 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
+    try {
+      const payload = {
+        url: typeof window !== 'undefined' ? window.location.href : null,
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+      };
+      const apiBase = (import.meta.env?.VITE_API_BASE_URL as string | undefined) ?? '';
+      const url = `${apiBase}/api/v1/client-logs/error`;
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+        navigator.sendBeacon(url, blob);
+      } else {
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // swallow — reporting must never itself throw
+    }
   }
 
   handleRetry = () => {
