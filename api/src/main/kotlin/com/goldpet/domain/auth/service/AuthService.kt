@@ -37,7 +37,23 @@ class AuthService(
         }
         // Check duplicate username or email
         if (userRepository.findByUsername(request.username).isPresent) {
-            throw ConflictException("Username already exists")
+            throw ConflictException("이미 사용 중인 아이디입니다.")
+        }
+        val reqEmail = request.email
+        if (!reqEmail.isNullOrBlank()) {
+            val emailHash = BlindIndexUtil.hash(reqEmail)!!
+            userRepository.findByEmailHash(emailHash).ifPresent { existing ->
+                val provider = existing.oauthProvider?.uppercase() ?: "LOCAL"
+                val msg = when (provider) {
+                    "LOCAL" -> "이미 가입된 이메일입니다. 아이디 찾기 또는 비밀번호 재설정을 이용해주세요."
+                    "KAKAO" -> "이미 카카오 계정으로 가입된 이메일입니다. 카카오 로그인을 이용해주세요."
+                    "NAVER" -> "이미 네이버 계정으로 가입된 이메일입니다. 네이버 로그인을 이용해주세요."
+                    "GOOGLE" -> "이미 Google 계정으로 가입된 이메일입니다. Google 로그인을 이용해주세요."
+                    "APPLE" -> "이미 Apple 계정으로 가입된 이메일입니다. Apple 로그인을 이용해주세요."
+                    else -> "이미 가입된 이메일입니다."
+                }
+                throw ConflictException(msg)
+            }
         }
         // Create user entity
         val user =

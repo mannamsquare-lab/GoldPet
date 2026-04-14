@@ -14,6 +14,9 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.auth.dto.ConfirmLinkRequest
 import com.goldpet.domain.auth.dto.CheckUsernameRequest
 import com.goldpet.domain.auth.dto.CheckNicknameRequest
+import com.goldpet.domain.auth.dto.CheckEmailRequest
+import com.goldpet.domain.auth.dto.EmailAvailabilityResponse
+import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.domain.auth.dto.FindUsernameRequest
 import com.goldpet.domain.auth.dto.FindUsernameResponse
 import com.goldpet.domain.auth.dto.NativeLoginRequest
@@ -79,6 +82,17 @@ class AuthController(
             false
         }
         return ResponseEntity.ok(AvailabilityResponse(available))
+    }
+
+    @PostMapping("/check-email")
+    fun checkEmail(@Valid @RequestBody request: CheckEmailRequest): ResponseEntity<EmailAvailabilityResponse> {
+        val emailHash = BlindIndexUtil.hash(request.email)!!
+        val existing = userRepository.findByEmailHash(emailHash).orElse(null)
+        return if (existing == null) {
+            ResponseEntity.ok(EmailAvailabilityResponse(available = true, provider = null))
+        } else {
+            ResponseEntity.ok(EmailAvailabilityResponse(available = false, provider = existing.oauthProvider?.uppercase() ?: "LOCAL"))
+        }
     }
 
     @PostMapping("/login/{provider}")

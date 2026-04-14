@@ -82,6 +82,17 @@ data class CheckNicknameRequest(
     val nickname: String
 )
 
+data class CheckEmailRequest(
+    @field:NotBlank(message = "Email is required")
+    @field:jakarta.validation.constraints.Email(message = "Invalid email format")
+    val email: String
+)
+
+data class EmailAvailabilityResponse(
+    val available: Boolean,
+    val provider: String? = null
+)
+
 data class NativeLoginRequest(
     @field:NotBlank(message = "Access token is required")
     val accessToken: String

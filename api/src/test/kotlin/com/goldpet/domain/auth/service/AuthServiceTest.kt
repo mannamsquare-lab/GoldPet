@@ -138,6 +138,48 @@ class AuthServiceTest {
     }
 
     @Test
+    fun `signup should fail with provider-aware message when email already registered via kakao`() {
+        // Given
+        val request = SignupRequest(
+            username = "newuser",
+            password = "password123",
+            nickname = "새유저",
+            name = "홍길동",
+            birthDate = "1990-01-01",
+            phoneNumber = "01012345678",
+            email = "existing@example.com",
+            gender = null,
+            birthYear = null,
+            mainLocationText = null
+        )
+
+        val existingKakaoUser = User(
+            id = 41L,
+            email = "encrypted",
+            oauthProvider = "kakao",
+            oauthId = "kakao_abc",
+            username = null,
+            password = null,
+            nickname = "Keasy",
+            name = null,
+            birthDate = null,
+            phoneNumber = null,
+            gender = null,
+            birthYear = null,
+            mainLocationText = null,
+            mainLocationGeom = null,
+            profileImageUrl = null
+        )
+
+        whenever(userRepository.findByUsername("newuser")).thenReturn(Optional.empty())
+        whenever(userRepository.findByEmailHash(any())).thenReturn(Optional.of(existingKakaoUser))
+
+        // When & Then
+        val ex = assertThrows<ConflictException> { authService.signup(request) }
+        assertTrue(ex.message!!.contains("카카오"), "message should hint kakao provider, was: ${ex.message}")
+    }
+
+    @Test
     fun `login should succeed with valid credentials`() {
         // Given
         val encodedPassword = passwordEncoder.encode("password123")

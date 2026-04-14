@@ -50,15 +50,9 @@ export interface AuthResponse {
 
 export const authService = {
   signup: async (data: SignupRequest): Promise<AuthResponse> => {
-    try {
-      const response = await apiClient.post("/auth/signup", data);
-      return response.data;
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      throw new Error(
-        err.response?.data?.message || "회원가입에 실패했습니다."
-      );
-    }
+    // Preserve axios error shape so UI can read error.response.data.message / status
+    const response = await apiClient.post("/auth/signup", data);
+    return response.data;
   },
 
   snsSignup: async (data: SnsSignupRequest): Promise<AuthResponse> => {
@@ -90,6 +84,15 @@ export const authService = {
       const response = await apiClient.post("/auth/check-username", {
         username,
       });
+      return response.data;
+    } catch {
+      return { available: false };
+    }
+  },
+
+  checkEmail: async (email: string): Promise<{ available: boolean; provider?: string }> => {
+    try {
+      const response = await apiClient.post("/auth/check-email", { email });
       return response.data;
     } catch {
       return { available: false };

@@ -30,7 +30,52 @@ export const SignupPage = () => {
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingNickname, setIsCheckingNickname] = useState(false);
   const [isNicknameAvailable, setIsNicknameAvailable] = useState<boolean | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [emailDuplicateProvider, setEmailDuplicateProvider] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const providerLabel = (p: string): string => {
+    switch (p.toUpperCase()) {
+      case 'KAKAO': return '카카오';
+      case 'NAVER': return '네이버';
+      case 'GOOGLE': return 'Google';
+      case 'APPLE': return 'Apple';
+      default: return '';
+    }
+  };
+
+  const handleCheckEmail = async () => {
+    const email = formData.email.trim();
+    if (!email) {
+      setEmailDuplicateProvider(null);
+      setErrors(prev => { const n = { ...prev }; delete n.email; return n; });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailDuplicateProvider(null);
+      setErrors(prev => ({ ...prev, email: '올바른 이메일 형식이 아닙니다.' }));
+      return;
+    }
+    setIsCheckingEmail(true);
+    try {
+      const res = await authService.checkEmail(email);
+      if (res.available) {
+        setEmailDuplicateProvider(null);
+        setErrors(prev => { const n = { ...prev }; delete n.email; return n; });
+      } else {
+        const provider = (res.provider || 'LOCAL').toUpperCase();
+        setEmailDuplicateProvider(provider);
+        const msg = provider === 'LOCAL'
+          ? '이미 가입된 이메일입니다. 아이디/비밀번호 찾기를 이용해주세요.'
+          : `이미 ${providerLabel(provider)} 계정으로 가입된 이메일입니다. ${providerLabel(provider)} 로그인을 이용해주세요.`;
+        setErrors(prev => ({ ...prev, email: msg }));
+      }
+    } catch {
+      setEmailDuplicateProvider(null);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
 
   const validatePassword = (password: string): string => {
     if (!password) {
@@ -98,6 +143,10 @@ export const SignupPage = () => {
     // 닉네임 변경 시 중복체크 상태 초기화
     if (name === 'nickname') {
       setIsNicknameAvailable(null);
+    }
+    // 이메일 변경 시 중복체크 상태 초기화
+    if (name === 'email') {
+      setEmailDuplicateProvider(null);
     }
   };
 
@@ -192,6 +241,11 @@ export const SignupPage = () => {
       return false;
     }
 
+    // 이메일 입력됐는데 중복이면 진행 불가
+    if (formData.email && emailDuplicateProvider) {
+      return false;
+    }
+
     return true;
   };
 
@@ -273,8 +327,24 @@ export const SignupPage = () => {
       navigate('/signup/complete');
     } catch (error: unknown) {
       console.error('Signup error:', error);
-      const err = error as { response?: { data?: { message?: string } } };
-      showAlert(err.response?.data?.message || '회원가입에 실패했습니다.');
+      const err = error as {
+        response?: { status?: number; data?: { message?: string } };
+        message?: string;
+      };
+      const serverMsg = err?.response?.data?.message;
+      const status = err?.response?.status;
+      if (status === 409 && serverMsg && /이메일/.test(serverMsg)) {
+        // 이메일 중복: 인라인 에러로 표시 + provider CTA가 보이도록 추측 매핑
+        setErrors(prev => ({ ...prev, email: serverMsg }));
+        const guess = /카카오/.test(serverMsg) ? 'KAKAO'
+          : /네이버/.test(serverMsg) ? 'NAVER'
+          : /Google/i.test(serverMsg) ? 'GOOGLE'
+          : /Apple/i.test(serverMsg) ? 'APPLE'
+          : 'LOCAL';
+        setEmailDuplicateProvider(guess);
+      } else {
+        showAlert(serverMsg || err?.message || '회원가입에 실패했습니다.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -471,10 +541,21 @@ export const SignupPage = () => {
               placeholder="이메일"
               value={formData.email}
               onChange={handleChange}
-              disabled={isLoading}
+              onBlur={handleCheckEmail}
+              disabled={isLoading || isCheckingEmail}
             />
             {errors.email && (
               <span className="signup-error-message">{errors.email}</span>
+            )}
+            {emailDuplicateProvider && emailDuplicateProvider !== 'LOCAL' && (
+              <button
+                type="button"
+                className="signup-check-button active"
+                style={{ marginTop: 8 }}
+                onClick={() => navigate('/login')}
+              >
+                {providerLabel(emailDuplicateProvider)} 로그인으로 이동
+              </button>
             )}
           </div>
 
