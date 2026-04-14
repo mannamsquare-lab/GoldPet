@@ -108,10 +108,9 @@ describe('authService', () => {
       expect(result.accessToken).toBe('token')
     })
 
-    it('throws error on failure', async () => {
-      mockedClient.post.mockRejectedValueOnce({
-        response: { data: { message: '이미 사용 중인 아이디입니다.' } },
-      })
+    it('re-throws axios rejection with response intact on failure', async () => {
+      const rejection = { response: { status: 409, data: { message: '이미 사용 중인 아이디입니다.' } } }
+      mockedClient.post.mockRejectedValueOnce(rejection)
 
       await expect(authService.signup({
         username: 'dup',
@@ -121,7 +120,7 @@ describe('authService', () => {
         birthDate: '1990-01-01',
         gender: 'MALE',
         phoneNumber: '010-0000-0000',
-      })).rejects.toThrow('이미 사용 중인 아이디입니다.')
+      })).rejects.toMatchObject({ response: { status: 409, data: { message: '이미 사용 중인 아이디입니다.' } } })
     })
   })
 

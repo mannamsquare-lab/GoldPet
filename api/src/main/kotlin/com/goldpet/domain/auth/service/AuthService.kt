@@ -17,6 +17,7 @@ import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.config.crypto.BlindIndexUtil
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -75,7 +76,19 @@ class AuthService(
                         profileImageUrl = null,
                         profileLockedAt = LocalDateTime.now()
                 )
-        val saved = userRepository.save(user)
+        // Race-condition backstop: concurrent signups may both pass the pre-check
+        // and one hits the uq_users_email_hash / username constraint.
+        val saved = try {
+            userRepository.save(user)
+        } catch (ex: DataIntegrityViolationException) {
+            val cause = ex.message ?: ""
+            val msg = when {
+                cause.contains("email_hash", ignoreCase = true) -> "이미 가입된 이메일입니다."
+                cause.contains("username", ignoreCase = true) -> "이미 사용 중인 아이디입니다."
+                else -> "이미 가입된 정보입니다."
+            }
+            throw ConflictException(msg)
+        }
         val userPrincipal = UserPrincipal.create(saved)
         val auth =
                 UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
