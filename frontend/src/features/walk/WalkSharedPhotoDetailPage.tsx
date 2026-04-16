@@ -8,7 +8,7 @@ import './WalkPhotoDetail.css';
 
 export default function WalkSharedPhotoDetailPage() {
   const navigate = useNavigate();
-  const { walkId } = useParams<{ walkId: string; spotId: string }>();
+  const { walkId, spotId } = useParams<{ walkId: string; spotId: string }>();
   const location = useLocation();
 
   const photoFromState = location.state as WalkPhotoItem | null;
@@ -26,12 +26,13 @@ export default function WalkSharedPhotoDetailPage() {
   useEffect(() => {
     if (photo || !walkId) return;
     walkService.getWalkDetail(Number(walkId)).then(walk => {
-      const spot = walk.spots?.find(s => s.type === 'PHOTO');
-      if (spot && spot.imageUrl) {
+      const target = walk.spots?.find(s => s.id === Number(spotId))
+                  ?? walk.spots?.find(s => s.type === 'PHOTO');
+      if (target && target.imageUrl) {
         setPhoto({
-          id: Number(spot),
-          imageUrl: spot.imageUrl,
-          note: spot.note ?? null,
+          id: target.id,
+          imageUrl: target.imageUrl,
+          note: target.note ?? null,
           walkDate: walk.startTime,
           walkId: Number(walkId),
           petName: walk.petNames?.[0] ?? null,
@@ -39,7 +40,7 @@ export default function WalkSharedPhotoDetailPage() {
         });
       }
     }).catch(() => {});
-  }, [walkId, photo]);
+  }, [walkId, spotId, photo]);
 
   useEffect(() => {
     if (!photo?.imageUrl) return;

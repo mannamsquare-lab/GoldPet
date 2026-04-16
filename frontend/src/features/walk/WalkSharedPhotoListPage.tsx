@@ -34,7 +34,7 @@ export default function WalkSharedPhotoListPage() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['walk', 'public', 'photos'],
-    queryFn: ({ pageParam = 0 }) => walkService.getPublicPhotos({ page: pageParam as number, size: 24 }),
+    queryFn: ({ pageParam = 0 }) => walkService.getPublicPhotos({ page: pageParam as number, size: 20 }),
     getNextPageParam: (lastPage) => (lastPage.last ? undefined : lastPage.number + 1),
     initialPageParam: 0,
   });

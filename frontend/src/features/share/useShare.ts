@@ -36,12 +36,15 @@ function buildShareText(target: ShareTarget): ShareText {
         subject: `${petNames} 산책 기록`,
       };
     }
-    case 'walk-photo':
+    case 'walk-photo': {
+      const base = target.walkId ? `${APP_BASE_URL}/w/${target.walkId}` : APP_BASE_URL;
+      const qs = target.walkId && target.spotId ? `?spot=${target.spotId}` : '';
       return {
         text: '산책 순간 📸',
-        url: target.walkId ? `${APP_BASE_URL}/w/${target.walkId}` : APP_BASE_URL,
+        url: `${base}${qs}`,
         subject: '산책 사진',
       };
+    }
     case 'course':
       return {
         text: `산책 코스 '${target.title}'`,

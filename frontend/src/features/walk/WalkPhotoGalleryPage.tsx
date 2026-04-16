@@ -154,7 +154,7 @@ export default function WalkPhotoGalleryPage() {
                   <div
                     key={`${photo.walkId}-${photo.id}`}
                     className="wgp_photo_cell"
-                    onClick={() => navigate(`/walk-photos/${photo.walkId}/${photo.id}`)}
+                    onClick={() => navigate(`/walk-photos/${photo.walkId}/${photo.id}`, { state: photo })}
                   >
                     {url ? (
                       <img src={url} alt="" className="wgp_photo_img" />

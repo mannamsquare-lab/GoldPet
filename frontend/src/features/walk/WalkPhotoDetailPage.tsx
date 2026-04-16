@@ -116,6 +116,7 @@ export default function WalkPhotoDetailPage() {
       kind: 'walk-photo',
       photoUrl: photo.imageUrl,
       walkId: Number(walkId),
+      spotId: spotId ? Number(spotId) : undefined,
       watermark: false,
     });
   };
