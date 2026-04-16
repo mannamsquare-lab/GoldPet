@@ -103,6 +103,13 @@ export function useShare() {
         if (shouldWatermark(target)) {
           imageBase64 = await tryComposeImage(target);
           if (!imageBase64) {
+            if (target.kind === 'walk-photo') {
+              // walk-photo 합성 최종 실패 — 무음 텍스트 전용 폴백 금지 (Pre-mortem Scenario 2).
+              // 사용자가 직접 재시도할 수 있도록 명시적 토스트를 노출하고 공유를 중단한다.
+              showToast('사진을 불러오지 못했어요. 다시 시도해주세요.', 'error');
+              logShareFailure(target, 'photo-load-failed');
+              return { status: 'failed' };
+            }
             showToast('이미지 생성 실패, 링크만 공유합니다', 'error');
           }
         }

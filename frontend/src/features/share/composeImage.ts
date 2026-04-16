@@ -7,6 +7,7 @@
 
 import type { ShareTarget } from './types';
 import { formatAddressForShare } from './formatAddressForShare';
+import apiClient from '../../services/api/client';
 
 const CANVAS_W = 1080;
 const CANVAS_H = 1920;
@@ -348,13 +349,57 @@ async function composeWalkSummary(
   return canvasToBlob(canvas, quality);
 }
 
+// ─── Per-spot URL mint (§3.7) ─────────────────────────────────────────────────
+
+interface PhotoUrlMintResponse {
+  spotId: number;
+  imageUrl: string;
+  imageKey: string;
+  expiresAt: string;
+}
+
+/**
+ * Re-authorize a single spot's presigned URL via the cold-path mint endpoint.
+ * Called when the embedded feed URL is expired (403) or clock-skewed (400).
+ * Applies the same auth/ownership check as the feed query — not a bypass.
+ */
+async function mintPhotoUrl(spotId: number): Promise<string> {
+  const res = await apiClient.get<PhotoUrlMintResponse>(`/walks/photos/${spotId}/url`);
+  return res.data.imageUrl;
+}
+
 // ─── walk-photo compositor ────────────────────────────────────────────────────
 
 async function composeWalkPhoto(
   target: Extract<ShareTarget, { kind: 'walk-photo' }>,
   quality: number,
 ): Promise<Blob> {
-  const img = await loadImage(target.photoUrl);
+  // Step 1: load the presigned URL embedded in the feed response.
+  // loadImage already sets crossOrigin="anonymous" — required for canvas.toBlob.
+  let img: HTMLImageElement;
+  try {
+    img = await loadImage(target.photoUrl);
+  } catch {
+    // Step 2: URL likely expired (403) or clock-skewed (400 RequestTimeTooSkewed).
+    // Re-authorize via the per-spot mint endpoint if spotId is available.
+    if (!target.spotId) {
+      throw new Error('walk-photo load failed and no spotId for mint retry');
+    }
+    let freshUrl: string;
+    try {
+      freshUrl = await mintPhotoUrl(target.spotId);
+    } catch {
+      throw new Error('walk-photo load failed: mint endpoint unavailable');
+    }
+    // Step 3: retry with freshly signed URL.
+    try {
+      img = await loadImage(freshUrl);
+    } catch {
+      // Both attempts failed — throw so the caller (useShare) surfaces a user-visible toast.
+      throw new Error('walk-photo load failed after mint retry');
+    }
+  }
+
   const isLandscape = img.naturalWidth >= img.naturalHeight;
   const scale = 1920 / (isLandscape ? img.naturalWidth : img.naturalHeight);
   const w = Math.round(img.naturalWidth * scale);
@@ -368,7 +413,23 @@ async function composeWalkPhoto(
   if (!ctx) throw new Error('Canvas 2D context unavailable');
 
   ctx.drawImage(img, 0, 0, w, h);
-  return canvasToBlob(canvas, quality);
+
+  try {
+    return await canvasToBlob(canvas, quality);
+  } catch (err) {
+    // SecurityError = canvas tainted despite crossOrigin="anonymous" — indicates a CORS
+    // misconfiguration on the S3 bucket. Emit a metric event so the ops dashboard can alert
+    // before user complaints accumulate (§4.4 walk_photo_canvas_taint_error_total).
+    if (err instanceof DOMException && err.name === 'SecurityError') {
+      console.warn('[goldpet] canvas SecurityError on walk-photo share — check S3 CORS policy', err);
+      window.dispatchEvent(
+        new CustomEvent('goldpet:metric', {
+          detail: { name: 'walk_photo_canvas_taint_error_total', value: 1 },
+        }),
+      );
+    }
+    throw err;
+  }
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
