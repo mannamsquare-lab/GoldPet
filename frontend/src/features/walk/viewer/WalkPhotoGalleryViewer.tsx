@@ -9,6 +9,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/zoom';
 import 'swiper/css/virtual';
 import 'swiper/css/thumbs';
+import '../WalkPhotoDetail.css';
 import { walkService } from '../../../services/walkService';
 import type { PageResponse, WalkPhotoItem } from '../../../services/walkService';
 import { reportService } from '../../../services/reportService';
