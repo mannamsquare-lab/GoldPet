@@ -47,6 +47,7 @@ dependencies {
     implementation("com.drewnoakes:metadata-extractor:2.19.0")
     implementation("net.coobird:thumbnailator:0.4.20")
     implementation("com.twelvemonkeys.imageio:imageio-webp:3.12.0")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")

@@ -31,11 +31,16 @@ class FileAttachment(
     val width: Int? = null,
     val height: Int? = null,
 
+    /** Variant URLs are mutable — backfilled after upload by the variant pipeline. */
     @Column(name = "thumbnail_url")
-    val thumbnailUrl: String? = null,
+    var thumbnailUrl: String? = null,
 
     @Column(name = "medium_url")
-    val mediumUrl: String? = null,
+    var mediumUrl: String? = null,
+
+    /** 1600px-wide viewer image for walk photo feed; null until variant job runs. */
+    @Column(name = "viewer_url")
+    var viewerUrl: String? = null,
 
     @Column(name = "duration_sec")
     val durationSec: Int? = null,

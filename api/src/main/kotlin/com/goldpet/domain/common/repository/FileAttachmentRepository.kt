@@ -24,4 +24,15 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
         @Param("width") width: Int,
         @Param("height") height: Int
     )
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE file_attachments SET thumbnail_url = :thumbUrl, medium_url = :medUrl, viewer_url = :viewerUrl, width = :width, height = :height WHERE id = :id", nativeQuery = true)
+    fun updateAllVariantUrls(
+        @Param("id") id: Long,
+        @Param("thumbUrl") thumbUrl: String?,
+        @Param("medUrl") medUrl: String?,
+        @Param("viewerUrl") viewerUrl: String?,
+        @Param("width") width: Int,
+        @Param("height") height: Int
+    )
 }

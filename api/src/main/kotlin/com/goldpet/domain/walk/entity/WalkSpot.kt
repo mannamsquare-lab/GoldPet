@@ -31,6 +31,12 @@ class WalkSpot(
     @Column(columnDefinition = "TEXT")
     var note: String? = null,
 
+    @Column(name = "image_key_viewer")
+    var imageKeyViewer: String? = null,
+
+    @Column(name = "image_key_thumb")
+    var imageKeyThumb: String? = null,
+
     @Column(nullable = false)
     var hiddenFromPublic: Boolean = false
 
