@@ -341,7 +341,9 @@ class _HybridWebViewState extends State<HybridWebView> {
     };
 
     // 배포 버전 체크 — 새 버전이면 WebView HTTP 캐시 비우고 로드
-    final baseUrl = Uri.parse(widget.initialUrl).replace(path: '', query: '').toString();
+    final parsed = Uri.parse(widget.initialUrl);
+    final baseUrl = '${parsed.scheme}://${parsed.host}'
+        '${parsed.hasPort ? ':${parsed.port}' : ''}';
     await WebVersionChecker.checkAndMaybeClearCache(
       baseUrl: baseUrl,
       controller: _controller,
