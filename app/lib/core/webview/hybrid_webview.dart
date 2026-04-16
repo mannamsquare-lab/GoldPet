@@ -16,6 +16,7 @@ import '../../features/walk/screens/course_walk_screen.dart';
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'web_version_checker.dart';
 
 /// React 앱을 로드하는 WebView 래퍼
 class HybridWebView extends StatefulWidget {
@@ -338,6 +339,13 @@ class _HybridWebViewState extends State<HybridWebView> {
         }
       }
     };
+
+    // 배포 버전 체크 — 새 버전이면 WebView HTTP 캐시 비우고 로드
+    final baseUrl = Uri.parse(widget.initialUrl).replace(path: '', query: '').toString();
+    await WebVersionChecker.checkAndMaybeClearCache(
+      baseUrl: baseUrl,
+      controller: _controller,
+    );
 
     // 마지막으로 페이지 로드
     _controller.loadRequest(Uri.parse(widget.initialUrl));
