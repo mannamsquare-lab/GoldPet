@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Keyboard, Navigation, Thumbs, Virtual, Zoom } from 'swiper/modules';
+import { Keyboard, Navigation, Thumbs, Zoom } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/zoom';
-import 'swiper/css/virtual';
 import 'swiper/css/thumbs';
 import '../WalkPhotoDetail.css';
 import { walkService } from '../../../services/walkService';
@@ -36,7 +35,6 @@ type Props = {
   onRequestPath?: (path: string) => void;
 };
 
-const VIRTUAL_THRESHOLD = 30;
 const THUMBS_THRESHOLD = 50;
 
 function formatDate(isoStr: string | undefined | null): string {
@@ -215,7 +213,6 @@ export function WalkPhotoGalleryViewer({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const useVirtual = photos.length > VIRTUAL_THRESHOLD;
   const showThumbs = photos.length > THUMBS_THRESHOLD;
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const modules = useMemo(() => {
@@ -223,10 +220,9 @@ export function WalkPhotoGalleryViewer({
       Navigation,
       Keyboard,
       Zoom,
-      ...(useVirtual ? [Virtual] : []),
       ...(showThumbs ? [Thumbs] : []),
     ];
-  }, [useVirtual, showThumbs]);
+  }, [showThumbs]);
 
   const photosRef = useRef(photos);
   useEffect(() => {
@@ -585,7 +581,6 @@ export function WalkPhotoGalleryViewer({
         spaceBetween={0}
         zoom={{ maxRatio: 3, toggle: true }}
         keyboard={{ enabled: true, onlyInViewport: true }}
-        virtual={useVirtual ? { enabled: true } : false}
         thumbs={showThumbs && thumbsSwiper ? { swiper: thumbsSwiper } : undefined}
         allowTouchMove={allowSwipe}
         onSwiper={(s) => {
@@ -625,8 +620,8 @@ export function WalkPhotoGalleryViewer({
           }
         }}
       >
-        {displayPhotos.map((photo, index) => (
-          <SwiperSlide key={`${photo.walkId}-${photo.id}`} virtualIndex={useVirtual ? index : undefined}>
+        {displayPhotos.map((photo) => (
+          <SwiperSlide key={`${photo.walkId}-${photo.id}`}>
             <WalkPhotoViewerSlide photo={photo} />
           </SwiperSlide>
         ))}

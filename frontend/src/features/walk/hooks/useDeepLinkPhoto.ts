@@ -58,7 +58,9 @@ export function useDeepLinkPhoto({
   const [photos, setPhotos] = useState<WalkPhotoItem[]>(
     photoFromState ? [photoFromState] : []
   );
-  const [allowSwipe, setAllowSwipe] = useState(false);
+  // 초기 [photoFromState] 한 장 상태에서도 스와이프 시도해봤자 no-op이므로 true로 시작.
+  // R2 race guard는 hydration 완료 후 slideTo로 처리.
+  const [allowSwipe, setAllowSwipe] = useState(true);
   const [empty, setEmpty] = useState(false);
   const [trackALoaded, setTrackALoaded] = useState<boolean>(!!photoFromState);
 
