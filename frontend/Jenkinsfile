@@ -23,6 +23,22 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                sh 'cd frontend && npm run lint'
+                sh 'cd frontend && npm run test -- --run --coverage'
+                // Playwright Chromium memory smoke (headless, JSHeap only — not real device)
+                sh 'cd frontend && npx playwright install chromium --with-deps'
+                sh 'cd frontend && npm run test:e2e:memory || true'  // warning only for now
+            }
+            post {
+                failure {
+                    // Block deploy on failure
+                    error("Test stage failed — aborting deploy")
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('frontend') {

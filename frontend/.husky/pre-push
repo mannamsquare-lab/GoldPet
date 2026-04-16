@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+cd frontend
+npm run lint || exit 1
+npm run test -- --run WalkPhotoGalleryViewer || exit 1
+echo "[pre-push] ✓ walk-photo viewer gate passed"
