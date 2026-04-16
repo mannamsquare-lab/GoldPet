@@ -27,7 +27,9 @@ pipeline {
             steps {
                 dir('frontend') {
                     // 환경에 맞는 .env 파일 사용하여 빌드
-                    sh "npm run build -- --mode ${params.ENV}"
+                    // 주의: `npm run build -- --mode X`는 build 스크립트의 체인 구조상
+                    // --mode 플래그가 vite build에 닿지 않음. build:dev/build:prod 전용 스크립트 사용.
+                    sh "npm run build:${params.ENV}"
                 }
             }
         }
