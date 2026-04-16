@@ -2,6 +2,7 @@ package com.goldpet.domain.walk.service
 
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.file.service.FileService
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -23,12 +24,14 @@ class PhotoUrlSignerTest {
     @Mock
     private lateinit var systemSettingService: SystemSettingService
 
+    private val meterRegistry = SimpleMeterRegistry()
+
     private lateinit var signer: PhotoUrlSigner
 
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        signer = PhotoUrlSigner(fileService, systemSettingService)
+        signer = PhotoUrlSigner(fileService, systemSettingService, meterRegistry)
     }
 
     private fun enableFlag() {

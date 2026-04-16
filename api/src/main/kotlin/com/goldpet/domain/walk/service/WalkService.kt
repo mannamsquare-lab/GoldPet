@@ -26,6 +26,8 @@ import org.locationtech.jts.geom.PrecisionModel
 import com.goldpet.domain.walk.event.WalkCompletedEvent
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.infra.GeocodingService
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -45,9 +47,43 @@ class WalkService(
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val systemSettingService: SystemSettingService,
     private val userBlockRepository: UserBlockRepository,
-    private val photoUrlSigner: PhotoUrlSigner
+    private val photoUrlSigner: PhotoUrlSigner,
+    private val meterRegistry: MeterRegistry
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
+
+    // Counters for presigned URL emission (feed path)
+    private val presignedServedCounter: Counter by lazy {
+        Counter.builder("walk_photo_presigned_served_total")
+            .tag("bucket", "private")
+            .description("Presigned URLs emitted in walk photo feed responses")
+            .register(meterRegistry)
+    }
+    private val hiddenPresignedServedCounter: Counter by lazy {
+        Counter.builder("walk_photo_hidden_presigned_served_total")
+            .description("Presigned URLs emitted for owner-visible hidden walk photos")
+            .register(meterRegistry)
+    }
+
+    // Counters for per-spot mint endpoint (§3.7)
+    private val mintOkCounter: Counter by lazy {
+        Counter.builder("walk_photo_mint_endpoint_total")
+            .tag("result", "ok")
+            .description("Successful per-spot URL mint requests")
+            .register(meterRegistry)
+    }
+    private val mintDeniedCounter: Counter by lazy {
+        Counter.builder("walk_photo_mint_endpoint_total")
+            .tag("result", "denied")
+            .description("Per-spot URL mint requests denied (403)")
+            .register(meterRegistry)
+    }
+    private val mintNotFoundCounter: Counter by lazy {
+        Counter.builder("walk_photo_mint_endpoint_total")
+            .tag("result", "not_found")
+            .description("Per-spot URL mint requests for unknown spots (404)")
+            .register(meterRegistry)
+    }
 
     @Transactional
     fun createWalk(userId: Long, request: CreateWalkRequest): WalkResponse {
@@ -312,22 +348,28 @@ class WalkService(
     // (public walk + not hidden + owner not blocked), plus an always-allowed owner path.
     // TODO(rate-limit): wire a Redis-backed per-user token bucket (~30 req/min) once abstraction exists.
     fun mintPhotoUrl(spotId: Long, userId: Long): PhotoMintResponse {
-        val spot = walkSpotRepository.findById(spotId)
-            .orElseThrow { NotFoundException("Spot not found: $spotId") }
+        val spot = walkSpotRepository.findById(spotId).orElse(null)
+        if (spot == null) {
+            mintNotFoundCounter.increment()
+            throw NotFoundException("Spot not found: $spotId")
+        }
 
         val isOwner = spot.walk.user.id == userId
         if (!isOwner) {
             if (spot.hiddenFromPublic || !spot.walk.isPublic) {
+                mintDeniedCounter.increment()
                 throw ForbiddenException("Not authorized to view this photo")
             }
             val blockedUserIds = userBlockRepository.findBlockedUserIds(userId)
             if (spot.walk.user.id in blockedUserIds) {
+                mintDeniedCounter.increment()
                 throw ForbiddenException("Not authorized to view this photo")
             }
         }
 
         val rawKey = spot.imageUrl
         val signed = photoUrlSigner.signedUrlOrNull(rawKey)
+        mintOkCounter.increment()
         return PhotoMintResponse(
             spotId = spot.id,
             imageUrl = signed ?: rawKey,
@@ -342,7 +384,12 @@ class WalkService(
     ): WalkPhotoResponse {
         val firstPet = spot.walk.walkPets.firstOrNull()?.pet
         val rawKey = spot.imageUrl
-        val resolvedUrl = if (suppressUrl) null else (photoUrlSigner.signedUrlOrNull(rawKey) ?: rawKey)
+        val signed = if (suppressUrl) null else photoUrlSigner.signedUrlOrNull(rawKey)
+        val resolvedUrl = if (suppressUrl) null else (signed ?: rawKey)
+        if (signed != null) {
+            presignedServedCounter.increment()
+            if (spot.hiddenFromPublic) hiddenPresignedServedCounter.increment()
+        }
         return WalkPhotoResponse(
             id = spot.id,
             imageUrl = resolvedUrl,

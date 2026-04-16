@@ -49,6 +49,7 @@ dependencies {
     implementation("com.twelvemonkeys.imageio:imageio-webp:3.12.0")
 
     runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
     // Test dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")

@@ -33,10 +33,13 @@ import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.walk.entity.WalkSpot
 import com.goldpet.domain.walk.entity.WalkSpotType
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 
 class WalkServiceTest {
+
+    private val meterRegistry = SimpleMeterRegistry()
 
     @Mock
     private lateinit var walkRepository: WalkRepository
@@ -82,7 +85,7 @@ class WalkServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        walkService = WalkService(walkRepository, walkSpotRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, geocodingService, applicationEventPublisher, systemSettingService, userBlockRepository, photoUrlSigner)
+        walkService = WalkService(walkRepository, walkSpotRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, geocodingService, applicationEventPublisher, systemSettingService, userBlockRepository, photoUrlSigner, meterRegistry)
         whenever(geocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
