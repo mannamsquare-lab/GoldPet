@@ -43,7 +43,8 @@ class WalkService(
     private val geocodingService: GeocodingService,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val systemSettingService: SystemSettingService,
-    private val userBlockRepository: UserBlockRepository
+    private val userBlockRepository: UserBlockRepository,
+    private val photoUrlSigner: PhotoUrlSigner
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
 
@@ -302,14 +303,20 @@ class WalkService(
         val blockedUserIds = userBlockRepository.findBlockedUserIds(userId)
         val effectiveBlockedIds = if (blockedUserIds.isEmpty()) listOf(-1L) else blockedUserIds
         return walkSpotRepository.findPublicPhotoSpots(effectiveBlockedIds, pageable)
-            .map { spot -> toWalkPhotoResponse(spot) }
+            .map { spot -> toWalkPhotoResponse(spot, suppressUrl = spot.hiddenFromPublic) }
     }
 
-    private fun toWalkPhotoResponse(spot: com.goldpet.domain.walk.entity.WalkSpot): WalkPhotoResponse {
+    private fun toWalkPhotoResponse(
+        spot: com.goldpet.domain.walk.entity.WalkSpot,
+        suppressUrl: Boolean = false
+    ): WalkPhotoResponse {
         val firstPet = spot.walk.walkPets.firstOrNull()?.pet
+        val rawKey = spot.imageUrl
+        val resolvedUrl = if (suppressUrl) null else (photoUrlSigner.signedUrlOrNull(rawKey) ?: rawKey)
         return WalkPhotoResponse(
             id = spot.id,
-            imageUrl = spot.imageUrl,
+            imageUrl = resolvedUrl,
+            imageKey = rawKey,
             note = spot.note,
             walkDate = spot.walk.startTime,
             walkId = spot.walk.id,

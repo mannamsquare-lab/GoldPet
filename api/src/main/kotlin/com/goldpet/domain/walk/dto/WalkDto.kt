@@ -47,6 +47,7 @@ data class WalkSpotDto(
 data class WalkPhotoResponse(
     val id: Long,
     val imageUrl: String?,
+    val imageKey: String?,
     val note: String?,
     val walkDate: LocalDateTime,
     val walkId: Long,

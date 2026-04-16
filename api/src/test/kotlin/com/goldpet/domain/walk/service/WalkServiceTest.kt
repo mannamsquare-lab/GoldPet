@@ -31,6 +31,10 @@ import java.time.LocalDateTime
 import java.util.*
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.service.SystemSettingService
+import com.goldpet.domain.walk.entity.WalkSpot
+import com.goldpet.domain.walk.entity.WalkSpotType
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 
 class WalkServiceTest {
 
@@ -67,6 +71,9 @@ class WalkServiceTest {
     @Mock
     private lateinit var systemSettingService: SystemSettingService
 
+    @Mock
+    private lateinit var photoUrlSigner: PhotoUrlSigner
+
     private lateinit var walkService: WalkService
 
     private lateinit var testUser: User
@@ -75,7 +82,7 @@ class WalkServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        walkService = WalkService(walkRepository, walkSpotRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, geocodingService, applicationEventPublisher, systemSettingService, userBlockRepository)
+        walkService = WalkService(walkRepository, walkSpotRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, geocodingService, applicationEventPublisher, systemSettingService, userBlockRepository, photoUrlSigner)
         whenever(geocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
@@ -380,5 +387,104 @@ class WalkServiceTest {
         assertEquals(5, result.totalWalks)
         assertEquals(30, result.totalGoldEarned)
         verify(goldService).getTotalRewardAmount(1L)
+    }
+
+    // === Presigned URL wiring ===
+
+    private fun buildPhotoSpot(imageKey: String, hiddenFromPublic: Boolean): WalkSpot {
+        val walk = Walk(
+            id = 10L,
+            user = testUser,
+            startTime = LocalDateTime.now().minusHours(1),
+            endTime = LocalDateTime.now(),
+            distanceKm = 1.0,
+            durationSeconds = 600,
+            path = geometryFactory.createLineString(arrayOf(
+                Coordinate(126.9780, 37.5665),
+                Coordinate(126.9785, 37.5670)
+            )),
+            caloriesBurned = null,
+            notes = null
+        )
+        val point = geometryFactory.createPoint(Coordinate(126.9781, 37.5666))
+        return WalkSpot(
+            id = 99L,
+            walk = walk,
+            location = point,
+            type = WalkSpotType.PHOTO,
+            timestamp = LocalDateTime.now(),
+            imageUrl = imageKey,
+            note = null,
+            hiddenFromPublic = hiddenFromPublic
+        )
+    }
+
+    @Test
+    fun `getMyPhotos signs URL when flag on and returns imageKey alongside`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val signedUrl = "https://minio.example.com/goldpet-private/$key?X-Amz-Signature=abc"
+        val spot = buildPhotoSpot(key, hiddenFromPublic = false)
+
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(signedUrl)
+        whenever(walkSpotRepository.findPhotoSpotsByUserId(eq(1L), any()))
+            .thenReturn(PageImpl(listOf(spot)))
+
+        val result = walkService.getMyPhotos(1L, null, PageRequest.of(0, 20))
+
+        assertEquals(1, result.content.size)
+        val photo = result.content.first()
+        assertEquals(signedUrl, photo.imageUrl)
+        assertEquals(key, photo.imageKey)
+    }
+
+    @Test
+    fun `getMyPhotos falls back to raw key when flag off`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val spot = buildPhotoSpot(key, hiddenFromPublic = false)
+
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(null)
+        whenever(walkSpotRepository.findPhotoSpotsByUserId(eq(1L), any()))
+            .thenReturn(PageImpl(listOf(spot)))
+
+        val result = walkService.getMyPhotos(1L, null, PageRequest.of(0, 20))
+
+        val photo = result.content.first()
+        assertEquals(key, photo.imageUrl, "flag-off path returns raw key for backward compatibility")
+        assertEquals(key, photo.imageKey)
+    }
+
+    @Test
+    fun `getPublicPhotos suppresses URL when hiddenFromPublic is true`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val hiddenSpot = buildPhotoSpot(key, hiddenFromPublic = true)
+
+        whenever(userBlockRepository.findBlockedUserIds(1L)).thenReturn(emptyList())
+        whenever(walkSpotRepository.findPublicPhotoSpots(any(), any()))
+            .thenReturn(PageImpl(listOf(hiddenSpot)))
+
+        val result = walkService.getPublicPhotos(1L, PageRequest.of(0, 20))
+
+        val photo = result.content.first()
+        assertNull(photo.imageUrl, "hidden photo in public listing must have URL suppressed")
+        assertEquals(key, photo.imageKey, "imageKey is still emitted so frontend can mint on demand")
+        verify(photoUrlSigner, never()).signedUrlOrNull(any())
+    }
+
+    @Test
+    fun `getPublicPhotos signs URL for non-hidden photo`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val signedUrl = "https://minio.example.com/goldpet-private/$key?X-Amz-Signature=xyz"
+        val spot = buildPhotoSpot(key, hiddenFromPublic = false)
+
+        whenever(userBlockRepository.findBlockedUserIds(1L)).thenReturn(emptyList())
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(signedUrl)
+        whenever(walkSpotRepository.findPublicPhotoSpots(any(), any()))
+            .thenReturn(PageImpl(listOf(spot)))
+
+        val result = walkService.getPublicPhotos(1L, PageRequest.of(0, 20))
+
+        val photo = result.content.first()
+        assertEquals(signedUrl, photo.imageUrl)
+        assertEquals(key, photo.imageKey)
     }
 }

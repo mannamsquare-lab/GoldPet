@@ -7,6 +7,7 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.walk.entity.BestWalkCouple
 import com.goldpet.domain.walk.repository.BestWalkCoupleRepository
 import com.goldpet.domain.walk.repository.WalkRepository
+import com.goldpet.domain.walk.service.PhotoUrlSigner
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -24,7 +25,8 @@ class AdminWalkService(
     private val walkRepository: WalkRepository,
     private val petRepository: PetRepository,
     private val userRepository: UserRepository,
-    private val bestWalkCoupleRepository: BestWalkCoupleRepository
+    private val bestWalkCoupleRepository: BestWalkCoupleRepository,
+    private val photoUrlSigner: PhotoUrlSigner
 ) {
     fun getWalks(
         page: Int,
@@ -77,7 +79,7 @@ class AdminWalkService(
             caloriesBurned = walk.caloriesBurned,
             notes = walk.notes,
             pathCoordinates = pathCoordinates,
-            spots = walk.spots.map { WalkSpotAdminDto.from(it) },
+            spots = walk.spots.map { WalkSpotAdminDto.from(it, photoUrlSigner) },
             createdAt = walk.createdAt
         )
     }

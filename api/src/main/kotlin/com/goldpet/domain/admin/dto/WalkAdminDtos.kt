@@ -2,6 +2,7 @@ package com.goldpet.domain.admin.dto
 
 import com.goldpet.domain.walk.entity.Walk
 import com.goldpet.domain.walk.entity.WalkSpot
+import com.goldpet.domain.walk.service.PhotoUrlSigner
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -52,16 +53,18 @@ data class WalkSpotAdminDto(
     val longitude: Double,
     val timestamp: LocalDateTime,
     val imageUrl: String?,
+    val imageKey: String?,
     val note: String?
 ) {
     companion object {
-        fun from(spot: WalkSpot): WalkSpotAdminDto = WalkSpotAdminDto(
+        fun from(spot: WalkSpot, photoUrlSigner: PhotoUrlSigner? = null): WalkSpotAdminDto = WalkSpotAdminDto(
             id = spot.id,
             type = spot.type.name,
             latitude = spot.location.y,
             longitude = spot.location.x,
             timestamp = spot.timestamp,
-            imageUrl = spot.imageUrl,
+            imageUrl = photoUrlSigner?.signedUrlOrNull(spot.imageUrl) ?: spot.imageUrl,
+            imageKey = spot.imageUrl,
             note = spot.note
         )
     }

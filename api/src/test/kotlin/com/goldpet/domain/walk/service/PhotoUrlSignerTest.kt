@@ -93,6 +93,13 @@ class PhotoUrlSignerTest {
     }
 
     @Test
+    fun `empty string returns null`() {
+        val result = signer.signedUrlOrNull("")
+        assertNull(result)
+        verify(fileService, never()).getPresignedUrl(any(), any())
+    }
+
+    @Test
     fun `non-uuid input returns null and does not sign`() {
         enableFlag()
         val result = signer.signedUrlOrNull("../../etc/passwd")
