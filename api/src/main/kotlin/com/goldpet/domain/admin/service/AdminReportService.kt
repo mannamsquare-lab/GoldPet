@@ -14,7 +14,9 @@ import com.goldpet.domain.report.entity.ReportActionType
 import com.goldpet.domain.report.entity.ReportStatus
 import com.goldpet.domain.report.entity.ReportType
 import com.goldpet.domain.report.repository.ReportRepository
+import com.goldpet.domain.walk.entity.WalkSpot
 import com.goldpet.domain.walk.repository.WalkSpotRepository
+import com.goldpet.domain.walk.service.PhotoUrlSigner
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -34,7 +36,8 @@ class AdminReportService(
     private val chatMessageRepository: ChatMessageRepository,
     private val walkCourseRepository: WalkCourseRepository,
     private val notificationService: NotificationService,
-    private val walkSpotRepository: WalkSpotRepository
+    private val walkSpotRepository: WalkSpotRepository,
+    private val photoUrlSigner: PhotoUrlSigner
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
@@ -47,7 +50,11 @@ class AdminReportService(
             adminUserRepository.findById(adminId).orElse(null)?.name
         }
 
-        return toResponse(report, resolvedByName)
+        val spot = if (report.type == ReportType.WALK_SPOT) {
+            walkSpotRepository.findById(report.targetId).orElse(null)
+        } else null
+
+        return toResponse(report, resolvedByName, spot)
     }
 
     // --- 목록 조회: N+1 방지를 위해 adminId를 batch 조회 ---
@@ -70,12 +77,27 @@ class AdminReportService(
             emptyMap()
         }
 
+        // N+1 방지: WALK_SPOT 타입 신고의 spot을 한 번에 조회
+        val walkSpotIds = reports.content
+            .filter { it.type == ReportType.WALK_SPOT }
+            .map { it.targetId }
+            .distinct()
+        val walkSpotMap: Map<Long, WalkSpot> = if (walkSpotIds.isNotEmpty()) {
+            walkSpotRepository.findAllById(walkSpotIds)
+                .associateBy { it.id }
+        } else {
+            emptyMap()
+        }
+
         return reports.map { report ->
-            toResponse(report, report.resolvedByAdminId?.let { adminNameMap[it] })
+            val spot = if (report.type == ReportType.WALK_SPOT) walkSpotMap[report.targetId] else null
+            toResponse(report, report.resolvedByAdminId?.let { adminNameMap[it] }, spot)
         }
     }
 
-    private fun toResponse(report: Report, resolvedByName: String?): ReportAdminResponse {
+    private fun toResponse(report: Report, resolvedByName: String?, walkSpot: WalkSpot? = null): ReportAdminResponse {
+        val rawKey = walkSpot?.imageUrl
+        val signedUrl = rawKey?.let { photoUrlSigner.signedUrlOrNull(it) ?: it }
         return ReportAdminResponse(
             id = report.id,
             type = report.type.name,
@@ -89,7 +111,9 @@ class AdminReportService(
             resolvedAt = report.resolvedAt?.format(formatter),
             actionType = report.actionType?.name,
             adminNote = report.adminNote,
-            resolvedByName = resolvedByName
+            resolvedByName = resolvedByName,
+            targetImageUrl = signedUrl,
+            targetImageKey = rawKey
         )
     }
 

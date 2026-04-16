@@ -72,5 +72,7 @@ data class ReportAdminResponse(
     val resolvedAt: String?,
     val actionType: String? = null,
     val adminNote: String? = null,
-    val resolvedByName: String? = null
+    val resolvedByName: String? = null,
+    val targetImageUrl: String? = null,
+    val targetImageKey: String? = null
 )
