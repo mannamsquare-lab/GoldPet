@@ -13,7 +13,6 @@ import type { PageResponse, WalkPhotoItem } from '../../../services/walkService'
 import { reportService } from '../../../services/reportService';
 import { useToast } from '../../../contexts/ToastContext';
 import { ReportModal } from '../../../components/common/ReportModal';
-import { getCachedPhotoUrl, resolvePhotoUrl } from '../utils/photoUrlCache';
 import {
   mapArrayRemoveItemById,
   mapArrayUpdateItemById,
@@ -62,58 +61,32 @@ type SlideProps = {
 };
 
 function WalkPhotoViewerSlide({ photo, active = true, onPresignedUrlExpired }: SlideProps) {
-  const initialUrl = photo.imageUrl ? getCachedPhotoUrl(photo.imageUrl) ?? null : null;
-  const [resolved, setResolved] = useState<string | null>(initialUrl);
-
-  useEffect(() => {
-    if (!active) return;
-    if (!photo.imageUrl) {
-      setResolved(null);
-      return;
-    }
-    const cached = getCachedPhotoUrl(photo.imageUrl);
-    if (cached) {
-      setResolved(cached);
-      return;
-    }
-    let cancelled = false;
-    resolvePhotoUrl(photo.imageUrl)
-      .then((url) => {
-        if (!cancelled) setResolved(url);
-      })
-      .catch(() => {
-        if (!cancelled) setResolved(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [photo.imageUrl, active]);
-
+  // 윈도우 밖 슬라이드(active=false)는 placeholder만 렌더 — <img> 미마운트로 iOS 메모리 보호.
+  // 백엔드 Option A 이후 photo.imageUrl은 HTTPS presigned URL; WKWebView 네이티브 이미지 캐시가
+  // 디코딩·메모리를 직접 관리한다 (blob URL 불필요).
+  if (!active || !photo.imageUrl) {
+    return <div className="swiper-zoom-container"><div className="wpv_slide_placeholder" /></div>;
+  }
   return (
     <div className="swiper-zoom-container">
-      {resolved ? (
-        <img
-          src={resolved}
-          alt=""
-          className="wpv_slide_img"
-          crossOrigin="anonymous"
-          loading="lazy"
-          decoding="async"
-          onError={(e) => {
-            setResolved(null);
-            // presigned URL 만료(403) 또는 클록 스큐(400 RequestTimeTooSkewed) 감지:
-            // <img>는 HTTP 상태 코드를 노출하지 않으므로 URL에 X-Amz-Signature= 포함 여부로 판별.
-            // 조건 충족 시 피드 쿼리를 무효화하여 다음 렌더 시 서버에서 신규 URL을 발급받는다.
-            const src = (e.currentTarget as HTMLImageElement).src;
-            if (src.includes('X-Amz-Signature=')) {
-              onPresignedUrlExpired?.();
-            }
-          }}
-          draggable={false}
-        />
-      ) : (
-        <div className="wpv_slide_placeholder" />
-      )}
+      <img
+        src={photo.imageUrl}
+        alt=""
+        className="wpv_slide_img"
+        crossOrigin="anonymous"
+        loading="lazy"
+        decoding="async"
+        onError={(e) => {
+          // presigned URL 만료(403) 또는 클록 스큐(400 RequestTimeTooSkewed) 감지:
+          // <img>는 HTTP 상태 코드를 노출하지 않으므로 URL에 X-Amz-Signature= 포함 여부로 판별.
+          // 조건 충족 시 피드 쿼리를 무효화하여 다음 렌더 시 서버에서 신규 URL을 발급받는다.
+          const src = (e.currentTarget as HTMLImageElement).src;
+          if (src.includes('X-Amz-Signature=')) {
+            onPresignedUrlExpired?.();
+          }
+        }}
+        draggable={false}
+      />
     </div>
   );
 }
