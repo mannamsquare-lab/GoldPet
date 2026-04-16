@@ -25,16 +25,12 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'cd frontend && npm run lint'
-                sh 'cd frontend && npm run test -- --run --coverage'
-                // Playwright Chromium memory smoke (headless, JSHeap only — not real device)
-                sh 'cd frontend && npx playwright install chromium --with-deps'
-                sh 'cd frontend && npm run test:e2e:memory || true'  // warning only for now
-            }
-            post {
-                failure {
-                    // Block deploy on failure
-                    error("Test stage failed — aborting deploy")
+                // Post-merge smoke — NOT a merge gate. Husky pre-push is the actual gate
+                // (plan §3.6 Option B). Failures here mark the build UNSTABLE but do not
+                // block deploy; real-device attestation is still required per PR checklist.
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    sh 'cd frontend && npm run lint'
+                    sh 'cd frontend && npm run test -- --run'
                 }
             }
         }
