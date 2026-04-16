@@ -135,9 +135,9 @@ export function useDeepLinkPhoto({
     swiperRef.current?.virtual?.update(true);
     // 2) Jump to target index (no animation, 동기)
     swiperRef.current?.slideTo(idx, 0, false);
-    // 3) photos 교체 + 잠금 해제 (동기 — React 18 batching + layout phase)
-    setPhotos(photosFromFeed);
-    setAllowSwipe(true);
+    // 3) photos 교체 (레퍼런스 동일하면 skip — 무한 루프 방지) + 잠금 해제
+    setPhotos((prev) => (prev === photosFromFeed ? prev : photosFromFeed));
+    setAllowSwipe((prev) => (prev ? prev : true));
   }, [photosFromFeed, walkId, spotId, rqHasNextPage, isFetchingNextPage, fetchNextPage, swiperRef]);
 
   // Timeout guard — trackA도 없고 empty 아니면 타임아웃 후 empty 처리

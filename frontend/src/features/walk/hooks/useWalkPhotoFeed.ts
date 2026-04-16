@@ -1,3 +1,4 @@
+import { useMemo, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { walkService } from '../../../services/walkService';
 import type { PageResponse, WalkPhotoItem } from '../../../services/walkService';
@@ -21,9 +22,14 @@ export function useWalkPhotoFeed({ mode }: { mode: WalkPhotoFeedMode }) {
     initialPageParam: 0,
   });
 
-  const photos: WalkPhotoItem[] = q.data?.pages.flatMap(p => p.content) ?? [];
-  const findIndexBySpotId = (spotId: number, walkId: number) =>
-    photos.findIndex(p => p.id === spotId && p.walkId === walkId);
+  const photos: WalkPhotoItem[] = useMemo(
+    () => q.data?.pages.flatMap(p => p.content) ?? [],
+    [q.data],
+  );
+  const findIndexBySpotId = useCallback(
+    (spotId: number, walkId: number) => photos.findIndex(p => p.id === spotId && p.walkId === walkId),
+    [photos],
+  );
 
   return { ...q, photos, queryKey, findIndexBySpotId, pageSize: PAGE_SIZE };
 }
