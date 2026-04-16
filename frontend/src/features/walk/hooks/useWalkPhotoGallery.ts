@@ -62,9 +62,11 @@ export function useWalkPhotoGallery(spots: WalkSpot[] | undefined): UseWalkPhoto
     }, []);
 
     const openGallery = useCallback((spot: WalkSpot) => {
-        const idx = photoSpots.findIndex(
-            s => s.imageUrl === spot.imageUrl && s.timestamp === spot.timestamp
-        );
+        // 일치 우선순위: spot.id → imageUrl (timestamp은 Date 재생성 시 레퍼런스 불일치 가능)
+        const idx = photoSpots.findIndex((s) => {
+            if (spot.id != null && s.id != null) return s.id === spot.id;
+            return s.imageUrl === spot.imageUrl;
+        });
         setInitialIndex(idx >= 0 ? idx : 0);
 
         // Revoke previous gallery URLs if any
