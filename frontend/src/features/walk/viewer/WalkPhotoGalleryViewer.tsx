@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Keyboard, Navigation, Thumbs, Zoom } from 'swiper/modules';
+import { Keyboard, Navigation, Zoom } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/zoom';
-import 'swiper/css/thumbs';
 import '../WalkPhotoDetail.css';
 import { walkService } from '../../../services/walkService';
 import type { PageResponse, WalkPhotoItem } from '../../../services/walkService';
@@ -35,8 +34,7 @@ type Props = {
   onRequestPath?: (path: string) => void;
 };
 
-const WINDOW_HALF = 5;  // 활성 슬라이드 좌우 N장을 DOM에 유지 (전체 2N+1장)
-const THUMBS_THRESHOLD = 50;
+const WINDOW_HALF = 3;  // 활성 슬라이드 좌우 N장을 DOM에 유지 (전체 2N+1장)
 
 function formatDate(isoStr: string | undefined | null): string {
   if (!isoStr) return '';
@@ -96,44 +94,6 @@ function WalkPhotoViewerSlide({ photo, active = true }: SlideProps) {
         />
       ) : (
         <div className="wpv_slide_placeholder" />
-      )}
-    </div>
-  );
-}
-
-function WalkPhotoThumbSlide({ photo }: SlideProps) {
-  const initialUrl = photo.imageUrl ? getCachedPhotoUrl(photo.imageUrl) ?? null : null;
-  const [resolved, setResolved] = useState<string | null>(initialUrl);
-
-  useEffect(() => {
-    if (!photo.imageUrl) {
-      setResolved(null);
-      return;
-    }
-    const cached = getCachedPhotoUrl(photo.imageUrl);
-    if (cached) {
-      setResolved(cached);
-      return;
-    }
-    let cancelled = false;
-    resolvePhotoUrl(photo.imageUrl)
-      .then((url) => {
-        if (!cancelled) setResolved(url);
-      })
-      .catch(() => {
-        if (!cancelled) setResolved(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [photo.imageUrl]);
-
-  return (
-    <div className="wpv_thumb_cell">
-      {resolved ? (
-        <img src={resolved} alt="" className="wpv_thumb_img" draggable={false} />
-      ) : (
-        <div className="wpv_thumb_placeholder" />
       )}
     </div>
   );
@@ -216,16 +176,7 @@ export function WalkPhotoGalleryViewer({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const showThumbs = photos.length > THUMBS_THRESHOLD;
-  const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
-  const modules = useMemo(() => {
-    return [
-      Navigation,
-      Keyboard,
-      Zoom,
-      ...(showThumbs ? [Thumbs] : []),
-    ];
-  }, [showThumbs]);
+  const modules = useMemo(() => [Navigation, Keyboard, Zoom], []);
 
   const photosRef = useRef(photos);
   useEffect(() => {
@@ -584,7 +535,6 @@ export function WalkPhotoGalleryViewer({
         spaceBetween={0}
         zoom={{ maxRatio: 3, toggle: true }}
         keyboard={{ enabled: true, onlyInViewport: true }}
-        thumbs={showThumbs && thumbsSwiper ? { swiper: thumbsSwiper } : undefined}
         allowTouchMove={allowSwipe}
         onSwiper={(s) => {
           swiperRef.current = s;
@@ -639,25 +589,6 @@ export function WalkPhotoGalleryViewer({
           );
         })}
       </Swiper>
-
-      {/* Thumbs strip (photos.length > 50) */}
-      {showThumbs && (
-        <Swiper
-          className="wpv_thumbs_swiper"
-          modules={[Thumbs]}
-          onSwiper={setThumbsSwiper}
-          slidesPerView="auto"
-          spaceBetween={4}
-          watchSlidesProgress
-          freeMode
-        >
-          {displayPhotos.map((photo) => (
-            <SwiperSlide key={`thumb-${photo.walkId}-${photo.id}`} className="wpv_thumb_slide">
-              <WalkPhotoThumbSlide photo={photo} />
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      )}
 
       <ReportModal
         isOpen={showReportModal}
