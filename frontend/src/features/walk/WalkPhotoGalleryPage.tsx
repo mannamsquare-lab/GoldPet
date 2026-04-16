@@ -5,6 +5,7 @@ import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
 import { resolvePhotoUrl, getCachedPhotoUrl } from './utils/photoUrlCache';
+import { WalkPhotoGalleryModal } from './viewer/WalkPhotoGalleryModal';
 import './WalkPhotoGallery.css';
 
 type ViewMode = 'month' | 'day' | 'year';
@@ -30,6 +31,7 @@ export default function WalkPhotoGalleryPage() {
   const [mode, setMode] = useState<ViewMode>('month');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
+  const [modalPhoto, setModalPhoto] = useState<WalkPhotoItem | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
@@ -154,7 +156,7 @@ export default function WalkPhotoGalleryPage() {
                   <div
                     key={`${photo.walkId}-${photo.id}`}
                     className="wgp_photo_cell"
-                    onClick={() => navigate(`/walk-photos/${photo.walkId}/${photo.id}`, { state: photo })}
+                    onClick={() => setModalPhoto(photo)}
                   >
                     {url ? (
                       <img src={url} alt="" className="wgp_photo_img" />
@@ -174,6 +176,16 @@ export default function WalkPhotoGalleryPage() {
       </div>
 
       <BottomNav />
+
+      {modalPhoto && (
+        <WalkPhotoGalleryModal
+          mode="owned"
+          walkId={modalPhoto.walkId}
+          initialSpotId={modalPhoto.id}
+          initialPhoto={modalPhoto}
+          onClose={() => setModalPhoto(null)}
+        />
+      )}
     </div>
   );
 }

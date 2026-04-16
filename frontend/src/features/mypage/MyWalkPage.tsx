@@ -5,6 +5,7 @@ import { walkService } from '../../services/walkService';
 import type { WalkRecord, WalkPhotoItem } from '../../services/walkService';
 import { WalkRouteThumbnail } from '../walk/components/WalkRouteThumbnail';
 import { resolvePhotoUrl, getCachedPhotoUrl } from '../walk/utils/photoUrlCache';
+import { WalkPhotoGalleryModal } from '../walk/viewer/WalkPhotoGalleryModal';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { useMonthNavigation } from '../../hooks/useMonthNavigation';
 import './MyWalkPage.css';
@@ -12,6 +13,7 @@ import './MyWalkPage.css';
 function PhotoCollection() {
     const navigate = useNavigate();
     const [resolved, setResolved] = useState<Record<string, string>>({});
+    const [modalPhoto, setModalPhoto] = useState<WalkPhotoItem | null>(null);
 
     const { data } = useQuery({
         queryKey: ['walk', 'my', 'photos', 'mywalk-collection'],
@@ -69,7 +71,7 @@ function PhotoCollection() {
                                 <div
                                     key={photo.id}
                                     className="mywalk_photo_item"
-                                    onClick={() => navigate(`/walk-photos/${photo.walkId}/${photo.id}`)}
+                                    onClick={() => setModalPhoto(photo)}
                                     style={{ cursor: 'pointer', overflow: 'hidden' }}
                                 >
                                     {src && (
@@ -86,6 +88,16 @@ function PhotoCollection() {
                     </div>
                 ))}
             </div>
+
+            {modalPhoto && (
+                <WalkPhotoGalleryModal
+                    mode="owned"
+                    walkId={modalPhoto.walkId}
+                    initialSpotId={modalPhoto.id}
+                    initialPhoto={modalPhoto}
+                    onClose={() => setModalPhoto(null)}
+                />
+            )}
         </div>
     );
 }

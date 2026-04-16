@@ -4,12 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { walkService } from '../../../services/walkService';
 import type { WalkPhotoItem } from '../../../services/walkService';
 import { resolvePhotoUrl, getCachedPhotoUrl } from '../utils/photoUrlCache';
+import { WalkPhotoGalleryModal } from '../viewer/WalkPhotoGalleryModal';
 
 const MAX_PHOTOS = 8;
 
 export function WalkPhotoCollection() {
   const navigate = useNavigate();
   const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
+  const [modalPhoto, setModalPhoto] = useState<WalkPhotoItem | null>(null);
 
   const { data } = useQuery({
     queryKey: ['walk', 'public', 'photos', 'collection'],
@@ -62,7 +64,7 @@ export function WalkPhotoCollection() {
               key={photo.id}
               type="button"
               className="walk_photo_collection_item"
-              onClick={() => navigate(`/walk-shared-photos/${photo.walkId}/${photo.id}`)}
+              onClick={() => setModalPhoto(photo)}
             >
               {src ? (
                 <img src={src} alt="" loading="lazy" />
@@ -73,6 +75,16 @@ export function WalkPhotoCollection() {
           );
         })}
       </div>
+
+      {modalPhoto && (
+        <WalkPhotoGalleryModal
+          mode="shared"
+          walkId={modalPhoto.walkId}
+          initialSpotId={modalPhoto.id}
+          initialPhoto={modalPhoto}
+          onClose={() => setModalPhoto(null)}
+        />
+      )}
     </div>
   );
 }

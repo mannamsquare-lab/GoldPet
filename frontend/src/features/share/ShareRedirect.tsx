@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { APP_STORE_URL } from './storeUrls';
 
 interface ShareRedirectProps {
@@ -82,13 +82,14 @@ export function ShareRedirect({ to, search = '' }: ShareRedirectProps) {
 // ─── Bridge wrapper for use in App.tsx routes ─────────────────────────────────
 
 interface ShareRedirectBridgeProps {
-  to: (params: Record<string, string>) => string;
-  searchFn?: (params: Record<string, string>) => string;
+  to: (params: Record<string, string>, searchParams?: URLSearchParams) => string;
+  searchFn?: (params: Record<string, string>, searchParams?: URLSearchParams) => string;
 }
 
 export function ShareRedirectBridge({ to, searchFn }: ShareRedirectBridgeProps) {
   const params = useParams() as Record<string, string>;
-  const resolvedTo = to(params);
-  const resolvedSearch = searchFn ? searchFn(params) : '';
+  const [searchParams] = useSearchParams();
+  const resolvedTo = to(params, searchParams);
+  const resolvedSearch = searchFn ? searchFn(params, searchParams) : '';
   return <ShareRedirect to={resolvedTo} search={resolvedSearch} />;
 }

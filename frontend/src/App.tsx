@@ -229,7 +229,18 @@ function App() {
               <Route path="/missions" element={<Suspense fallback={null}><GamificationTabPage /></Suspense>} />
 
               {/* Share short-link routes */}
-              <Route path="/w/:walkId" element={<ShareRedirectBridge to={(p) => `/walk/detail/${p.walkId}`} />} />
+              <Route
+                path="/w/:walkId"
+                element={
+                  <ShareRedirectBridge
+                    to={(p, search) => {
+                      const spotId = search?.get('spot');
+                      if (spotId) return `/walk-shared-photos/${p.walkId}/${spotId}`;
+                      return `/walk/detail/${p.walkId}`;
+                    }}
+                  />
+                }
+              />
               <Route path="/c/:courseId" element={<ShareRedirectBridge to={(p) => `/courses/${p.courseId}`} />} />
               <Route path="/pet/:petId/health" element={<ShareRedirectBridge to={() => '/health'} searchFn={(p) => `?pet=${p.petId}`} />} />
               <Route path="/health/:healthId" element={<ShareRedirectBridge to={() => '/health'} searchFn={(p) => `?focus=${p.healthId}`} />} />
