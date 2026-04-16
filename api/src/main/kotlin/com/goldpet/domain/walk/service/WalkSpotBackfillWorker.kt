@@ -80,13 +80,14 @@ class WalkSpotBackfillWorker(
             val baseFilename = rawKey.substringBeforeLast(".")
             var viewerKey: String? = null
             var thumbKey: String? = null
-            // Use longSide (not shortSide) so portrait screenshots (e.g. 1170x2532)
-            // still get downscaled on long axis. Thumbnailator's size(maxDim, maxDim)
-            // bounds to a box so both dimensions end <= maxDim.
-            val longSide = maxOf(image.width, image.height)
+            // Always generate both variants. Thumbnailator never upscales, so when the
+            // source is already below maxDim the result preserves source dimensions —
+            // the savings come from JPEG re-encoding a lossless PNG (e.g. 1200x900 PNG
+            // ~3MB → 1200x900 JPEG ~250KB, a ~12x reduction). Without this, any walk
+            // photo whose longSide is below maxDim fell back to the raw original and
+            // produced the "swipe hangs on 10/51" lag on iOS WKWebView.
 
             for ((suffix, maxDim, quality) in variants) {
-                if (longSide <= maxDim) continue
                 val variantFilename = "$baseFilename$suffix.jpg"
                 val out = ByteArrayOutputStream()
                 Thumbnails.of(image)
