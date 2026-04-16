@@ -9,7 +9,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 /// WebView HTTP 캐시를 비워 브라우저 캐시된 구버전 JS가 계속 실행되는
 /// 문제를 방지한다. 로그인/프로필 등은 localStorage에 있으므로 그대로 유지.
 class WebVersionChecker {
-  static const String _prefsKey = 'web_app_version';
+  // v2: 이 키를 bump하면 재설치/업데이트 후 반드시 1회 clearCache 실행됨.
+  static const String _prefsKey = 'web_app_version_v2';
   static const Duration _timeout = Duration(seconds: 3);
 
   /// 새 버전이 감지되어 캐시를 비운 경우 true.
@@ -32,8 +33,12 @@ class WebVersionChecker {
       final prefs = await SharedPreferences.getInstance();
       final oldVersion = prefs.getString(_prefsKey);
 
-      if (oldVersion != null && oldVersion != newVersion) {
-        debugPrint('[WebVersionChecker] $oldVersion -> $newVersion, clearing WebView cache');
+      // oldVersion == null: 이 앱 바이너리가 처음 실행됐거나 prefs 초기화됨.
+      // 재설치 직후 WebView HTTP 캐시에 이전 설치의 구버전 해시 청크가
+      // 남아있을 수 있으므로 방어적으로 clearCache.
+      final needClear = oldVersion == null || oldVersion != newVersion;
+      if (needClear) {
+        debugPrint('[WebVersionChecker] ${oldVersion ?? "(null)"} -> $newVersion, clearing WebView cache');
         try {
           await controller.clearCache();
         } catch (e) {
@@ -41,10 +46,6 @@ class WebVersionChecker {
         }
         await prefs.setString(_prefsKey, newVersion);
         return true;
-      }
-
-      if (oldVersion == null) {
-        await prefs.setString(_prefsKey, newVersion);
       }
       return false;
     } catch (e) {
