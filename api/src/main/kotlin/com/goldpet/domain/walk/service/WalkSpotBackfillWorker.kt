@@ -80,10 +80,13 @@ class WalkSpotBackfillWorker(
             val baseFilename = rawKey.substringBeforeLast(".")
             var viewerKey: String? = null
             var thumbKey: String? = null
-            val shortSide = minOf(image.width, image.height)
+            // Use longSide (not shortSide) so portrait screenshots (e.g. 1170x2532)
+            // still get downscaled on long axis. Thumbnailator's size(maxDim, maxDim)
+            // bounds to a box so both dimensions end <= maxDim.
+            val longSide = maxOf(image.width, image.height)
 
             for ((suffix, maxDim, quality) in variants) {
-                if (shortSide <= maxDim) continue
+                if (longSide <= maxDim) continue
                 val variantFilename = "$baseFilename$suffix.jpg"
                 val out = ByteArrayOutputStream()
                 Thumbnails.of(image)
