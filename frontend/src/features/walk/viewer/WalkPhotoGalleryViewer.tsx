@@ -580,10 +580,18 @@ export function WalkPhotoGalleryViewer({
         }}
         onSlideChangeTransitionStart={(s) => {
           (document.activeElement as HTMLElement | null)?.blur();
-          s.zoom?.out();
+          // Swiper zoom 모듈이 slide remount/초기 transition 시 내부적으로 active el의
+          // querySelector를 호출하다가 undefined에 접근해 throw하는 경우 있음 → 안전 가드
+          try {
+            if (s.zoom && s.slides && s.slides.length > 0 && s.slides[s.activeIndex]) {
+              s.zoom.out();
+            }
+          } catch { /* ignore zoom reset errors during transition */ }
         }}
         onTouchMove={(s) => {
-          if (s.zoom && s.zoom.scale > 1) s.zoom.out();
+          try {
+            if (s.zoom && s.zoom.scale > 1) s.zoom.out();
+          } catch { /* ignore */ }
         }}
         onSlideChange={(s) => {
           setActiveIndex(s.activeIndex);
