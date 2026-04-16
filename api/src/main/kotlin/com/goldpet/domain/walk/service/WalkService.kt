@@ -313,6 +313,7 @@ class WalkService(
             note = spot.note,
             walkDate = spot.walk.startTime,
             walkId = spot.walk.id,
+            userId = spot.walk.user.id,
             petName = firstPet?.name,
             petImageUrl = firstPet?.profileImageUrl,
             hiddenFromPublic = spot.hiddenFromPublic

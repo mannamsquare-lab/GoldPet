@@ -24,6 +24,7 @@ import {
 } from '../utils/photoQueryCache';
 import { useDeepLinkPhoto } from '../hooks/useDeepLinkPhoto';
 import { useShare } from '../../share/useShare';
+import { useAuthStore } from '../../../stores/authStore';
 
 type Props = {
   variant: 'page' | 'modal';
@@ -150,6 +151,7 @@ export function WalkPhotoGalleryViewer({
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { share } = useShare();
+  const currentUserId = useAuthStore((state) => state.user?.id ?? null);
   const swiperRef = useRef<SwiperType | null>(null);
 
   const {
@@ -522,7 +524,7 @@ export function WalkPhotoGalleryViewer({
               {currentIndexDisplay}/{totalCount}
             </span>
           )}
-          {mode === 'shared' && currentPhoto && (
+          {mode === 'shared' && currentPhoto && currentPhoto.userId != null && currentPhoto.userId !== currentUserId && (
             <button
               type="button"
               className="wpv_nav_btn"

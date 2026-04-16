@@ -50,6 +50,7 @@ data class WalkPhotoResponse(
     val note: String?,
     val walkDate: LocalDateTime,
     val walkId: Long,
+    val userId: Long,
     val petName: String?,
     val petImageUrl: String?,
     val hiddenFromPublic: Boolean = false

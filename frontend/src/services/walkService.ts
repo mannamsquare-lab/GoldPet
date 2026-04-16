@@ -49,6 +49,7 @@ export interface WalkPhotoItem {
   note: string | null;
   walkDate: string;
   walkId: number;
+  userId?: number;
   petName: string | null;
   petImageUrl: string | null;
   hiddenFromPublic?: boolean;
