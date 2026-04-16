@@ -28,7 +28,7 @@ export default function WalkSharedPhotoDetailPage() {
     walkService.getWalkDetail(Number(walkId)).then(walk => {
       const target = walk.spots?.find(s => s.id === Number(spotId))
                   ?? walk.spots?.find(s => s.type === 'PHOTO');
-      if (target && target.imageUrl) {
+      if (target && target.imageUrl && target.id != null) {
         setPhoto({
           id: target.id,
           imageUrl: target.imageUrl,
