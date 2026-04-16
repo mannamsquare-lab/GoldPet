@@ -39,6 +39,7 @@ export interface WalkSpot {
   type: 'PEE' | 'POOP' | 'PHOTO' | 'PROBLEM' | 'OTHER';
   timestamp: string;
   imageUrl?: string;
+  imageKey?: string;   // raw S3 key — additive field emitted alongside imageUrl once backend ships Option A
   note?: string;
   hiddenFromPublic?: boolean;
 }
@@ -46,6 +47,7 @@ export interface WalkSpot {
 export interface WalkPhotoItem {
   id: number;
   imageUrl: string | null;
+  imageKey?: string | null;  // raw S3 key — new additive field from backend Option A contract change
   note: string | null;
   walkDate: string;
   walkId: number;

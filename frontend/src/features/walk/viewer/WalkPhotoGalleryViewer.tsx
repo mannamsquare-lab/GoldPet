@@ -13,7 +13,7 @@ import type { PageResponse, WalkPhotoItem } from '../../../services/walkService'
 import { reportService } from '../../../services/reportService';
 import { useToast } from '../../../contexts/ToastContext';
 import { ReportModal } from '../../../components/common/ReportModal';
-import { getCachedPhotoUrl, resolvePhotoUrl, revokeOutsideWindow } from '../utils/photoUrlCache';
+import { getCachedPhotoUrl, resolvePhotoUrl } from '../utils/photoUrlCache';
 import {
   mapArrayRemoveItemById,
   mapArrayUpdateItemById,
@@ -36,6 +36,11 @@ type Props = {
 
 const WINDOW_HALF = 3;  // 활성 슬라이드 좌우 N장을 DOM에 유지 (전체 2N+1장)
 
+// 만료된 presigned URL 감지 시 React Query 무효화를 분당 1회로 제한하는 모듈-스코프 타임스탬프.
+// 컴포넌트 마운트/언마운트와 무관하게 전역으로 디바운스한다.
+let lastPresignedInvalidateMs = 0;
+const PRESIGNED_INVALIDATE_DEBOUNCE_MS = 60_000;
+
 function formatDate(isoStr: string | undefined | null): string {
   if (!isoStr) return '';
   const d = new Date(isoStr);
@@ -52,9 +57,11 @@ function buildPath(mode: 'owned' | 'shared', walkId: number, spotId: number): st
 type SlideProps = {
   photo: WalkPhotoItem;
   active?: boolean;  // 활성 ±N 윈도우 안에 있을 때만 true — 그 외는 blob 리졸브 skip하여 iOS WKWebView 메모리 보호
+  /** presigned URL 만료(4xx) 감지 시 호출 — 상위에서 React Query 무효화 처리 */
+  onPresignedUrlExpired?: () => void;
 };
 
-function WalkPhotoViewerSlide({ photo, active = true }: SlideProps) {
+function WalkPhotoViewerSlide({ photo, active = true, onPresignedUrlExpired }: SlideProps) {
   const initialUrl = photo.imageUrl ? getCachedPhotoUrl(photo.imageUrl) ?? null : null;
   const [resolved, setResolved] = useState<string | null>(initialUrl);
 
@@ -89,7 +96,19 @@ function WalkPhotoViewerSlide({ photo, active = true }: SlideProps) {
           src={resolved}
           alt=""
           className="wpv_slide_img"
-          onError={() => setResolved(null)}
+          crossOrigin="anonymous"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            setResolved(null);
+            // presigned URL 만료(403) 또는 클록 스큐(400 RequestTimeTooSkewed) 감지:
+            // <img>는 HTTP 상태 코드를 노출하지 않으므로 URL에 X-Amz-Signature= 포함 여부로 판별.
+            // 조건 충족 시 피드 쿼리를 무효화하여 다음 렌더 시 서버에서 신규 URL을 발급받는다.
+            const src = (e.currentTarget as HTMLImageElement).src;
+            if (src.includes('X-Amz-Signature=')) {
+              onPresignedUrlExpired?.();
+            }
+          }}
           draggable={false}
         />
       ) : (
@@ -183,21 +202,16 @@ export function WalkPhotoGalleryViewer({
     photosRef.current = photos;
   }, [photos]);
 
-  useEffect(() => {
-    return () => {
-      const list = photosRef.current;
-      if (list.length === 0) return;
-      const activeIdx = swiperRef.current?.activeIndex ?? 0;
-      const keep = new Set<string>();
-      const start = Math.max(0, activeIdx - 5);
-      const end = Math.min(list.length - 1, activeIdx + 5);
-      for (let i = start; i <= end; i++) {
-        const key = list[i]?.imageUrl;
-        if (key && !key.startsWith('http')) keep.add(key);
-      }
-      revokeOutsideWindow(keep);
-    };
-  }, []);
+  /**
+   * presigned URL 만료 감지 시 피드 쿼리를 무효화한다.
+   * 모듈-스코프 타임스탬프로 분당 1회만 실행 (오프라인→온라인 전환 시 폭풍 방지).
+   */
+  const handlePresignedUrlExpired = useCallback(() => {
+    const now = Date.now();
+    if (now - lastPresignedInvalidateMs < PRESIGNED_INVALIDATE_DEBOUNCE_MS) return;
+    lastPresignedInvalidateMs = now;
+    void queryClient.invalidateQueries({ queryKey: ['walk', mode, 'photos'] });
+  }, [queryClient, mode]);
 
   const handleShare = useCallback(async () => {
     if (!currentPhoto?.imageUrl) return;
@@ -579,7 +593,11 @@ export function WalkPhotoGalleryViewer({
           return (
             <SwiperSlide key={`${photo.walkId}-${photo.id}`}>
               {inWindow ? (
-                <WalkPhotoViewerSlide photo={photo} active={Math.abs(idx - activeIndex) <= 2} />
+                <WalkPhotoViewerSlide
+                  photo={photo}
+                  active={Math.abs(idx - activeIndex) <= 2}
+                  onPresignedUrlExpired={handlePresignedUrlExpired}
+                />
               ) : (
                 // 윈도우 밖: zoom-container 미포함. Swiper zoom 모듈이 iOS에서
                 // 많은 슬라이드를 순회할 때 발생하는 크래시 완화.
