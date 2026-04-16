@@ -12,9 +12,11 @@ import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.ObjectProvider
 
 class PhotoUrlSignerTest {
 
@@ -31,7 +33,9 @@ class PhotoUrlSignerTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        signer = PhotoUrlSigner(fileService, systemSettingService, meterRegistry)
+        val cacheProvider = mock<ObjectProvider<PerRequestSignerCache>>()
+        whenever(cacheProvider.ifAvailable).thenReturn(null)
+        signer = PhotoUrlSigner(fileService, systemSettingService, meterRegistry, cacheProvider)
     }
 
     private fun enableFlag() {

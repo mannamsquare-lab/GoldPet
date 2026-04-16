@@ -2,6 +2,7 @@ package com.goldpet.domain.admin.controller
 
 import com.goldpet.config.security.AdminUserPrincipal
 import com.goldpet.domain.file.service.FileService
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -40,8 +41,10 @@ class AdminFileController(
 
     @PostMapping("/backfill-variants")
     fun backfillVariants(
-        @RequestParam(defaultValue = "100") batchSize: Int
+        @RequestParam(defaultValue = "100") batchSize: Int,
+        @AuthenticationPrincipal principal: AdminUserPrincipal?
     ): ResponseEntity<FileService.BackfillResult> {
+        principal ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         val effectiveBatchSize = batchSize.coerceIn(1, 500)
         val result = fileService.backfillVariants(effectiveBatchSize)
         return ResponseEntity.ok(result)

@@ -53,4 +53,26 @@ interface WalkSpotRepository : JpaRepository<WalkSpot, Long> {
         @Param("blockedUserIds") blockedUserIds: List<Long>,
         pageable: Pageable
     ): Page<WalkSpot>
+
+    @Query("""
+        SELECT ws FROM WalkSpot ws
+        WHERE ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO
+        AND ws.imageUrl IS NOT NULL
+        AND ws.imageKeyViewer IS NULL
+        ORDER BY ws.id ASC
+    """)
+    fun findSpotsWithoutVariantKeys(pageable: Pageable): Page<WalkSpot>
+
+    @Query("""
+        SELECT ws FROM WalkSpot ws
+        WHERE ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO
+        AND ws.imageUrl IS NOT NULL
+        AND ws.imageKeyViewer IS NULL
+        AND ws.createdAt < :before
+        ORDER BY ws.id ASC
+    """)
+    fun findSpotsForSweep(
+        @Param("before") before: LocalDateTime,
+        pageable: Pageable
+    ): List<WalkSpot>
 }

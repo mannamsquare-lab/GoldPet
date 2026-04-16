@@ -7,10 +7,15 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.drew.imaging.ImageMetadataReader
 import com.drew.metadata.exif.GpsDirectory
 import com.goldpet.domain.common.exception.*
+import io.micrometer.core.instrument.MeterRegistry
 import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -18,6 +23,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.Date
 import java.util.UUID
+import java.util.concurrent.RejectedExecutionException
 import javax.imageio.ImageIO
 
 private const val MAX_IMAGE_SIZE = 10 * 1024 * 1024L // 10MB
@@ -48,13 +54,18 @@ class FileService(
     @Value("\${S3_PRIVATE_BUCKET_NAME:goldpet-private}") private val privateBucketName: String,
     @Value("\${S3_PUBLIC_ENDPOINT:http://localhost:9100}") private val publicEndpoint: String,
     @Value("\${S3_ENDPOINT:http://localhost:9100}") private val s3Endpoint: String,
-    private val fileAttachmentRepository: com.goldpet.domain.common.repository.FileAttachmentRepository
+    private val fileAttachmentRepository: com.goldpet.domain.common.repository.FileAttachmentRepository,
+    @org.springframework.beans.factory.annotation.Qualifier("variantExecutor")
+    private val variantExecutor: ThreadPoolTaskExecutor,
+    private val meterRegistry: MeterRegistry,
+    @Lazy private val walkSpotBackfillWorker: com.goldpet.domain.walk.service.WalkSpotBackfillWorker
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     private val IMAGE_VARIANTS = listOf(
         ImageVariant("_thumb", 200, 0.80),
-        ImageVariant("_medium", 600, 0.85)
+        ImageVariant("_medium", 600, 0.85),
+        ImageVariant("_viewer", 1600, 0.82)
     )
 
     init {
@@ -100,6 +111,13 @@ class FileService(
             else -> StorageBucket.PRIVATE
         }
     }
+
+    /**
+     * Allowlist for variant generation. Explicit scope to prevent silent scope leak:
+     * PUBLIC bucket (all existing PUBLIC categories) + walk-photo uploads (category == null).
+     */
+    private fun needsVariants(category: String?, bucket: StorageBucket): Boolean =
+        bucket == StorageBucket.PUBLIC || category == null
 
     private fun validateImageFile(file: MultipartFile) {
         if (file.size > MAX_IMAGE_SIZE) {
@@ -199,6 +217,58 @@ class FileService(
     }
 
     /**
+     * Generate variants and persist them directly to the FileAttachment row.
+     * Runs OUTSIDE any outer transaction (submitted via variantExecutor post-commit).
+     * For PRIVATE bucket, stores raw S3 keys in variant columns (callers presign on read).
+     * For PUBLIC bucket, stores full HTTPS URLs.
+     */
+    fun generateVariantsRaw(
+        attachmentId: Long,
+        image: BufferedImage,
+        baseFilename: String,
+        mimeType: String,
+        bucket: String,
+        isPublic: Boolean
+    ) {
+        if (mimeType == "image/gif") return
+        val results = mutableMapOf<String, String>()
+        val shortSide = minOf(image.width, image.height)
+
+        for (variant in IMAGE_VARIANTS) {
+            if (shortSide <= variant.maxDimension) continue
+
+            val variantFilename = "${baseFilename}${variant.suffix}.jpg"
+            val output = ByteArrayOutputStream()
+
+            Thumbnails.of(image)
+                .size(variant.maxDimension, variant.maxDimension)
+                .outputFormat("JPEG")
+                .outputQuality(variant.quality)
+                .toOutputStream(output)
+
+            val variantBytes = output.toByteArray()
+            val variantMetadata = ObjectMetadata().apply {
+                contentType = "image/jpeg"
+                contentLength = variantBytes.size.toLong()
+            }
+            amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)
+
+            val stored = if (isPublic) "$publicEndpoint/$bucket/$variantFilename" else variantFilename
+            results[variant.suffix.removePrefix("_")] = stored
+        }
+
+        if (results.isEmpty()) return
+        fileAttachmentRepository.updateAllVariantUrls(
+            id = attachmentId,
+            thumbUrl = results["thumb"],
+            medUrl = results["medium"],
+            viewerUrl = results["viewer"],
+            width = image.width,
+            height = image.height
+        )
+    }
+
+    /**
      * Store a file and route it to the correct bucket based on category.
      *
      * @param file      the uploaded file
@@ -256,16 +326,6 @@ class FileService(
                 else -> "FILE"
             }
 
-            // Generate thumbnail + medium variants for public images (reuse decoded BufferedImage)
-            val variantUrls = if (bucket == StorageBucket.PUBLIC && processed.bufferedImage != null) {
-                generateVariants(
-                    image = processed.bufferedImage,
-                    baseFilename = newFilename.substringBeforeLast("."),
-                    mimeType = mimeType,
-                    bucket = targetBucket
-                )
-            } else emptyMap()
-
             val fileAttachment = com.goldpet.domain.common.entity.FileAttachment(
                 ownerUserId = userId,
                 fileType = fileType,
@@ -275,10 +335,64 @@ class FileService(
                 sizeBytes = file.size,
                 width = processed.width,
                 height = processed.height,
-                thumbnailUrl = variantUrls["thumb"],
-                mediumUrl = variantUrls["medium"]
+                thumbnailUrl = null,
+                mediumUrl = null,
+                viewerUrl = null
             )
-            return fileAttachmentRepository.save(fileAttachment)
+            val saved = fileAttachmentRepository.save(fileAttachment)
+
+            // Variants are generated POST-COMMIT so storeFile's @Transactional boundary
+            // is not held during Thumbnailator + S3 PUT latency.
+            // IMPORTANT: do NOT capture the BufferedImage in the closure — with queueCapacity=200
+            // the heap could retain 200 × ~50MB = 10GB of decoded images.
+            // Re-fetch bytes from S3 inside the async task (scheduler DLQ sweep uses the same pattern).
+            if (processed.bufferedImage != null
+                && mimeType != "image/gif"
+                && needsVariants(category, bucket)
+            ) {
+                val attachmentId = saved.id
+                val baseFilename = newFilename.substringBeforeLast(".")
+                val isPublic = bucket == StorageBucket.PUBLIC
+                val s3Key = newFilename
+                TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                    override fun afterCommit() {
+                        try {
+                            variantExecutor.submit {
+                                try {
+                                    val s3Object = amazonS3.getObject(targetBucket, s3Key)
+                                    val reloaded: BufferedImage? = s3Object.objectContent.use { ImageIO.read(it) }
+                                    if (reloaded == null) {
+                                        log.warn("async variant-gen could not decode S3 object for attachment={} key={}", attachmentId, s3Key)
+                                        return@submit
+                                    }
+                                    generateVariantsRaw(
+                                        attachmentId = attachmentId,
+                                        image = reloaded,
+                                        baseFilename = baseFilename,
+                                        mimeType = mimeType,
+                                        bucket = targetBucket,
+                                        isPublic = isPublic
+                                    )
+                                } catch (e: Exception) {
+                                    log.warn("async variant-gen failed for attachment={}: {}", attachmentId, e.message, e)
+                                }
+                            }
+                        } catch (e: RejectedExecutionException) {
+                            meterRegistry.counter(
+                                "walk_photo_variant_rejected_total",
+                                "reason", "queue_full"
+                            ).increment()
+                            log.warn(
+                                "variant-gen task REJECTED for attachment={}; " +
+                                    "will be reclaimed by WalkSpotVariantSyncScheduler DLQ sweep",
+                                attachmentId, e
+                            )
+                        }
+                    }
+                })
+            }
+
+            return saved
         } catch (e: IllegalArgumentException) {
             throw e
         } catch (e: IOException) {
@@ -296,12 +410,48 @@ class FileService(
         val durationMs: Long
     )
 
+    enum class BackfillScope { ALL, FILE_ATTACHMENTS, WALK_SPOTS }
+
     /**
-     * Backfill thumbnail and medium variants for existing IMAGE records that have none.
-     * Skips GIFs. Processes up to [batchSize] records per call.
+     * Scoped backfill. Per-row work executes through `WalkSpotBackfillWorker` (REQUIRES_NEW)
+     * so pod restarts mid-batch leave committed rows intact.
+     * NO @Transactional on this outer method — the worker beans own their own tx.
      */
+    fun backfillVariants(scope: BackfillScope, batchSize: Int, dryRun: Boolean = false): BackfillResult {
+        return when (scope) {
+            BackfillScope.FILE_ATTACHMENTS -> backfillFileAttachments(batchSize)
+            BackfillScope.WALK_SPOTS -> backfillWalkSpots(batchSize, dryRun)
+            BackfillScope.ALL -> {
+                val a = backfillFileAttachments(batchSize)
+                val b = backfillWalkSpots(batchSize, dryRun)
+                BackfillResult(
+                    total = a.total + b.total,
+                    processed = a.processed + b.processed,
+                    skipped = a.skipped + b.skipped,
+                    failed = a.failed + b.failed,
+                    durationMs = a.durationMs + b.durationMs
+                )
+            }
+        }
+    }
+
+    private fun backfillWalkSpots(batchSize: Int, dryRun: Boolean): BackfillResult {
+        val startMs = System.currentTimeMillis()
+        val result = walkSpotBackfillWorker.backfillBatch(batchSize, dryRun)
+        return BackfillResult(
+            total = result.total,
+            processed = result.processed,
+            skipped = result.skipped,
+            failed = result.failed,
+            durationMs = System.currentTimeMillis() - startMs
+        )
+    }
+
     @org.springframework.transaction.annotation.Transactional
-    fun backfillVariants(batchSize: Int): BackfillResult {
+    fun backfillVariants(batchSize: Int): BackfillResult = backfillFileAttachments(batchSize)
+
+    @org.springframework.transaction.annotation.Transactional
+    private fun backfillFileAttachments(batchSize: Int): BackfillResult {
         val startMs = System.currentTimeMillis()
         val pageable = org.springframework.data.domain.PageRequest.of(0, batchSize)
         val page = fileAttachmentRepository.findImagesWithoutVariants(pageable)

@@ -20,6 +20,7 @@ import com.goldpet.domain.walk.entity.WalkPet
 import com.goldpet.domain.walk.repository.WalkRepository
 import com.goldpet.domain.walk.repository.WalkSpotRepository
 import com.goldpet.domain.walk.repository.BestWalkCoupleRepository
+import com.goldpet.domain.common.repository.FileAttachmentRepository
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.PrecisionModel
@@ -48,7 +49,8 @@ class WalkService(
     private val systemSettingService: SystemSettingService,
     private val userBlockRepository: UserBlockRepository,
     private val photoUrlSigner: PhotoUrlSigner,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
+    private val fileAttachmentRepository: FileAttachmentRepository
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
 
@@ -115,15 +117,30 @@ class WalkService(
         
         // Add spots
         val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
+        // Batch-fetch attachments once to avoid N+1 findByUrl inside the loop.
+        // Variant keys may be null if async variant-gen is still in flight;
+        // WalkSpotVariantSyncScheduler reconciles these on its 5-minute tick.
+        val spotUrls = request.spots.mapNotNull { it.imageUrl }.distinct()
+        val attachmentsByUrl: Map<String, com.goldpet.domain.common.entity.FileAttachment> =
+            if (spotUrls.isEmpty()) emptyMap()
+            else try {
+                fileAttachmentRepository.findAllByUrlIn(spotUrls).associateBy { it.url }
+            } catch (e: Exception) {
+                log.warn("findAllByUrlIn failed for {} urls: {}", spotUrls.size, e.message)
+                emptyMap()
+            }
         request.spots.forEach { spotDto ->
             val point = geometryFactory.createPoint(Coordinate(spotDto.longitude, spotDto.latitude))
+            val attachment = spotDto.imageUrl?.let { attachmentsByUrl[it] }
             walk.spots.add(com.goldpet.domain.walk.entity.WalkSpot(
                 walk = walk,
                 location = point,
                 type = com.goldpet.domain.walk.entity.WalkSpotType.valueOf(spotDto.type),
                 timestamp = spotDto.timestamp,
                 imageUrl = spotDto.imageUrl,
-                note = spotDto.note
+                note = spotDto.note,
+                imageKeyViewer = attachment?.viewerUrl,
+                imageKeyThumb = attachment?.thumbnailUrl
             ))
         }
 
@@ -174,19 +191,19 @@ class WalkService(
 
         applicationEventPublisher.publishEvent(WalkCompletedEvent(this, savedWalk.id, userId, savedWalk.followedCourseId))
 
-        return WalkResponse.from(savedWalk)
+        return WalkResponse.from(savedWalk, photoUrlSigner)
     }
 
     fun getWalk(walkId: Long, currentUserId: Long?): WalkResponse {
         val walk = walkRepository.findById(walkId).orElseThrow { NotFoundException("Walk not found") }
         val isOwner = currentUserId != null && walk.user.id == currentUserId
         if (isOwner) {
-            return WalkResponse.from(walk)
+            return WalkResponse.from(walk, photoUrlSigner)
         }
         if (!walk.isPublic) {
             throw ForbiddenException("This walk is private")
         }
-        return WalkResponse.publicFrom(walk)
+        return WalkResponse.publicFrom(walk, photoUrlSigner)
     }
 
     fun getPublicWalks(pageable: org.springframework.data.domain.Pageable, yearMonth: String? = null, userId: Long? = null, province: String? = null): org.springframework.data.domain.Page<WalkResponse> {
@@ -201,12 +218,12 @@ class WalkService(
         } else {
             walkRepository.findPublicWalks(province, pageable)
         }
-        return walks.map { WalkResponse.publicFrom(it) }
+        return walks.map { WalkResponse.publicFrom(it, photoUrlSigner) }
     }
 
     fun getWalksByUser(userId: Long): List<WalkResponse> {
         val walks = walkRepository.findByUserIdOrderByStartTimeDesc(userId)
-        return walks.map { WalkResponse.from(it) }
+        return walks.map { WalkResponse.from(it, photoUrlSigner) }
     }
 
     fun getWalksByUser(userId: Long, pageable: org.springframework.data.domain.Pageable, yearMonth: String? = null): org.springframework.data.domain.Page<WalkResponse> {
@@ -216,7 +233,7 @@ class WalkService(
         } else {
             walkRepository.findByUserIdOrderByStartTimeDesc(userId, pageable)
         }
-        return walks.map { WalkResponse.from(it) }
+        return walks.map { WalkResponse.from(it, photoUrlSigner) }
     }
 
     fun findWalksInArea(request: BoundingBoxRequest): List<WalkResponse> {
@@ -226,7 +243,7 @@ class WalkService(
             request.maxLat,
             request.maxLon
         )
-        return walks.map { WalkResponse.from(it) }
+        return walks.map { WalkResponse.from(it, photoUrlSigner) }
     }
 
     fun getWalkRanking(period: String, pageable: org.springframework.data.domain.Pageable, province: String? = null): List<WalkRankingResponse> {
@@ -374,6 +391,10 @@ class WalkService(
             spotId = spot.id,
             imageUrl = signed ?: rawKey,
             imageKey = rawKey,
+            imageUrlViewer = photoUrlSigner.signedViewerUrlOrNull(spot.imageKeyViewer),
+            imageUrlThumb = photoUrlSigner.signedThumbUrlOrNull(spot.imageKeyThumb),
+            imageKeyViewer = spot.imageKeyViewer,
+            imageKeyThumb = spot.imageKeyThumb,
             expiresAt = java.time.LocalDateTime.now().plusMinutes(PhotoUrlSigner.PRESIGN_TTL_MINUTES)
         )
     }
@@ -390,10 +411,16 @@ class WalkService(
             presignedServedCounter.increment()
             if (spot.hiddenFromPublic) hiddenPresignedServedCounter.increment()
         }
+        val viewerUrl = if (suppressUrl) null else photoUrlSigner.signedViewerUrlOrNull(spot.imageKeyViewer)
+        val thumbUrl = if (suppressUrl) null else photoUrlSigner.signedThumbUrlOrNull(spot.imageKeyThumb)
         return WalkPhotoResponse(
             id = spot.id,
             imageUrl = resolvedUrl,
             imageKey = rawKey,
+            imageUrlViewer = viewerUrl,
+            imageUrlThumb = thumbUrl,
+            imageKeyViewer = spot.imageKeyViewer,
+            imageKeyThumb = spot.imageKeyThumb,
             note = spot.note,
             walkDate = spot.walk.startTime,
             walkId = spot.walk.id,

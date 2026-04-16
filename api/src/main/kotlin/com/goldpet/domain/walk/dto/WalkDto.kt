@@ -1,6 +1,7 @@
 package com.goldpet.domain.walk.dto
 
 import com.goldpet.domain.walk.entity.Walk
+import com.goldpet.domain.walk.service.PhotoUrlSigner
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
@@ -41,6 +42,10 @@ data class WalkSpotDto(
     val timestamp: LocalDateTime,
     val imageUrl: String?,
     val imageKey: String? = null,
+    val imageUrlViewer: String? = null,
+    val imageUrlThumb: String? = null,
+    val imageKeyViewer: String? = null,
+    val imageKeyThumb: String? = null,
     val note: String?,
     val hiddenFromPublic: Boolean = false
 )
@@ -49,6 +54,10 @@ data class WalkPhotoResponse(
     val id: Long,
     val imageUrl: String?,
     val imageKey: String?,
+    val imageUrlViewer: String? = null,
+    val imageUrlThumb: String? = null,
+    val imageKeyViewer: String? = null,
+    val imageKeyThumb: String? = null,
     val note: String?,
     val walkDate: LocalDateTime,
     val walkId: Long,
@@ -62,6 +71,10 @@ data class PhotoMintResponse(
     val spotId: Long,
     val imageUrl: String?,
     val imageKey: String?,
+    val imageUrlViewer: String? = null,
+    val imageUrlThumb: String? = null,
+    val imageKeyViewer: String? = null,
+    val imageKeyThumb: String? = null,
     val expiresAt: LocalDateTime
 )
 
@@ -99,7 +112,7 @@ data class WalkResponse(
     val hasPath: Boolean = false,
 ) {
     companion object {
-        fun from(walk: Walk): WalkResponse {
+        fun from(walk: Walk, photoUrlSigner: PhotoUrlSigner? = null): WalkResponse {
             val pathCoordinates = walk.path.coordinates.map { listOf(it.y, it.x) } // Convert back to [latitude, longitude]
             return WalkResponse(
                 id = walk.id,
@@ -110,14 +123,20 @@ data class WalkResponse(
                 durationSeconds = walk.durationSeconds,
                 path = pathCoordinates,
                 spots = walk.spots.map { spot ->
+                    val rawKey = spot.imageUrl
+                    val signedOriginal = photoUrlSigner?.signedUrlOrNull(rawKey)
                     WalkSpotDto(
                         id = spot.id,
                         latitude = spot.location.y,
                         longitude = spot.location.x,
                         type = spot.type.name,
                         timestamp = spot.timestamp,
-                        imageUrl = spot.imageUrl,
-                        imageKey = spot.imageUrl,
+                        imageUrl = signedOriginal ?: rawKey,
+                        imageKey = rawKey,
+                        imageUrlViewer = photoUrlSigner?.signedViewerUrlOrNull(spot.imageKeyViewer),
+                        imageUrlThumb = photoUrlSigner?.signedThumbUrlOrNull(spot.imageKeyThumb),
+                        imageKeyViewer = spot.imageKeyViewer,
+                        imageKeyThumb = spot.imageKeyThumb,
                         note = spot.note,
                         hiddenFromPublic = spot.hiddenFromPublic
                     )
@@ -140,7 +159,7 @@ data class WalkResponse(
             )
         }
 
-        fun publicFrom(walk: Walk): WalkResponse {
+        fun publicFrom(walk: Walk, photoUrlSigner: PhotoUrlSigner? = null): WalkResponse {
             val pathCoordinates = walk.path.coordinates.map { listOf(it.y, it.x) }
             return WalkResponse(
                 id = walk.id,
@@ -153,14 +172,20 @@ data class WalkResponse(
                 spots = walk.spots
                     .filter { !it.hiddenFromPublic }
                     .map { spot ->
+                        val rawKey = spot.imageUrl
+                        val signedOriginal = photoUrlSigner?.signedUrlOrNull(rawKey)
                         WalkSpotDto(
                             id = spot.id,
                             latitude = spot.location.y,
                             longitude = spot.location.x,
                             type = spot.type.name,
                             timestamp = spot.timestamp,
-                            imageUrl = spot.imageUrl,
-                            imageKey = spot.imageUrl,
+                            imageUrl = signedOriginal ?: rawKey,
+                            imageKey = rawKey,
+                            imageUrlViewer = photoUrlSigner?.signedViewerUrlOrNull(spot.imageKeyViewer),
+                            imageUrlThumb = photoUrlSigner?.signedThumbUrlOrNull(spot.imageKeyThumb),
+                            imageKeyViewer = spot.imageKeyViewer,
+                            imageKeyThumb = spot.imageKeyThumb,
                             note = spot.note,
                             hiddenFromPublic = false
                         )
