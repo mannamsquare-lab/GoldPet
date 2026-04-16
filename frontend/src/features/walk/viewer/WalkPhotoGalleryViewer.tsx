@@ -2,16 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Keyboard, Navigation, Virtual, Zoom } from 'swiper/modules';
+import { Keyboard, Navigation, Thumbs, Virtual, Zoom } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/zoom';
 import 'swiper/css/virtual';
+import 'swiper/css/thumbs';
 import { walkService } from '../../../services/walkService';
 import type { PageResponse, WalkPhotoItem } from '../../../services/walkService';
 import { useToast } from '../../../contexts/ToastContext';
-import { getCachedPhotoUrl, resolvePhotoUrl } from '../utils/photoUrlCache';
+import { getCachedPhotoUrl, resolvePhotoUrl, revokeOutsideWindow } from '../utils/photoUrlCache';
 import {
   mapArrayRemoveItemById,
   mapArrayUpdateItemById,
@@ -32,6 +33,7 @@ type Props = {
 };
 
 const VIRTUAL_THRESHOLD = 30;
+const THUMBS_THRESHOLD = 50;
 
 function formatDate(isoStr: string | undefined | null): string {
   if (!isoStr) return '';
@@ -94,6 +96,44 @@ function WalkPhotoViewerSlide({ photo }: SlideProps) {
   );
 }
 
+function WalkPhotoThumbSlide({ photo }: SlideProps) {
+  const initialUrl = photo.imageUrl ? getCachedPhotoUrl(photo.imageUrl) ?? null : null;
+  const [resolved, setResolved] = useState<string | null>(initialUrl);
+
+  useEffect(() => {
+    if (!photo.imageUrl) {
+      setResolved(null);
+      return;
+    }
+    const cached = getCachedPhotoUrl(photo.imageUrl);
+    if (cached) {
+      setResolved(cached);
+      return;
+    }
+    let cancelled = false;
+    resolvePhotoUrl(photo.imageUrl)
+      .then((url) => {
+        if (!cancelled) setResolved(url);
+      })
+      .catch(() => {
+        if (!cancelled) setResolved(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [photo.imageUrl]);
+
+  return (
+    <div className="wpv_thumb_cell">
+      {resolved ? (
+        <img src={resolved} alt="" className="wpv_thumb_img" draggable={false} />
+      ) : (
+        <div className="wpv_thumb_placeholder" />
+      )}
+    </div>
+  );
+}
+
 export function WalkPhotoGalleryViewer({
   variant,
   mode,
@@ -151,10 +191,38 @@ export function WalkPhotoGalleryViewer({
   }, [menuOpen]);
 
   const useVirtual = photos.length > VIRTUAL_THRESHOLD;
+  const showThumbs = photos.length > THUMBS_THRESHOLD;
+  const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const modules = useMemo(() => {
-    const base = [Navigation, Keyboard, Zoom];
-    return useVirtual ? [...base, Virtual] : base;
-  }, [useVirtual]);
+    return [
+      Navigation,
+      Keyboard,
+      Zoom,
+      ...(useVirtual ? [Virtual] : []),
+      ...(showThumbs ? [Thumbs] : []),
+    ];
+  }, [useVirtual, showThumbs]);
+
+  const photosRef = useRef(photos);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+
+  useEffect(() => {
+    return () => {
+      const list = photosRef.current;
+      if (list.length === 0) return;
+      const activeIdx = swiperRef.current?.activeIndex ?? 0;
+      const keep = new Set<string>();
+      const start = Math.max(0, activeIdx - 5);
+      const end = Math.min(list.length - 1, activeIdx + 5);
+      for (let i = start; i <= end; i++) {
+        const key = list[i]?.imageUrl;
+        if (key && !key.startsWith('http')) keep.add(key);
+      }
+      revokeOutsideWindow(keep);
+    };
+  }, []);
 
   const handleShare = useCallback(async () => {
     if (!currentPhoto?.imageUrl) return;
@@ -270,6 +338,7 @@ export function WalkPhotoGalleryViewer({
   }, [mode, currentPhoto, applyCacheHiddenPatch, queryClient, showToast]);
 
   if (empty && !currentPhoto) {
+    const listPath = mode === 'owned' ? '/walk-photos' : '/walk-shared-photos';
     return (
       <div className="wpv_root">
         <div className="wpv_top_meta">
@@ -282,13 +351,49 @@ export function WalkPhotoGalleryViewer({
           </div>
         </div>
         <div className="wpv_empty" role="alert">
-          <p>사진을 찾을 수 없습니다</p>
-          <button
-            type="button"
-            onClick={() => navigate(mode === 'owned' ? '/walk-photos' : '/walk-shared-photos')}
+          <svg
+            className="wpv_empty_icon"
+            viewBox="0 0 64 64"
+            fill="none"
+            aria-hidden="true"
           >
-            목록으로 돌아가기
-          </button>
+            <rect x="8" y="14" width="48" height="36" rx="4" stroke="currentColor" strokeWidth="2.5" />
+            <circle cx="22" cy="28" r="4" stroke="currentColor" strokeWidth="2.5" />
+            <path
+              d="M10 44L24 32L36 42L46 34L54 42"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M12 12L52 52"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+          </svg>
+          <p className="wpv_empty_title">사진을 찾을 수 없어요</p>
+          <p className="wpv_empty_desc">
+            삭제되었거나 비공개로 전환된 사진일 수 있어요.
+            {'\n'}네트워크 상태를 확인한 뒤 다시 시도해 주세요.
+          </p>
+          <div className="wpv_empty_actions">
+            <button
+              type="button"
+              className="wpv_empty_primary"
+              onClick={() => navigate(listPath)}
+            >
+              목록으로 돌아가기
+            </button>
+            <button
+              type="button"
+              className="wpv_empty_secondary"
+              onClick={handleClose}
+            >
+              닫기
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -422,6 +527,7 @@ export function WalkPhotoGalleryViewer({
         zoom={{ maxRatio: 3, toggle: true }}
         keyboard={{ enabled: true, onlyInViewport: true }}
         virtual={useVirtual ? { enabled: true } : false}
+        thumbs={showThumbs && thumbsSwiper ? { swiper: thumbsSwiper } : undefined}
         allowTouchMove={allowSwipe}
         onSwiper={(s) => {
           swiperRef.current = s;
@@ -458,6 +564,25 @@ export function WalkPhotoGalleryViewer({
           </SwiperSlide>
         ))}
       </Swiper>
+
+      {/* Thumbs strip (photos.length > 50) */}
+      {showThumbs && (
+        <Swiper
+          className="wpv_thumbs_swiper"
+          modules={[Thumbs]}
+          onSwiper={setThumbsSwiper}
+          slidesPerView="auto"
+          spaceBetween={4}
+          watchSlidesProgress
+          freeMode
+        >
+          {displayPhotos.map((photo) => (
+            <SwiperSlide key={`thumb-${photo.walkId}-${photo.id}`} className="wpv_thumb_slide">
+              <WalkPhotoThumbSlide photo={photo} />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      )}
 
       {/* Bottom panel */}
       {currentPhoto && (
