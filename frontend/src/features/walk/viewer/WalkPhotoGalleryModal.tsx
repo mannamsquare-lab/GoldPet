@@ -116,6 +116,8 @@ export function WalkPhotoGalleryModal({
           fallbackHref={mode === 'owned' ? '/walk-photos' : '/walk-shared-photos'}
         >
           <WalkPhotoGalleryViewer
+            // 다른 사진 클릭 시 Viewer 상태(hasHydratedRef, activeIndex 등) 완전 초기화
+            key={`${mode}-${walkId}-${initialSpotId}`}
             variant="modal"
             mode={mode}
             walkId={walkId}

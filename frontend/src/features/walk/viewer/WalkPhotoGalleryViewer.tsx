@@ -169,11 +169,24 @@ export function WalkPhotoGalleryViewer({
   });
 
   const [activeIndex, setActiveIndex] = useState(feedInitialIndex);
+  const hasHydratedRef = useRef(false);
 
-  // feed hydration으로 initialIndex 확정되면 activeIndex 동기화 (Swiper는 key remount로 initialSlide 재설정됨)
+  // 1회 hydration: photos 배열이 [photoFromState] → 전체 feed로 바뀌는 시점에
+  // Swiper를 초기 클릭 사진 위치로 이동 (이후 페이지 prefetch로 photos 증가해도 재이동 X)
   useEffect(() => {
+    if (hasHydratedRef.current) return;
+    if (photos.length <= 1) return;
+    if (feedInitialIndex <= 0) {
+      // 0번 슬라이드라면 이동 불필요, 다만 hydrated로 고정하여 이후 재이동 방지
+      hasHydratedRef.current = true;
+      return;
+    }
+    hasHydratedRef.current = true;
+    try {
+      swiperRef.current?.slideTo(feedInitialIndex, 0, false);
+    } catch { /* ignore */ }
     setActiveIndex(feedInitialIndex);
-  }, [feedInitialIndex]);
+  }, [photos.length, feedInitialIndex]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState<string>(initialPhoto?.note ?? '');
   const [showReportModal, setShowReportModal] = useState(false);
@@ -563,8 +576,6 @@ export function WalkPhotoGalleryViewer({
 
       {/* Swiper */}
       <Swiper
-        // key: photos 배열 크기 + initialIndex가 바뀌면 재생성해 initialSlide를 재적용
-        key={`wpv-${walkId}-${initialSpotId}-${displayPhotos.length}-${feedInitialIndex}`}
         initialSlide={feedInitialIndex}
         className="wpv_swiper"
         modules={modules}
