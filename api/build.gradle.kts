@@ -56,10 +56,10 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("org.springframework.security:spring-security-test")
 
-    // TestContainers for integration tests
-    testImplementation("org.testcontainers:testcontainers:1.19.3")
-    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
-    testImplementation("org.testcontainers:postgresql:1.19.3")
+    // TestContainers 1.20+ required for Java 21 (1.19.x hits sun.misc.Unsafe restriction)
+    testImplementation("org.testcontainers:testcontainers:1.20.4")
+    testImplementation("org.testcontainers:junit-jupiter:1.20.4")
+    testImplementation("org.testcontainers:postgresql:1.20.4")
 }
 
 tasks.withType<KotlinCompile> {
@@ -71,4 +71,23 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // TestContainers가 macOS Docker Desktop의 유저 소켓을 찾지 못해
+    // "Could not find a valid Docker environment"로 실패하는 것을 방지.
+    // 환경변수 DOCKER_HOST와 시스템 프로퍼티 docker.host 양쪽에 주입한다 —
+    // docker-java의 EnvironmentAndSystemPropertyClientProviderStrategy는
+    // 둘 중 하나라도 있으면 해당 소켓을 사용한다.
+    fun resolveDockerHost(): String {
+        System.getenv("DOCKER_HOST")?.let { return it }
+        val userSocket = file("${System.getProperty("user.home")}/.docker/run/docker.sock")
+        if (userSocket.exists()) return "unix://${userSocket.absolutePath}"
+        val systemSocket = file("/var/run/docker.sock")
+        if (systemSocket.exists()) return "unix://${systemSocket.absolutePath}"
+        return "unix:///var/run/docker.sock"
+    }
+    val dockerHost = resolveDockerHost()
+    environment("DOCKER_HOST", dockerHost)
+    systemProperty("docker.host", dockerHost)
+    systemProperty("testcontainers.docker.host", dockerHost)
+    // 헬스체크 컨테이너(socat) 스킵 — macOS Docker Desktop에서 전파 지연으로 행 걸리는 것 방지
+    systemProperty("testcontainers.checks.disable", "true")
 }

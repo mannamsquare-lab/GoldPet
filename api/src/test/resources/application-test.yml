@@ -1,9 +1,6 @@
+# datasource는 IntegrationTestBase의 TestContainers + @DynamicPropertySource가 런타임에 주입한다.
+# 이 파일에서 jdbc URL을 하드코딩하면 실수로 원격 dev DB를 가리킬 위험이 있어 비워둔다.
 spring:
-  datasource:
-    url: jdbc:postgresql://101.250.201.36:5432/goldpet_db
-    username: goldpet
-    password: doF149zVzj2kGfKVvT6CQddd/F2Pn1xDJCrnDD2vPBU=
-    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: none

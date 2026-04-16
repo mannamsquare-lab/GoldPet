@@ -41,6 +41,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.net.URL
 import java.time.LocalDateTime
+import java.util.UUID
 
 /**
  * Integration tests for walk-photo presigned URL contract.
@@ -76,8 +77,11 @@ class WalkPhotoIntegrationTest : IntegrationTestBase() {
 
     private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
 
-    private val PHOTO_KEY  = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
-    private val HIDDEN_KEY = "b2c3d4e5-f6a7-8901-bcde-f01234567890.jpg"
+    // 각 테스트 인스턴스마다 새로운 UUID를 생성한다. 고정 UUID를 재사용하면
+    // 격리 결함 발생 시 동일 키가 실 DB에 반복 누적되고 MinIO에 존재하지 않는 키를
+    // 가리키는 고아 row가 실사용자 피드에 노출되는 문제가 있었다.
+    private val PHOTO_KEY  = "${UUID.randomUUID()}.jpg"
+    private val HIDDEN_KEY = "${UUID.randomUUID()}.jpg"
     private val FAKE_SIGNED_URL =
         "http://localhost:9100/goldpet-private/$PHOTO_KEY?X-Amz-Signature=testsig&X-Amz-Expires=1800"
 
