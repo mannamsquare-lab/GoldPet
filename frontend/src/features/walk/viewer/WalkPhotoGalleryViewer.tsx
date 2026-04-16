@@ -153,6 +153,31 @@ export function WalkPhotoGalleryViewer({
     return resolvedInitial;
   }, [photos, activeIndex, resolvedInitial]);
 
+  // Prefetch ±2 (window 밖 1칸) 슬라이드의 viewer URL로 HTTP 캐시 예열.
+  // `<img>` 로 DOM에 마운트하지 않고 `new Image()` 로 네이티브 디코더 바이패스 →
+  // WKWebView가 response만 저장. 실제 swipe 시 `<img src>` 마운트 → 즉시 hit.
+  // WINDOW_HALF=1 이라 현재 마운트된 ±1 너머의 ±2만 예열 대상.
+  useEffect(() => {
+    if (photos.length <= 1) return;
+    const prefetchIndices = [activeIndex + 2, activeIndex - 2];
+    const imgs: HTMLImageElement[] = [];
+    for (const idx of prefetchIndices) {
+      if (idx < 0 || idx >= photos.length) continue;
+      const p = photos[idx];
+      const url = p.imageUrlViewer ?? p.imageUrl;
+      if (!url) continue;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.decoding = 'async';
+      img.src = url;
+      imgs.push(img);
+    }
+    return () => {
+      // href 해제로 GC를 돕되, WKWebView의 HTTP response cache는 src unset 해도 유지됨.
+      for (const img of imgs) img.src = '';
+    };
+  }, [activeIndex, photos]);
+
   useEffect(() => {
     setDraft(currentPhoto?.note ?? '');
   }, [currentPhoto?.id, currentPhoto?.walkId, currentPhoto?.note]);
