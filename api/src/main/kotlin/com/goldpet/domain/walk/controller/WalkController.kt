@@ -1,6 +1,7 @@
 package com.goldpet.domain.walk.controller
 
 import com.goldpet.domain.walk.dto.CreateWalkRequest
+import com.goldpet.domain.walk.dto.PhotoMintResponse
 import com.goldpet.domain.walk.dto.WalkPhotoResponse
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
@@ -124,6 +125,16 @@ class WalkController(
         if (userDetails == null) return ResponseEntity.status(401).build()
         val photos = walkService.getPublicPhotos(userDetails.id, pageable)
         return ResponseEntity.ok(photos)
+    }
+
+    @GetMapping("/photos/{spotId}/url")
+    fun mintPhotoUrl(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
+        @PathVariable spotId: Long
+    ): ResponseEntity<PhotoMintResponse> {
+        if (userDetails == null) return ResponseEntity.status(401).build()
+        val response = walkService.mintPhotoUrl(spotId, userDetails.id)
+        return ResponseEntity.ok(response)
     }
 
     @GetMapping("/ranking")

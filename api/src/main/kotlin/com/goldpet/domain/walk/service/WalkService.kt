@@ -8,6 +8,7 @@ import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
+import com.goldpet.domain.walk.dto.PhotoMintResponse
 import com.goldpet.domain.walk.dto.WalkPhotoResponse
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
@@ -304,6 +305,35 @@ class WalkService(
         val effectiveBlockedIds = if (blockedUserIds.isEmpty()) listOf(-1L) else blockedUserIds
         return walkSpotRepository.findPublicPhotoSpots(effectiveBlockedIds, pageable)
             .map { spot -> toWalkPhotoResponse(spot, suppressUrl = spot.hiddenFromPublic) }
+    }
+
+    // §3.7 Cold-path per-spot URL mint endpoint backing.
+    // Re-derives the same authorization predicate as WalkSpotRepository.findPublicPhotoSpots
+    // (public walk + not hidden + owner not blocked), plus an always-allowed owner path.
+    // TODO(rate-limit): wire a Redis-backed per-user token bucket (~30 req/min) once abstraction exists.
+    fun mintPhotoUrl(spotId: Long, userId: Long): PhotoMintResponse {
+        val spot = walkSpotRepository.findById(spotId)
+            .orElseThrow { NotFoundException("Spot not found: $spotId") }
+
+        val isOwner = spot.walk.user.id == userId
+        if (!isOwner) {
+            if (spot.hiddenFromPublic || !spot.walk.isPublic) {
+                throw ForbiddenException("Not authorized to view this photo")
+            }
+            val blockedUserIds = userBlockRepository.findBlockedUserIds(userId)
+            if (spot.walk.user.id in blockedUserIds) {
+                throw ForbiddenException("Not authorized to view this photo")
+            }
+        }
+
+        val rawKey = spot.imageUrl
+        val signed = photoUrlSigner.signedUrlOrNull(rawKey)
+        return PhotoMintResponse(
+            spotId = spot.id,
+            imageUrl = signed ?: rawKey,
+            imageKey = rawKey,
+            expiresAt = java.time.LocalDateTime.now().plusMinutes(PhotoUrlSigner.PRESIGN_TTL_MINUTES)
+        )
     }
 
     private fun toWalkPhotoResponse(

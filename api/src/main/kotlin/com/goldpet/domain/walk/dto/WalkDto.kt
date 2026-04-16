@@ -57,6 +57,13 @@ data class WalkPhotoResponse(
     val hiddenFromPublic: Boolean = false
 )
 
+data class PhotoMintResponse(
+    val spotId: Long,
+    val imageUrl: String?,
+    val imageKey: String?,
+    val expiresAt: LocalDateTime
+)
+
 data class UpdateSpotNoteRequest(
     val note: String?
 )

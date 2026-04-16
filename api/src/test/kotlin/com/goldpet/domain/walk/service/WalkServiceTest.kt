@@ -487,4 +487,135 @@ class WalkServiceTest {
         assertEquals(signedUrl, photo.imageUrl)
         assertEquals(key, photo.imageKey)
     }
+
+    // === §3.7 mint endpoint ===
+
+    private fun buildPublicPhotoSpot(
+        imageKey: String,
+        owner: User,
+        hiddenFromPublic: Boolean,
+        isPublic: Boolean = true
+    ): WalkSpot {
+        val walk = Walk(
+            id = 10L,
+            user = owner,
+            startTime = LocalDateTime.now().minusHours(1),
+            endTime = LocalDateTime.now(),
+            distanceKm = 1.0,
+            durationSeconds = 600,
+            path = geometryFactory.createLineString(arrayOf(
+                Coordinate(126.9780, 37.5665),
+                Coordinate(126.9785, 37.5670)
+            )),
+            caloriesBurned = null,
+            notes = null,
+            isPublic = isPublic
+        )
+        return WalkSpot(
+            id = 77L,
+            walk = walk,
+            location = geometryFactory.createPoint(Coordinate(126.9781, 37.5666)),
+            type = WalkSpotType.PHOTO,
+            timestamp = LocalDateTime.now(),
+            imageUrl = imageKey,
+            note = null,
+            hiddenFromPublic = hiddenFromPublic
+        )
+    }
+
+    @Test
+    fun `mintPhotoUrl returns signed URL and imageKey for owner`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val signedUrl = "https://minio.example.com/goldpet-private/$key?X-Amz-Signature=abc"
+        val spot = buildPublicPhotoSpot(key, owner = testUser, hiddenFromPublic = false)
+
+        whenever(walkSpotRepository.findById(77L)).thenReturn(Optional.of(spot))
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(signedUrl)
+
+        val response = walkService.mintPhotoUrl(77L, testUser.id)
+
+        assertEquals(77L, response.spotId)
+        assertEquals(signedUrl, response.imageUrl)
+        assertEquals(key, response.imageKey)
+        assertTrue(response.expiresAt.isAfter(LocalDateTime.now().plusMinutes(25)))
+    }
+
+    @Test
+    fun `mintPhotoUrl falls back to raw key when signer returns null (flag off)`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val spot = buildPublicPhotoSpot(key, owner = testUser, hiddenFromPublic = false)
+
+        whenever(walkSpotRepository.findById(77L)).thenReturn(Optional.of(spot))
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(null)
+
+        val response = walkService.mintPhotoUrl(77L, testUser.id)
+
+        assertEquals(key, response.imageUrl, "flag-off path returns raw key for backward compat")
+        assertEquals(key, response.imageKey)
+    }
+
+    @Test
+    fun `mintPhotoUrl allows non-owner viewer on public, not-hidden photo`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val signedUrl = "https://minio.example.com/goldpet-private/$key?X-Amz-Signature=xyz"
+        val owner = createTestUser(1L, "owner", "소유자")
+        val viewer = createTestUser(2L, "viewer", "뷰어")
+        val spot = buildPublicPhotoSpot(key, owner = owner, hiddenFromPublic = false)
+
+        whenever(walkSpotRepository.findById(77L)).thenReturn(Optional.of(spot))
+        whenever(userBlockRepository.findBlockedUserIds(viewer.id)).thenReturn(emptyList())
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(signedUrl)
+
+        val response = walkService.mintPhotoUrl(77L, viewer.id)
+
+        assertEquals(signedUrl, response.imageUrl)
+        assertEquals(key, response.imageKey)
+    }
+
+    @Test
+    fun `mintPhotoUrl throws ForbiddenException when non-owner requests hidden photo`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val owner = createTestUser(1L, "owner", "소유자")
+        val viewer = createTestUser(2L, "viewer", "뷰어")
+        val spot = buildPublicPhotoSpot(key, owner = owner, hiddenFromPublic = true)
+
+        whenever(walkSpotRepository.findById(77L)).thenReturn(Optional.of(spot))
+
+        assertThrows<ForbiddenException> { walkService.mintPhotoUrl(77L, viewer.id) }
+        verify(photoUrlSigner, never()).signedUrlOrNull(any())
+    }
+
+    @Test
+    fun `mintPhotoUrl throws ForbiddenException when non-owner requests private walk`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val owner = createTestUser(1L, "owner", "소유자")
+        val viewer = createTestUser(2L, "viewer", "뷰어")
+        val spot = buildPublicPhotoSpot(key, owner = owner, hiddenFromPublic = false, isPublic = false)
+
+        whenever(walkSpotRepository.findById(77L)).thenReturn(Optional.of(spot))
+
+        assertThrows<ForbiddenException> { walkService.mintPhotoUrl(77L, viewer.id) }
+        verify(photoUrlSigner, never()).signedUrlOrNull(any())
+    }
+
+    @Test
+    fun `mintPhotoUrl throws ForbiddenException when viewer is blocked by owner`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val owner = createTestUser(1L, "owner", "소유자")
+        val viewer = createTestUser(2L, "viewer", "뷰어")
+        val spot = buildPublicPhotoSpot(key, owner = owner, hiddenFromPublic = false)
+
+        whenever(walkSpotRepository.findById(77L)).thenReturn(Optional.of(spot))
+        whenever(userBlockRepository.findBlockedUserIds(viewer.id)).thenReturn(listOf(owner.id))
+
+        assertThrows<ForbiddenException> { walkService.mintPhotoUrl(77L, viewer.id) }
+        verify(photoUrlSigner, never()).signedUrlOrNull(any())
+    }
+
+    @Test
+    fun `mintPhotoUrl throws NotFoundException for non-existent spot`() {
+        whenever(walkSpotRepository.findById(999L)).thenReturn(Optional.empty())
+
+        assertThrows<NotFoundException> { walkService.mintPhotoUrl(999L, 1L) }
+    }
 }
