@@ -12,7 +12,7 @@ echo "🚀 Deploying GoldPet Frontend to dev server..."
 # 빌드
 cd "$(dirname "$0")/../../frontend"
 npm ci
-npm run build -- --mode dev
+npm run build:dev
 
 # 백업
 if [ -d "$DEPLOY_PATH/dist" ]; then
