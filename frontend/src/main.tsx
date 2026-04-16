@@ -12,6 +12,19 @@ import { installGlobalErrorReporter } from './lib/clientErrorReporter';
 
 installGlobalErrorReporter();
 
+// 새 배포 후 기존 WebView 세션이 가진 구버전 chunk 해시를 참조하다가
+// Vite의 동적 import가 404로 실패할 때 자동으로 최신 index.html 재요청 → 새 chunk 로드.
+// 무한 루프 방지를 위해 최근 5초 안에 한 번만 reload 허용.
+window.addEventListener('vite:preloadError', () => {
+  const RELOAD_KEY = '__wpv_preload_reload_at';
+  try {
+    const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? '0');
+    if (Date.now() - last < 5000) return;
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+  } catch { /* ignore */ }
+  window.location.reload();
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
