@@ -631,7 +631,9 @@ export function WalkPhotoGalleryViewer({
               {inWindow ? (
                 <WalkPhotoViewerSlide photo={photo} active={Math.abs(idx - activeIndex) <= 2} />
               ) : (
-                <div className="swiper-zoom-container"><div className="wpv_slide_placeholder" /></div>
+                // 윈도우 밖: zoom-container 미포함. Swiper zoom 모듈이 iOS에서
+                // 많은 슬라이드를 순회할 때 발생하는 크래시 완화.
+                <div className="wpv_slide_placeholder" />
               )}
             </SwiperSlide>
           );
