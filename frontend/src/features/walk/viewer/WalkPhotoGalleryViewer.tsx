@@ -52,13 +52,15 @@ function buildPath(mode: 'owned' | 'shared', walkId: number, spotId: number): st
 
 type SlideProps = {
   photo: WalkPhotoItem;
+  active?: boolean;  // 활성 ±N 윈도우 안에 있을 때만 true — 그 외는 blob 리졸브 skip하여 iOS WKWebView 메모리 보호
 };
 
-function WalkPhotoViewerSlide({ photo }: SlideProps) {
+function WalkPhotoViewerSlide({ photo, active = true }: SlideProps) {
   const initialUrl = photo.imageUrl ? getCachedPhotoUrl(photo.imageUrl) ?? null : null;
   const [resolved, setResolved] = useState<string | null>(initialUrl);
 
   useEffect(() => {
+    if (!active) return;
     if (!photo.imageUrl) {
       setResolved(null);
       return;
@@ -79,7 +81,7 @@ function WalkPhotoViewerSlide({ photo }: SlideProps) {
     return () => {
       cancelled = true;
     };
-  }, [photo.imageUrl]);
+  }, [photo.imageUrl, active]);
 
   return (
     <div className="swiper-zoom-container">
@@ -620,9 +622,9 @@ export function WalkPhotoGalleryViewer({
           }
         }}
       >
-        {displayPhotos.map((photo) => (
+        {displayPhotos.map((photo, idx) => (
           <SwiperSlide key={`${photo.walkId}-${photo.id}`}>
-            <WalkPhotoViewerSlide photo={photo} />
+            <WalkPhotoViewerSlide photo={photo} active={Math.abs(idx - activeIndex) <= 2} />
           </SwiperSlide>
         ))}
       </Swiper>
