@@ -174,3 +174,8 @@ scripts/
 /package.json
 /package-lock.json
 refer/
+
+# Local env (per-machine, not checked in)
+frontend/.env.local
+.env.local
+.env.*.local
