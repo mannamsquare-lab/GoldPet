@@ -155,6 +155,7 @@ export function WalkPhotoGalleryViewer({
   const {
     initialPhoto: resolvedInitial,
     photos,
+    initialIndex: feedInitialIndex,
     allowSwipe,
     empty,
     loading,
@@ -165,10 +166,14 @@ export function WalkPhotoGalleryViewer({
     spotId: initialSpotId,
     mode,
     photoFromState: initialPhoto ?? null,
-    swiperRef,
   });
 
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(feedInitialIndex);
+
+  // feed hydration으로 initialIndex 확정되면 activeIndex 동기화 (Swiper는 key remount로 initialSlide 재설정됨)
+  useEffect(() => {
+    setActiveIndex(feedInitialIndex);
+  }, [feedInitialIndex]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState<string>(initialPhoto?.note ?? '');
   const [showReportModal, setShowReportModal] = useState(false);
@@ -558,6 +563,9 @@ export function WalkPhotoGalleryViewer({
 
       {/* Swiper */}
       <Swiper
+        // key: photos 배열 크기 + initialIndex가 바뀌면 재생성해 initialSlide를 재적용
+        key={`wpv-${walkId}-${initialSpotId}-${displayPhotos.length}-${feedInitialIndex}`}
+        initialSlide={feedInitialIndex}
         className="wpv_swiper"
         modules={modules}
         slidesPerView={1}

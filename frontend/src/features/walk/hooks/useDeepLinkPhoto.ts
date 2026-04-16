@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import type { Swiper as SwiperType } from 'swiper';
 import { walkService } from '../../../services/walkService';
 import type { WalkPhotoItem, WalkSession, WalkSpot } from '../../../services/walkService';
 import { useWalkPhotoFeed, type WalkPhotoFeedMode } from './useWalkPhotoFeed';
@@ -9,13 +8,13 @@ type UseDeepLinkPhotoParams = {
   spotId: number;
   mode: WalkPhotoFeedMode;
   photoFromState?: WalkPhotoItem | null;
-  swiperRef: React.MutableRefObject<SwiperType | null>;
   deepLinkTimeoutMs?: number;
 };
 
 type UseDeepLinkPhotoResult = {
   initialPhoto: WalkPhotoItem | null;
   photos: WalkPhotoItem[];
+  initialIndex: number;
   allowSwipe: boolean;
   empty: boolean;
   loading: boolean;
@@ -53,7 +52,6 @@ export function useDeepLinkPhoto({
   spotId,
   mode,
   photoFromState,
-  swiperRef,
   deepLinkTimeoutMs,
 }: UseDeepLinkPhotoParams): UseDeepLinkPhotoResult {
   const [initialPhoto, setInitialPhoto] = useState<WalkPhotoItem | null>(photoFromState ?? null);
@@ -114,6 +112,8 @@ export function useDeepLinkPhoto({
   }, [photosFromFeed.length, rqHasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // trackB — 캐시 hydration (R2 race guard)
+  // 주의: Swiper에게 slideTo를 직접 호출하지 않음. Swiper는 Viewer에서 initialSlide={initialIndex} + key remount로 위치 지정.
+  // 여기서는 photos state만 업데이트하고, Viewer가 올바른 initialSlide로 Swiper를 재생성.
   useLayoutEffect(() => {
     if (photosFromFeed.length === 0) return;
     const idx = photosFromFeed.findIndex(
@@ -131,14 +131,18 @@ export function useDeepLinkPhoto({
       return;
     }
 
-    // 1) Virtual cache invalidate (동기)
-    swiperRef.current?.virtual?.update(true);
-    // 2) Jump to target index (no animation, 동기)
-    swiperRef.current?.slideTo(idx, 0, false);
-    // 3) photos 교체 (레퍼런스 동일하면 skip — 무한 루프 방지) + 잠금 해제
     setPhotos((prev) => (prev === photosFromFeed ? prev : photosFromFeed));
     setAllowSwipe((prev) => (prev ? prev : true));
-  }, [photosFromFeed, walkId, spotId, rqHasNextPage, isFetchingNextPage, fetchNextPage, swiperRef]);
+  }, [photosFromFeed, walkId, spotId, rqHasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // photos 배열 안에서 현재 spot의 위치 (Viewer가 Swiper initialSlide로 사용)
+  const initialIndex = (() => {
+    if (photos.length === 0) return 0;
+    const idx = photos.findIndex(
+      (p) => p.id === Number(spotId) && p.walkId === Number(walkId)
+    );
+    return idx >= 0 ? idx : 0;
+  })();
 
   // Timeout guard — trackA도 없고 empty 아니면 타임아웃 후 empty 처리
   useEffect(() => {
@@ -154,6 +158,7 @@ export function useDeepLinkPhoto({
   return {
     initialPhoto,
     photos,
+    initialIndex,
     allowSwipe,
     empty,
     loading,

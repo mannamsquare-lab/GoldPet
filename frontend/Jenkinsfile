@@ -87,9 +87,17 @@ pipeline {
         }
         always {
             // 오래된 백업 정리 (최근 3개만 유지)
+            // 소유자가 다른 백업(수동 배포 잔존물)도 안전하게 삭제하기 위해 write 권한 체크
             sh """
                 cd ${DEPLOY_PATH}
-                ls -td dist.backup.* 2>/dev/null | tail -n +4 | xargs rm -rf || true
+                ls -td dist.backup.* 2>/dev/null | tail -n +4 | while read d; do
+                    if [ -w "\$d" ]; then
+                        rm -rf "\$d"
+                    else
+                        echo "Skipping \$d (not writable by current user)"
+                    fi
+                done
+                true
             """
         }
     }
