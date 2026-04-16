@@ -20,6 +20,7 @@ export function usePetSelector(): UsePetSelectorResult {
 
   useEffect(() => {
     if (selectedPet == null && pets.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedPet(pets[0]);
     }
   }, [pets, selectedPet]);

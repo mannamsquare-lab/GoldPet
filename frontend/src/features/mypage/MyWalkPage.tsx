@@ -27,8 +27,9 @@ function PhotoCollection() {
     useEffect(() => {
         const seedFromCache: Record<string, string> = {};
         photos.forEach((photo) => {
-            if (!photo.imageUrl) return;
-            const key = photo.imageUrl;
+            const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
+            if (!thumbUrl) return;
+            const key = thumbUrl;
             if (resolved[key] !== undefined) return;
             const cached = getCachedPhotoUrl(key);
             if (cached) {
@@ -40,6 +41,7 @@ function PhotoCollection() {
                 .catch(() => setResolved((prev) => ({ ...prev, [key]: '' })));
         });
         if (Object.keys(seedFromCache).length > 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setResolved((prev) => ({ ...seedFromCache, ...prev }));
         }
     }, [photos]);
@@ -66,7 +68,8 @@ function PhotoCollection() {
                 {rows.map((row, rowIdx) => (
                     <div key={rowIdx} className="mywalk_photo_row">
                         {row.map((photo) => {
-                            const src = photo.imageUrl ? resolved[photo.imageUrl] : '';
+                            const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
+                            const src = thumbUrl ? resolved[thumbUrl] : '';
                             return (
                                 <div
                                     key={photo.id}

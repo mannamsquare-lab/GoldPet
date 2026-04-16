@@ -33,12 +33,12 @@ type Props = {
   onRequestPath?: (path: string) => void;
 };
 
-const WINDOW_HALF = 3;  // 활성 슬라이드 좌우 N장을 DOM에 유지 (전체 2N+1장)
+const WINDOW_HALF = 1;  // 활성 슬라이드 좌우 N장을 DOM에 유지 (전체 2N+1장 = 3장)
 
 // 만료된 presigned URL 감지 시 React Query 무효화를 분당 1회로 제한하는 모듈-스코프 타임스탬프.
 // 컴포넌트 마운트/언마운트와 무관하게 전역으로 디바운스한다.
 let lastPresignedInvalidateMs = 0;
-const PRESIGNED_INVALIDATE_DEBOUNCE_MS = 60_000;
+const PRESIGNED_INVALIDATE_DEBOUNCE_MS = 10_000;
 
 function formatDate(isoStr: string | undefined | null): string {
   if (!isoStr) return '';
@@ -70,7 +70,7 @@ function WalkPhotoViewerSlide({ photo, active = true, onPresignedUrlExpired }: S
   return (
     <div className="swiper-zoom-container">
       <img
-        src={photo.imageUrl}
+        src={photo.imageUrlViewer ?? photo.imageUrl}
         alt=""
         className="wpv_slide_img"
         crossOrigin="anonymous"
@@ -188,6 +188,7 @@ export function WalkPhotoGalleryViewer({
 
   const handleShare = useCallback(async () => {
     if (!currentPhoto?.imageUrl) return;
+    // share/compose always uses full-resolution original
     await share({
       kind: 'walk-photo',
       photoUrl: currentPhoto.imageUrl,
@@ -568,7 +569,7 @@ export function WalkPhotoGalleryViewer({
               {inWindow ? (
                 <WalkPhotoViewerSlide
                   photo={photo}
-                  active={Math.abs(idx - activeIndex) <= 2}
+                  active={true}
                   onPresignedUrlExpired={handlePresignedUrlExpired}
                 />
               ) : (

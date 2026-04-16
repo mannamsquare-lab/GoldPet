@@ -46,8 +46,9 @@ export default function WalkPhotoGalleryPage() {
   useEffect(() => {
     const seedFromCache: Record<string, string> = {};
     photos.forEach((photo: WalkPhotoItem) => {
-      if (!photo.imageUrl) return;
-      const key = photo.imageUrl;
+      const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
+      if (!thumbUrl) return;
+      const key = thumbUrl;
       if (resolvedUrls[key] !== undefined) return;
       const cached = getCachedPhotoUrl(key);
       if (cached) {
@@ -59,6 +60,7 @@ export default function WalkPhotoGalleryPage() {
         .catch(() => setResolvedUrls(prev => ({ ...prev, [key]: '' })));
     });
     if (Object.keys(seedFromCache).length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResolvedUrls(prev => ({ ...seedFromCache, ...prev }));
     }
   }, [photos]);
@@ -151,7 +153,8 @@ export default function WalkPhotoGalleryPage() {
             </div>
             <div className="wgp_photo_grid">
               {group.items.map((photo: WalkPhotoItem) => {
-                const url = photo.imageUrl ? resolvedUrls[photo.imageUrl] : undefined;
+                const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
+                const url = thumbUrl ? resolvedUrls[thumbUrl] : undefined;
                 return (
                   <div
                     key={`${photo.walkId}-${photo.id}`}

@@ -78,6 +78,7 @@ export function useDeepLinkPhoto({
   // trackA — 단건 즉시 확보 (이미 photoFromState 있으면 skip)
   useEffect(() => {
     if (initialPhoto || !walkId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (initialPhoto) setTrackALoaded(true);
       return;
     }
@@ -133,6 +134,7 @@ export function useDeepLinkPhoto({
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPhotos((prev) => (prev === photosFromFeed ? prev : photosFromFeed));
     setAllowSwipe((prev) => (prev ? prev : true));
   }, [photosFromFeed, walkId, spotId, rqHasNextPage, isFetchingNextPage, fetchNextPage]);

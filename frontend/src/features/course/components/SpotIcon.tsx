@@ -11,6 +11,7 @@ import spotWaste from '../assets/spot-waste.png';
 import spotPhoto from '../assets/spot-photo.png';
 import spotMore from '../assets/spot-more.png';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const SPOT_ICON_MAP: Record<CourseSpotType, string> = {
   CONVENIENCE_STORE: spotStore,
   WATER_FOUNTAIN: spotWater,
@@ -24,6 +25,7 @@ export const SPOT_ICON_MAP: Record<CourseSpotType, string> = {
   OTHER: spotMore,
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function spotIconUrl(type: CourseSpotType | string): string {
   return SPOT_ICON_MAP[type as CourseSpotType] ?? spotMore;
 }

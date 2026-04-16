@@ -28,6 +28,7 @@ function CoursesTabContent({ initialRegion }: { initialRegion: string | undefine
     useEffect(() => {
         if (!regionInitRef.current && initialRegion !== undefined) {
             regionInitRef.current = true;
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setFilters(prev => ({ ...prev, region: initialRegion }));
         }
     }, [initialRegion]);
@@ -144,6 +145,7 @@ export const WalkPage = () => {
     const provinceInitRef = useRef(false);
     useEffect(() => {
         if (!provinceInitRef.current && defaultProvince !== undefined) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setRecordsProvince(defaultProvince);
             setRankingProvince(defaultProvince);
             provinceInitRef.current = true;

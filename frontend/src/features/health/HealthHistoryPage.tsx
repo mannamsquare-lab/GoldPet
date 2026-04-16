@@ -109,6 +109,7 @@ const HealthHistoryPage = () => {
   useEffect(() => {
     if (!historyPage) return;
     if (page === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAllAnalyses(historyPage.content);
     } else {
       setAllAnalyses(prev => [...prev, ...historyPage.content]);

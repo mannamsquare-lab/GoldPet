@@ -25,8 +25,9 @@ export function WalkPhotoCollection() {
   useEffect(() => {
     const seedFromCache: Record<string, string> = {};
     photos.forEach((photo) => {
-      if (!photo.imageUrl) return;
-      const key = photo.imageUrl;
+      const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
+      if (!thumbUrl) return;
+      const key = thumbUrl;
       if (resolvedUrls[key] !== undefined) return;
       const cached = getCachedPhotoUrl(key);
       if (cached) {
@@ -38,6 +39,7 @@ export function WalkPhotoCollection() {
         .catch(() => setResolvedUrls((prev) => ({ ...prev, [key]: '' })));
     });
     if (Object.keys(seedFromCache).length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResolvedUrls((prev) => ({ ...seedFromCache, ...prev }));
     }
   }, [photos]);
@@ -58,7 +60,8 @@ export function WalkPhotoCollection() {
       </button>
       <div className="walk_photo_collection_grid">
         {photos.map((photo) => {
-          const src = photo.imageUrl ? resolvedUrls[photo.imageUrl] : '';
+          const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
+          const src = thumbUrl ? resolvedUrls[thumbUrl] : '';
           return (
             <button
               key={photo.id}

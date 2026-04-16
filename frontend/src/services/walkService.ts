@@ -40,14 +40,22 @@ export interface WalkSpot {
   timestamp: string;
   imageUrl?: string;
   imageKey?: string;   // raw S3 key — additive field emitted alongside imageUrl once backend ships Option A
+  imageUrlViewer?: string | null;  // 1600px presigned variant
+  imageUrlThumb?: string | null;   // 200px presigned variant
+  imageKeyViewer?: string | null;  // raw S3 key for 1600px variant
+  imageKeyThumb?: string | null;   // raw S3 key for 200px variant
   note?: string;
   hiddenFromPublic?: boolean;
 }
 
 export interface WalkPhotoItem {
   id: number;
-  imageUrl: string | null;
-  imageKey?: string | null;  // raw S3 key — new additive field from backend Option A contract change
+  imageUrl: string | null;           // original full-res (backward compat + share/save)
+  imageUrlViewer?: string | null;    // 1600px presigned variant — default viewer src
+  imageUrlThumb?: string | null;     // 200px presigned variant — grid tiles
+  imageKey?: string | null;          // raw S3 key — Option A additive field
+  imageKeyViewer?: string | null;    // raw S3 key for 1600px variant
+  imageKeyThumb?: string | null;     // raw S3 key for 200px variant
   note: string | null;
   walkDate: string;
   walkId: number;
