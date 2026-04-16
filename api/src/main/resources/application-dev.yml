@@ -29,6 +29,8 @@ app:
       - https://app.mannamsquare.com
       - https://admin.mannamsquare.com
       - https://mannamsquare.com
+      - http://localhost:5173
+      - http://localhost:5174
 
 # Dev MinIO Configuration
 S3_ENDPOINT: ${MINIO_ENDPOINT:http://minio:9000}
