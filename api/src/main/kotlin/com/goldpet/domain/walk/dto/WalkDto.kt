@@ -40,6 +40,7 @@ data class WalkSpotDto(
     val type: String,
     val timestamp: LocalDateTime,
     val imageUrl: String?,
+    val imageKey: String? = null,
     val note: String?,
     val hiddenFromPublic: Boolean = false
 )
@@ -116,6 +117,7 @@ data class WalkResponse(
                         type = spot.type.name,
                         timestamp = spot.timestamp,
                         imageUrl = spot.imageUrl,
+                        imageKey = spot.imageUrl,
                         note = spot.note,
                         hiddenFromPublic = spot.hiddenFromPublic
                     )
@@ -158,6 +160,7 @@ data class WalkResponse(
                             type = spot.type.name,
                             timestamp = spot.timestamp,
                             imageUrl = spot.imageUrl,
+                            imageKey = spot.imageUrl,
                             note = spot.note,
                             hiddenFromPublic = false
                         )

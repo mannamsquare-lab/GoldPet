@@ -677,7 +677,7 @@ export const WalkDetailPage = () => {
                         )}
                         {/* POOP spots: show analysis badge if available */}
                         {selectedSpot.type === 'POOP' && selectedSpot.imageUrl && (() => {
-                            const analysis = analysisMap.get(selectedSpot.imageUrl!);
+                            const analysis = analysisMap.get(selectedSpot.imageKey ?? selectedSpot.imageUrl!);
                             if (!analysis || analysis.status !== 'COMPLETED') return null;
                             const color = analysis.overallScore != null
                                 ? (analysis.overallScore <= 2 ? '#FF5005' : analysis.overallScore === 3 ? '#F5A623' : '#4CAF50')
