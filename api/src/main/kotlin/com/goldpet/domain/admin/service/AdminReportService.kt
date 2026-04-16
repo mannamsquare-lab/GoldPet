@@ -14,6 +14,7 @@ import com.goldpet.domain.report.entity.ReportActionType
 import com.goldpet.domain.report.entity.ReportStatus
 import com.goldpet.domain.report.entity.ReportType
 import com.goldpet.domain.report.repository.ReportRepository
+import com.goldpet.domain.walk.repository.WalkSpotRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -32,7 +33,8 @@ class AdminReportService(
     private val communityCommentRepository: CommunityCommentRepository,
     private val chatMessageRepository: ChatMessageRepository,
     private val walkCourseRepository: WalkCourseRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val walkSpotRepository: WalkSpotRepository
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
@@ -202,6 +204,11 @@ class AdminReportService(
                 val course = walkCourseRepository.findById(report.targetId)
                     .orElseThrow { NotFoundException("코스를 찾을 수 없습니다: ${report.targetId}") }
                 course.author.id
+            }
+            ReportType.WALK_SPOT -> {
+                val spot = walkSpotRepository.findById(report.targetId)
+                    .orElseThrow { NotFoundException("산책 사진을 찾을 수 없습니다: ${report.targetId}") }
+                spot.walk.user.id
             }
         }
     }

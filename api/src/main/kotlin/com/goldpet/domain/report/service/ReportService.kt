@@ -14,6 +14,7 @@ import com.goldpet.domain.report.entity.ReportType
 import com.goldpet.domain.report.repository.ReportRepository
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.walk.repository.WalkSpotRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -27,7 +28,8 @@ class ReportService(
     private val commentRepository: CommunityCommentRepository,
     private val walkCourseRepository: WalkCourseRepository,
     private val systemSettingService: SystemSettingService,
-    private val adminCommunityService: AdminCommunityService
+    private val adminCommunityService: AdminCommunityService,
+    private val walkSpotRepository: WalkSpotRepository
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
@@ -60,6 +62,11 @@ class ReportService(
                 val course = walkCourseRepository.findById(request.targetId)
                     .orElseThrow { NotFoundException("Course not found") }
                 course.title.take(50)
+            }
+            ReportType.WALK_SPOT -> {
+                val spot = walkSpotRepository.findById(request.targetId)
+                    .orElseThrow { NotFoundException("Walk spot not found") }
+                spot.note?.take(50) ?: "산책 사진 #${spot.id}"
             }
         }
 
@@ -128,7 +135,7 @@ class ReportService(
                     reportRepository.save(report)
                 }
             }
-            else -> { /* USER, CHAT: 자동 숨김 대상 아님 */ }
+            else -> { /* USER, CHAT, WALK_SPOT: 자동 숨김 대상 아님 */ }
         }
     }
 

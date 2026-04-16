@@ -12,6 +12,7 @@ import com.goldpet.domain.report.entity.ReportType
 import com.goldpet.domain.report.repository.ReportRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.walk.repository.WalkSpotRepository
 import com.goldpet.domain.common.exception.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -47,6 +48,9 @@ class ReportServiceTest {
     @Mock
     private lateinit var adminCommunityService: AdminCommunityService
 
+    @Mock
+    private lateinit var walkSpotRepository: WalkSpotRepository
+
     private lateinit var reportService: ReportService
 
     private lateinit var testUser: User
@@ -55,7 +59,7 @@ class ReportServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        reportService = ReportService(reportRepository, userRepository, postRepository, commentRepository, walkCourseRepository, systemSettingService, adminCommunityService)
+        reportService = ReportService(reportRepository, userRepository, postRepository, commentRepository, walkCourseRepository, systemSettingService, adminCommunityService, walkSpotRepository)
 
         testUser = User(
             id = 1L,

@@ -14,6 +14,7 @@ import com.goldpet.domain.report.entity.ReportStatus
 import com.goldpet.domain.report.entity.ReportType
 import com.goldpet.domain.report.repository.ReportRepository
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.walk.repository.WalkSpotRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -38,6 +39,7 @@ class AdminReportServiceTest {
     @Mock private lateinit var chatMessageRepository: ChatMessageRepository
     @Mock private lateinit var walkCourseRepository: WalkCourseRepository
     @Mock private lateinit var notificationService: NotificationService
+    @Mock private lateinit var walkSpotRepository: WalkSpotRepository
 
     private lateinit var service: AdminReportService
     private lateinit var testUser: User
@@ -48,7 +50,8 @@ class AdminReportServiceTest {
         service = AdminReportService(
             reportRepository, adminCommunityService, adminUserManagementService,
             adminChatService, adminUserRepository, communityPostRepository,
-            communityCommentRepository, chatMessageRepository, walkCourseRepository, notificationService
+            communityCommentRepository, chatMessageRepository, walkCourseRepository, notificationService,
+            walkSpotRepository
         )
 
         testUser = User(

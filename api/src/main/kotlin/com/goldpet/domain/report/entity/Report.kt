@@ -6,7 +6,7 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 enum class ReportType {
-    POST, COMMENT, USER, CHAT, COURSE
+    POST, COMMENT, USER, CHAT, COURSE, WALK_SPOT
 }
 
 enum class ReportStatus {

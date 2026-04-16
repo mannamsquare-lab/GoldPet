@@ -11,7 +11,9 @@ import 'swiper/css/virtual';
 import 'swiper/css/thumbs';
 import { walkService } from '../../../services/walkService';
 import type { PageResponse, WalkPhotoItem } from '../../../services/walkService';
+import { reportService } from '../../../services/reportService';
 import { useToast } from '../../../contexts/ToastContext';
+import { ReportModal } from '../../../components/common/ReportModal';
 import { getCachedPhotoUrl, resolvePhotoUrl, revokeOutsideWindow } from '../utils/photoUrlCache';
 import {
   mapArrayRemoveItemById,
@@ -168,6 +170,8 @@ export function WalkPhotoGalleryViewer({
   const [activeIndex, setActiveIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState<string>(initialPhoto?.note ?? '');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isReportSubmitting, setIsReportSubmitting] = useState(false);
   const menuWrapRef = useRef<HTMLDivElement>(null);
 
   const currentPhoto: WalkPhotoItem | null = useMemo(() => {
@@ -320,6 +324,21 @@ export function WalkPhotoGalleryViewer({
       showToast('숨김 처리에 실패했어요', 'error');
     }
   }, [mode, currentPhoto, applyCacheHiddenPatch, removeFromSharedCache, queryClient, showToast]);
+
+  const handleReportSubmit = useCallback(async (reason: string) => {
+    if (!currentPhoto) return;
+    setIsReportSubmitting(true);
+    try {
+      await reportService.createReport({ type: 'WALK_SPOT', targetId: currentPhoto.id, reason });
+      setShowReportModal(false);
+      showToast('신고가 접수되었습니다.', 'success');
+    } catch {
+      setShowReportModal(false);
+      showToast('신고 접수에 실패했습니다.', 'error');
+    } finally {
+      setIsReportSubmitting(false);
+    }
+  }, [currentPhoto, showToast]);
 
   const handleUnhide = useCallback(async () => {
     if (mode !== 'owned' || !currentPhoto) return;
@@ -484,6 +503,24 @@ export function WalkPhotoGalleryViewer({
               {currentIndexDisplay}/{totalCount}
             </span>
           )}
+          {mode === 'shared' && currentPhoto && (
+            <button
+              type="button"
+              className="wpv_nav_btn"
+              onClick={() => setShowReportModal(true)}
+              aria-label="신고"
+            >
+              <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                <path
+                  d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
           {mode === 'owned' && (
             <div className="wpv_menu_wrap" ref={menuWrapRef}>
               <button
@@ -583,6 +620,13 @@ export function WalkPhotoGalleryViewer({
           ))}
         </Swiper>
       )}
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={(reason) => void handleReportSubmit(reason)}
+        isSubmitting={isReportSubmitting}
+      />
 
       {/* Bottom panel */}
       {currentPhoto && (
