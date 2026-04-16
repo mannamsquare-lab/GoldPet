@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Keyboard, Navigation, Thumbs, Virtual, Zoom } from 'swiper/modules';
+import { Keyboard, Navigation, Thumbs, Zoom } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/zoom';
-import 'swiper/css/virtual';
 import 'swiper/css/thumbs';
 import '../WalkPhotoDetail.css';
 import { walkService } from '../../../services/walkService';
@@ -36,7 +35,7 @@ type Props = {
   onRequestPath?: (path: string) => void;
 };
 
-const VIRTUAL_THRESHOLD = 10;
+const WINDOW_HALF = 5;  // 활성 슬라이드 좌우 N장을 DOM에 유지 (전체 2N+1장)
 const THUMBS_THRESHOLD = 50;
 
 function formatDate(isoStr: string | undefined | null): string {
@@ -218,16 +217,12 @@ export function WalkPhotoGalleryViewer({
   }, [menuOpen]);
 
   const showThumbs = photos.length > THUMBS_THRESHOLD;
-  // displayPhotos.length는 아래 선언이지만 photos.length (>= 1 이후 feed 전체) 로 판정해도 동등한 결과 (초기 [photoFromState] 1장 < 10장 한계).
-  const useVirtual = photos.length > VIRTUAL_THRESHOLD;
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
-  // Virtual은 항상 import해 modules에 고정. enabled 토글만으로 제어 (dynamic modules 변경 시 Swiper init 깨지는 문제 방지).
   const modules = useMemo(() => {
     return [
       Navigation,
       Keyboard,
       Zoom,
-      Virtual,
       ...(showThumbs ? [Thumbs] : []),
     ];
   }, [showThumbs]);
@@ -589,7 +584,6 @@ export function WalkPhotoGalleryViewer({
         spaceBetween={0}
         zoom={{ maxRatio: 3, toggle: true }}
         keyboard={{ enabled: true, onlyInViewport: true }}
-        virtual={useVirtual ? { enabled: true, addSlidesAfter: 2, addSlidesBefore: 2 } : false}
         thumbs={showThumbs && thumbsSwiper ? { swiper: thumbsSwiper } : undefined}
         allowTouchMove={allowSwipe}
         onSwiper={(s) => {
@@ -629,11 +623,19 @@ export function WalkPhotoGalleryViewer({
           }
         }}
       >
-        {displayPhotos.map((photo, idx) => (
-          <SwiperSlide key={`${photo.walkId}-${photo.id}`} virtualIndex={useVirtual ? idx : undefined}>
-            <WalkPhotoViewerSlide photo={photo} active={Math.abs(idx - activeIndex) <= 2} />
-          </SwiperSlide>
-        ))}
+        {displayPhotos.map((photo, idx) => {
+          // 윈도우 밖 슬라이드는 placeholder only (DOM은 유지되지만 이미지/zoom 리소스 X)
+          const inWindow = Math.abs(idx - activeIndex) <= WINDOW_HALF;
+          return (
+            <SwiperSlide key={`${photo.walkId}-${photo.id}`}>
+              {inWindow ? (
+                <WalkPhotoViewerSlide photo={photo} active={Math.abs(idx - activeIndex) <= 2} />
+              ) : (
+                <div className="swiper-zoom-container"><div className="wpv_slide_placeholder" /></div>
+              )}
+            </SwiperSlide>
+          );
+        })}
       </Swiper>
 
       {/* Thumbs strip (photos.length > 50) */}
