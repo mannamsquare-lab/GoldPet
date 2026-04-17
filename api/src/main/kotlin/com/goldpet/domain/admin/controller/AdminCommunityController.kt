@@ -34,7 +34,6 @@ data class PostDetailAdminResponse(
     val authorNickname: String,
     val authorProfileImage: String?,
     val imageUrls: List<String>,
-    val youtubeUrl: String? = null,
     val viewCount: Int,
     val likeCount: Int,
     val commentCount: Int,

@@ -46,7 +46,6 @@ class AdminCommunityService(
             authorNickname = post.user.nickname ?: "",
             authorProfileImage = post.user.profileImageUrl,
             imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
-            youtubeUrl = post.youtubeUrl,
             viewCount = post.viewCount,
             likeCount = likeCount.toInt(),
             commentCount = comments.size,

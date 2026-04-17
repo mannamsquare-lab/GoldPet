@@ -27,8 +27,6 @@ data class CommunityPostResponse(
     @get:JsonProperty("isCommentedByMe")
     val isCommentedByMe: Boolean = false,
     val imageUrls: List<String> = emptyList(),
-    @get:JsonInclude(JsonInclude.Include.NON_NULL)
-    val youtubeUrl: String? = null,
     val comments: List<CommunityCommentResponse> = emptyList(),
     @get:JsonProperty("isMine")
     val isMine: Boolean = false
@@ -43,8 +41,7 @@ data class CommunityPostCreateRequest(
     val content: String,
     val visibility: CommunityPost.Visibility = CommunityPost.Visibility.PUBLIC,
     val postType: CommunityPost.PostType = CommunityPost.PostType.GENERAL,
-    val imageUrls: List<String> = emptyList(),
-    val youtubeUrl: String? = null
+    val imageUrls: List<String> = emptyList()
 )
 
 data class CommunityCommentResponse(
