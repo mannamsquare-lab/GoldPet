@@ -33,6 +33,7 @@ export default function WalkSharedPhotoListPage() {
   const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
   const [modalPhoto, setModalPhoto] = useState<WalkPhotoItem | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const dispatchedRef = useRef<Set<string>>(new Set());
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['walk', 'public', 'photos'],
@@ -41,7 +42,10 @@ export default function WalkSharedPhotoListPage() {
     initialPageParam: 0,
   });
 
-  const photos = data?.pages.flatMap((p) => p.content) ?? [];
+  const photos = useMemo<WalkPhotoItem[]>(
+    () => data?.pages.flatMap((p) => p.content) ?? [],
+    [data],
+  );
 
   useEffect(() => {
     const seedFromCache: Record<string, string> = {};
@@ -49,7 +53,8 @@ export default function WalkSharedPhotoListPage() {
       const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
       if (!thumbUrl) return;
       const key = thumbUrl;
-      if (resolvedUrls[key] !== undefined) return;
+      if (dispatchedRef.current.has(key)) return;
+      dispatchedRef.current.add(key);
       const cached = getCachedPhotoUrl(key);
       if (cached) {
         seedFromCache[key] = cached;

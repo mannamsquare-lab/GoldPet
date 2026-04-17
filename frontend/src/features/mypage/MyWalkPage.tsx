@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walkService } from '../../services/walkService';
@@ -14,15 +14,17 @@ function PhotoCollection() {
     const navigate = useNavigate();
     const [resolved, setResolved] = useState<Record<string, string>>({});
     const [modalPhoto, setModalPhoto] = useState<WalkPhotoItem | null>(null);
+    const dispatchedRef = useRef<Set<string>>(new Set());
 
     const { data } = useQuery({
         queryKey: ['walk', 'my', 'photos', 'mywalk-collection'],
         queryFn: () => walkService.getMyPhotos({ page: 0, size: 32 }),
     });
 
-    const photos: WalkPhotoItem[] = (data?.content ?? [])
-        .filter((p) => !!p.imageUrl)
-        .slice(0, 8);
+    const photos: WalkPhotoItem[] = useMemo(
+        () => (data?.content ?? []).filter((p) => !!p.imageUrl).slice(0, 8),
+        [data],
+    );
 
     useEffect(() => {
         const seedFromCache: Record<string, string> = {};
@@ -30,7 +32,8 @@ function PhotoCollection() {
             const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
             if (!thumbUrl) return;
             const key = thumbUrl;
-            if (resolved[key] !== undefined) return;
+            if (dispatchedRef.current.has(key)) return;
+            dispatchedRef.current.add(key);
             const cached = getCachedPhotoUrl(key);
             if (cached) {
                 seedFromCache[key] = cached;
