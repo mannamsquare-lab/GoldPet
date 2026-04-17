@@ -95,9 +95,17 @@ export default function UserDetailPage() {
               <div>
                 <div className="text-xl font-bold text-gray-900">{user.nickname}</div>
                 <span className={`mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                  user.status === 'SUSPENDED' ? 'bg-red-100 text-red-800' :
+                  user.status === 'DORMANT' ? 'bg-yellow-100 text-yellow-800' :
+                  user.status === 'WITHDRAWN' ? 'bg-gray-100 text-gray-800' :
+                  'bg-gray-100 text-gray-800'
                 }`}>
-                  {user.status === 'ACTIVE' ? '활성' : '비활성'}
+                  {user.status === 'ACTIVE' ? '활성' :
+                   user.status === 'SUSPENDED' ? '정지' :
+                   user.status === 'DORMANT' ? '휴면' :
+                   user.status === 'WITHDRAWN' ? '탈퇴' :
+                   user.status}
                 </span>
               </div>
             </div>

@@ -234,7 +234,11 @@ export default function MarketingPage() {
         targetType: values.targetType,
         targetUserIds,
       });
-      toast.error(`발송 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`);
+      if (result.failCount > 0) {
+        toast.warning(`발송 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`);
+      } else {
+        toast.success(`발송 완료: ${result.successCount}건 전송되었습니다.`);
+      }
       closeSendDialog();
     } catch {
       toast.error('알림 발송에 실패했습니다.');
@@ -311,7 +315,6 @@ export default function MarketingPage() {
       align: 'right',
       render: (_v, row) => (
         <div className="flex justify-end gap-2">
-          <Button variant="link" size="sm">수정</Button>
           <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDeleteBanner(row.id)}>삭제</Button>
         </div>
       ),
