@@ -104,7 +104,7 @@ export function DataTable<T>({
           </thead>
           <tbody>
             {Array.from({ length: 5 }).map((_, i) => (
-              <tr key={i} className="border-b border-gray-100">
+              <tr key={`skeleton-${i}`} className="border-b border-gray-100">
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
                     <div className="h-4 bg-gray-200 rounded animate-pulse" />
