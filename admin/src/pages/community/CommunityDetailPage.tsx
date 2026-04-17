@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { ContentRenderer } from '../../utils/contentRenderer';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityManagementService } from '../../services/communityManagementService';
 import { DetailPageLayout } from '../../components/common/DetailPageLayout';
@@ -141,23 +142,9 @@ export default function CommunityDetailPage() {
 
         <h2 className="text-xl font-semibold text-gray-900">{post.title}</h2>
 
-        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{post.content}</p>
-
-        {post.youtubeUrl && (
-          <div className="pt-2">
-            <div className="relative w-full max-w-2xl aspect-video rounded-lg overflow-hidden border border-gray-200">
-              <iframe
-                src={post.youtubeUrl}
-                title={`YouTube video for post ${post.id}`}
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-                className="absolute inset-0 w-full h-full border-0"
-              />
-            </div>
-          </div>
-        )}
+        <div className="text-gray-700 leading-relaxed">
+          <ContentRenderer content={post.content} />
+        </div>
 
         {/* Images */}
         {post.imageUrls.length > 0 && (

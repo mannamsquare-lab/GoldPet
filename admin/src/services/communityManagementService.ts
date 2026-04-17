@@ -28,7 +28,6 @@ export interface PostDetail {
   viewCount: number;
   likeCount: number;
   commentCount: number;
-  youtubeUrl: string | null;
   isHidden?: boolean;
   createdAt: string | null;
   updatedAt: string | null;

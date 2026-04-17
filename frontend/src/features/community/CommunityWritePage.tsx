@@ -7,8 +7,6 @@ import { useAlert } from '../../contexts/AlertContext';
 import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
 import CustomSelect from '../../components/common/CustomSelect';
-import { extractYoutubeVideoIdLoose } from '../../utils/youtube';
-
 export default function CommunityWritePage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,7 +20,6 @@ export default function CommunityWritePage() {
     title: initialPost?.title || '',
     content: initialPost?.content || '',
     postType: initialPost?.postType || 'GENERAL',
-    youtubeUrl: initialPost?.youtubeUrl ?? '',
   });
 
   /* Image State */
@@ -98,7 +95,6 @@ export default function CommunityWritePage() {
             title: data.title,
             content: data.content,
             imageUrls: finalUrls,
-            youtubeUrl: data.youtubeUrl,
         });
     },
     onSuccess: () => {
@@ -169,19 +165,13 @@ export default function CommunityWritePage() {
       return;
     }
 
-    const youtubeInput = (formData.youtubeUrl ?? '').trim();
-    if (youtubeInput && !extractYoutubeVideoIdLoose(youtubeInput)) {
-      showAlert('유효한 유튜브 링크를 입력해주세요.');
-      return;
-    }
-
     if (editMode) {
         updateMutation.mutate(formData);
     } else {
         // Prepare files for create
         const validItems = mediaSlots.filter((item): item is MediaItem => !!item);
         const filesToUpload = validItems.map(item => item.file).filter((f): f is File => !!f);
-        createMutation.mutate({ ...formData, images: filesToUpload, youtubeUrl: youtubeInput || undefined });
+        createMutation.mutate({ ...formData, images: filesToUpload });
     }
   };
 
@@ -230,18 +220,6 @@ export default function CommunityWritePage() {
                  onChange={(value) => setFormData({ ...formData, categoryId: Number(value) })}
              />
          </div>
-
-        {/* YouTube URL */}
-        <div className="input_wrap">
-            <label htmlFor="write_youtube">유튜브 링크</label>
-            <input
-              type="url"
-              id="write_youtube"
-              placeholder="유튜브 링크 (선택)"
-              value={formData.youtubeUrl ?? ''}
-              onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
-            />
-        </div>
 
         {/* Replaced Custom UI with ImageUploadSlider */}
         <div style={{ marginTop: '20px' }}> {/* Add some spacing wrapper if needed */}
