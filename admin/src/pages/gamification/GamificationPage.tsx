@@ -1,12 +1,20 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { gamificationService } from '../../services/gamificationService';
 import { fileService } from '../../services/fileService';
 import type { Badge } from '../../services/gamificationService';
 import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
-import { toast } from 'sonner'
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button as UIButton } from '@/components/ui/button';
 
 const CONDITION_TYPE_LABELS: Record<string, string> = {
   PET_REGISTER: '반려동물 등록',
@@ -26,21 +34,23 @@ const REPEAT_CYCLES = [
   { value: 'MONTHLY', label: '매월' },
 ];
 
-interface BadgeFormData {
-  name: string;
-  description: string;
-  imageUrl: string;
-  conditionType: string;
-  conditionValue: string;
-  rewardGold: string;
-  startDate: string;
-  endDate: string;
-  isRepeatable: boolean;
-  repeatCycle: string;
-  isActive: boolean;
-}
+const badgeSchema = z.object({
+  name: z.string().trim().min(1, '이름을 입력해주세요.'),
+  description: z.string().trim().min(1, '설명을 입력해주세요.'),
+  imageUrl: z.string(),
+  conditionType: z.string(),
+  conditionValue: z.string(),
+  rewardGold: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  isRepeatable: z.boolean(),
+  repeatCycle: z.string(),
+  isActive: z.boolean(),
+});
 
-const emptyForm: BadgeFormData = {
+type BadgeFormValues = z.infer<typeof badgeSchema>;
+
+const defaultValues: BadgeFormValues = {
   name: '',
   description: '',
   imageUrl: '',
@@ -69,27 +79,33 @@ const getMissionTypeColor = (badge: Badge) => {
 
 export default function GamificationPage() {
   const queryClient = useQueryClient();
-  const [showModal, setShowModal] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBadge, setEditingBadge] = useState<Badge | null>(null);
-  const [form, setForm] = useState<BadgeFormData>(emptyForm);
-  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm<BadgeFormValues>({
+    resolver: zodResolver(badgeSchema),
+    defaultValues,
+  });
+
+  const { formState: { isSubmitting }, setValue, watch } = form;
+  const imageUrl = watch('imageUrl');
+  const isRepeatable = watch('isRepeatable');
 
   const { data: badges = [], isLoading } = useQuery({
     queryKey: ['badges'],
     queryFn: () => gamificationService.getBadges(),
   });
 
-  const openCreateModal = () => {
+  const openCreateDialog = () => {
     setEditingBadge(null);
-    setForm(emptyForm);
-    setShowModal(true);
+    form.reset(defaultValues);
+    setDialogOpen(true);
   };
 
-  const openEditModal = (badge: Badge) => {
+  const openEditDialog = (badge: Badge) => {
     setEditingBadge(badge);
-    setForm({
+    form.reset({
       name: badge.name,
       description: badge.description,
       imageUrl: badge.imageUrl || '',
@@ -102,7 +118,13 @@ export default function GamificationPage() {
       repeatCycle: badge.repeatCycle || '',
       isActive: badge.isActive,
     });
-    setShowModal(true);
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditingBadge(null);
+    form.reset();
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,7 +133,7 @@ export default function GamificationPage() {
     setUploading(true);
     try {
       const result = await fileService.uploadFile(file);
-      setForm({ ...form, imageUrl: result.url });
+      setValue('imageUrl', result.url, { shouldValidate: true });
     } catch (error) {
       console.error('Failed to upload image:', error);
       toast.error('이미지 업로드에 실패했습니다.');
@@ -120,37 +142,30 @@ export default function GamificationPage() {
     }
   };
 
-  const handleSave = async () => {
-    setSaving(true);
+  const onSubmit = async (values: BadgeFormValues) => {
     try {
       const payload = {
-        name: form.name || undefined,
-        description: form.description || undefined,
-        imageUrl: form.imageUrl || undefined,
-        conditionType: form.conditionType || undefined,
-        conditionValue: form.conditionValue ? parseInt(form.conditionValue) : undefined,
-        rewardGold: form.rewardGold ? parseInt(form.rewardGold) : undefined,
-        startDate: form.startDate || undefined,
-        endDate: form.endDate || undefined,
-        isRepeatable: form.isRepeatable || undefined,
-        repeatCycle: form.isRepeatable ? form.repeatCycle || undefined : undefined,
+        name: values.name,
+        description: values.description,
+        imageUrl: values.imageUrl || undefined,
+        conditionType: values.conditionType || undefined,
+        conditionValue: values.conditionValue ? parseInt(values.conditionValue) : undefined,
+        rewardGold: values.rewardGold ? parseInt(values.rewardGold) : undefined,
+        startDate: values.startDate || undefined,
+        endDate: values.endDate || undefined,
+        isRepeatable: values.isRepeatable || undefined,
+        repeatCycle: values.isRepeatable ? values.repeatCycle || undefined : undefined,
       };
-
       if (editingBadge) {
-        await gamificationService.updateBadge(editingBadge.id, {
-          ...payload,
-          isActive: form.isActive,
-        });
+        await gamificationService.updateBadge(editingBadge.id, { ...payload, isActive: values.isActive });
       } else {
         await gamificationService.createBadge(payload as Parameters<typeof gamificationService.createBadge>[0]);
       }
-      setShowModal(false);
+      closeDialog();
       queryClient.invalidateQueries({ queryKey: ['badges'] });
     } catch (error) {
       console.error('Failed to save badge:', error);
       toast.error('저장에 실패했습니다.');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -227,7 +242,7 @@ export default function GamificationPage() {
       header: '관리',
       align: 'center',
       render: (_value, row) => (
-        <Button variant="link" size="sm" onClick={() => openEditModal(row)}>수정</Button>
+        <Button variant="link" size="sm" onClick={() => openEditDialog(row)}>수정</Button>
       ),
     },
   ];
@@ -239,7 +254,7 @@ export default function GamificationPage() {
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="font-semibold">뱃지 목록 ({badges.length})</h2>
-          <Button variant="primary" onClick={openCreateModal}>+ 뱃지 추가</Button>
+          <Button variant="primary" onClick={openCreateDialog}>+ 뱃지 추가</Button>
         </div>
         <DataTable<Badge>
           columns={columns}
@@ -250,193 +265,176 @@ export default function GamificationPage() {
         />
       </div>
 
-      {/* Badge Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <h3 className="text-lg font-semibold">{editingBadge ? '뱃지 수정' : '뱃지 추가'}</h3>
-            </div>
-            <div className="p-6 space-y-4">
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingBadge ? '뱃지 수정' : '뱃지 추가'}</DialogTitle>
+            <DialogDescription>뱃지 이름, 설명, 미션 조건을 입력하세요.</DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Image Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">뱃지 이미지</label>
                 <div className="flex items-center gap-4">
-                  {form.imageUrl ? (
-                    <img src={form.imageUrl} alt="뱃지" className="w-16 h-16 rounded-lg object-cover border" />
+                  {imageUrl ? (
+                    <img src={imageUrl} alt="뱃지" className="w-16 h-16 rounded-lg object-cover border" />
                   ) : (
                     <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-2xl border">🏅</div>
                   )}
-                  <div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                    >
+                  <div className="flex items-center gap-2">
+                    <label className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors ${uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
                       {uploading ? '업로드 중...' : '이미지 선택'}
-                    </Button>
-                    {form.imageUrl && (
-                      <Button
-                        type="button"
-                        variant="link"
-                        size="sm"
-                        className="ml-2 text-red-600 hover:text-red-800"
-                        onClick={() => setForm({ ...form, imageUrl: '' })}
-                      >
+                      <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} className="hidden" />
+                    </label>
+                    {imageUrl && (
+                      <button type="button" onClick={() => setValue('imageUrl', '')} className="text-sm text-red-600 hover:text-red-800">
                         삭제
-                      </Button>
+                      </button>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="뱃지 이름"
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">설명 *</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="뱃지 설명"
-                  rows={2}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
+              <FormField name="name" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>이름 *</FormLabel>
+                  <FormControl><Input {...field} placeholder="뱃지 이름" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-              {/* Mission Condition */}
+              <FormField name="description" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>설명 *</FormLabel>
+                  <FormControl>
+                    <textarea
+                      {...field}
+                      rows={2}
+                      placeholder="뱃지 설명"
+                      className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">미션 조건 유형</label>
-                  <select
-                    value={form.conditionType}
-                    onChange={(e) => setForm({ ...form, conditionType: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  >
-                    <option value="">선택 안함</option>
-                    {CONDITION_TYPES.map((type) => (
-                      <option key={type} value={type}>{CONDITION_TYPE_LABELS[type]}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">달성 기준값</label>
-                  <input
-                    type="number"
-                    value={form.conditionValue}
-                    onChange={(e) => setForm({ ...form, conditionValue: e.target.value })}
-                    placeholder="1"
-                    min={1}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
+                <FormField name="conditionType" control={form.control} render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>미션 조건 유형</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="선택 안함" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">선택 안함</SelectItem>
+                        {CONDITION_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>{CONDITION_TYPE_LABELS[type]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField name="conditionValue" control={form.control} render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>달성 기준값</FormLabel>
+                    <FormControl><Input type="number" {...field} placeholder="1" min={1} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </div>
 
-              {/* Reward Gold */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">보상 골드</label>
-                <input
-                  type="number"
-                  value={form.rewardGold}
-                  onChange={(e) => setForm({ ...form, rewardGold: e.target.value })}
-                  placeholder="0 (보상 없음)"
-                  min={0}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
+              <FormField name="rewardGold" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>보상 골드</FormLabel>
+                  <FormControl><Input type="number" {...field} placeholder="0 (보상 없음)" min={0} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-              {/* Period */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">시작일 (비워두면 상시)</label>
-                  <input
-                    type="date"
-                    value={form.startDate}
-                    onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">종료일</label>
-                  <input
-                    type="date"
-                    value={form.endDate}
-                    onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
+                <FormField name="startDate" control={form.control} render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>시작일 (비워두면 상시)</FormLabel>
+                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField name="endDate" control={form.control} render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>종료일</FormLabel>
+                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </div>
 
-              {/* Repeatable */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isRepeatable"
-                    checked={form.isRepeatable}
-                    onChange={(e) => setForm({ ...form, isRepeatable: e.target.checked, repeatCycle: e.target.checked ? form.repeatCycle : '' })}
-                    className="rounded"
-                  />
-                  <label htmlFor="isRepeatable" className="text-sm text-gray-700">반복 미션</label>
-                </div>
-                {form.isRepeatable && (
-                  <select
-                    value={form.repeatCycle}
-                    onChange={(e) => setForm({ ...form, repeatCycle: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  >
-                    <option value="">주기 선택</option>
-                    {REPEAT_CYCLES.map((cycle) => (
-                      <option key={cycle.value} value={cycle.value}>{cycle.label}</option>
-                    ))}
-                  </select>
+                <FormField name="isRepeatable" control={form.control} render={({ field }) => (
+                  <FormItem className="flex items-center gap-2 space-y-0">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        id="isRepeatable"
+                        checked={field.value}
+                        onChange={(e) => {
+                          field.onChange(e.target.checked);
+                          if (!e.target.checked) setValue('repeatCycle', '');
+                        }}
+                        className="rounded"
+                      />
+                    </FormControl>
+                    <FormLabel htmlFor="isRepeatable" className="font-normal cursor-pointer">반복 미션</FormLabel>
+                  </FormItem>
+                )} />
+                {isRepeatable && (
+                  <FormField name="repeatCycle" control={form.control} render={({ field }) => (
+                    <FormItem>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="주기 선택" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {REPEAT_CYCLES.map((cycle) => (
+                            <SelectItem key={cycle.value} value={cycle.value}>{cycle.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 )}
               </div>
 
-              {/* Active toggle (edit only) */}
               {editingBadge && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isActive"
-                    checked={form.isActive}
-                    onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                    className="rounded"
-                  />
-                  <label htmlFor="isActive" className="text-sm text-gray-700">활성 상태</label>
-                </div>
+                <FormField name="isActive" control={form.control} render={({ field }) => (
+                  <FormItem className="flex items-center gap-2 space-y-0">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        id="isActive"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="rounded"
+                      />
+                    </FormControl>
+                    <FormLabel htmlFor="isActive" className="font-normal cursor-pointer">활성 상태</FormLabel>
+                  </FormItem>
+                )} />
               )}
-            </div>
-            <div className="p-6 border-t flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowModal(false)}>취소</Button>
-              <Button
-                variant="primary"
-                onClick={handleSave}
-                disabled={saving || !form.name || !form.description}
-                loading={saving}
-              >
-                저장
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+
+              <DialogFooter>
+                <UIButton type="button" variant="outline" onClick={closeDialog}>취소</UIButton>
+                <UIButton type="submit" disabled={isSubmitting || uploading}>
+                  {isSubmitting ? '저장 중...' : '저장'}
+                </UIButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
