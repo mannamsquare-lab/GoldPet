@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { reportService } from '../../services/reportService';
 import { DetailPageLayout } from '../../components/common/DetailPageLayout';
 import { Button } from '../../components/common/Button';
-import { toast } from 'sonner'
-import { useConfirm } from '@/hooks/useConfirm'
+import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Button as UIButton } from '@/components/ui/button';
 
 const TYPE_LABELS: Record<string, string> = {
   POST: '게시글',
@@ -60,16 +66,27 @@ const ACTION_LABELS: Record<string, string> = {
   WARN_USER: '경고',
 };
 
+const resolveSchema = z.object({
+  actionType: z.string().min(1, '조치를 선택해주세요.'),
+  adminNote: z.string().default(''),
+});
+
+type ResolveFormValues = z.infer<typeof resolveSchema>;
+
 export default function ReportDetailPage() {
   const { reportId } = useParams<{ reportId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm();
 
-  const [showModal, setShowModal] = useState(false);
-  const [selectedAction, setSelectedAction] = useState<string>('');
-  const [adminNote, setAdminNote] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  // Local state drives conditional hint rendering without form.watch()
+  const [selectedAction, setSelectedAction] = useState('');
+
+  const resolveForm = useForm<ResolveFormValues>({
+    resolver: zodResolver(resolveSchema),
+    defaultValues: { actionType: '', adminNote: '' },
+  });
 
   const { data: report, isLoading, isError } = useQuery({
     queryKey: ['reports', 'detail', reportId],
@@ -79,23 +96,26 @@ export default function ReportDetailPage() {
 
   const openModal = () => {
     if (!report) return;
-    const defaultAction = ACTION_OPTIONS[report.type]?.find(o => o.default)?.value ?? '';
+    const defaultAction = ACTION_OPTIONS[report.type]?.find((o) => o.default)?.value ?? '';
     setSelectedAction(defaultAction);
-    setAdminNote('');
-    setShowModal(true);
+    resolveForm.reset({ actionType: defaultAction, adminNote: '' });
+    setDialogOpen(true);
   };
 
-  const handleResolve = async () => {
-    if (!report || !selectedAction) return;
-    setSubmitting(true);
+  const closeModal = () => {
+    setDialogOpen(false);
+    setSelectedAction('');
+    resolveForm.reset();
+  };
+
+  const onResolve = async (values: ResolveFormValues) => {
+    if (!report) return;
     try {
-      await reportService.resolveReport(report.id, selectedAction, adminNote || undefined);
+      await reportService.resolveReport(report.id, values.actionType, values.adminNote || undefined);
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       navigate('/reports');
     } catch {
       toast.error('처리에 실패했습니다.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -113,12 +133,8 @@ export default function ReportDetailPage() {
 
   const actions = report?.status === 'PENDING' ? (
     <>
-      <Button variant="success" onClick={openModal}>
-        조치 완료
-      </Button>
-      <Button variant="secondary" onClick={handleDismiss}>
-        기각
-      </Button>
+      <Button variant="success" onClick={openModal}>조치 완료</Button>
+      <Button variant="secondary" onClick={handleDismiss}>기각</Button>
     </>
   ) : undefined;
 
@@ -141,7 +157,6 @@ export default function ReportDetailPage() {
   return (
     <DetailPageLayout title="신고 상세" backPath="/reports" actions={actions}>
       <div className="space-y-6">
-        {/* Status & Meta */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">신고 정보</h2>
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -182,13 +197,11 @@ export default function ReportDetailPage() {
           </dl>
         </div>
 
-        {/* Report Reason */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">신고 사유</h2>
           <p className="text-sm text-gray-900">{report.reason}</p>
         </div>
 
-        {/* Reported Content Preview */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">신고 대상 미리보기</h2>
           {report.targetPreview ? (
@@ -199,7 +212,6 @@ export default function ReportDetailPage() {
           <p className="mt-3 text-xs text-gray-400">대상 ID: {report.targetId}</p>
         </div>
 
-        {/* Resolution Info (RESOLVED status) */}
         {report.status === 'RESOLVED' && (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">처리 내역</h2>
@@ -225,68 +237,87 @@ export default function ReportDetailPage() {
         )}
       </div>
 
-      {/* Action Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">제재 액션 선택</h3>
-
-            <div className="space-y-2 mb-4">
-              {(ACTION_OPTIONS[report.type] ?? []).map(option => (
-                <label key={option.value} className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="actionType"
-                    value={option.value}
-                    checked={selectedAction === option.value}
-                    onChange={() => setSelectedAction(option.value)}
-                    className="mt-0.5"
-                  />
-                  <span className="text-sm text-gray-900">{option.label}</span>
-                </label>
-              ))}
-            </div>
-
-            {selectedAction === 'SUSPEND_USER' && (
-              <p className="text-xs text-amber-600 bg-amber-50 rounded px-3 py-2 mb-4">
-                계정만 정지되며, 콘텐츠는 삭제되지 않습니다.
-              </p>
-            )}
-            {(selectedAction === 'HIDE_POST' || selectedAction === 'HIDE_COMMENT') && (
-              <p className="text-xs text-blue-600 bg-blue-50 rounded px-3 py-2 mb-4">
-                콘텐츠가 숨김 처리되며, 관리자 페이지에서 복원할 수 있습니다.
-              </p>
-            )}
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                관리자 메모 <span className="text-gray-400 font-normal">(선택)</span>
-              </label>
-              <textarea
-                value={adminNote}
-                onChange={e => setAdminNote(e.target.value)}
-                rows={3}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="처리 사유나 참고 내용을 입력하세요."
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>제재 액션 선택</DialogTitle>
+            <DialogDescription>수행할 조치와 관리자 메모를 입력하세요.</DialogDescription>
+          </DialogHeader>
+          <Form {...resolveForm}>
+            <form onSubmit={resolveForm.handleSubmit(onResolve)} className="space-y-4">
+              <FormField
+                name="actionType"
+                control={resolveForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <div className="space-y-2">
+                        {(ACTION_OPTIONS[report.type] ?? []).map((option) => (
+                          <label key={option.value} className="flex items-start gap-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="actionType"
+                              value={option.value}
+                              checked={field.value === option.value}
+                              onChange={() => {
+                                field.onChange(option.value);
+                                setSelectedAction(option.value);
+                              }}
+                              className="mt-0.5"
+                            />
+                            <span className="text-sm text-gray-900">{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
+              {selectedAction === 'SUSPEND_USER' && (
+                <p className="text-xs text-amber-600 bg-amber-50 rounded px-3 py-2">
+                  계정만 정지되며, 콘텐츠는 삭제되지 않습니다.
+                </p>
+              )}
+              {(selectedAction === 'HIDE_POST' || selectedAction === 'HIDE_COMMENT') && (
+                <p className="text-xs text-blue-600 bg-blue-50 rounded px-3 py-2">
+                  콘텐츠가 숨김 처리되며, 관리자 페이지에서 복원할 수 있습니다.
+                </p>
+              )}
+              <FormField
+                name="adminNote"
+                control={resolveForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          관리자 메모 <span className="text-gray-400 font-normal">(선택)</span>
+                        </label>
+                        <textarea
+                          {...field}
+                          rows={3}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                          placeholder="처리 사유나 참고 내용을 입력하세요."
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <UIButton type="button" variant="outline" onClick={closeModal} disabled={resolveForm.formState.isSubmitting}>취소</UIButton>
+                <UIButton type="submit" disabled={!selectedAction || resolveForm.formState.isSubmitting}>
+                  {resolveForm.formState.isSubmitting ? '처리 중...' : '조치 실행'}
+                </UIButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowModal(false)} disabled={submitting}>
-                취소
-              </Button>
-              <Button
-                variant="success"
-                onClick={handleResolve}
-                disabled={!selectedAction || submitting}
-              >
-                {submitting ? '처리 중...' : '조치 실행'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    {ConfirmDialog}
+      {ConfirmDialog}
     </DetailPageLayout>
   );
 }

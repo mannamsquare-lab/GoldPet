@@ -1,14 +1,22 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { marketingService } from '../../services/marketingService';
-import type { NotificationTemplate, NotificationTemplateRequest, DeliveryLog } from '../../services/marketingService';
+import type { NotificationTemplate, DeliveryLog } from '../../services/marketingService';
 import { Tabs } from '../../components/common/Tabs';
 import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
 import { Pagination } from '../../components/common/Pagination';
 import { Button } from '../../components/common/Button';
-import { toast } from 'sonner'
-import { useConfirm } from '@/hooks/useConfirm'
+import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button as UIButton } from '@/components/ui/button';
 
 interface Banner {
   id: number;
@@ -24,6 +32,28 @@ const TABS = [
   { key: 'delivery-logs', label: '발송 로그' },
   { key: 'banner', label: '배너 관리' },
 ];
+
+const templateSchema = z.object({
+  title: z.string().trim().min(1, '제목을 입력해주세요.'),
+  body: z.string().trim().min(1, '내용을 입력해주세요.'),
+  category: z.string().min(1),
+});
+
+const bannerSchema = z.object({
+  title: z.string().trim().min(1, '제목을 입력해주세요.'),
+  imageUrl: z.string().default(''),
+  link: z.string().default(''),
+  displayOrder: z.number().int().min(1).default(1),
+});
+
+const sendSchema = z.object({
+  targetType: z.enum(['ALL', 'USER']),
+  targetUserIds: z.string().default(''),
+});
+
+type TemplateFormValues = z.infer<typeof templateSchema>;
+type BannerFormValues = z.infer<typeof bannerSchema>;
+type SendFormValues = z.infer<typeof sendSchema>;
 
 const getCategoryBadge = (category: string) => {
   const styles: Record<string, string> = {
@@ -53,41 +83,38 @@ const getTargetTypeBadge = (targetType: string) => {
 
 export default function MarketingPage() {
   const queryClient = useQueryClient();
-  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm();
   const [activeTab, setActiveTab] = useState('templates');
 
-  // Template form state
-  const [showTemplateForm, setShowTemplateForm] = useState(false);
+  // Dialog open states
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | null>(null);
-  const [templateForm, setTemplateForm] = useState<NotificationTemplateRequest>({
-    title: '',
-    body: '',
-    category: 'NOTICE',
-  });
-
-  // Banner form state
-  const [showBannerForm, setShowBannerForm] = useState(false);
-  const [bannerForm, setBannerForm] = useState({
-    title: '',
-    imageUrl: '',
-    link: '',
-    displayOrder: '1',
-  });
-
-  // Send dialog state
+  const [bannerDialogOpen, setBannerDialogOpen] = useState(false);
   const [sendDialogTemplateId, setSendDialogTemplateId] = useState<number | null>(null);
-  const [sendForm, setSendForm] = useState({
-    targetType: 'ALL' as 'ALL' | 'USER',
-    targetUserIds: '',
-  });
+  // Local state drives conditional rendering without form.watch()
+  const [sendTargetType, setSendTargetType] = useState<'ALL' | 'USER'>('ALL');
 
-  // Template pagination
+  // Pagination
   const [templatePage, setTemplatePage] = useState(0);
   const [templateSize] = useState(20);
-
-  // Delivery log pagination
   const [logPage, setLogPage] = useState(0);
   const [logSize, setLogSize] = useState(20);
+
+  // Forms
+  const templateForm = useForm<TemplateFormValues>({
+    resolver: zodResolver(templateSchema),
+    defaultValues: { title: '', body: '', category: 'NOTICE' },
+  });
+
+  const bannerForm = useForm<BannerFormValues>({
+    resolver: zodResolver(bannerSchema),
+    defaultValues: { title: '', imageUrl: '', link: '', displayOrder: 1 },
+  });
+
+  const sendForm = useForm<SendFormValues>({
+    resolver: zodResolver(sendSchema),
+    defaultValues: { targetType: 'ALL', targetUserIds: '' },
+  });
 
   // Queries
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
@@ -108,58 +135,11 @@ export default function MarketingPage() {
     enabled: activeTab === 'banner',
   });
 
-  // Mutations
-  const createTemplateMutation = useMutation({
-    mutationFn: (req: NotificationTemplateRequest) => marketingService.createTemplate(req),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketing-templates'] });
-      setShowTemplateForm(false);
-      setTemplateForm({ title: '', body: '', category: 'NOTICE' });
-    },
-    onError: () => toast.error('템플릿 생성에 실패했습니다.'),
-  });
-
-  const updateTemplateMutation = useMutation({
-    mutationFn: ({ id, req }: { id: number; req: NotificationTemplateRequest }) =>
-      marketingService.updateTemplate(id, req),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketing-templates'] });
-      setEditingTemplate(null);
-      setShowTemplateForm(false);
-      setTemplateForm({ title: '', body: '', category: 'NOTICE' });
-    },
-    onError: () => toast.error('템플릿 수정에 실패했습니다.'),
-  });
-
+  // Delete mutations
   const deleteTemplateMutation = useMutation({
     mutationFn: (id: number) => marketingService.deleteTemplate(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['marketing-templates'] }),
     onError: () => toast.error('템플릿 삭제에 실패했습니다.'),
-  });
-
-  const sendNotificationMutation = useMutation({
-    mutationFn: ({ templateId }: { templateId: number }) => {
-      const targetUserIds =
-        sendForm.targetType === 'USER' && sendForm.targetUserIds
-          ? sendForm.targetUserIds
-              .split(',')
-              .map((id) => parseInt(id.trim()))
-              .filter((id) => !isNaN(id))
-          : null;
-      return marketingService.sendNotification({
-        templateId,
-        title: null,
-        body: null,
-        targetType: sendForm.targetType,
-        targetUserIds,
-      });
-    },
-    onSuccess: (result) => {
-      toast.error(`발송 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`);
-      setSendDialogTemplateId(null);
-      setSendForm({ targetType: 'ALL', targetUserIds: '' });
-    },
-    onError: () => toast.error('알림 발송에 실패했습니다.'),
   });
 
   const deleteBannerMutation = useMutation({
@@ -168,39 +148,96 @@ export default function MarketingPage() {
     onError: () => toast.error('배너 삭제에 실패했습니다.'),
   });
 
-  const createBannerMutation = useMutation({
-    mutationFn: () => marketingService.createBanner({
-      title: bannerForm.title,
-      imageUrl: bannerForm.imageUrl || null,
-      link: bannerForm.link || null,
-      displayOrder: parseInt(bannerForm.displayOrder) || 1,
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marketing-banners'] });
-      setShowBannerForm(false);
-      setBannerForm({ title: '', imageUrl: '', link: '', displayOrder: '1' });
-    },
-    onError: () => toast.error('배너 생성에 실패했습니다.'),
-  });
-
-  // Handlers
-  const startEditTemplate = (template: NotificationTemplate) => {
-    setEditingTemplate(template);
-    setTemplateForm({ title: template.title, body: template.body, category: template.category });
-    setShowTemplateForm(true);
-  };
-
-  const cancelTemplateForm = () => {
-    setShowTemplateForm(false);
+  // Template dialog handlers
+  const openCreateTemplate = () => {
     setEditingTemplate(null);
-    setTemplateForm({ title: '', body: '', category: 'NOTICE' });
+    templateForm.reset({ title: '', body: '', category: 'NOTICE' });
+    setTemplateDialogOpen(true);
   };
 
-  const handleTemplateSubmit = () => {
-    if (editingTemplate) {
-      updateTemplateMutation.mutate({ id: editingTemplate.id, req: templateForm });
-    } else {
-      createTemplateMutation.mutate(templateForm);
+  const openEditTemplate = (template: NotificationTemplate) => {
+    setEditingTemplate(template);
+    templateForm.reset({ title: template.title, body: template.body, category: template.category });
+    setTemplateDialogOpen(true);
+  };
+
+  const closeTemplateDialog = () => {
+    setTemplateDialogOpen(false);
+    setEditingTemplate(null);
+    templateForm.reset();
+  };
+
+  const onTemplateSubmit = async (values: TemplateFormValues) => {
+    try {
+      if (editingTemplate) {
+        await marketingService.updateTemplate(editingTemplate.id, values);
+      } else {
+        await marketingService.createTemplate(values);
+      }
+      closeTemplateDialog();
+      queryClient.invalidateQueries({ queryKey: ['marketing-templates'] });
+    } catch {
+      toast.error(editingTemplate ? '템플릿 수정에 실패했습니다.' : '템플릿 생성에 실패했습니다.');
+    }
+  };
+
+  // Banner dialog handlers
+  const openCreateBanner = () => {
+    bannerForm.reset({ title: '', imageUrl: '', link: '', displayOrder: 1 });
+    setBannerDialogOpen(true);
+  };
+
+  const closeBannerDialog = () => {
+    setBannerDialogOpen(false);
+    bannerForm.reset();
+  };
+
+  const onBannerSubmit = async (values: BannerFormValues) => {
+    try {
+      await marketingService.createBanner({
+        title: values.title,
+        imageUrl: values.imageUrl || null,
+        link: values.link || null,
+        displayOrder: values.displayOrder,
+      });
+      closeBannerDialog();
+      queryClient.invalidateQueries({ queryKey: ['marketing-banners'] });
+    } catch {
+      toast.error('배너 생성에 실패했습니다.');
+    }
+  };
+
+  // Send dialog handlers
+  const openSendDialog = (templateId: number) => {
+    setSendDialogTemplateId(templateId);
+    setSendTargetType('ALL');
+    sendForm.reset({ targetType: 'ALL', targetUserIds: '' });
+  };
+
+  const closeSendDialog = () => {
+    setSendDialogTemplateId(null);
+    setSendTargetType('ALL');
+    sendForm.reset();
+  };
+
+  const onSendSubmit = async (values: SendFormValues) => {
+    if (!sendDialogTemplateId) return;
+    try {
+      const targetUserIds =
+        values.targetType === 'USER' && values.targetUserIds
+          ? values.targetUserIds.split(',').map((id) => parseInt(id.trim())).filter((id) => !isNaN(id))
+          : null;
+      const result = await marketingService.sendNotification({
+        templateId: sendDialogTemplateId,
+        title: null,
+        body: null,
+        targetType: values.targetType,
+        targetUserIds,
+      });
+      toast.error(`발송 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`);
+      closeSendDialog();
+    } catch {
+      toast.error('알림 발송에 실패했습니다.');
     }
   };
 
@@ -214,7 +251,7 @@ export default function MarketingPage() {
     deleteBannerMutation.mutate(bannerId);
   };
 
-  // Paginated slices for client-side pagination (templates returns array)
+  // Client-side pagination for templates
   const templateStart = templatePage * templateSize;
   const pagedTemplates = templates.slice(templateStart, templateStart + templateSize);
 
@@ -225,9 +262,7 @@ export default function MarketingPage() {
     {
       key: 'body',
       header: '내용',
-      render: (_v, row) => (
-        <span className="text-gray-500 max-w-xs truncate block">{row.body}</span>
-      ),
+      render: (_v, row) => <span className="text-gray-500 max-w-xs truncate block">{row.body}</span>,
     },
     { key: 'category', header: '카테고리', render: (_v, row) => getCategoryBadge(row.category) },
     {
@@ -241,20 +276,9 @@ export default function MarketingPage() {
       align: 'right',
       render: (_v, row) => (
         <div className="flex justify-end gap-2">
-          <Button variant="link" size="sm" onClick={() => setSendDialogTemplateId(row.id)}>
-            발송
-          </Button>
-          <Button variant="link" size="sm" onClick={() => startEditTemplate(row)}>
-            수정
-          </Button>
-          <Button
-            variant="link"
-            size="sm"
-            className="text-red-600 hover:text-red-900"
-            onClick={() => handleDeleteTemplate(row.id)}
-          >
-            삭제
-          </Button>
+          <Button variant="link" size="sm" onClick={() => openSendDialog(row.id)}>발송</Button>
+          <Button variant="link" size="sm" onClick={() => openEditTemplate(row)}>수정</Button>
+          <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDeleteTemplate(row.id)}>삭제</Button>
         </div>
       ),
     },
@@ -264,17 +288,8 @@ export default function MarketingPage() {
     { key: 'id', header: 'ID', width: '60px' },
     { key: 'title', header: '제목', render: (_v, row) => <span className="font-medium">{row.title}</span> },
     { key: 'targetType', header: '대상', render: (_v, row) => getTargetTypeBadge(row.targetType) },
-    {
-      key: 'sentCount',
-      header: '발송수',
-      align: 'right',
-      render: (_v, row) => row.sentCount.toLocaleString(),
-    },
-    {
-      key: 'sentAt',
-      header: '발송일시',
-      render: (_v, row) => new Date(row.sentAt).toLocaleString(),
-    },
+    { key: 'sentCount', header: '발송수', align: 'right', render: (_v, row) => row.sentCount.toLocaleString() },
+    { key: 'sentAt', header: '발송일시', render: (_v, row) => new Date(row.sentAt).toLocaleString() },
   ];
 
   const bannerColumns: ColumnDef<Banner>[] = [
@@ -285,11 +300,7 @@ export default function MarketingPage() {
       key: 'isActive',
       header: '상태',
       render: (_v, row) => (
-        <span
-          className={`px-2 py-1 text-xs rounded-full ${
-            row.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-          }`}
-        >
+        <span className={`px-2 py-1 text-xs rounded-full ${row.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
           {row.isActive ? '활성' : '비활성'}
         </span>
       ),
@@ -300,17 +311,8 @@ export default function MarketingPage() {
       align: 'right',
       render: (_v, row) => (
         <div className="flex justify-end gap-2">
-          <Button variant="link" size="sm">
-            수정
-          </Button>
-          <Button
-            variant="link"
-            size="sm"
-            className="text-red-600 hover:text-red-900"
-            onClick={() => handleDeleteBanner(row.id)}
-          >
-            삭제
-          </Button>
+          <Button variant="link" size="sm">수정</Button>
+          <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDeleteBanner(row.id)}>삭제</Button>
         </div>
       ),
     },
@@ -327,68 +329,9 @@ export default function MarketingPage() {
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
           <div className="p-4 border-b flex justify-between items-center">
             <h2 className="font-semibold">알림 템플릿</h2>
-            <Button variant="primary" size="sm" onClick={() => setShowTemplateForm(true)}>
-              + 템플릿 추가
-            </Button>
+            <Button variant="primary" size="sm" onClick={openCreateTemplate}>+ 템플릿 추가</Button>
           </div>
-
-          {showTemplateForm && (
-            <div className="p-4 border-b bg-gray-50">
-              <h3 className="font-medium mb-3">{editingTemplate ? '템플릿 수정' : '새 템플릿'}</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
-                  <input
-                    type="text"
-                    value={templateForm.title}
-                    onChange={(e) => setTemplateForm({ ...templateForm, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
-                  <textarea
-                    value={templateForm.body}
-                    onChange={(e) => setTemplateForm({ ...templateForm, body: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-                  <select
-                    value={templateForm.category}
-                    onChange={(e) => setTemplateForm({ ...templateForm, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="NOTICE">공지</option>
-                    <option value="EVENT">이벤트</option>
-                    <option value="MARKETING">마케팅</option>
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    loading={createTemplateMutation.isPending || updateTemplateMutation.isPending}
-                    onClick={handleTemplateSubmit}
-                  >
-                    {editingTemplate ? '수정' : '생성'}
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={cancelTemplateForm}>
-                    취소
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <DataTable
-            columns={templateColumns}
-            data={pagedTemplates}
-            loading={templatesLoading}
-            emptyMessage="등록된 템플릿이 없습니다."
-          />
+          <DataTable columns={templateColumns} data={pagedTemplates} loading={templatesLoading} emptyMessage="등록된 템플릿이 없습니다." />
           <div className="border-t border-gray-100">
             <Pagination
               page={templatePage}
@@ -399,66 +342,6 @@ export default function MarketingPage() {
               onSizeChange={() => {}}
             />
           </div>
-
-          {/* Send dialog */}
-          {sendDialogTemplateId && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <h3 className="text-lg font-semibold mb-4">알림 발송</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">대상</label>
-                    <select
-                      value={sendForm.targetType}
-                      onChange={(e) =>
-                        setSendForm({ ...sendForm, targetType: e.target.value as 'ALL' | 'USER' })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    >
-                      <option value="ALL">전체</option>
-                      <option value="USER">특정 사용자</option>
-                    </select>
-                  </div>
-                  {sendForm.targetType === 'USER' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        사용자 ID (쉼표로 구분)
-                      </label>
-                      <input
-                        type="text"
-                        value={sendForm.targetUserIds}
-                        onChange={(e) => setSendForm({ ...sendForm, targetUserIds: e.target.value })}
-                        placeholder="예: 1, 2, 3"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                  )}
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      variant="primary"
-                      className="flex-1"
-                      loading={sendNotificationMutation.isPending}
-                      onClick={() =>
-                        sendNotificationMutation.mutate({ templateId: sendDialogTemplateId })
-                      }
-                    >
-                      발송
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={() => {
-                        setSendDialogTemplateId(null);
-                        setSendForm({ targetType: 'ALL', targetUserIds: '' });
-                      }}
-                    >
-                      취소
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -468,12 +351,7 @@ export default function MarketingPage() {
           <div className="p-4 border-b">
             <h2 className="font-semibold">발송 로그</h2>
           </div>
-          <DataTable
-            columns={logColumns}
-            data={deliveryLogs}
-            loading={logsLoading}
-            emptyMessage="발송 로그가 없습니다."
-          />
+          <DataTable columns={logColumns} data={deliveryLogs} loading={logsLoading} emptyMessage="발송 로그가 없습니다." />
           <div className="border-t border-gray-100">
             <Pagination
               page={logPage}
@@ -492,81 +370,202 @@ export default function MarketingPage() {
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
           <div className="p-4 border-b flex justify-between items-center">
             <h2 className="font-semibold">배너 목록</h2>
-            <Button variant="primary" size="sm" onClick={() => setShowBannerForm(true)}>
-              + 배너 추가
-            </Button>
+            <Button variant="primary" size="sm" onClick={openCreateBanner}>+ 배너 추가</Button>
           </div>
-          {showBannerForm && (
-            <div className="p-4 border-b bg-gray-50">
-              <h3 className="font-medium mb-3">새 배너</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
-                  <input
-                    type="text"
-                    value={bannerForm.title}
-                    onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL</label>
-                  <input
-                    type="text"
-                    value={bannerForm.imageUrl}
-                    onChange={(e) => setBannerForm({ ...bannerForm, imageUrl: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="/banners/example.jpg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>
-                  <input
-                    type="text"
-                    value={bannerForm.link}
-                    onChange={(e) => setBannerForm({ ...bannerForm, link: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">표시 순서</label>
-                  <input
-                    type="number"
-                    value={bannerForm.displayOrder}
-                    onChange={(e) => setBannerForm({ ...bannerForm, displayOrder: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    min={1}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    loading={createBannerMutation.isPending}
-                    onClick={() => createBannerMutation.mutate()}
-                  >
-                    생성
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => {
-                    setShowBannerForm(false);
-                    setBannerForm({ title: '', imageUrl: '', link: '', displayOrder: '1' });
-                  }}>
-                    취소
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-          <DataTable
-            columns={bannerColumns}
-            data={banners}
-            loading={bannersLoading}
-            emptyMessage="등록된 배너가 없습니다."
-          />
+          <DataTable columns={bannerColumns} data={banners} loading={bannersLoading} emptyMessage="등록된 배너가 없습니다." />
         </div>
       )}
-    {ConfirmDialog}
+
+      {/* Template Dialog */}
+      <Dialog open={templateDialogOpen} onOpenChange={(open) => { if (!open) closeTemplateDialog(); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingTemplate ? '템플릿 수정' : '새 템플릿'}</DialogTitle>
+            <DialogDescription>제목, 내용, 카테고리를 입력하세요.</DialogDescription>
+          </DialogHeader>
+          <Form {...templateForm}>
+            <form onSubmit={templateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
+              <FormField
+                name="title"
+                control={templateForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>제목</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="body"
+                control={templateForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>내용</FormLabel>
+                    <FormControl>
+                      <textarea {...field} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none" rows={3} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="category"
+                control={templateForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>카테고리</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="NOTICE">공지</SelectItem>
+                        <SelectItem value="EVENT">이벤트</SelectItem>
+                        <SelectItem value="MARKETING">마케팅</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <UIButton type="button" variant="outline" onClick={closeTemplateDialog}>취소</UIButton>
+                <UIButton type="submit" disabled={templateForm.formState.isSubmitting}>
+                  {templateForm.formState.isSubmitting ? '저장 중...' : (editingTemplate ? '수정' : '생성')}
+                </UIButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Banner Dialog */}
+      <Dialog open={bannerDialogOpen} onOpenChange={(open) => { if (!open) closeBannerDialog(); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>새 배너</DialogTitle>
+            <DialogDescription>배너 정보를 입력하세요.</DialogDescription>
+          </DialogHeader>
+          <Form {...bannerForm}>
+            <form onSubmit={bannerForm.handleSubmit(onBannerSubmit)} className="space-y-4">
+              <FormField
+                name="title"
+                control={bannerForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>제목</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="imageUrl"
+                control={bannerForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>이미지 URL</FormLabel>
+                    <FormControl><Input {...field} placeholder="/banners/example.jpg" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="link"
+                control={bannerForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>링크 URL</FormLabel>
+                    <FormControl><Input {...field} placeholder="https://..." /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="displayOrder"
+                control={bannerForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>표시 순서</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <UIButton type="button" variant="outline" onClick={closeBannerDialog}>취소</UIButton>
+                <UIButton type="submit" disabled={bannerForm.formState.isSubmitting}>
+                  {bannerForm.formState.isSubmitting ? '저장 중...' : '생성'}
+                </UIButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Notification Dialog */}
+      <Dialog open={sendDialogTemplateId !== null} onOpenChange={(open) => { if (!open) closeSendDialog(); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>알림 발송</DialogTitle>
+            <DialogDescription>발송 대상을 선택하세요.</DialogDescription>
+          </DialogHeader>
+          <Form {...sendForm}>
+            <form onSubmit={sendForm.handleSubmit(onSendSubmit)} className="space-y-4">
+              <FormField
+                name="targetType"
+                control={sendForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>대상</FormLabel>
+                    <Select
+                      onValueChange={(v) => {
+                        field.onChange(v);
+                        setSendTargetType(v as 'ALL' | 'USER');
+                      }}
+                      value={field.value}
+                    >
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="ALL">전체</SelectItem>
+                        <SelectItem value="USER">특정 사용자</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {sendTargetType === 'USER' && (
+                <FormField
+                  name="targetUserIds"
+                  control={sendForm.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>사용자 ID (쉼표로 구분)</FormLabel>
+                      <FormControl><Input {...field} placeholder="예: 1, 2, 3" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <DialogFooter>
+                <UIButton type="button" variant="outline" className="flex-1" onClick={closeSendDialog}>취소</UIButton>
+                <UIButton type="submit" className="flex-1" disabled={sendForm.formState.isSubmitting}>
+                  {sendForm.formState.isSubmitting ? '발송 중...' : '발송'}
+                </UIButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {ConfirmDialog}
     </div>
   );
 }
