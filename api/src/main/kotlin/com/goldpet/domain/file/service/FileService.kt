@@ -27,7 +27,7 @@ import java.util.concurrent.RejectedExecutionException
 import javax.imageio.ImageIO
 
 private const val MAX_IMAGE_SIZE = 10 * 1024 * 1024L // 10MB
-private val ALLOWED_IMAGE_TYPES = setOf("image/jpeg", "image/png", "image/gif", "image/webp")
+private val ALLOWED_IMAGE_TYPES = setOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml")
 
 enum class StorageBucket {
     PUBLIC,  // Profile images, pet images - directly accessible via public URL
