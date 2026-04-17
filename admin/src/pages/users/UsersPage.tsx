@@ -116,7 +116,7 @@ export default function UsersPage() {
             상세
           </Button>
           {row.status === 'ACTIVE' ? (
-            <Button variant="link" size="sm" className="text-orange-600 hover:text-orange-900" onClick={() => handleStatusChange(row.id, 'INACTIVE')}>
+            <Button variant="link" size="sm" className="text-orange-600 hover:text-orange-900" onClick={() => handleStatusChange(row.id, 'SUSPENDED')}>
               정지
             </Button>
           ) : (

@@ -20,7 +20,7 @@ export default function UserDetailPage() {
 
   const handleStatusChange = async () => {
     if (!user) return;
-    const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const newStatus = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
     try {
       await userManagementService.updateUserStatus(user.id, newStatus);
       queryClient.invalidateQueries({ queryKey: ['users'] });
