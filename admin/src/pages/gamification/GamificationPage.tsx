@@ -16,6 +16,16 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button as UIButton } from '@/components/ui/button';
 
+function BadgeImage({ src, size }: { src: string; size: 'sm' | 'lg' }) {
+  const [broken, setBroken] = useState(false);
+  const box = size === 'sm' ? 'w-8 h-8 rounded text-sm' : 'w-16 h-16 rounded-lg text-2xl border';
+  if (!src || broken) {
+    return <div className={`${box} bg-gray-100 flex items-center justify-center`}>🏅</div>;
+  }
+  const imgCls = size === 'sm' ? 'w-8 h-8 rounded object-cover' : 'w-16 h-16 rounded-lg object-cover border';
+  return <img src={src} alt="" className={imgCls} onError={() => setBroken(true)} loading="lazy" />;
+}
+
 const CONDITION_TYPE_LABELS: Record<string, string> = {
   PET_REGISTER: '반려동물 등록',
   WALK_COUNT: '산책 횟수',
@@ -175,11 +185,7 @@ export default function GamificationPage() {
       key: 'imageUrl',
       header: '이미지',
       width: '60px',
-      render: (value) => value ? (
-        <img src={value} alt="" className="w-8 h-8 rounded object-cover" />
-      ) : (
-        <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-sm">🏅</div>
-      ),
+      render: (value) => <BadgeImage src={value as string} size="sm" />,
     },
     {
       key: 'name',
@@ -277,11 +283,7 @@ export default function GamificationPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">뱃지 이미지</label>
                 <div className="flex items-center gap-4">
-                  {imageUrl ? (
-                    <img src={imageUrl} alt="뱃지" className="w-16 h-16 rounded-lg object-cover border" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-2xl border">🏅</div>
-                  )}
+                  <BadgeImage src={imageUrl || ''} size="lg" />
                   <div className="flex items-center gap-2">
                     <label className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors ${uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
                       {uploading ? '업로드 중...' : '이미지 선택'}
