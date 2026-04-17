@@ -395,6 +395,23 @@
   word-break: break-word;
 }
 
+.wpv_caption_trigger {
+  align-self: flex-start;
+  background: rgba(0, 0, 0, 0.35);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: var(--letter-spacing);
+  cursor: pointer;
+}
+
+.wpv_caption_trigger:active {
+  background: rgba(0, 0, 0, 0.55);
+}
+
 .wpv_empty {
   display: flex;
   flex-direction: column;

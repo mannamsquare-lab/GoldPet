@@ -144,9 +144,11 @@ export function WalkPhotoGalleryViewer({
   }, [photos.length, feedInitialIndex]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState<string>(initialPhoto?.note ?? '');
+  const [isEditingCaption, setIsEditingCaption] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isReportSubmitting, setIsReportSubmitting] = useState(false);
   const menuWrapRef = useRef<HTMLDivElement>(null);
+  const captionInputRef = useRef<HTMLTextAreaElement>(null);
 
   const currentPhoto: WalkPhotoItem | null = useMemo(() => {
     if (photos.length > 0) return photos[activeIndex] ?? photos[0] ?? null;
@@ -180,6 +182,7 @@ export function WalkPhotoGalleryViewer({
 
   useEffect(() => {
     setDraft(currentPhoto?.note ?? '');
+    setIsEditingCaption(false);
   }, [currentPhoto?.id, currentPhoto?.walkId, currentPhoto?.note]);
 
   useEffect(() => {
@@ -618,19 +621,35 @@ export function WalkPhotoGalleryViewer({
       {currentPhoto && (
         <div className="wpv_bottom_panel">
           {mode === 'owned' ? (
-            <div className="wpv_caption_box">
-              <textarea
-                className="wpv_caption_input"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value.slice(0, 100))}
-                placeholder="한마디를 남겨보세요"
-                rows={2}
-                onBlur={() => {
-                  void handleSaveCaption(draft);
+            draft || isEditingCaption ? (
+              <div className="wpv_caption_box">
+                <textarea
+                  ref={captionInputRef}
+                  className="wpv_caption_input"
+                  value={draft}
+                  autoFocus={isEditingCaption && !draft}
+                  onChange={(e) => setDraft(e.target.value.slice(0, 100))}
+                  placeholder="한마디를 남겨보세요"
+                  rows={2}
+                  onBlur={() => {
+                    void handleSaveCaption(draft);
+                    setIsEditingCaption(false);
+                  }}
+                />
+                <span className="wpv_caption_counter">{draft.length}/100자</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="wpv_caption_trigger"
+                onClick={() => {
+                  setIsEditingCaption(true);
+                  requestAnimationFrame(() => captionInputRef.current?.focus());
                 }}
-              />
-              <span className="wpv_caption_counter">{draft.length}/100자</span>
-            </div>
+              >
+                한마디 남기기
+              </button>
+            )
           ) : (
             currentPhoto.note && (
               <div className="wpv_caption_readonly">{currentPhoto.note}</div>
