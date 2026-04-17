@@ -623,7 +623,7 @@ export function WalkPhotoGalleryViewer({
                 className="wpv_caption_input"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value.slice(0, 100))}
-                placeholder="산책 사진에 한마디를 남겨보세요"
+                placeholder="한마디를 남겨보세요"
                 rows={2}
                 onBlur={() => {
                   void handleSaveCaption(draft);
