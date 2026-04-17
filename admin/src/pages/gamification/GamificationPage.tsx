@@ -6,6 +6,7 @@ import type { Badge } from '../../services/gamificationService';
 import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
 
 const CONDITION_TYPE_LABELS: Record<string, string> = {
   PET_REGISTER: '반려동물 등록',
@@ -113,7 +114,7 @@ export default function GamificationPage() {
       setForm({ ...form, imageUrl: result.url });
     } catch (error) {
       console.error('Failed to upload image:', error);
-      alert('이미지 업로드에 실패했습니다.');
+      toast.error('이미지 업로드에 실패했습니다.');
     } finally {
       setUploading(false);
     }
@@ -147,7 +148,7 @@ export default function GamificationPage() {
       queryClient.invalidateQueries({ queryKey: ['badges'] });
     } catch (error) {
       console.error('Failed to save badge:', error);
-      alert('저장에 실패했습니다.');
+      toast.error('저장에 실패했습니다.');
     } finally {
       setSaving(false);
     }

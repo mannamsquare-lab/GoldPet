@@ -9,6 +9,8 @@ import type { ColumnDef } from '../../components/common/DataTable';
 import { Pagination } from '../../components/common/Pagination';
 import { SearchFilters } from '../../components/common/SearchFilters';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: '활성' },
@@ -32,6 +34,7 @@ const FILTER_FIELDS = [
 export default function UsersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const { page, size, search, filters, setPage, setSize, setFilter } = useListParams({ defaultSize: 20 });
 
   const { data, isLoading } = usePagedQuery<UserListItem>({
@@ -48,18 +51,18 @@ export default function UsersPage() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('상태 변경에 실패했습니다.');
+      toast.error('상태 변경에 실패했습니다.');
     }
   };
 
   const handleDelete = async (userId: number) => {
-    if (!confirm('정말 이 회원을 삭제하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '정말 이 회원을 삭제하시겠습니까?', variant: 'destructive' }))) return;
     try {
       await userManagementService.deleteUser(userId);
       queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
       console.error('Failed to delete user:', error);
-      alert('회원 삭제에 실패했습니다.');
+      toast.error('회원 삭제에 실패했습니다.');
     }
   };
 
@@ -165,6 +168,7 @@ export default function UsersPage() {
           />
         )}
       </div>
+    {ConfirmDialog}
     </div>
   );
 }

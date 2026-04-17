@@ -3,11 +3,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { userManagementService } from '../../services/userManagementService';
 import { DetailPageLayout } from '../../components/common/DetailPageLayout';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function UserDetailPage() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
 
   const { data: user, isLoading, isError } = useQuery({
     queryKey: ['users', 'detail', userId],
@@ -24,20 +27,20 @@ export default function UserDetailPage() {
       navigate('/users');
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('상태 변경에 실패했습니다.');
+      toast.error('상태 변경에 실패했습니다.');
     }
   };
 
   const handleDelete = async () => {
     if (!user) return;
-    if (!confirm('정말 이 회원을 삭제하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '정말 이 회원을 삭제하시겠습니까?', variant: 'destructive' }))) return;
     try {
       await userManagementService.deleteUser(user.id);
       queryClient.invalidateQueries({ queryKey: ['users'] });
       navigate('/users');
     } catch (error) {
       console.error('Failed to delete user:', error);
-      alert('회원 삭제에 실패했습니다.');
+      toast.error('회원 삭제에 실패했습니다.');
     }
   };
 
@@ -179,6 +182,7 @@ export default function UserDetailPage() {
           </div>
         </div>
       </div>
+    {ConfirmDialog}
     </DetailPageLayout>
   );
 }

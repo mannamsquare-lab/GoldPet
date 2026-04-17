@@ -3,10 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityManagementService } from '../../services/communityManagementService';
 import { DetailPageLayout } from '../../components/common/DetailPageLayout';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function CommunityDetailPage() {
   const { postId } = useParams<{ postId: string }>();
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['community', 'detail', postId],
@@ -19,7 +22,7 @@ export default function CommunityDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community'] });
     },
-    onError: () => alert('게시글 숨김에 실패했습니다.'),
+    onError: () => toast.error('게시글 숨김에 실패했습니다.'),
   });
 
   const deleteMutation = useMutation({
@@ -27,7 +30,7 @@ export default function CommunityDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community'] });
     },
-    onError: () => alert('게시글 삭제에 실패했습니다.'),
+    onError: () => toast.error('게시글 삭제에 실패했습니다.'),
   });
 
   const unhideMutation = useMutation({
@@ -35,7 +38,7 @@ export default function CommunityDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community'] });
     },
-    onError: () => alert('게시글 숨김 해제에 실패했습니다.'),
+    onError: () => toast.error('게시글 숨김 해제에 실패했습니다.'),
   });
 
   const deleteCommentMutation = useMutation({
@@ -43,26 +46,26 @@ export default function CommunityDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community', 'detail', postId] });
     },
-    onError: () => alert('댓글 삭제에 실패했습니다.'),
+    onError: () => toast.error('댓글 삭제에 실패했습니다.'),
   });
 
-  const handleHide = () => {
-    if (!confirm('이 게시글을 숨기시겠습니까?')) return;
+  const handleHide = async () => {
+    if (!(await confirmDialog({ description: '이 게시글을 숨기시겠습니까?' }))) return;
     hideMutation.mutate();
   };
 
-  const handleUnhide = () => {
-    if (!confirm('이 게시글의 숨김을 해제하시겠습니까?')) return;
+  const handleUnhide = async () => {
+    if (!(await confirmDialog({ description: '이 게시글의 숨김을 해제하시겠습니까?' }))) return;
     unhideMutation.mutate();
   };
 
-  const handleDelete = () => {
-    if (!confirm('정말 이 게시글을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.')) return;
+  const handleDelete = async () => {
+    if (!(await confirmDialog({ description: '정말 이 게시글을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.', variant: 'destructive' }))) return;
     deleteMutation.mutate();
   };
 
-  const handleDeleteComment = (commentId: number) => {
-    if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
+  const handleDeleteComment = async (commentId: number) => {
+    if (!(await confirmDialog({ description: '이 댓글을 삭제하시겠습니까?', variant: 'destructive' }))) return;
     deleteCommentMutation.mutate(commentId);
   };
 
@@ -204,6 +207,7 @@ export default function CommunityDetailPage() {
           </div>
         )}
       </div>
+    {ConfirmDialog}
     </DetailPageLayout>
   );
 }

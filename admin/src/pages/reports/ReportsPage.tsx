@@ -9,6 +9,8 @@ import { SearchFilters } from '../../components/common/SearchFilters';
 import { Button } from '../../components/common/Button';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { useListParams } from '../../hooks/useListParams';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const STATUS_OPTIONS = [
   { value: 'PENDING', label: '대기' },
@@ -38,6 +40,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default function ReportsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const { page, size, filters, setPage, setSize, setFilter } = useListParams({ defaultSize: 20 });
 
   const status = filters.status || 'PENDING';
@@ -52,12 +55,12 @@ export default function ReportsPage() {
   });
 
   const handleDismiss = async (reportId: number) => {
-    if (!confirm('기각하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '기각하시겠습니까?' }))) return;
     try {
       await reportService.dismissReport(reportId);
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch {
-      alert('처리에 실패했습니다.');
+      toast.error('처리에 실패했습니다.');
     }
   };
 
@@ -168,6 +171,7 @@ export default function ReportsPage() {
           />
         </div>
       </div>
+    {ConfirmDialog}
     </div>
   );
 }

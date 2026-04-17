@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { courseManagementService } from '../../services/courseManagementService';
 import { DetailPageLayout } from '../../components/common/DetailPageLayout';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const DIFFICULTY_BADGE: Record<string, { label: string; className: string }> = {
   EASY: { label: '초급', className: 'bg-green-100 text-green-800' },
@@ -37,6 +39,7 @@ function RatingStars({ rating }: { rating: number | null }) {
 export default function CourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
 
   const { data: course, isLoading } = useQuery({
     queryKey: ['courses', 'detail', courseId],
@@ -47,66 +50,66 @@ export default function CourseDetailPage() {
   const hideMutation = useMutation({
     mutationFn: () => courseManagementService.hideCourse(Number(courseId)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses'] }),
-    onError: () => alert('코스 숨김에 실패했습니다.'),
+    onError: () => toast.error('코스 숨김에 실패했습니다.'),
   });
 
   const unhideMutation = useMutation({
     mutationFn: () => courseManagementService.unhideCourse(Number(courseId)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses'] }),
-    onError: () => alert('코스 숨김 해제에 실패했습니다.'),
+    onError: () => toast.error('코스 숨김 해제에 실패했습니다.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => courseManagementService.deleteCourse(Number(courseId)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses'] }),
-    onError: () => alert('코스 삭제에 실패했습니다.'),
+    onError: () => toast.error('코스 삭제에 실패했습니다.'),
   });
 
   const hideCommentMutation = useMutation({
     mutationFn: (commentId: number) => courseManagementService.hideComment(commentId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses', 'detail', courseId] }),
-    onError: () => alert('댓글 숨김에 실패했습니다.'),
+    onError: () => toast.error('댓글 숨김에 실패했습니다.'),
   });
 
   const unhideCommentMutation = useMutation({
     mutationFn: (commentId: number) => courseManagementService.unhideComment(commentId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses', 'detail', courseId] }),
-    onError: () => alert('댓글 숨김 해제에 실패했습니다.'),
+    onError: () => toast.error('댓글 숨김 해제에 실패했습니다.'),
   });
 
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: number) => courseManagementService.deleteComment(commentId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses', 'detail', courseId] }),
-    onError: () => alert('댓글 삭제에 실패했습니다.'),
+    onError: () => toast.error('댓글 삭제에 실패했습니다.'),
   });
 
-  const handleHide = () => {
-    if (!confirm('이 코스를 숨기시겠습니까?')) return;
+  const handleHide = async () => {
+    if (!(await confirmDialog({ description: '이 코스를 숨기시겠습니까?' }))) return;
     hideMutation.mutate();
   };
 
-  const handleUnhide = () => {
-    if (!confirm('이 코스의 숨김을 해제하시겠습니까?')) return;
+  const handleUnhide = async () => {
+    if (!(await confirmDialog({ description: '이 코스의 숨김을 해제하시겠습니까?' }))) return;
     unhideMutation.mutate();
   };
 
-  const handleDelete = () => {
-    if (!confirm('정말 이 코스를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.')) return;
+  const handleDelete = async () => {
+    if (!(await confirmDialog({ description: '정말 이 코스를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.', variant: 'destructive' }))) return;
     deleteMutation.mutate();
   };
 
-  const handleHideComment = (commentId: number) => {
-    if (!confirm('이 댓글을 숨기시겠습니까?')) return;
+  const handleHideComment = async (commentId: number) => {
+    if (!(await confirmDialog({ description: '이 댓글을 숨기시겠습니까?' }))) return;
     hideCommentMutation.mutate(commentId);
   };
 
-  const handleUnhideComment = (commentId: number) => {
-    if (!confirm('이 댓글의 숨김을 해제하시겠습니까?')) return;
+  const handleUnhideComment = async (commentId: number) => {
+    if (!(await confirmDialog({ description: '이 댓글의 숨김을 해제하시겠습니까?' }))) return;
     unhideCommentMutation.mutate(commentId);
   };
 
-  const handleDeleteComment = (commentId: number) => {
-    if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
+  const handleDeleteComment = async (commentId: number) => {
+    if (!(await confirmDialog({ description: '이 댓글을 삭제하시겠습니까?', variant: 'destructive' }))) return;
     deleteCommentMutation.mutate(commentId);
   };
 
@@ -301,6 +304,7 @@ export default function CourseDetailPage() {
           </div>
         )}
       </div>
+    {ConfirmDialog}
     </DetailPageLayout>
   );
 }

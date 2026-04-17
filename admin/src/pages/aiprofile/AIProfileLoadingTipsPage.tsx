@@ -6,11 +6,13 @@ import type { ColumnDef } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
 import { loadingTipService } from '../../services/loadingTipService';
 import type { AILoadingTipResponse, CreateLoadingTipRequest } from '../../services/loadingTipService';
+import { useConfirm } from '@/hooks/useConfirm'
 
 type ActiveFilter = 'all' | 'active' | 'inactive';
 
 export default function AIProfileLoadingTipsPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [showForm, setShowForm] = useState(false);
   const [editingTip, setEditingTip] = useState<AILoadingTipResponse | null>(null);
   const [form, setForm] = useState<CreateLoadingTipRequest>({ content: '', displayOrder: 0 });
@@ -68,8 +70,8 @@ export default function AIProfileLoadingTipsPage() {
     updateMutation.mutate({ id: tip.id, req: { isActive: !tip.isActive } });
   };
 
-  const handleDelete = (tip: AILoadingTipResponse) => {
-    if (window.confirm(`"${tip.content}" 팁을 삭제하시겠습니까?`)) {
+  const handleDelete = async (tip: AILoadingTipResponse) => {
+    if (await confirmDialog({ description: `"${tip.content}" 팁을 삭제하시겠습니까?`, variant: 'destructive' })) {
       deleteMutation.mutate(tip.id);
     }
   };
@@ -219,6 +221,7 @@ export default function AIProfileLoadingTipsPage() {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 }

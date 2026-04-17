@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { reportService } from '../../services/reportService';
 import { DetailPageLayout } from '../../components/common/DetailPageLayout';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const TYPE_LABELS: Record<string, string> = {
   POST: '게시글',
@@ -62,6 +64,7 @@ export default function ReportDetailPage() {
   const { reportId } = useParams<{ reportId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
 
   const [showModal, setShowModal] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>('');
@@ -90,7 +93,7 @@ export default function ReportDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       navigate('/reports');
     } catch {
-      alert('처리에 실패했습니다.');
+      toast.error('처리에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
@@ -98,13 +101,13 @@ export default function ReportDetailPage() {
 
   const handleDismiss = async () => {
     if (!report) return;
-    if (!confirm('기각하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '기각하시겠습니까?' }))) return;
     try {
       await reportService.dismissReport(report.id);
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       navigate('/reports');
     } catch {
-      alert('처리에 실패했습니다.');
+      toast.error('처리에 실패했습니다.');
     }
   };
 
@@ -283,6 +286,7 @@ export default function ReportDetailPage() {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </DetailPageLayout>
   );
 }

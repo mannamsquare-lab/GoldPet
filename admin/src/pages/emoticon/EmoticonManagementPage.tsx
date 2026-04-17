@@ -7,6 +7,8 @@ import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';
 import { Tabs } from '../../components/common/Tabs';
 import type { ColumnDef } from '../../components/common/DataTable';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const FILTER_TABS = [
   { key: 'all', label: '전체' },
@@ -23,6 +25,7 @@ const EMPTY_FORM: CreateEmoticonRequest = {
 
 export default function EmoticonManagementPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [activeFilter, setActiveFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingEmoticon, setEditingEmoticon] = useState<EmoticonResponse | null>(null);
@@ -52,7 +55,7 @@ export default function EmoticonManagementPage() {
     setShowForm(true);
   };
 
-  const openEditForm = (emoticon: EmoticonResponse) => {
+  const openEditForm = async (emoticon: EmoticonResponse) => {
     setEditingEmoticon(emoticon);
     setForm({
       name: emoticon.name,
@@ -63,7 +66,7 @@ export default function EmoticonManagementPage() {
     setShowForm(true);
   };
 
-  const closeForm = () => {
+  const closeForm = async () => {
     setShowForm(false);
     setEditingEmoticon(null);
     setForm(EMPTY_FORM);
@@ -73,11 +76,11 @@ export default function EmoticonManagementPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 업로드 가능합니다.');
+      toast.info('이미지 파일만 업로드 가능합니다.');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      alert('파일 크기는 10MB 이하여야 합니다.');
+      toast.info('파일 크기는 10MB 이하여야 합니다.');
       return;
     }
     setUploading(true);
@@ -86,7 +89,7 @@ export default function EmoticonManagementPage() {
       setForm({ ...form, imageUrl: result.url });
     } catch (error) {
       console.error('Failed to upload image:', error);
-      alert('이미지 업로드에 실패했습니다.');
+      toast.error('이미지 업로드에 실패했습니다.');
     } finally {
       setUploading(false);
     }
@@ -94,15 +97,15 @@ export default function EmoticonManagementPage() {
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
-      alert('이름을 입력해주세요.');
+      toast.info('이름을 입력해주세요.');
       return;
     }
     if (!form.imageUrl.trim()) {
-      alert('이미지 URL을 입력해주세요.');
+      toast.info('이미지 URL을 입력해주세요.');
       return;
     }
     if (!form.packId) {
-      alert('팩을 선택해주세요.');
+      toast.info('팩을 선택해주세요.');
       return;
     }
     setSubmitting(true);
@@ -116,32 +119,32 @@ export default function EmoticonManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['emoticons'] });
     } catch (error) {
       console.error('Failed to save emoticon:', error);
-      alert('저장에 실패했습니다.');
+      toast.error('저장에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`"${name}" 이모티콘을 삭제하시겠습니까?`)) return;
+    if (!(await confirmDialog({ description: `"${name}" 이모티콘을 삭제하시겠습니까?`, variant: 'destructive' }))) return;
     try {
       await emoticonService.delete(id);
       queryClient.invalidateQueries({ queryKey: ['emoticons'] });
     } catch (error) {
       console.error('Failed to delete emoticon:', error);
-      alert('삭제에 실패했습니다.');
+      toast.error('삭제에 실패했습니다.');
     }
   };
 
   const handleToggleActive = async (id: number, name: string, currentActive: boolean) => {
     const msg = currentActive ? '비활성화하시겠습니까?' : '활성화하시겠습니까?';
-    if (!confirm(`"${name}" 이모티콘을 ${msg}`)) return;
+    if (!(await confirmDialog({ description: `"${name}" 이모티콘을 ${msg}` }))) return;
     try {
       await emoticonService.toggleActive(id);
       queryClient.invalidateQueries({ queryKey: ['emoticons'] });
     } catch (error) {
       console.error('Failed to toggle emoticon status:', error);
-      alert('상태 변경에 실패했습니다.');
+      toast.error('상태 변경에 실패했습니다.');
     }
   };
 
@@ -323,6 +326,7 @@ export default function EmoticonManagementPage() {
           emptyMessage="이모티콘이 없습니다."
         />
       </div>
+    {ConfirmDialog}
     </div>
   );
 }

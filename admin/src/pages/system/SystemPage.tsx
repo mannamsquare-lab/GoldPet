@@ -6,9 +6,12 @@ import { cacheService } from '../../services/cacheService';
 import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function SystemPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
 
   const { data: systemInfo, isLoading: loadingSystem } = useQuery({
     queryKey: ['systemInfo'],
@@ -40,11 +43,11 @@ export default function SystemPage() {
     mutationFn: ({ key, value }: { key: string; value: string }) =>
       systemService.updateConfig(key, value),
     onSuccess: () => {
-      alert('설정이 저장되었습니다');
+      toast.success('설정이 저장되었습니다');
       queryClient.invalidateQueries({ queryKey: ['configs'] });
     },
     onError: () => {
-      alert('설정 변경에 실패했습니다');
+      toast.error('설정 변경에 실패했습니다');
     },
   });
 
@@ -52,14 +55,14 @@ export default function SystemPage() {
     mutationFn: (cacheName: string) => cacheService.clearCache(cacheName),
     onSuccess: (result) => {
       if (result.success) {
-        alert(`캐시 초기화 완료: ${result.message}`);
+        toast.success(`캐시 초기화 완료: ${result.message}`);
       } else {
-        alert(`캐시 초기화 실패: ${result.message}`);
+        toast.error(`캐시 초기화 실패: ${result.message}`);
       }
       queryClient.invalidateQueries({ queryKey: ['caches'] });
     },
     onError: () => {
-      alert('캐시 초기화 실패');
+      toast.error('캐시 초기화 실패');
     },
   });
 
@@ -75,24 +78,24 @@ export default function SystemPage() {
   const maintenanceMutation = useMutation({
     mutationFn: (enabled: boolean) => systemService.setMaintenanceMode(enabled),
     onSuccess: (_data, enabled) => {
-      alert(enabled ? '유지보수 모드가 활성화되었습니다.' : '유지보수 모드가 해제되었습니다.');
+      toast.info(enabled ? '유지보수 모드가 활성화되었습니다.' : '유지보수 모드가 해제되었습니다.');
       queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
       queryClient.invalidateQueries({ queryKey: ['configs'] });
       queryClient.invalidateQueries({ queryKey: ['notices'] });
     },
     onError: () => {
-      alert('유지보수 모드 변경에 실패했습니다.');
+      toast.error('유지보수 모드 변경에 실패했습니다.');
     },
   });
 
   const signupMutation = useMutation({
     mutationFn: (enabled: boolean) => systemService.updateConfig('allow_signups', String(enabled)),
     onSuccess: (_data, enabled) => {
-      alert(enabled ? '신규 가입이 허용되었습니다.' : '신규 가입이 차단되었습니다.');
+      toast.info(enabled ? '신규 가입이 허용되었습니다.' : '신규 가입이 차단되었습니다.');
       queryClient.invalidateQueries({ queryKey: ['configs'] });
     },
     onError: () => {
-      alert('설정 변경에 실패했습니다.');
+      toast.error('설정 변경에 실패했습니다.');
     },
   });
 
@@ -100,14 +103,14 @@ export default function SystemPage() {
     mutationFn: () => cacheService.clearAll(),
     onSuccess: (result) => {
       if (result.success) {
-        alert(`전체 캐시 초기화 완료: ${result.message}`);
+        toast.success(`전체 캐시 초기화 완료: ${result.message}`);
       } else {
-        alert(`전체 캐시 초기화 실패: ${result.message}`);
+        toast.error(`전체 캐시 초기화 실패: ${result.message}`);
       }
       queryClient.invalidateQueries({ queryKey: ['caches'] });
     },
     onError: () => {
-      alert('전체 캐시 초기화 실패');
+      toast.error('전체 캐시 초기화 실패');
     },
   });
 
@@ -115,14 +118,30 @@ export default function SystemPage() {
     updateConfigMutation.mutate({ key, value });
   };
 
-  const handleClearCache = (cacheName: string) => {
-    if (!confirm(`${cacheName} 캐시를 초기화하시겠습니까?`)) return;
+  const handleClearCache = async (cacheName: string) => {
+    if (!(await confirmDialog({ description: `${cacheName} 캐시를 초기화하시겠습니까?` }))) return;
     clearCacheMutation.mutate(cacheName);
   };
 
-  const handleClearAllCaches = () => {
-    if (!confirm('전체 캐시를 초기화하시겠습니까? 일시적으로 시스템 성능에 영향을 줄 수 있습니다.')) return;
+  const handleClearAllCaches = async () => {
+    if (!(await confirmDialog({ description: '전체 캐시를 초기화하시겠습니까? 일시적으로 시스템 성능에 영향을 줄 수 있습니다.' }))) return;
     clearAllCachesMutation.mutate();
+  };
+
+  const handleToggleMaintenance = async () => {
+    const next = !maintenanceEnabled;
+    const msg = next
+      ? '유지보수 모드를 활성화하시겠습니까? 서비스가 중단됩니다.'
+      : '유지보수 모드를 해제하시겠습니까?';
+    if (await confirmDialog({ description: msg })) maintenanceMutation.mutate(next);
+  };
+
+  const handleToggleSignup = async () => {
+    const next = !signupEnabled;
+    const msg = next
+      ? '신규 가입을 허용하시겠습니까?'
+      : '신규 가입을 차단하시겠습니까?';
+    if (await confirmDialog({ description: msg })) signupMutation.mutate(next);
   };
 
   const getStatusBadge = (status: string) => {
@@ -323,13 +342,7 @@ export default function SystemPage() {
             <Button
               variant={maintenanceEnabled ? 'danger' : 'ghost'}
               disabled={maintenanceMutation.isPending}
-              onClick={() => {
-                const next = !maintenanceEnabled;
-                const msg = next
-                  ? '유지보수 모드를 활성화하시겠습니까? 서비스가 중단됩니다.'
-                  : '유지보수 모드를 해제하시겠습니까?';
-                if (confirm(msg)) maintenanceMutation.mutate(next);
-              }}
+              onClick={handleToggleMaintenance}
             >
               {maintenanceMutation.isPending ? '변경 중...' : maintenanceEnabled ? '활성' : '비활성'}
             </Button>
@@ -342,13 +355,7 @@ export default function SystemPage() {
             <Button
               variant={signupEnabled ? 'success' : 'ghost'}
               disabled={signupMutation.isPending}
-              onClick={() => {
-                const next = !signupEnabled;
-                const msg = next
-                  ? '신규 가입을 허용하시겠습니까?'
-                  : '신규 가입을 차단하시겠습니까?';
-                if (confirm(msg)) signupMutation.mutate(next);
-              }}
+              onClick={handleToggleSignup}
             >
               {signupMutation.isPending ? '변경 중...' : signupEnabled ? '활성' : '비활성'}
             </Button>
@@ -362,6 +369,7 @@ export default function SystemPage() {
           </div>
         </div>
       </div>
+    {ConfirmDialog}
     </div>
   );
 }

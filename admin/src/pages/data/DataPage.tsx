@@ -7,6 +7,8 @@ import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';
 import { Tabs } from '../../components/common/Tabs';
 import type { ColumnDef } from '../../components/common/DataTable';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const DATA_TABS = [
   { key: 'species', label: '반려동물 종' },
@@ -28,6 +30,7 @@ interface CategoryItem {
 
 export default function DataPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [activeTab, setActiveTab] = useState('species');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -46,13 +49,13 @@ export default function DataPage() {
   const deleteSpeciesMutation = useMutation({
     mutationFn: (id: number) => breedService.deleteSpecies(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['species'] }),
-    onError: () => alert('종 삭제에 실패했습니다.'),
+    onError: () => toast.error('종 삭제에 실패했습니다.'),
   });
 
   const deleteCategoryMutation = useMutation({
     mutationFn: (id: number) => dataService.deleteCategory(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
-    onError: () => alert('카테고리 삭제에 실패했습니다.'),
+    onError: () => toast.error('카테고리 삭제에 실패했습니다.'),
   });
 
   const createSpeciesMutation = useMutation({
@@ -61,7 +64,7 @@ export default function DataPage() {
       queryClient.invalidateQueries({ queryKey: ['species'] });
       closeModal();
     },
-    onError: () => alert('종 추가에 실패했습니다.'),
+    onError: () => toast.error('종 추가에 실패했습니다.'),
   });
 
   const createCategoryMutation = useMutation({
@@ -70,16 +73,16 @@ export default function DataPage() {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       closeModal();
     },
-    onError: () => alert('카테고리 추가에 실패했습니다.'),
+    onError: () => toast.error('카테고리 추가에 실패했습니다.'),
   });
 
-  const handleDeleteSpecies = (id: number) => {
-    if (!confirm('이 종을 삭제하시겠습니까? 연관된 품종이 있으면 삭제할 수 없습니다.')) return;
+  const handleDeleteSpecies = async (id: number) => {
+    if (!(await confirmDialog({ description: '이 종을 삭제하시겠습니까? 연관된 품종이 있으면 삭제할 수 없습니다.', variant: 'destructive' }))) return;
     deleteSpeciesMutation.mutate(id);
   };
 
-  const handleDeleteCategory = (id: number) => {
-    if (!confirm('이 카테고리를 삭제하시겠습니까? 연관된 게시글이 있으면 삭제할 수 없습니다.')) return;
+  const handleDeleteCategory = async (id: number) => {
+    if (!(await confirmDialog({ description: '이 카테고리를 삭제하시겠습니까? 연관된 게시글이 있으면 삭제할 수 없습니다.', variant: 'destructive' }))) return;
     deleteCategoryMutation.mutate(id);
   };
 
@@ -97,12 +100,12 @@ export default function DataPage() {
 
   const handleCreate = () => {
     if (!newName.trim()) {
-      alert('이름을 입력해주세요.');
+      toast.info('이름을 입력해주세요.');
       return;
     }
     if (activeTab === 'species') {
       if (!newCode.trim()) {
-        alert('코드를 입력해주세요.');
+        toast.info('코드를 입력해주세요.');
         return;
       }
       createSpeciesMutation.mutate({ name: newName, code: newCode });
@@ -230,6 +233,7 @@ export default function DataPage() {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 }

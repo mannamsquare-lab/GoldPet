@@ -9,6 +9,8 @@ import { Pagination } from '../../components/common/Pagination';
 import { SearchFilters } from '../../components/common/SearchFilters';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { useListParams } from '../../hooks/useListParams';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const DIFFICULTY_BADGE: Record<string, { label: string; className: string }> = {
   EASY: { label: '초급', className: 'bg-green-100 text-green-800' },
@@ -19,6 +21,7 @@ const DIFFICULTY_BADGE: Record<string, { label: string; className: string }> = {
 export default function CoursePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const { page, size, search, filters, setPage, setSize, setSearch, setFilter } = useListParams({ defaultSize: 20 });
 
   const { data, isLoading } = usePagedQuery<CourseListItem>({
@@ -38,33 +41,33 @@ export default function CoursePage() {
   const hideMutation = useMutation({
     mutationFn: (courseId: number) => courseManagementService.hideCourse(courseId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses'] }),
-    onError: () => alert('코스 숨김에 실패했습니다.'),
+    onError: () => toast.error('코스 숨김에 실패했습니다.'),
   });
 
   const unhideMutation = useMutation({
     mutationFn: (courseId: number) => courseManagementService.unhideCourse(courseId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses'] }),
-    onError: () => alert('코스 숨김 해제에 실패했습니다.'),
+    onError: () => toast.error('코스 숨김 해제에 실패했습니다.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (courseId: number) => courseManagementService.deleteCourse(courseId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses'] }),
-    onError: () => alert('코스 삭제에 실패했습니다.'),
+    onError: () => toast.error('코스 삭제에 실패했습니다.'),
   });
 
-  const handleHide = (courseId: number) => {
-    if (!confirm('이 코스를 숨기시겠습니까?')) return;
+  const handleHide = async (courseId: number) => {
+    if (!(await confirmDialog({ description: '이 코스를 숨기시겠습니까?' }))) return;
     hideMutation.mutate(courseId);
   };
 
-  const handleUnhide = (courseId: number) => {
-    if (!confirm('이 코스의 숨김을 해제하시겠습니까?')) return;
+  const handleUnhide = async (courseId: number) => {
+    if (!(await confirmDialog({ description: '이 코스의 숨김을 해제하시겠습니까?' }))) return;
     unhideMutation.mutate(courseId);
   };
 
-  const handleDelete = (courseId: number) => {
-    if (!confirm('정말 이 코스를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.')) return;
+  const handleDelete = async (courseId: number) => {
+    if (!(await confirmDialog({ description: '정말 이 코스를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.', variant: 'destructive' }))) return;
     deleteMutation.mutate(courseId);
   };
 
@@ -190,6 +193,7 @@ export default function CoursePage() {
           />
         </div>
       </div>
+    {ConfirmDialog}
     </div>
   );
 }

@@ -16,6 +16,8 @@ import { StatCard } from '../../components/common/StatCard';
 import { Button } from '../../components/common/Button';
 import type { AIRequestAdminResponse } from '../../services/aiProfileAdminService';
 import AIProfileLoadingTipsPage from './AIProfileLoadingTipsPage';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const AI_PROFILE_TABS = [
   { key: 'requests', label: '요청 관리' },
@@ -23,7 +25,7 @@ const AI_PROFILE_TABS = [
   { key: 'loading-tips', label: '로딩 팁 관리' },
 ];
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = async (status: string) => {
   const styles: Record<string, string> = {
     PENDING: 'bg-yellow-100 text-yellow-800',
     PROCESSING: 'bg-blue-100 text-blue-800',
@@ -47,6 +49,7 @@ const getStatusBadge = (status: string) => {
 
 export default function AIProfilePage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [activeTab, setActiveTab] = useState<string>('requests');
   const [styles, setStyles] = useState<AIStyleAdminResponse[]>([]);
   const [stylesLoading, setStylesLoading] = useState(false);
@@ -93,7 +96,7 @@ export default function AIProfilePage() {
     }
   };
 
-  const handleTabChange = (key: string) => {
+  const handleTabChange = async (key: string) => {
     setActiveTab(key);
     if (key === 'styles') {
       loadStyles();
@@ -101,38 +104,38 @@ export default function AIProfilePage() {
   };
 
   const handleRetry = async (id: number) => {
-    if (!confirm('이 요청을 다시 시도하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '이 요청을 다시 시도하시겠습니까?' }))) return;
     try {
       await aiProfileAdminService.retryRequest(id);
       queryClient.invalidateQueries({ queryKey: ['ai-profile-requests'] });
       queryClient.invalidateQueries({ queryKey: ['ai-profile-stats'] });
     } catch (error) {
       console.error('Failed to retry request:', error);
-      alert('재시도에 실패했습니다.');
+      toast.error('재시도에 실패했습니다.');
     }
   };
 
   const handleRefund = async (id: number) => {
-    if (!confirm('이 요청을 환불 처리하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '이 요청을 환불 처리하시겠습니까?' }))) return;
     try {
       await aiProfileAdminService.refundRequest(id);
       queryClient.invalidateQueries({ queryKey: ['ai-profile-requests'] });
       queryClient.invalidateQueries({ queryKey: ['ai-profile-stats'] });
     } catch (error) {
       console.error('Failed to refund request:', error);
-      alert('환불 처리에 실패했습니다.');
+      toast.error('환불 처리에 실패했습니다.');
     }
   };
 
   const handleForceFail = async (id: number) => {
-    if (!confirm('이 요청을 강제 실패 처리하시겠습니까? 골드가 환불됩니다.')) return;
+    if (!(await confirmDialog({ description: '이 요청을 강제 실패 처리하시겠습니까? 골드가 환불됩니다.' }))) return;
     try {
       await aiProfileAdminService.forceFailRequest(id);
       queryClient.invalidateQueries({ queryKey: ['ai-profile-requests'] });
       queryClient.invalidateQueries({ queryKey: ['ai-profile-stats'] });
     } catch (error) {
       console.error('Failed to force fail request:', error);
-      alert('강제 실패 처리에 실패했습니다.');
+      toast.error('강제 실패 처리에 실패했습니다.');
     }
   };
 
@@ -142,7 +145,7 @@ export default function AIProfilePage() {
       setSelectedRequest(detail);
     } catch (error) {
       console.error('Failed to load request detail:', error);
-      alert('요청 상세 정보를 불러올 수 없습니다.');
+      toast.error('요청 상세 정보를 불러올 수 없습니다.');
     }
   };
 
@@ -152,18 +155,18 @@ export default function AIProfilePage() {
       loadStyles();
     } catch (error) {
       console.error('Failed to toggle style:', error);
-      alert('스타일 상태 변경에 실패했습니다.');
+      toast.error('스타일 상태 변경에 실패했습니다.');
     }
   };
 
   const handleDeleteStyle = async (id: string) => {
-    if (!confirm('이 스타일을 삭제하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '이 스타일을 삭제하시겠습니까?', variant: 'destructive' }))) return;
     try {
       await aiProfileAdminService.deleteStyle(id);
       loadStyles();
     } catch (error) {
       console.error('Failed to delete style:', error);
-      alert('스타일 삭제에 실패했습니다.');
+      toast.error('스타일 삭제에 실패했습니다.');
     }
   };
 
@@ -198,7 +201,7 @@ export default function AIProfilePage() {
       loadStyles();
     } catch (error) {
       console.error('Failed to save style:', error);
-      alert('스타일 저장에 실패했습니다.');
+      toast.error('스타일 저장에 실패했습니다.');
     }
   };
 
@@ -541,6 +544,7 @@ export default function AIProfilePage() {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 }

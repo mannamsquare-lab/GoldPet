@@ -15,6 +15,8 @@ import { SearchFilters } from '../../components/common/SearchFilters';
 import { Button } from '../../components/common/Button';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const LBS_TABS = [
   { key: 'stats', label: '통계' },
@@ -32,6 +34,7 @@ const WALK_FILTER_FIELDS = [
 
 export default function LBSPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [activeTab, setActiveTab] = useState<string>('stats');
   const [places, setPlaces] = useState<Place[]>([]);
   const [placesLoading, setPlacesLoading] = useState(false);
@@ -90,7 +93,7 @@ export default function LBSPage() {
     }
   };
 
-  const handleTabChange = (key: string) => {
+  const handleTabChange = async (key: string) => {
     setActiveTab(key);
     if (key === 'places') {
       loadPlaces();
@@ -98,7 +101,7 @@ export default function LBSPage() {
   };
 
   const handleDeleteWalk = async (id: number) => {
-    if (!confirm('이 산책 기록을 삭제하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '이 산책 기록을 삭제하시겠습니까?', variant: 'destructive' }))) return;
     const reason = prompt('삭제 사유를 입력하세요:');
     if (!reason) return;
     try {
@@ -106,7 +109,7 @@ export default function LBSPage() {
       queryClient.invalidateQueries({ queryKey: ['walks'] });
     } catch (error) {
       console.error('Failed to delete walk:', error);
-      alert('삭제에 실패했습니다.');
+      toast.error('삭제에 실패했습니다.');
     }
   };
 
@@ -116,7 +119,7 @@ export default function LBSPage() {
       setSelectedWalk(detail);
     } catch (error) {
       console.error('Failed to load walk detail:', error);
-      alert('산책 상세 정보를 불러올 수 없습니다.');
+      toast.error('산책 상세 정보를 불러올 수 없습니다.');
     }
   };
 
@@ -132,7 +135,7 @@ export default function LBSPage() {
       setShowPlaceForm(false);
       setPlaceForm({ name: '', category: '', latitude: '', longitude: '' });
     },
-    onError: () => alert('장소 추가에 실패했습니다.'),
+    onError: () => toast.error('장소 추가에 실패했습니다.'),
   });
 
   const walkColumns: ColumnDef<WalkAdminResponse>[] = [
@@ -393,6 +396,7 @@ export default function LBSPage() {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 }

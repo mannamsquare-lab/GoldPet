@@ -5,6 +5,8 @@ import type { WalkRankingAdminEntry, BestWalkCoupleResponse } from '../../servic
 import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 function getCurrentYearMonth(): string {
   const now = new Date();
@@ -32,6 +34,7 @@ function Avatar({ url, name, size = 32 }: { url: string | null; name: string | n
 
 export default function WalkRankingManagementPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth());
   const [confirmTarget, setConfirmTarget] = useState<WalkRankingAdminEntry | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -53,7 +56,7 @@ export default function WalkRankingManagementPage() {
     setYearMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   };
 
-  const nextMonth = () => {
+  const nextMonth = async () => {
     const current = getCurrentYearMonth();
     if (yearMonth >= current) return;
     const [y, m] = yearMonth.split('-').map(Number);
@@ -63,7 +66,7 @@ export default function WalkRankingManagementPage() {
 
   const handleSelect = async (entry: WalkRankingAdminEntry) => {
     if (!entry.petId) {
-      alert('이 사용자는 해당 월에 반려동물 산책 기록이 없습니다.');
+      toast.error('이 사용자는 해당 월에 반려동물 산책 기록이 없습니다.');
       return;
     }
     setConfirmTarget(entry);
@@ -82,21 +85,21 @@ export default function WalkRankingManagementPage() {
       setConfirmTarget(null);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
-      alert(e.response?.data?.message || '선정에 실패했습니다.');
+      toast.error(e.response?.data?.message || '선정에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleRemove = async () => {
-    if (!confirm(`${formatYearMonth(yearMonth)} 베스트 산책커플 선정을 해제하시겠습니까?`)) return;
+    if (!(await confirmDialog({ description: `${formatYearMonth(yearMonth)} 베스트 산책커플 선정을 해제하시겠습니까?` }))) return;
     setRemoving(true);
     try {
       await walkRankingService.deleteBestCouple(yearMonth);
       queryClient.invalidateQueries({ queryKey: ['admin', 'bestCouple', yearMonth] });
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
-      alert(e.response?.data?.message || '해제에 실패했습니다.');
+      toast.error(e.response?.data?.message || '해제에 실패했습니다.');
     } finally {
       setRemoving(false);
     }
@@ -300,6 +303,7 @@ export default function WalkRankingManagementPage() {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
 import { Pagination } from '../../components/common/Pagination';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 interface Banner {
   id: number;
@@ -51,6 +53,7 @@ const getTargetTypeBadge = (targetType: string) => {
 
 export default function MarketingPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [activeTab, setActiveTab] = useState('templates');
 
   // Template form state
@@ -113,7 +116,7 @@ export default function MarketingPage() {
       setShowTemplateForm(false);
       setTemplateForm({ title: '', body: '', category: 'NOTICE' });
     },
-    onError: () => alert('템플릿 생성에 실패했습니다.'),
+    onError: () => toast.error('템플릿 생성에 실패했습니다.'),
   });
 
   const updateTemplateMutation = useMutation({
@@ -125,13 +128,13 @@ export default function MarketingPage() {
       setShowTemplateForm(false);
       setTemplateForm({ title: '', body: '', category: 'NOTICE' });
     },
-    onError: () => alert('템플릿 수정에 실패했습니다.'),
+    onError: () => toast.error('템플릿 수정에 실패했습니다.'),
   });
 
   const deleteTemplateMutation = useMutation({
     mutationFn: (id: number) => marketingService.deleteTemplate(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['marketing-templates'] }),
-    onError: () => alert('템플릿 삭제에 실패했습니다.'),
+    onError: () => toast.error('템플릿 삭제에 실패했습니다.'),
   });
 
   const sendNotificationMutation = useMutation({
@@ -152,17 +155,17 @@ export default function MarketingPage() {
       });
     },
     onSuccess: (result) => {
-      alert(`발송 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`);
+      toast.error(`발송 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`);
       setSendDialogTemplateId(null);
       setSendForm({ targetType: 'ALL', targetUserIds: '' });
     },
-    onError: () => alert('알림 발송에 실패했습니다.'),
+    onError: () => toast.error('알림 발송에 실패했습니다.'),
   });
 
   const deleteBannerMutation = useMutation({
     mutationFn: (id: number) => marketingService.deleteBanner(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['marketing-banners'] }),
-    onError: () => alert('배너 삭제에 실패했습니다.'),
+    onError: () => toast.error('배너 삭제에 실패했습니다.'),
   });
 
   const createBannerMutation = useMutation({
@@ -177,7 +180,7 @@ export default function MarketingPage() {
       setShowBannerForm(false);
       setBannerForm({ title: '', imageUrl: '', link: '', displayOrder: '1' });
     },
-    onError: () => alert('배너 생성에 실패했습니다.'),
+    onError: () => toast.error('배너 생성에 실패했습니다.'),
   });
 
   // Handlers
@@ -201,9 +204,14 @@ export default function MarketingPage() {
     }
   };
 
-  const handleDeleteTemplate = (id: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+  const handleDeleteTemplate = async (id: number) => {
+    if (!(await confirmDialog({ description: '정말 삭제하시겠습니까?', variant: 'destructive' }))) return;
     deleteTemplateMutation.mutate(id);
+  };
+
+  const handleDeleteBanner = async (bannerId: number) => {
+    if (!(await confirmDialog({ description: '배너를 삭제하시겠습니까?', variant: 'destructive' }))) return;
+    deleteBannerMutation.mutate(bannerId);
   };
 
   // Paginated slices for client-side pagination (templates returns array)
@@ -299,9 +307,7 @@ export default function MarketingPage() {
             variant="link"
             size="sm"
             className="text-red-600 hover:text-red-900"
-            onClick={() => {
-              if (confirm('배너를 삭제하시겠습니까?')) deleteBannerMutation.mutate(row.id);
-            }}
+            onClick={() => handleDeleteBanner(row.id)}
           >
             삭제
           </Button>
@@ -560,6 +566,7 @@ export default function MarketingPage() {
           />
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 }

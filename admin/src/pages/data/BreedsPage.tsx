@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { breedService } from '../../services/breedService';
 import type { BreedResponse, SpeciesResponse } from '../../services/breedService';
 import { Button } from '../../components/common/Button';
+import { useConfirm } from '@/hooks/useConfirm'
 
 interface BreedsPageProps {
   embedded?: boolean;
@@ -10,6 +11,7 @@ interface BreedsPageProps {
 
 const BreedsPage: React.FC<BreedsPageProps> = ({ embedded = false }) => {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [selectedSpeciesId, setSelectedSpeciesId] = useState<number | undefined>();
 
   // Form state
@@ -84,8 +86,8 @@ const BreedsPage: React.FC<BreedsPageProps> = ({ embedded = false }) => {
     submitMutation.mutate(formData);
   };
 
-  const handleDelete = (breedId: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+  const handleDelete = async (breedId: number) => {
+    if (!(await confirmDialog({ description: '정말 삭제하시겠습니까?', variant: 'destructive' }))) return;
     deleteMutation.mutate(breedId);
   };
 
@@ -245,6 +247,7 @@ const BreedsPage: React.FC<BreedsPageProps> = ({ embedded = false }) => {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 };

@@ -3,8 +3,11 @@ import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
 import { Shield, ShieldAlert, ShieldCheck, QrCode, X, Loader2, Copy, Check } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function ProfilePage() {
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const { user, login, token } = useAuth(); // login used effectively to update user state
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   
@@ -28,7 +31,7 @@ export default function ProfilePage() {
       setQrUrl(qrUrl);
       setIsSetupModalOpen(true);
     } catch (err) {
-      alert('2FA 설정 시작 실패: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toast.error('2FA 설정 시작 실패: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +59,7 @@ export default function ProfilePage() {
       setVerificationCode('');
       setSecret('');
       setQrUrl('');
-      alert('2단계 인증이 활성화되었습니다.');
+      toast.info('2단계 인증이 활성화되었습니다.');
     } catch {
        setError('인증에 실패했습니다. 코드를 다시 확인해주세요.');
     } finally {
@@ -65,7 +68,7 @@ export default function ProfilePage() {
   };
 
   const handleDisable = async () => {
-    if (!confirm('정말로 2단계 인증을 해제하시겠습니까? 계정 보안이 취약해질 수 있습니다.')) return;
+    if (!(await confirmDialog({ description: '정말로 2단계 인증을 해제하시겠습니까? 계정 보안이 취약해질 수 있습니다.' }))) return;
     
     setIsDisabling(true);
     try {
@@ -74,9 +77,9 @@ export default function ProfilePage() {
         const updatedUser = { ...user, isTwoFactorEnabled: false };
         login(token, updatedUser);
       }
-      alert('2단계 인증이 해제되었습니다.');
+      toast.info('2단계 인증이 해제되었습니다.');
     } catch (err) {
-      alert('해제 실패: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toast.error('해제 실패: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setIsDisabling(false);
     }
@@ -224,6 +227,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 }

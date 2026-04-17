@@ -6,6 +6,8 @@ import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';
 import { Tabs } from '../../components/common/Tabs';
 import type { ColumnDef } from '../../components/common/DataTable';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const TYPE_LABELS: Record<string, string> = {
   POPUP_MODAL: '팝업 모달',
@@ -48,6 +50,7 @@ function formatDateTime(dt: string) {
 
 export default function NoticeManagementPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [activeFilter, setActiveFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingNotice, setEditingNotice] = useState<AppNoticeResponse | null>(null);
@@ -89,7 +92,7 @@ export default function NoticeManagementPage() {
     setShowForm(true);
   };
 
-  const closeForm = () => {
+  const closeForm = async () => {
     setShowForm(false);
     setEditingNotice(null);
     setForm(EMPTY_FORM);
@@ -97,11 +100,11 @@ export default function NoticeManagementPage() {
 
   const handleSubmit = async () => {
     if (!form.title.trim()) {
-      alert('제목을 입력해주세요.');
+      toast.info('제목을 입력해주세요.');
       return;
     }
     if (!form.startAt) {
-      alert('시작일시를 입력해주세요.');
+      toast.info('시작일시를 입력해주세요.');
       return;
     }
     setSubmitting(true);
@@ -124,25 +127,25 @@ export default function NoticeManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
     } catch (error) {
       console.error('Failed to save notice:', error);
-      alert('저장에 실패했습니다.');
+      toast.error('저장에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    if (!(await confirmDialog({ description: '정말 삭제하시겠습니까?', variant: 'destructive' }))) return;
     try {
       await noticeService.deleteNotice(id);
       queryClient.invalidateQueries({ queryKey: ['notices'] });
       queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
     } catch (error) {
       console.error('Failed to delete notice:', error);
-      alert('삭제에 실패했습니다.');
+      toast.error('삭제에 실패했습니다.');
     }
   };
 
-  const getTypeBadge = (type: string) => {
+  const getTypeBadge = async (type: string) => {
     const styles: Record<string, string> = {
       POPUP_MODAL: 'bg-purple-100 text-purple-800',
       MAINTENANCE: 'bg-orange-100 text-orange-800',
@@ -187,13 +190,13 @@ export default function NoticeManagementPage() {
           onClick={async () => {
             const next = !value;
             const msg = next ? '활성화하시겠습니까?' : '비활성화하시겠습니까?';
-            if (!confirm(`"${row.title}" 공지를 ${msg}`)) return;
+            if (!(await confirmDialog({ description: `"${row.title}" 공지를 ${msg}` }))) return;
             try {
               await noticeService.updateNotice(row.id, { isActive: next });
               queryClient.invalidateQueries({ queryKey: ['notices'] });
               queryClient.invalidateQueries({ queryKey: ['maintenanceStatus'] });
             } catch {
-              alert('상태 변경에 실패했습니다.');
+              toast.error('상태 변경에 실패했습니다.');
             }
           }}
           title="클릭하여 상태 변경"
@@ -334,7 +337,7 @@ export default function NoticeManagementPage() {
                             const url = await noticeService.uploadImage(file);
                             setForm(prev => ({ ...prev, imageUrls: [...(prev.imageUrls || []), url] }));
                           } catch {
-                            alert(`이미지 업로드 실패: ${file.name}`);
+                            toast.error(`이미지 업로드 실패: ${file.name}`);
                           }
                         }
                         e.target.value = '';
@@ -465,6 +468,7 @@ export default function NoticeManagementPage() {
           emptyMessage="공지가 없습니다."
         />
       </div>
+    {ConfirmDialog}
     </div>
   );
 }

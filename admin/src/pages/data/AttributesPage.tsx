@@ -3,9 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { PetAttribute, CreateAttributeRequest } from '../../services/attributeService';
 import { getAttributes, createAttribute, updateAttribute, deleteAttribute } from '../../services/attributeService';
 import { Button } from '../../components/common/Button';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const AttributesPage: React.FC = () => {
     const queryClient = useQueryClient();
+    const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
     const { data: attributes, isLoading } = useQuery({ queryKey: ['attributes'], queryFn: getAttributes });
 
     // Modal State
@@ -85,8 +88,13 @@ const AttributesPage: React.FC = () => {
                 createMutation.mutate(req);
             }
         } catch {
-            alert("잘못된 JSON 형식입니다");
+            toast.error("잘못된 JSON 형식입니다");
         }
+    };
+
+    const handleDeleteAttr = async (attrId: number) => {
+        if (!(await confirmDialog({ description: '삭제하시겠습니까?', variant: 'destructive' }))) return;
+        deleteMutation.mutate(attrId);
     };
 
     const renderCategorySection = (cat: 'TRAIT' | 'INTEREST' | 'ALLERGY', title: string) => (
@@ -112,7 +120,7 @@ const AttributesPage: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap">{attr.inputType}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <Button variant="link" size="sm" onClick={() => openModal(attr)}>수정</Button>
-                                    <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => { if(confirm('삭제하시겠습니까?')) deleteMutation.mutate(attr.id) }}>삭제</Button>
+                                    <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDeleteAttr(attr.id)}>삭제</Button>
                                 </td>
                             </tr>
                         ))}
@@ -215,6 +223,7 @@ const AttributesPage: React.FC = () => {
                     </div>
                 </div>
             )}
+        {ConfirmDialog}
         </div>
     );
 };

@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dataService, type DataItem } from '../../services/dataService';
 import { Button } from '../../components/common/Button';
+import { useConfirm } from '@/hooks/useConfirm'
 
 const UserAttributesPage: React.FC = () => {
     const queryClient = useQueryClient();
+    const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
 
     // Fetch Lists
     const { data: interests, isLoading: isInterestsLoading } = useQuery({ queryKey: ['data', 'interests'], queryFn: dataService.getInterests });
@@ -79,7 +81,7 @@ const UserAttributesPage: React.FC = () => {
                                     variant="link"
                                     size="sm"
                                     className="text-red-600 hover:text-red-900"
-                                    onClick={() => { if(confirm('삭제하시겠습니까?')) deleteAction(item.id) }}
+                                    onClick={async () => { if (!(await confirmDialog({ description: '삭제하시겠습니까?', variant: 'destructive' }))) return; deleteAction(item.id) }}
                                 >
                                     삭제
                                 </Button>
@@ -115,6 +117,7 @@ const UserAttributesPage: React.FC = () => {
                     deleteHobbyMutation.mutate
                 )}
             </div>
+        {ConfirmDialog}
         </div>
     );
 };

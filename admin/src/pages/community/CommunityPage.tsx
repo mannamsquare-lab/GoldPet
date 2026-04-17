@@ -9,10 +9,13 @@ import { Pagination } from '../../components/common/Pagination';
 import { SearchFilters } from '../../components/common/SearchFilters';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { useListParams } from '../../hooks/useListParams';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function CommunityPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const { page, size, search, filters, setPage, setSize, setSearch, setFilter } = useListParams({ defaultSize: 20 });
 
   const { data, isLoading } = usePagedQuery<PostListItem>({
@@ -31,33 +34,33 @@ export default function CommunityPage() {
   const hideMutation = useMutation({
     mutationFn: (postId: number) => communityManagementService.hidePost(postId, '관리자에 의해 숨김'),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['community'] }),
-    onError: () => alert('게시글 숨김에 실패했습니다.'),
+    onError: () => toast.error('게시글 숨김에 실패했습니다.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (postId: number) => communityManagementService.deletePost(postId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['community'] }),
-    onError: () => alert('게시글 삭제에 실패했습니다.'),
+    onError: () => toast.error('게시글 삭제에 실패했습니다.'),
   });
 
   const unhideMutation = useMutation({
     mutationFn: (postId: number) => communityManagementService.unhidePost(postId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['community'] }),
-    onError: () => alert('게시글 숨김 해제에 실패했습니다.'),
+    onError: () => toast.error('게시글 숨김 해제에 실패했습니다.'),
   });
 
-  const handleHide = (postId: number) => {
-    if (!confirm('이 게시글을 숨기시겠습니까?')) return;
+  const handleHide = async (postId: number) => {
+    if (!(await confirmDialog({ description: '이 게시글을 숨기시겠습니까?' }))) return;
     hideMutation.mutate(postId);
   };
 
-  const handleDelete = (postId: number) => {
-    if (!confirm('정말 이 게시글을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.')) return;
+  const handleDelete = async (postId: number) => {
+    if (!(await confirmDialog({ description: '정말 이 게시글을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.', variant: 'destructive' }))) return;
     deleteMutation.mutate(postId);
   };
 
-  const handleUnhide = (postId: number) => {
-    if (!confirm('이 게시글의 숨김을 해제하시겠습니까?')) return;
+  const handleUnhide = async (postId: number) => {
+    if (!(await confirmDialog({ description: '이 게시글의 숨김을 해제하시겠습니까?' }))) return;
     unhideMutation.mutate(postId);
   };
 
@@ -168,6 +171,7 @@ export default function CommunityPage() {
           />
         </div>
       </div>
+    {ConfirmDialog}
     </div>
   );
 }

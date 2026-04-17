@@ -4,9 +4,12 @@ import { chatManagementService } from '../../services/chatManagementService';
 import type { ChatRoomItem } from '../../services/chatManagementService';
 import { Button } from '../../components/common/Button';
 import { Pagination } from '../../components/common/Pagination';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function ChatManagementPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(20);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoomItem | null>(null);
@@ -29,11 +32,11 @@ export default function ChatManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['chat'] });
       if (selectedRoom?.id === roomId) setSelectedRoom(null);
     },
-    onError: () => alert('채팅방 삭제에 실패했습니다.'),
+    onError: () => toast.error('채팅방 삭제에 실패했습니다.'),
   });
 
-  const handleDeleteRoom = (roomId: number) => {
-    if (!confirm('이 채팅방을 삭제하시겠습니까?')) return;
+  const handleDeleteRoom = async (roomId: number) => {
+    if (!(await confirmDialog({ description: '이 채팅방을 삭제하시겠습니까?', variant: 'destructive' }))) return;
     deleteMutation.mutate(roomId);
   };
 
@@ -42,11 +45,11 @@ export default function ChatManagementPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat', 'messages', selectedRoom?.id] });
     },
-    onError: () => alert('메시지 삭제에 실패했습니다.'),
+    onError: () => toast.error('메시지 삭제에 실패했습니다.'),
   });
 
-  const handleDeleteMessage = (messageId: number) => {
-    if (!confirm('이 메시지를 삭제하시겠습니까?')) return;
+  const handleDeleteMessage = async (messageId: number) => {
+    if (!(await confirmDialog({ description: '이 메시지를 삭제하시겠습니까?', variant: 'destructive' }))) return;
     deleteMessageMutation.mutate(messageId);
   };
 
@@ -146,6 +149,7 @@ export default function ChatManagementPage() {
           </div>
         </div>
       </div>
+    {ConfirmDialog}
     </div>
   );
 }

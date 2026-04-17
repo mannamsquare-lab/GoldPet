@@ -11,6 +11,8 @@ import { StatCard } from '../../components/common/StatCard';
 import { Button } from '../../components/common/Button';
 import { useListParams } from '../../hooks/useListParams';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
+import { toast } from 'sonner'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const TABS = [
   { key: 'transactions', label: '거래 내역' },
@@ -32,6 +34,7 @@ const getTypeLabel = (type: string) => {
 
 export default function EconomyPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
   const [activeTab, setActiveTab] = useState('transactions');
 
   // Transaction filter
@@ -90,7 +93,7 @@ export default function EconomyPage() {
       setRefundTarget(null);
       setRefundReason('');
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '환불 처리 실패'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e?.response?.data?.message || '환불 처리 실패'),
   });
 
   const adjustMutation = useMutation({
@@ -102,9 +105,9 @@ export default function EconomyPage() {
       setAdjustUserId('');
       setAdjustAmount('');
       setAdjustReason('');
-      alert('골드 조정이 완료되었습니다.');
+      toast.success('골드 조정이 완료되었습니다.');
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '골드 조정 실패'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e?.response?.data?.message || '골드 조정 실패'),
   });
 
   const createProductMutation = useMutation({
@@ -121,7 +124,7 @@ export default function EconomyPage() {
       queryClient.invalidateQueries({ queryKey: ['economy-products'] });
       resetProductForm();
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '상품 처리 실패'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e?.response?.data?.message || '상품 처리 실패'),
   });
 
   const updateProductMutation = useMutation({
@@ -131,17 +134,17 @@ export default function EconomyPage() {
       queryClient.invalidateQueries({ queryKey: ['economy-products'] });
       resetProductForm();
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '상품 처리 실패'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e?.response?.data?.message || '상품 처리 실패'),
   });
 
   const deleteProductMutation = useMutation({
     mutationFn: (id: number) => economyService.deleteProduct(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['economy-products'] }),
-    onError: (e: { response?: { data?: { message?: string } } }) => alert(e?.response?.data?.message || '상품 삭제에 실패했습니다.'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e?.response?.data?.message || '상품 삭제에 실패했습니다.'),
   });
 
-  const handleDeleteProduct = (id: number) => {
-    if (!confirm('이 상품을 삭제하시겠습니까?')) return;
+  const handleDeleteProduct = async (id: number) => {
+    if (!(await confirmDialog({ description: '이 상품을 삭제하시겠습니까?', variant: 'destructive' }))) return;
     deleteProductMutation.mutate(id);
   };
 
@@ -155,7 +158,7 @@ export default function EconomyPage() {
     const userId = parseInt(adjustUserId);
     const amount = parseInt(adjustAmount);
     if (!userId || !amount || !adjustReason.trim()) {
-      alert('모든 항목을 입력해주세요.');
+      toast.info('모든 항목을 입력해주세요.');
       return;
     }
     adjustMutation.mutate({ userId, amount, reason: adjustReason });
@@ -497,6 +500,7 @@ export default function EconomyPage() {
           </div>
         </div>
       )}
+    {ConfirmDialog}
     </div>
   );
 }

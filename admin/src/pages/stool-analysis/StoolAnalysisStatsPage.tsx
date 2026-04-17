@@ -11,6 +11,7 @@ import { StatCard } from '../../components/common/StatCard';
 import { Button } from '../../components/common/Button';
 import { useListParams } from '../../hooks/useListParams';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
+import { toast } from 'sonner'
 
 const TABS = [
   { key: 'overview', label: '통계 개요' },
@@ -62,16 +63,16 @@ export default function StoolAnalysisStatsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stool-daily-limit'] });
       setLimitInput('');
-      alert('일일 제한이 업데이트되었습니다.');
+      toast.info('일일 제한이 업데이트되었습니다.');
     },
     onError: (e: { response?: { data?: { message?: string } } }) =>
-      alert(e?.response?.data?.message || '업데이트 실패'),
+      toast.error(e?.response?.data?.message || '업데이트 실패'),
   });
 
   const handleUpdateLimit = () => {
     const value = parseInt(limitInput, 10);
     if (isNaN(value) || value < 0) {
-      alert('유효한 숫자를 입력해주세요.');
+      toast.info('유효한 숫자를 입력해주세요.');
       return;
     }
     updateLimitMutation.mutate(value);
