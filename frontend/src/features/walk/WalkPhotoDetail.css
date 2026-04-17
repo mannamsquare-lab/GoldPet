@@ -344,7 +344,7 @@
 }
 
 .wpv_caption_box {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.35);
   border-radius: 12px;
   padding: 10px 14px;
   display: flex;
@@ -359,9 +359,19 @@
   resize: none;
   font-family: var(--font-family);
   font-size: 14px;
-  color: var(--color-text-primary);
+  color: #fff;
   background: transparent;
   line-height: 1.4;
+  caret-color: #fff;
+}
+
+.wpv_caption_input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+  opacity: 1;
+}
+
+.wpv_caption_input::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .wpv_caption_input.readonly {
@@ -370,7 +380,7 @@
 
 .wpv_caption_counter {
   font-size: 12px;
-  color: #727272;
+  color: rgba(255, 255, 255, 0.75);
   align-self: flex-end;
 }
 

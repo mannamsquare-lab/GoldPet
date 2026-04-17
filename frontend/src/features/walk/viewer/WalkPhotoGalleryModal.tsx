@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { WalkPhotoGalleryViewer } from './WalkPhotoGalleryViewer';
 import { WalkPhotoErrorBoundary } from './WalkPhotoErrorBoundary';
 import type { WalkPhotoItem } from '../../../services/walkService';
+import { useOverlayColor } from '../../../hooks/useOverlayColor';
 
 type Props = {
   mode: 'owned' | 'shared';
@@ -25,6 +26,8 @@ export function WalkPhotoGalleryModal({
   initialPhoto,
   onClose,
 }: Props) {
+  useOverlayColor(true, '#000000', '#000000');
+
   const rootRef = useRef<HTMLDivElement>(null);
   const previousActiveRef = useRef<HTMLElement | null>(null);
   const closedByPopstateRef = useRef(false);

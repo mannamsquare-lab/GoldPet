@@ -1,4 +1,5 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { reportClientError } from '../../../lib/clientErrorReporter';
 
 type Props = { children: React.ReactNode; fallbackHref?: string };
@@ -24,15 +25,7 @@ export class WalkPhotoErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      const href = this.props.fallbackHref ?? '/walk-photos';
-      return (
-        <div className="wpv_empty" role="alert">
-          <p>갤러리를 열 수 없어요</p>
-          <button type="button" onClick={() => { window.location.href = href; }}>
-            목록으로
-          </button>
-        </div>
-      );
+      return <Navigate to={this.props.fallbackHref ?? '/walk-photos'} replace />;
     }
     return this.props.children;
   }
