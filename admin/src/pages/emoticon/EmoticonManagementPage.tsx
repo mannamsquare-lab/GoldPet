@@ -1,14 +1,31 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { emoticonService } from '../../services/emoticonService';
 import { fileService } from '../../services/fileService';
-import type { EmoticonResponse, CreateEmoticonRequest } from '../../services/emoticonService';
+import type { EmoticonResponse } from '../../services/emoticonService';
 import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';
 import { Tabs } from '../../components/common/Tabs';
 import type { ColumnDef } from '../../components/common/DataTable';
-import { toast } from 'sonner'
-import { useConfirm } from '@/hooks/useConfirm'
+import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button as UIButton } from '@/components/ui/button';
+
+const emoticonSchema = z.object({
+  name: z.string().trim().min(1, '이름을 입력해주세요.'),
+  packId: z.number().int().positive('팩을 선택해주세요.'),
+  imageUrl: z.string().trim().min(1, '이미지 URL을 입력해주세요.').url('올바른 이미지 URL이 필요합니다.'),
+  sortOrder: z.number().int().min(0).default(0),
+});
+
+type EmoticonFormValues = z.infer<typeof emoticonSchema>;
 
 const FILTER_TABS = [
   { key: 'all', label: '전체' },
@@ -16,22 +33,20 @@ const FILTER_TABS = [
   { key: 'inactive', label: '비활성' },
 ];
 
-const EMPTY_FORM: CreateEmoticonRequest = {
-  name: '',
-  packId: 0,
-  imageUrl: '',
-  sortOrder: 0,
-};
-
 export default function EmoticonManagementPage() {
   const queryClient = useQueryClient();
-  const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm();
   const [activeFilter, setActiveFilter] = useState('all');
-  const [showForm, setShowForm] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmoticon, setEditingEmoticon] = useState<EmoticonResponse | null>(null);
-  const [form, setForm] = useState<CreateEmoticonRequest>(EMPTY_FORM);
-  const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  const form = useForm<EmoticonFormValues>({
+    resolver: zodResolver(emoticonSchema),
+    defaultValues: { name: '', packId: 0, imageUrl: '', sortOrder: 0 },
+  });
+
+  const { formState: { isSubmitting } } = form;
 
   const { data: emoticons = [], isLoading } = useQuery({
     queryKey: ['emoticons'],
@@ -51,25 +66,25 @@ export default function EmoticonManagementPage() {
 
   const openCreateForm = () => {
     setEditingEmoticon(null);
-    setForm({ ...EMPTY_FORM, packId: packs[0]?.id ?? 0 });
-    setShowForm(true);
+    form.reset({ name: '', packId: packs[0]?.id ?? 0, imageUrl: '', sortOrder: 0 });
+    setDialogOpen(true);
   };
 
-  const openEditForm = async (emoticon: EmoticonResponse) => {
+  const openEditForm = (emoticon: EmoticonResponse) => {
     setEditingEmoticon(emoticon);
-    setForm({
+    form.reset({
       name: emoticon.name,
       packId: emoticon.packId,
       imageUrl: emoticon.imageUrl,
       sortOrder: emoticon.sortOrder,
     });
-    setShowForm(true);
+    setDialogOpen(true);
   };
 
-  const closeForm = async () => {
-    setShowForm(false);
+  const closeForm = () => {
+    setDialogOpen(false);
     setEditingEmoticon(null);
-    setForm(EMPTY_FORM);
+    form.reset();
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +101,7 @@ export default function EmoticonManagementPage() {
     setUploading(true);
     try {
       const result = await fileService.uploadFile(file);
-      setForm({ ...form, imageUrl: result.url });
+      form.setValue('imageUrl', result.url, { shouldValidate: true });
     } catch (error) {
       console.error('Failed to upload image:', error);
       toast.error('이미지 업로드에 실패했습니다.');
@@ -95,33 +110,18 @@ export default function EmoticonManagementPage() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!form.name.trim()) {
-      toast.info('이름을 입력해주세요.');
-      return;
-    }
-    if (!form.imageUrl.trim()) {
-      toast.info('이미지 URL을 입력해주세요.');
-      return;
-    }
-    if (!form.packId) {
-      toast.info('팩을 선택해주세요.');
-      return;
-    }
-    setSubmitting(true);
+  const onSubmit = async (values: EmoticonFormValues) => {
     try {
       if (editingEmoticon) {
-        await emoticonService.update(editingEmoticon.id, form);
+        await emoticonService.update(editingEmoticon.id, values);
       } else {
-        await emoticonService.create(form);
+        await emoticonService.create(values);
       }
       closeForm();
       queryClient.invalidateQueries({ queryKey: ['emoticons'] });
     } catch (error) {
       console.error('Failed to save emoticon:', error);
       toast.error('저장에 실패했습니다.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -226,98 +226,6 @@ export default function EmoticonManagementPage() {
 
       <Tabs tabs={FILTER_TABS} activeTab={activeFilter} onTabChange={setActiveFilter} />
 
-      {/* Create/Edit form */}
-      {showForm && (
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            {editingEmoticon ? '이모티콘 수정' : '새 이모티콘 추가'}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="이모티콘 이름을 입력하세요"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">팩 *</label>
-              <select
-                value={form.packId}
-                onChange={(e) => setForm({ ...form, packId: Number(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value={0} disabled>팩을 선택하세요</option>
-                {packs.map((pack) => (
-                  <option key={pack.id} value={pack.id}>{pack.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">이미지 *</label>
-              <div className="flex gap-3 items-start">
-                <div className="flex-1">
-                  <div className="flex gap-2">
-                    <label className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors ${uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      {uploading ? '업로드 중...' : '이미지 업로드'}
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/gif,image/webp"
-                        onChange={handleImageUpload}
-                        disabled={uploading}
-                        className="hidden"
-                      />
-                    </label>
-                    <span className="text-xs text-gray-400 self-center">또는 URL 직접 입력</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={form.imageUrl}
-                    onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                    className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    placeholder="https://..."
-                  />
-                </div>
-                {form.imageUrl && (
-                  <img
-                    src={form.imageUrl}
-                    alt="미리보기"
-                    style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }}
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                  />
-                )}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">정렬 순서</label>
-              <input
-                type="number"
-                value={form.sortOrder}
-                onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                min={0}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <Button
-              variant="primary"
-              onClick={handleSubmit}
-              loading={submitting}
-              disabled={submitting}
-            >
-              {editingEmoticon ? '수정' : '생성'}
-            </Button>
-            <Button variant="secondary" onClick={closeForm}>취소</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Emoticon table */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         <DataTable<EmoticonResponse>
           columns={columns}
@@ -326,7 +234,120 @@ export default function EmoticonManagementPage() {
           emptyMessage="이모티콘이 없습니다."
         />
       </div>
-    {ConfirmDialog}
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeForm(); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingEmoticon ? '이모티콘 수정' : '새 이모티콘 추가'}</DialogTitle>
+            <DialogDescription>이름, 팩, 이미지, 정렬 순서를 입력하세요.</DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                name="name"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>이름</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="이모티콘 이름을 입력하세요" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="packId"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>팩</FormLabel>
+                    <Select
+                      onValueChange={(v) => field.onChange(Number(v))}
+                      value={field.value > 0 ? String(field.value) : ''}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="팩을 선택하세요" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {packs.map((p) => (
+                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="imageUrl"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>이미지</FormLabel>
+                    <FormControl>
+                      <div className="space-y-2">
+                        <Input {...field} placeholder="https://..." />
+                        <div className="flex items-center gap-2">
+                          <label className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors ${uploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            {uploading ? '업로드 중...' : '이미지 업로드'}
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/gif,image/webp"
+                              onChange={handleImageUpload}
+                              disabled={uploading}
+                              className="hidden"
+                            />
+                          </label>
+                          <span className="text-xs text-gray-400">또는 URL 직접 입력</span>
+                        </div>
+                        {field.value && (
+                          <img
+                            src={field.value}
+                            alt="미리보기"
+                            style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }}
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="sortOrder"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>정렬 순서</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <UIButton type="button" variant="outline" onClick={closeForm}>취소</UIButton>
+                <UIButton type="submit" disabled={isSubmitting || uploading}>
+                  {isSubmitting ? '저장 중...' : (editingEmoticon ? '수정' : '생성')}
+                </UIButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {ConfirmDialog}
     </div>
   );
 }
