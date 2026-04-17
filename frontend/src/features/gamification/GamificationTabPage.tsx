@@ -81,7 +81,7 @@ export default function GamificationTabPage() {
             <div className="gm_badges_grid">
               {badges?.map((badge) => {
                 const acquired = !!badge.acquiredAt;
-                const icon = getBadgeIcon(badge.name);
+                const icon = getBadgeIcon(badge);
                 return (
                   <div key={badge.id} className={`gm_badge_card${acquired ? ' acquired' : ''}`}>
                     <div className={`gm_badge_icon_wrap${acquired ? ' acquired' : ''}`}>
@@ -151,7 +151,7 @@ function MissionItem({ badge, completed }: { badge: Badge; completed: boolean })
   const total = badge.conditionValue ?? 0;
   const current = completed ? total : 0;
   const pct = total > 0 ? (current / total) * 100 : 0;
-  const icon = getBadgeIcon(badge.name);
+  const icon = getBadgeIcon(badge);
   const rewardGold = badge.rewardGold ?? 0;
   const hasReward = rewardGold > 0;
 

@@ -9,20 +9,30 @@ import communityStar from '../../assets/badges/badge-community-star.svg';
 import empathy from '../../assets/badges/badge-empathy.svg';
 import hotplace from '../../assets/badges/badge-hotplace.svg';
 
-const BADGE_ICON_BY_NAME: Record<string, string> = {
-  '첫 걸음': firstWalk,
-  '동네 한 바퀴': neighborhood,
-  '마라토너': marathoner,
-  '핵인싸': popular,
-  '첫 가족': firstFamily,
-  '산책 마니아': walkMania,
-  '소통의 시작': firstPost,
-  '커뮤니티 스타': communityStar,
-  '공감 한마디': empathy,
-  '핫플 탐험가': hotplace,
+// Seed 뱃지(id) → 번들된 SVG fallback
+// Source of truth: api/src/main/resources/db/migration/V2 + V8
+// 관리자가 imageUrl을 업로드하면 그 URL이 우선 사용됨
+const BADGE_FALLBACK_BY_ID: Record<number, string> = {
+  1: firstWalk,       // 첫 걸음
+  2: neighborhood,    // 동네 한 바퀴
+  3: marathoner,      // 마라토너
+  4: popular,         // 핵인싸
+  8: firstFamily,     // 첫 가족
+  9: walkMania,       // 산책 마니아
+  10: firstPost,      // 소통의 시작
+  11: communityStar,  // 커뮤니티 스타
+  12: empathy,        // 공감의 한마디
+  13: hotplace,       // 핫플 탐험가
 };
 
-export function getBadgeIcon(name: string | undefined | null): string | null {
-  if (!name) return null;
-  return BADGE_ICON_BY_NAME[name] ?? null;
+/**
+ * 뱃지 아이콘 URL 해석 3단 fallback.
+ * 1) badge.imageUrl이 있으면 그대로 사용 (관리자 업로드)
+ * 2) 없으면 seed 뱃지 id 기반 번들 SVG
+ * 3) 그것도 없으면 null (호출부에서 emoji fallback)
+ */
+export function getBadgeIcon(badge: { id: number; imageUrl?: string | null } | null | undefined): string | null {
+  if (!badge) return null;
+  if (badge.imageUrl && badge.imageUrl.trim()) return badge.imageUrl;
+  return BADGE_FALLBACK_BY_ID[badge.id] ?? null;
 }
