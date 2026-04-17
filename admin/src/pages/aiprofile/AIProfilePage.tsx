@@ -25,7 +25,7 @@ const AI_PROFILE_TABS = [
   { key: 'loading-tips', label: '로딩 팁 관리' },
 ];
 
-const getStatusBadge = async (status: string) => {
+const getStatusBadge = (status: string) => {
   const styles: Record<string, string> = {
     PENDING: 'bg-yellow-100 text-yellow-800',
     PROCESSING: 'bg-blue-100 text-blue-800',

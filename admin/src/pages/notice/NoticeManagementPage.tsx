@@ -145,7 +145,7 @@ export default function NoticeManagementPage() {
     }
   };
 
-  const getTypeBadge = async (type: string) => {
+  const getTypeBadge = (type: string) => {
     const styles: Record<string, string> = {
       POPUP_MODAL: 'bg-purple-100 text-purple-800',
       MAINTENANCE: 'bg-orange-100 text-orange-800',
