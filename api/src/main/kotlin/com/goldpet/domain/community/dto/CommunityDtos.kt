@@ -2,6 +2,7 @@ package com.goldpet.domain.community.dto
 
 import com.goldpet.domain.community.entity.CommunityPost
 import java.time.LocalDateTime
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -26,6 +27,8 @@ data class CommunityPostResponse(
     @get:JsonProperty("isCommentedByMe")
     val isCommentedByMe: Boolean = false,
     val imageUrls: List<String> = emptyList(),
+    @get:JsonInclude(JsonInclude.Include.NON_NULL)
+    val youtubeUrl: String? = null,
     val comments: List<CommunityCommentResponse> = emptyList(),
     @get:JsonProperty("isMine")
     val isMine: Boolean = false
@@ -40,7 +43,8 @@ data class CommunityPostCreateRequest(
     val content: String,
     val visibility: CommunityPost.Visibility = CommunityPost.Visibility.PUBLIC,
     val postType: CommunityPost.PostType = CommunityPost.PostType.GENERAL,
-    val imageUrls: List<String> = emptyList()
+    val imageUrls: List<String> = emptyList(),
+    val youtubeUrl: String? = null
 )
 
 data class CommunityCommentResponse(

@@ -145,7 +145,20 @@ class _HybridWebViewState extends State<HybridWebView> {
               return NavigationDecision.prevent;
             }
 
-            // 3. HTTP/HTTPS는 WebView에서 로드
+            // 3. YouTube top-frame navigation → 외부 앱으로 열기
+            const youtubeHosts = {
+              'www.youtube.com',
+              'youtube.com',
+              'm.youtube.com',
+              'youtu.be',
+              'www.youtube-nocookie.com',
+            };
+            if (youtubeHosts.contains(uri.host.toLowerCase())) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+              return NavigationDecision.prevent;
+            }
+
+            // 4. HTTP/HTTPS는 WebView에서 로드
             // 단, 특정 도메인(예: App Link)은 예외 처리가 필요할 수 있음
             return NavigationDecision.navigate;
           },

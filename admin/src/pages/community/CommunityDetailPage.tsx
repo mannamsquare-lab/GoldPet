@@ -143,6 +143,22 @@ export default function CommunityDetailPage() {
 
         <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{post.content}</p>
 
+        {post.youtubeUrl && (
+          <div className="pt-2">
+            <div className="relative w-full max-w-2xl aspect-video rounded-lg overflow-hidden border border-gray-200">
+              <iframe
+                src={post.youtubeUrl}
+                title={`YouTube video for post ${post.id}`}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                className="absolute inset-0 w-full h-full border-0"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Images */}
         {post.imageUrls.length > 0 && (
           <div className="flex flex-wrap gap-3 pt-2">

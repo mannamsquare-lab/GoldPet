@@ -1,5 +1,7 @@
 /* Community Page Styles */
 
+.youtube-embed { margin: 16px 0; border-radius: 12px; overflow: hidden; }
+
 #communityPage {
   padding-bottom: 80px;
 }

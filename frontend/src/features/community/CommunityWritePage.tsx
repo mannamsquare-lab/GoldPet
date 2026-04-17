@@ -7,6 +7,7 @@ import { useAlert } from '../../contexts/AlertContext';
 import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import ImageUploadSlider from '../../components/common/ImageUploadSlider';
 import CustomSelect from '../../components/common/CustomSelect';
+import { extractYoutubeVideoIdLoose } from '../../utils/youtube';
 
 export default function CommunityWritePage() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function CommunityWritePage() {
     title: initialPost?.title || '',
     content: initialPost?.content || '',
     postType: initialPost?.postType || 'GENERAL',
+    youtubeUrl: initialPost?.youtubeUrl ?? '',
   });
 
   /* Image State */
@@ -92,10 +94,11 @@ export default function CommunityWritePage() {
         
         const finalUrls = await Promise.all(uploadPromises);
         
-        return communityService.updatePost(initialPost.id, { 
-            title: data.title, 
+        return communityService.updatePost(initialPost.id, {
+            title: data.title,
             content: data.content,
-            imageUrls: finalUrls 
+            imageUrls: finalUrls,
+            youtubeUrl: data.youtubeUrl,
         });
     },
     onSuccess: () => {
@@ -165,17 +168,20 @@ export default function CommunityWritePage() {
       showAlert('제목과 내용을 입력해주세요.');
       return;
     }
-    
+
+    const youtubeInput = (formData.youtubeUrl ?? '').trim();
+    if (youtubeInput && !extractYoutubeVideoIdLoose(youtubeInput)) {
+      showAlert('유효한 유튜브 링크를 입력해주세요.');
+      return;
+    }
+
     if (editMode) {
         updateMutation.mutate(formData);
     } else {
         // Prepare files for create
         const validItems = mediaSlots.filter((item): item is MediaItem => !!item);
         const filesToUpload = validItems.map(item => item.file).filter((f): f is File => !!f);
-        // Note: Logic allows mixed content? Create usually implies new uploads only, but if re-using existing logic...
-        // Actually createPost expects `images: File[]`. What if we edited a draft? 
-        // Assuming fresh create only has files.
-        createMutation.mutate({ ...formData, images: filesToUpload });
+        createMutation.mutate({ ...formData, images: filesToUpload, youtubeUrl: youtubeInput || undefined });
     }
   };
 
@@ -224,6 +230,18 @@ export default function CommunityWritePage() {
                  onChange={(value) => setFormData({ ...formData, categoryId: Number(value) })}
              />
          </div>
+
+        {/* YouTube URL */}
+        <div className="input_wrap">
+            <label htmlFor="write_youtube">유튜브 링크</label>
+            <input
+              type="url"
+              id="write_youtube"
+              placeholder="유튜브 링크 (선택)"
+              value={formData.youtubeUrl ?? ''}
+              onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
+            />
+        </div>
 
         {/* Replaced Custom UI with ImageUploadSlider */}
         <div style={{ marginTop: '20px' }}> {/* Add some spacing wrapper if needed */}

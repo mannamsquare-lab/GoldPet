@@ -11,6 +11,7 @@ import { reportService } from '../../services/reportService';
 import { BackButton } from '../../components/common/BackButton';
 import { ReportModal } from '../../components/common/ReportModal';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
+import YoutubeEmbed from '../../components/common/YoutubeEmbed';
 import './CommunityPage.css';
 import { useAlert } from '../../contexts/AlertContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -352,6 +353,9 @@ export default function CommunityDetailPage() {
             <strong>{post.title}</strong>
             <p style={{ whiteSpace: 'pre-line' }}>{post.content}</p>
           </div>
+
+          {/* YouTube Embed */}
+          {post.youtubeUrl && <YoutubeEmbed url={post.youtubeUrl} title={post.title} />}
 
           {/* Images */}
           {/* Images */}

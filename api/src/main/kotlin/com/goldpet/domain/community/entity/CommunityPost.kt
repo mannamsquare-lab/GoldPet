@@ -43,6 +43,9 @@ class CommunityPost(
     @JoinColumn(name = "adopted_comment_id")
     var adoptedComment: CommunityComment? = null,
 
+    @Column(length = 500)
+    var youtubeUrl: String? = null,
+
     @OneToMany(mappedBy = "post", cascade = [CascadeType.ALL], orphanRemoval = true)
     var images: MutableList<CommunityPostImage> = mutableListOf(),
 

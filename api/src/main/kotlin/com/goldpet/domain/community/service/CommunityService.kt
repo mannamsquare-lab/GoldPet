@@ -21,6 +21,7 @@ import com.goldpet.domain.gamification.service.BadgeAwardService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.common.exception.*
+import com.goldpet.domain.community.util.YoutubeUrlValidator
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
@@ -127,13 +128,20 @@ class CommunityService(
         val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found") }
         val category = categoryRepository.findById(request.categoryId).orElseThrow { NotFoundException("Category not found") }
         
+        val normalizedYoutubeUrl = request.youtubeUrl?.let { raw ->
+            if (raw.isBlank()) null
+            else YoutubeUrlValidator.normalize(raw)
+                ?: throw BadRequestException("유효하지 않은 유튜브 링크입니다")
+        }
+
         val post = CommunityPost(
             user = user,
             category = category,
             title = request.title,
             content = request.content,
             visibility = request.visibility,
-            postType = request.postType
+            postType = request.postType,
+            youtubeUrl = normalizedYoutubeUrl
         )
 
         if (request.imageUrls.isNotEmpty()) {
@@ -171,6 +179,7 @@ class CommunityService(
             commentCount = 0,
             createdAt = savedPost.createdAt,
             imageUrls = savedPost.images.sortedBy { it.sortOrder }.map { it.file.url },
+            youtubeUrl = savedPost.youtubeUrl,
             isMine = true
         )
     }
@@ -339,6 +348,7 @@ class CommunityService(
             isLikedByMe = isLiked,
             isCommentedByMe = isCommented,
             imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
+            youtubeUrl = post.youtubeUrl,
             comments = comments,
             isMine = currentUserId == post.user.id
         )
@@ -378,13 +388,19 @@ class CommunityService(
             if (urls.isNotEmpty()) {
                 val files = fileRepository.findAllByUrlIn(urls)
                 val fileMap = files.associateBy { it.url }
-                
+
                 urls.forEachIndexed { index, url ->
                     fileMap[url]?.let { file ->
                         post.images.add(CommunityPostImage(post = post, file = file, sortOrder = index))
                     }
                 }
             }
+        }
+
+        if (request.youtubeUrl != null) {
+            post.youtubeUrl = if (request.youtubeUrl.isBlank()) null
+            else YoutubeUrlValidator.normalize(request.youtubeUrl)
+                ?: throw BadRequestException("유효하지 않은 유튜브 링크입니다")
         }
 
         val savedPost = postRepository.save(post)
@@ -404,6 +420,7 @@ class CommunityService(
             likeCount = savedPost.likeCount,
             commentCount = 0,
             createdAt = savedPost.createdAt,
+            youtubeUrl = savedPost.youtubeUrl,
             isMine = true
         )
     }

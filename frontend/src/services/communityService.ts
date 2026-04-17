@@ -20,7 +20,8 @@ export interface CommunityPost {
   isCommentedByMe: boolean;
   isMine: boolean;
   thumbnailUrl?: string;
-  imageUrls: string[]; // Added this
+  imageUrls: string[];
+  youtubeUrl: string | null; // Added this
   comments?: CommunityComment[];
   createdAt: string;
 }
@@ -57,6 +58,7 @@ export interface CreatePostRequest {
   content: string;
   postType: 'GENERAL' | 'QUESTION' | 'INFO';
   images?: File[];
+  youtubeUrl?: string | null;
 }
 
 export const communityService = {
@@ -156,6 +158,7 @@ export const communityService = {
         content: data.content,
         postType: data.postType,
         imageUrls: imageUrls,
+        youtubeUrl: data.youtubeUrl,
       });
       return { success: true, postId: response.data.id };
     } catch (error: unknown) {
@@ -231,7 +234,7 @@ export const communityService = {
       }
   },
 
-  updatePost: async (postId: number, data: { title: string; content: string; imageUrls?: string[] }): Promise<void> => {
+  updatePost: async (postId: number, data: { title: string; content: string; imageUrls?: string[]; youtubeUrl?: string | null }): Promise<void> => {
       try {
           await apiClient.put(`/community/posts/${postId}`, data);
       } catch {

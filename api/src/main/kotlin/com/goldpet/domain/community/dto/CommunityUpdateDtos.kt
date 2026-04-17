@@ -9,7 +9,8 @@ data class CommunityPostUpdateRequest(
     val content: String? = null,
     val categoryId: Long? = null,
     val visibility: String? = null,
-    val imageUrls: List<String>? = null
+    val imageUrls: List<String>? = null,
+    val youtubeUrl: String? = null
 )
 
 data class CommunityCommentUpdateRequest(
