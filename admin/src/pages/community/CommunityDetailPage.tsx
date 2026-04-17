@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ContentRenderer } from '../../utils/contentRenderer';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,6 +18,15 @@ export default function CommunityDetailPage() {
     queryFn: () => communityManagementService.getPostDetail(Number(postId)),
     enabled: !!postId,
   });
+
+  const [isEditingPost, setIsEditingPost] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState('');
+
+  const invalidateDetail = () =>
+    queryClient.invalidateQueries({ queryKey: ['community', 'detail', postId] });
 
   const hideMutation = useMutation({
     mutationFn: () => communityManagementService.hidePost(Number(postId), '관리자에 의해 숨김'),
@@ -42,10 +52,34 @@ export default function CommunityDetailPage() {
     onError: () => toast.error('게시글 숨김 해제에 실패했습니다.'),
   });
 
+  const updatePostMutation = useMutation({
+    mutationFn: (payload: { title: string; content: string }) =>
+      communityManagementService.updatePost(Number(postId), payload),
+    onSuccess: () => {
+      toast.success('게시글이 수정되었습니다.');
+      setIsEditingPost(false);
+      invalidateDetail();
+      queryClient.invalidateQueries({ queryKey: ['community'] });
+    },
+    onError: () => toast.error('게시글 수정에 실패했습니다.'),
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: ({ commentId, content }: { commentId: number; content: string }) =>
+      communityManagementService.updateComment(commentId, content),
+    onSuccess: () => {
+      toast.success('댓글이 수정되었습니다.');
+      setEditingCommentId(null);
+      setEditCommentContent('');
+      invalidateDetail();
+    },
+    onError: () => toast.error('댓글 수정에 실패했습니다.'),
+  });
+
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: number) => communityManagementService.deleteComment(commentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['community', 'detail', postId] });
+      invalidateDetail();
     },
     onError: () => toast.error('댓글 삭제에 실패했습니다.'),
   });
@@ -70,6 +104,45 @@ export default function CommunityDetailPage() {
     deleteCommentMutation.mutate(commentId);
   };
 
+  const handleStartEditPost = () => {
+    if (!post) return;
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setIsEditingPost(true);
+  };
+
+  const handleCancelEditPost = () => {
+    setIsEditingPost(false);
+  };
+
+  const handleSavePost = async () => {
+    if (!editTitle.trim()) {
+      toast.error('제목을 입력하세요.');
+      return;
+    }
+    if (!(await confirmDialog({ description: '게시글 내용을 수정하시겠습니까? 원본이 변경됩니다.' }))) return;
+    updatePostMutation.mutate({ title: editTitle, content: editContent });
+  };
+
+  const handleStartEditComment = (commentId: number, content: string) => {
+    setEditingCommentId(commentId);
+    setEditCommentContent(content);
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditCommentContent('');
+  };
+
+  const handleSaveComment = async (commentId: number) => {
+    if (!editCommentContent.trim()) {
+      toast.error('내용을 입력하세요.');
+      return;
+    }
+    if (!(await confirmDialog({ description: '댓글 내용을 수정하시겠습니까? 원본이 변경됩니다.' }))) return;
+    updateCommentMutation.mutate({ commentId, content: editCommentContent });
+  };
+
   if (isLoading) {
     return (
       <DetailPageLayout title="게시글 상세" backPath="/community">
@@ -92,6 +165,11 @@ export default function CommunityDetailPage() {
       backPath="/community"
       actions={
         <>
+          {!isEditingPost && (
+            <Button variant="primary" onClick={handleStartEditPost}>
+              내용 수정
+            </Button>
+          )}
           {!post.isHidden ? (
             <Button
               variant="warning"
@@ -140,14 +218,46 @@ export default function CommunityDetailPage() {
           )}
         </div>
 
-        <h2 className="text-xl font-semibold text-gray-900">{post.title}</h2>
-
-        <div className="text-gray-700 leading-relaxed">
-          <ContentRenderer content={post.content} />
-        </div>
+        {isEditingPost ? (
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="제목"
+              maxLength={100}
+            />
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={10}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+              placeholder="본문 내용"
+            />
+            <p className="text-xs text-gray-500">
+              어뷰징/비속어 마스킹 등 원본을 직접 수정합니다. 작성자에게 통지되지 않습니다.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="secondary" onClick={handleCancelEditPost} disabled={updatePostMutation.isPending}>
+                취소
+              </Button>
+              <Button variant="primary" onClick={handleSavePost} loading={updatePostMutation.isPending}>
+                저장
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-xl font-semibold text-gray-900">{post.title}</h2>
+            <div className="text-gray-700 leading-relaxed">
+              <ContentRenderer content={post.content} />
+            </div>
+          </>
+        )}
 
         {/* Images */}
-        {post.imageUrls.length > 0 && (
+        {!isEditingPost && post.imageUrls.length > 0 && (
           <div className="flex flex-wrap gap-3 pt-2">
             {post.imageUrls.map((url, idx) => (
               <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
@@ -180,33 +290,77 @@ export default function CommunityDetailPage() {
           <p className="text-sm text-gray-500">댓글이 없습니다.</p>
         ) : (
           <div className="space-y-3">
-            {post.comments.map((comment) => (
-              <div
-                key={comment.id}
-                className={`p-4 rounded-lg flex justify-between items-start gap-4 ${
-                  comment.isHidden ? 'bg-red-50 border border-red-100' : 'bg-gray-50'
-                }`}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-gray-900">{comment.userNickname}</span>
-                    {comment.isHidden && (
-                      <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded">숨김</span>
-                    )}
-                    <span className="text-xs text-gray-400">{comment.createdAt ?? '-'}</span>
-                  </div>
-                  <p className="text-sm text-gray-700">{comment.content}</p>
-                </div>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => handleDeleteComment(comment.id)}
-                  loading={deleteCommentMutation.isPending}
+            {post.comments.map((comment) => {
+              const isEditing = editingCommentId === comment.id;
+              return (
+                <div
+                  key={comment.id}
+                  className={`p-4 rounded-lg flex justify-between items-start gap-4 ${
+                    comment.isHidden ? 'bg-red-50 border border-red-100' : 'bg-gray-50'
+                  }`}
                 >
-                  삭제
-                </Button>
-              </div>
-            ))}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-gray-900">{comment.userNickname}</span>
+                      {comment.isHidden && (
+                        <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded">숨김</span>
+                      )}
+                      <span className="text-xs text-gray-400">{comment.createdAt ?? '-'}</span>
+                    </div>
+                    {isEditing ? (
+                      <textarea
+                        value={editCommentContent}
+                        onChange={(e) => setEditCommentContent(e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    {isEditing ? (
+                      <>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleSaveComment(comment.id)}
+                          loading={updateCommentMutation.isPending}
+                        >
+                          저장
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleCancelEditComment}
+                          disabled={updateCommentMutation.isPending}
+                        >
+                          취소
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleStartEditComment(comment.id, comment.content)}
+                        >
+                          수정
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDeleteComment(comment.id)}
+                          loading={deleteCommentMutation.isPending}
+                        >
+                          삭제
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

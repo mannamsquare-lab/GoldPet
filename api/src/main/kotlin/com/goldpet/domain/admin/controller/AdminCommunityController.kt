@@ -56,6 +56,15 @@ data class HideContentRequest(
     val reason: String?
 )
 
+data class AdminPostUpdateRequest(
+    val title: String? = null,
+    val content: String? = null
+)
+
+data class AdminCommentUpdateRequest(
+    val content: String
+)
+
 @Tag(name = "Admin Community", description = "관리자 커뮤니티 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/community")
@@ -84,6 +93,24 @@ class AdminCommunityController(
     @GetMapping("/posts/{postId}")
     fun getPostDetail(@PathVariable postId: Long): ResponseEntity<PostDetailAdminResponse> {
         return ResponseEntity.ok(communityService.getPostDetail(postId))
+    }
+
+    @Operation(summary = "게시글 내용 수정 (관리자 어뷰징 처리용)")
+    @PatchMapping("/posts/{postId}")
+    fun updatePost(
+        @PathVariable postId: Long,
+        @RequestBody request: AdminPostUpdateRequest
+    ): ResponseEntity<PostDetailAdminResponse> {
+        return ResponseEntity.ok(communityService.updatePost(postId, request))
+    }
+
+    @Operation(summary = "댓글 내용 수정 (관리자 어뷰징 처리용)")
+    @PatchMapping("/comments/{commentId}")
+    fun updateComment(
+        @PathVariable commentId: Long,
+        @RequestBody request: AdminCommentUpdateRequest
+    ): ResponseEntity<CommentAdminResponse> {
+        return ResponseEntity.ok(communityService.updateComment(commentId, request))
     }
 
     @Operation(summary = "게시글 숨김 처리")

@@ -65,6 +65,16 @@ export const communityManagementService = {
     return response.data;
   },
 
+  async updatePost(postId: number, payload: { title?: string; content?: string }): Promise<PostDetail> {
+    const response = await apiClient.patch(`/community/posts/${postId}`, payload);
+    return response.data;
+  },
+
+  async updateComment(commentId: number, content: string): Promise<CommentItem> {
+    const response = await apiClient.patch(`/community/comments/${commentId}`, { content });
+    return response.data;
+  },
+
   async hidePost(postId: number, reason?: string): Promise<void> {
     await apiClient.post(`/community/posts/${postId}/hide`, { reason });
   },

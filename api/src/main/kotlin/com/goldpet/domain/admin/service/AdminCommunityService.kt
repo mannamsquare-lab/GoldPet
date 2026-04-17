@@ -66,6 +66,32 @@ class AdminCommunityService(
     }
 
     @Transactional
+    fun updatePost(postId: Long, request: AdminPostUpdateRequest): PostDetailAdminResponse {
+        val post = postRepository.findById(postId)
+            .orElseThrow { NotFoundException("Post not found: $postId") }
+        request.title?.let { post.title = it }
+        request.content?.let { post.content = it }
+        postRepository.save(post)
+        return getPostDetail(postId)
+    }
+
+    @Transactional
+    fun updateComment(commentId: Long, request: AdminCommentUpdateRequest): CommentAdminResponse {
+        val comment = commentRepository.findById(commentId)
+            .orElseThrow { NotFoundException("Comment not found: $commentId") }
+        comment.content = request.content
+        val saved = commentRepository.save(comment)
+        return CommentAdminResponse(
+            id = saved.id,
+            content = saved.content,
+            authorId = saved.user.id,
+            authorNickname = saved.user.nickname ?: "",
+            isHidden = saved.isHidden,
+            createdAt = saved.createdAt.format(formatter)
+        )
+    }
+
+    @Transactional
     fun hidePost(postId: Long, reason: String?) {
         val post = postRepository.findById(postId)
             .orElseThrow { NotFoundException("Post not found: $postId") }
