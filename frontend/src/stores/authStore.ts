@@ -11,7 +11,7 @@ import { chatWebSocket } from '../services/websocket/chatWebSocket';
 export interface User {
   id: number;
   nickname: string;
-  email?: string;
+  email?: string | null;
   profileImageUrl?: string;
   profileImageUrls?: string[];
   gender?: string;
@@ -20,7 +20,7 @@ export interface User {
   mainLocationLat?: number;
   mainLocationLng?: number;
   goldBalance?: number;
-  phoneNumber?: string;
+  phoneNumber?: string | null;
   name?: string;
   birthDate?: string;
   mbti?: string;
