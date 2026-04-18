@@ -9,6 +9,7 @@ import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.user.service.UserService
+import com.goldpet.domain.walk.repository.WalkRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -21,6 +22,7 @@ class AdminUserManagementService(
     private val petRepository: PetRepository,
     private val postRepository: CommunityPostRepository,
     private val commentRepository: CommunityCommentRepository,
+    private val walkRepository: WalkRepository,
     private val userService: UserService
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -41,10 +43,12 @@ class AdminUserManagementService(
         val pets = petRepository.findAllByOwnerId(userId)
         val postCount = postRepository.countByUserId(userId)
         val commentCount = commentRepository.countByUserId(userId)
+        val walkCount = walkRepository.countByUserId(userId)
+        val totalDistanceKm = walkRepository.sumDistanceByUserId(userId)
 
         return UserDetailResponse(
             id = user.id,
-            email = user.email,
+            email = safeEmail(user.email),
             nickname = user.nickname ?: "",
             intro = user.intro,
             profileImageUrl = user.profileImageUrl,
@@ -62,8 +66,8 @@ class AdminUserManagementService(
                 )
             },
             stats = UserStats(
-                totalWalks = 0,
-                totalDistance = 0.0,
+                totalWalks = walkCount.toInt(),
+                totalDistance = totalDistanceKm,
                 totalPosts = postCount.toInt(),
                 totalComments = commentCount.toInt(),
                 badgeCount = 0
@@ -102,18 +106,26 @@ class AdminUserManagementService(
     private fun toUserListItem(user: User): UserListItemResponse {
         val petCount = petRepository.countByOwnerId(user.id)
         val postCount = postRepository.countByUserId(user.id)
+        val walkCount = walkRepository.countByUserId(user.id)
 
         return UserListItemResponse(
             id = user.id,
-            email = user.email,
+            email = safeEmail(user.email),
             nickname = user.nickname ?: "",
             profileImageUrl = user.profileImageUrl,
             status = user.status.name,
             petCount = petCount.toInt(),
-            walkCount = 0,
+            walkCount = walkCount.toInt(),
             postCount = postCount.toInt(),
             createdAt = user.createdAt.format(formatter),
             lastLoginAt = null
         )
+    }
+
+    // Guard: legitimate emails always contain '@'. Ciphertext leakage (e.g. from prior rotation
+    // corruption) would not — suppress it instead of exposing garbage in the admin UI.
+    private fun safeEmail(email: String?): String? {
+        if (email.isNullOrBlank()) return null
+        return if (email.contains('@')) email else null
     }
 }
