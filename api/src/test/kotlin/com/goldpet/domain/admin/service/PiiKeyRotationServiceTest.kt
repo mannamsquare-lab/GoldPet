@@ -183,6 +183,35 @@ class PiiKeyRotationServiceTest {
     }
 
     @Test
+    fun `row with undecryptable ciphertext in one column is FAILED and no UPDATE is issued`() {
+        // Regression for the 2026-04-19 double-encryption bug: email encrypted with a third
+        // (unknown) key, name with secondary. Previously the rotator wrote the raw email
+        // ciphertext back through the converter, double-encrypting it. Now it must FAIL the
+        // row outright so the bad column is never re-encrypted as plaintext.
+        val unknownKey = "unknown-third-key-never-registered"
+        val emailCipher = encryptWith("whatever@example.com", unknownKey) // primary+secondary both fail
+        val nameCipher = encryptWith("real name", SECONDARY_KEY)          // would otherwise trigger rotation
+        val userId = 77L
+        val mainRow = mapOf<String, Any?>(
+            "id" to userId, "email" to emailCipher,
+            "name" to nameCipher, "phone_number" to null, "birth_date" to null
+        )
+        stubUserRows(listOf(mainRow), emptyList())
+
+        val result = service.rotate(dryRun = false, principalId = 1L)
+
+        assertEquals(0, result.rotated)
+        assertEquals(0, result.skippedAlreadyNew)
+        assertEquals(1, result.failed)
+        assertTrue(result.mismatches.contains(userId))
+        verify(jdbcTemplate, never()).update(
+            anyString(),
+            nullable(Any::class.java), nullable(Any::class.java), nullable(Any::class.java),
+            nullable(Any::class.java), nullable(Any::class.java), nullable(Any::class.java)
+        )
+    }
+
+    @Test
     fun `row with all null PII columns is counted as skippedAlreadyNew with no UPDATE`() {
         val userId = 99L
         val mainRow = mapOf<String, Any?>(

@@ -184,6 +184,7 @@ class PiiKeyRotationService(
     ): RowOutcome {
         val plaintexts = mutableMapOf<String, String?>()
         var anyNeedsRotation = false
+        var anyFailed = false
 
         for (column in PII_COLUMNS) {
             val rawValue = row[column] as? String
@@ -205,8 +206,18 @@ class PiiKeyRotationService(
                 }
             }
 
-            // Neither key worked — treat as plaintext passthrough (same permissive fallback).
-            plaintexts[column] = rawValue
+            // Neither key worked. Ciphertext-shaped values must NOT be re-encrypted as plaintext
+            // (prior bug double-encrypted rows when sibling column triggered UPDATE). Fail the row.
+            if (looksLikeCiphertext(rawValue)) {
+                log.error("Row {} column '{}' undecryptable by primary+secondary — marking FAILED to prevent re-encryption corruption", userId, column)
+                anyFailed = true
+            } else {
+                plaintexts[column] = rawValue // legacy plaintext migration bootstrap
+            }
+        }
+
+        if (anyFailed) {
+            return RowOutcome.FAILED
         }
 
         if (!anyNeedsRotation) {
@@ -255,6 +266,10 @@ class PiiKeyRotationService(
                 val s = tryDecrypt(rawEmail, secondary)
                 if (s != null) return@run s
             }
+            if (looksLikeCiphertext(rawEmail)) {
+                log.error("admin_user {} email undecryptable by primary+secondary — FAILED to prevent re-encryption corruption", adminId)
+                return RowOutcome.FAILED
+            }
             rawEmail // plaintext bootstrap
         }
 
@@ -265,6 +280,10 @@ class PiiKeyRotationService(
             if (secondary.isNotBlank()) {
                 val s = tryDecrypt(rawName, secondary)
                 if (s != null) return@run s
+            }
+            if (looksLikeCiphertext(rawName)) {
+                log.error("admin_user {} name undecryptable by primary+secondary — FAILED to prevent re-encryption corruption", adminId)
+                return RowOutcome.FAILED
             }
             rawName
         }
@@ -317,6 +336,11 @@ class PiiKeyRotationService(
             }
         }
         return VerificationResult(expected = rows.size, matched = matched, mismatches = mismatches)
+    }
+
+    private fun looksLikeCiphertext(s: String): Boolean {
+        if (s.length < 40) return false
+        return s.all { c -> c in 'A'..'Z' || c in 'a'..'z' || c in '0'..'9' || c == '+' || c == '/' || c == '=' }
     }
 
     private fun tryDecrypt(dbData: String, keyString: String): String? {
