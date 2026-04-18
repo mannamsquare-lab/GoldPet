@@ -31,8 +31,18 @@ pipeline {
                         fi
                     """
                     
-                    // 환경 변수 파일 생성 (Systemd가 읽을 수 있도록)
-                    sh "echo 'SPRING_PROFILES_ACTIVE=${params.PROFILE}' > ${DEPLOY_PATH}/goldpet-api.env"
+                    // 환경 변수 파일 업데이트 — SPRING_PROFILES_ACTIVE만 교체하고
+                    // ENCRYPTION_KEY* 등 나머지 비밀키는 보존. `>` 덮어쓰기를 쓰면
+                    // 매 배포마다 비밀키가 사라져 센티넬 가드가 앱 기동을 거부함.
+                    sh """
+                        ENV_FILE=${DEPLOY_PATH}/goldpet-api.env
+                        TMP=\$(mktemp)
+                        if [ -f \$ENV_FILE ]; then
+                            grep -v '^SPRING_PROFILES_ACTIVE=' \$ENV_FILE > \$TMP || true
+                        fi
+                        echo 'SPRING_PROFILES_ACTIVE=${params.PROFILE}' >> \$TMP
+                        mv \$TMP \$ENV_FILE
+                    """
                     
                     // 서비스 중지
                     sh 'sudo systemctl stop goldpet-api || true'
