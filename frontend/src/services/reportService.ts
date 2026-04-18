@@ -1,6 +1,6 @@
 import apiClient from './api/client';
 
-export type ReportType = 'POST' | 'COMMENT' | 'USER' | 'CHAT' | 'WALK_SPOT';
+export type ReportType = 'POST' | 'COMMENT' | 'USER' | 'CHAT' | 'COURSE' | 'WALK_SPOT';
 
 export interface CreateReportRequest {
   type: ReportType;

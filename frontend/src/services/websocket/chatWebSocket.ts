@@ -279,7 +279,7 @@ class ChatWebSocketService {
     };
   }
 
-  private mapMessageType(type: string): 'text' | 'image' | 'video' | 'file' | 'system' | 'emoticon' {
+  private mapMessageType(type: string): 'text' | 'image' | 'video' | 'file' | 'system' | 'emoticon' | 'emoji' {
     switch (type?.toUpperCase()) {
       case 'IMAGE':
         return 'image';
@@ -291,6 +291,8 @@ class ChatWebSocketService {
         return 'system';
       case 'EMOTICON':
         return 'emoticon';
+      case 'EMOJI':
+        return 'emoji';
       default:
         return 'text';
     }

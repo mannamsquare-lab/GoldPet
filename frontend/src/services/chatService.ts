@@ -5,8 +5,8 @@ import apiClient from './api/client';
 export interface ChatRoom {
   id: number;
   name: string;
-  lastMessage: string;
-  lastMessageTime: string;
+  lastMessage: string | null;
+  lastMessageTime: string | null;
   unreadCount: number;
   participants: {
     id: number;
@@ -35,7 +35,7 @@ export interface ChatMessage {
   senderNickname: string;
   textContent: string;
   timestamp: string;
-  type: 'text' | 'image' | 'video' | 'file' | 'system' | 'emoticon';
+  type: 'text' | 'image' | 'video' | 'file' | 'system' | 'emoticon' | 'emoji';
   // API response fields
   createdAt?: string;
   messageType?: string;

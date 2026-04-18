@@ -147,7 +147,7 @@ const ChatListPage = () => {
                                         <div className="day_txt">
                                             {chat.unreadCount > 0 && <p className="count_num">{chat.unreadCount}</p>}
                                             {/* Simple date formatting */}
-                                            <p className="last_day">{new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p className="last_day">{chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</p>
                                         </div>
                                     </button>
                                 </li>
@@ -206,7 +206,7 @@ const ChatListPage = () => {
                                         </div>
                                         <div className="day_txt">
                                             {chat.unreadCount > 0 && <p className="count_num">{chat.unreadCount}</p>}
-                                            <p className="last_day">{new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p className="last_day">{chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</p>
                                         </div>
                                     </button>
                                 </li>

@@ -15,6 +15,7 @@ export interface CommunityPost {
   likeCount: number;
   commentCount: number;
   postType: 'GENERAL' | 'QUESTION' | 'INFO';
+  visibility: 'PUBLIC' | 'FRIENDS';
   isAnswered?: boolean;
   isLiked: boolean;
   isCommentedByMe: boolean;
@@ -41,6 +42,7 @@ export interface CommunityComment {
   authorProfileUrl?: string;
   isAdopted: boolean;
   createdAt: string;
+  parentCommentId: number | null;
   replyTo?: number;
   replies?: CommunityComment[];
   likeCount: number;
@@ -57,6 +59,7 @@ export interface CreatePostRequest {
   title: string;
   content: string;
   postType: 'GENERAL' | 'QUESTION' | 'INFO';
+  visibility?: 'PUBLIC' | 'FRIENDS';
   images?: File[];
 }
 

@@ -318,7 +318,7 @@ const HealthHistoryPage = () => {
                             alt="분석 이미지"
                             className="hh_list_item_img"
                           />
-                          {(analysis.status === 'PENDING' || analysis.status === 'PROCESSING') && (
+                          {(analysis.status === 'PENDING' || analysis.status === 'ANALYZING') && (
                             <div className="hh_list_item_overlay">분석 중</div>
                           )}
                         </div>
@@ -329,7 +329,7 @@ const HealthHistoryPage = () => {
                               <p className="hh_list_item_summary">{analysis.healthSummary}</p>
                             )}
                           </>
-                        ) : analysis.status === 'PENDING' || analysis.status === 'PROCESSING' ? (
+                        ) : analysis.status === 'PENDING' || analysis.status === 'ANALYZING' ? (
                           <span className="hh_list_item_status">분석 중...</span>
                         ) : analysis.status === 'FAILED' ? (
                           <span className="hh_list_item_status hh_list_item_status--fail">

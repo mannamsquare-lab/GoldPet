@@ -4,7 +4,7 @@ import apiClient from './api/client';
 
 export interface Notification {
   id: number;
-  type: 'MATCH' | 'LIKE' | 'MESSAGE' | 'COMMENT' | 'FOLLOW' | 'WALK' | 'NOTICE' | 'EVENT' | 'SYSTEM';
+  type: 'MATCH' | 'LIKE' | 'MESSAGE' | 'COMMENT' | 'FOLLOW' | 'WALK' | 'NOTICE' | 'EVENT' | 'SYSTEM' | 'REPORT_RESOLVED';
   title: string;
   message: string;
   targetId?: number;

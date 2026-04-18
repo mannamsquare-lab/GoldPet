@@ -3,7 +3,7 @@ import type { PageResponse } from '../types/api';
 
 export interface ReportItem {
   id: number;
-  type: 'POST' | 'COMMENT' | 'USER' | 'CHAT';
+  type: 'POST' | 'COMMENT' | 'USER' | 'CHAT' | 'COURSE' | 'WALK_SPOT';
   targetId: number;
   targetPreview: string | null;
   reason: string;

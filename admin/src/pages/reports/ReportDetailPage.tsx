@@ -18,6 +18,8 @@ const TYPE_LABELS: Record<string, string> = {
   COMMENT: '댓글',
   USER: '회원',
   CHAT: '채팅',
+  COURSE: '산책 코스',
+  WALK_SPOT: '산책 스팟',
 };
 
 const STATUS_BADGE_STYLES: Record<string, string> = {
@@ -54,6 +56,15 @@ const ACTION_OPTIONS: Record<string, { value: string; label: string; default?: b
     { value: 'SUSPEND_USER', label: '계정 정지 (발신자)' },
     { value: 'WARN_USER', label: '경고' },
   ],
+  COURSE: [
+    { value: 'HIDE_COURSE', label: '코스 숨김', default: true },
+    { value: 'SUSPEND_USER', label: '계정 정지 (작성자)' },
+    { value: 'WARN_USER', label: '경고' },
+  ],
+  WALK_SPOT: [
+    { value: 'WARN_USER', label: '경고', default: true },
+    { value: 'SUSPEND_USER', label: '계정 정지 (작성자)' },
+  ],
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -62,6 +73,7 @@ const ACTION_LABELS: Record<string, string> = {
   DELETE_COMMENT: '댓글 삭제',
   HIDE_COMMENT: '댓글 숨김',
   DELETE_MESSAGE: '메시지 삭제',
+  HIDE_COURSE: '코스 숨김',
   SUSPEND_USER: '계정 정지',
   WARN_USER: '경고',
 };

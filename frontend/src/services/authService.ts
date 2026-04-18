@@ -43,7 +43,8 @@ export interface AuthResponse {
     id: number;
     username: string;
     nickname: string;
-    email?: string;
+    email: string | null;
+    phoneNumber: string | null;
   };
   linkSuggestion?: LinkSuggestionInfo;
 }
