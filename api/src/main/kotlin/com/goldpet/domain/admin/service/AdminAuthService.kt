@@ -1,5 +1,6 @@
 package com.goldpet.domain.admin.service
 
+import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.AdminUserPrincipal
 import com.goldpet.domain.admin.entity.AdminUser
@@ -19,7 +20,9 @@ class AdminAuthService(
 
     @Transactional(readOnly = true)
     fun login(email: String, passwordRaw: String): Pair<String?, AdminUser> {
-        val adminUser = adminUserRepository.findByEmail(email)
+        val emailHash = BlindIndexUtil.hash(email)
+            ?: throw BadCredentialsException("Invalid Email or Password")
+        val adminUser = adminUserRepository.findByEmailHash(emailHash)
             .orElseThrow { BadCredentialsException("Invalid Email or Password") }
 
         if (!passwordEncoder.matches(passwordRaw, adminUser.passwordHash)) {

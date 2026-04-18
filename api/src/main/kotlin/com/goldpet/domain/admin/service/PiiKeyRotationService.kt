@@ -104,13 +104,41 @@ class PiiKeyRotationService(
                 }
             }
 
+            // admin_users 테이블도 동일하게 로테이션 (email + name 2개 PII 컬럼 + email_hash)
+            val adminRows = jdbcTemplate.queryForList(
+                "SELECT id, email, name FROM admin_users WHERE is_active = true"
+            )
+            for (row in adminRows) {
+                val adminId = (row["id"] as Number).toLong()
+                try {
+                    val perRowTx = TransactionTemplate(transactionManager).apply {
+                        propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
+                    }
+                    val outcome = perRowTx.execute {
+                        jdbcTemplate.queryForList(
+                            "SELECT id FROM admin_users WHERE id = ? FOR UPDATE", adminId
+                        )
+                        rotateAdminRow(adminId, row, primary, secondary, dryRun)
+                    } ?: RowOutcome.FAILED
+                    when (outcome) {
+                        RowOutcome.ROTATED -> rotated++
+                        RowOutcome.SKIPPED_ALREADY_NEW -> skippedAlreadyNew++
+                        RowOutcome.FAILED -> { failed++; mismatches.add(-adminId) }
+                    }
+                } catch (e: Exception) {
+                    log.error("Rotation failed for admin_user {}: {}", adminId, e.message, e)
+                    failed++
+                    mismatches.add(-adminId)
+                }
+            }
+
             val verification = runVerificationPass(primary)
 
             adminAuditService.log(
                 adminUserId = principalId,
                 action = if (dryRun) "KEY_ROTATE_DRYRUN" else "KEY_ROTATE",
-                targetType = "users",
-                details = "rotated=$rotated skipped=$skippedAlreadyNew failed=$failed verificationMismatches=${verification.mismatches.size}"
+                targetType = "users+admin",
+                details = "rotated=$rotated skipped=$skippedAlreadyNew failed=$failed users=${rows.size} admins=${adminRows.size} verificationMismatches=${verification.mismatches.size}"
             )
 
             return RotationResult(
@@ -198,6 +226,67 @@ class PiiKeyRotationService(
         jdbcTemplate.update(
             "UPDATE users SET email = ?, name = ?, phone_number = ?, birth_date = ?, email_hash = ? WHERE id = ?",
             newEmailCipher, newNameCipher, newPhoneCipher, newBirthCipher, newEmailHash, userId
+        )
+        return RowOutcome.ROTATED
+    }
+
+    /**
+     * admin_users용 per-row 로테이션. email/name만 암호화 대상, email_hash 동시 갱신.
+     * Bootstrap 케이스(plaintext 이메일 + NULL email_hash) 또는 Secondary→Primary 마이그레이션을
+     * 모두 커버한다. 이미 Primary이고 email_hash가 정확하면 SKIPPED_ALREADY_NEW.
+     */
+    private fun rotateAdminRow(
+        adminId: Long,
+        row: Map<String, Any?>,
+        primary: String,
+        secondary: String,
+        dryRun: Boolean
+    ): RowOutcome {
+        val rawEmail = row["email"] as? String ?: return RowOutcome.SKIPPED_ALREADY_NEW
+        val rawName = row["name"] as? String ?: return RowOutcome.SKIPPED_ALREADY_NEW
+
+        var needsRotation = false
+
+        val emailPlain: String = run {
+            val p = tryDecrypt(rawEmail, primary)
+            if (p != null) return@run p
+            needsRotation = true
+            if (secondary.isNotBlank()) {
+                val s = tryDecrypt(rawEmail, secondary)
+                if (s != null) return@run s
+            }
+            rawEmail // plaintext bootstrap
+        }
+
+        val namePlain: String = run {
+            val p = tryDecrypt(rawName, primary)
+            if (p != null) return@run p
+            needsRotation = true
+            if (secondary.isNotBlank()) {
+                val s = tryDecrypt(rawName, secondary)
+                if (s != null) return@run s
+            }
+            rawName
+        }
+
+        // email_hash가 누락되거나 어긋나 있어도 갱신 필요 (bootstrap 직후 케이스)
+        val currentHash = try {
+            jdbcTemplate.queryForObject(
+                "SELECT email_hash FROM admin_users WHERE id = ?", String::class.java, adminId
+            )
+        } catch (e: Exception) { null }
+        val expectedHash = BlindIndexUtil.hash(emailPlain)
+        if (currentHash != expectedHash) needsRotation = true
+
+        if (!needsRotation) return RowOutcome.SKIPPED_ALREADY_NEW
+        if (dryRun) return RowOutcome.ROTATED
+
+        jdbcTemplate.update(
+            "UPDATE admin_users SET email = ?, name = ?, email_hash = ? WHERE id = ?",
+            converter.convertToDatabaseColumn(emailPlain),
+            converter.convertToDatabaseColumn(namePlain),
+            expectedHash,
+            adminId
         )
         return RowOutcome.ROTATED
     }

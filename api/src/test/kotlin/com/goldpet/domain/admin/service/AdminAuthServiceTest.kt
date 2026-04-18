@@ -1,5 +1,6 @@
 package com.goldpet.domain.admin.service
 
+import com.goldpet.config.crypto.EncryptionConfig
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.domain.admin.entity.AdminUser
 import com.goldpet.domain.admin.entity.AdminUserRole
@@ -38,6 +39,8 @@ class AdminAuthServiceTest {
     fun setUp() {
         MockitoAnnotations.openMocks(this)
         passwordEncoder = BCryptPasswordEncoder()
+        // AdminAuthService가 BlindIndexUtil.hash를 호출하므로 EncryptionConfig.instance 필요
+        EncryptionConfig("admin-auth-test-key-32-chars!!!!", "").validate()
 
         adminAuthService = AdminAuthService(
             adminUserRepository,
@@ -63,7 +66,7 @@ class AdminAuthServiceTest {
     @Test
     fun `login should succeed with valid credentials`() {
         // Given
-        whenever(adminUserRepository.findByEmail("admin@goldpet.com"))
+        whenever(adminUserRepository.findByEmailHash(any()))
             .thenReturn(Optional.of(testAdminUser))
         whenever(jwtTokenProvider.generateToken(any()))
             .thenReturn("test-jwt-token")
@@ -82,7 +85,7 @@ class AdminAuthServiceTest {
     @Test
     fun `login should fail with invalid email`() {
         // Given
-        whenever(adminUserRepository.findByEmail("invalid@goldpet.com"))
+        whenever(adminUserRepository.findByEmailHash(any()))
             .thenReturn(Optional.empty())
 
         // When & Then
@@ -95,7 +98,7 @@ class AdminAuthServiceTest {
     @Test
     fun `login should fail with invalid password`() {
         // Given
-        whenever(adminUserRepository.findByEmail("admin@goldpet.com"))
+        whenever(adminUserRepository.findByEmailHash(any()))
             .thenReturn(Optional.of(testAdminUser))
 
         // When & Then
@@ -120,7 +123,7 @@ class AdminAuthServiceTest {
             createdAt = LocalDateTime.now()
             updatedAt = LocalDateTime.now()
         }
-        whenever(adminUserRepository.findByEmail("admin@goldpet.com"))
+        whenever(adminUserRepository.findByEmailHash(any()))
             .thenReturn(Optional.of(disabledUser))
 
         // When & Then
@@ -145,7 +148,7 @@ class AdminAuthServiceTest {
             createdAt = LocalDateTime.now()
             updatedAt = LocalDateTime.now()
         }
-        whenever(adminUserRepository.findByEmail("admin@goldpet.com"))
+        whenever(adminUserRepository.findByEmailHash(any()))
             .thenReturn(Optional.of(userWith2FA))
 
         // When

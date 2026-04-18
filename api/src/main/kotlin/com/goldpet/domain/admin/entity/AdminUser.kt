@@ -1,5 +1,7 @@
 package com.goldpet.domain.admin.entity
 
+import com.goldpet.config.crypto.BlindIndexUtil
+import com.goldpet.config.crypto.EncryptionConverter
 import com.goldpet.domain.common.entity.BaseTimeEntity
 import jakarta.persistence.*
 
@@ -16,12 +18,17 @@ class AdminUser(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(unique = true, nullable = false)
+    @Convert(converter = EncryptionConverter::class)
+    @Column(nullable = false)
     var email: String,
+
+    @Column(name = "email_hash", unique = true)
+    var emailHash: String? = null,
 
     @Column(nullable = false)
     var passwordHash: String,
 
+    @Convert(converter = EncryptionConverter::class)
     @Column(nullable = false)
     var name: String,
 
@@ -34,4 +41,16 @@ class AdminUser(
     @Column(nullable = false)
     var isActive: Boolean = true
 
-) : BaseTimeEntity()
+) : BaseTimeEntity() {
+
+    /**
+     * email 컬럼이 random-IV AES-GCM으로 암호화되어 equality 조회가 불가능하므로
+     * 저장/수정 시 email_hash(BlindIndex HMAC-SHA256)를 자동 동기화한다.
+     * 호출부가 emailHash를 직접 관리할 필요가 없고 누락 방지.
+     */
+    @PrePersist
+    @PreUpdate
+    fun syncEmailHash() {
+        emailHash = BlindIndexUtil.hash(email)
+    }
+}

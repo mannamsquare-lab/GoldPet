@@ -55,9 +55,10 @@ class AdminAuthControllerIntegrationTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
-        // Clean up test data
+        // Clean up test data — BlindIndex 해시로 조회 (email 컬럼이 이제 암호화되어 equality 불가)
         testEmails.forEach { email ->
-            adminUserRepository.findByEmail(email).ifPresent {
+            val hash = com.goldpet.config.crypto.BlindIndexUtil.hash(email) ?: return@forEach
+            adminUserRepository.findByEmailHash(hash).ifPresent {
                 adminUserRepository.delete(it)
             }
         }
