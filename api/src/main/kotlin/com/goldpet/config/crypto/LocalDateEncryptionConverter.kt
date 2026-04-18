@@ -25,7 +25,7 @@ class LocalDateEncryptionConverter : AttributeConverter<LocalDate?, String?> {
         if (attribute == null) return null
         try {
             val dateString = attribute.format(dateFormatter)
-            val key = getKey()
+            val key = getKey(EncryptionConfig.instance.primaryKey)
             val iv = ByteArray(ivLength)
             SecureRandom().nextBytes(iv)
 
@@ -43,30 +43,44 @@ class LocalDateEncryptionConverter : AttributeConverter<LocalDate?, String?> {
     override fun convertToEntityAttribute(dbData: String?): LocalDate? {
         if (dbData == null) return null
         try {
-            val key = getKey()
-            val combined = Base64.getDecoder().decode(dbData)
-
-            val iv = combined.sliceArray(0 until ivLength)
-            val encrypted = combined.sliceArray(ivLength until combined.size)
-
-            val cipher = Cipher.getInstance(algorithm)
-            cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(gcmTagLength, iv))
-            val dateString = String(cipher.doFinal(encrypted), Charsets.UTF_8)
-            return LocalDate.parse(dateString, dateFormatter)
-        } catch (e: Exception) {
-            // Backward compatibility: try parsing as plain date string
-            return try {
-                log.warn("Decryption failed for LocalDate column — trying plaintext fallback. Cause: {}", e.message)
-                LocalDate.parse(dbData)
-            } catch (parseEx: Exception) {
-                log.error("Failed to parse LocalDate value as both encrypted and plaintext: {}", parseEx.message)
-                null
+            return decryptWith(dbData, EncryptionConfig.instance.primaryKey)
+        } catch (primaryEx: Exception) {
+            val secondary = EncryptionConfig.instance.secondaryKey
+            if (secondary.isNotBlank()) {
+                try {
+                    return decryptWith(dbData, secondary)
+                } catch (secondaryEx: Exception) {
+                    return plaintextFallback(dbData, secondaryEx)
+                }
             }
+            return plaintextFallback(dbData, primaryEx)
         }
     }
 
-    private fun getKey(): SecretKeySpec {
-        val keyString = EncryptionConfig.instance.encryptionKey
+    private fun decryptWith(dbData: String, keyString: String): LocalDate {
+        val key = getKey(keyString)
+        val combined = Base64.getDecoder().decode(dbData)
+
+        val iv = combined.sliceArray(0 until ivLength)
+        val encrypted = combined.sliceArray(ivLength until combined.size)
+
+        val cipher = Cipher.getInstance(algorithm)
+        cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(gcmTagLength, iv))
+        val dateString = String(cipher.doFinal(encrypted), Charsets.UTF_8)
+        return LocalDate.parse(dateString, dateFormatter)
+    }
+
+    private fun plaintextFallback(dbData: String, cause: Exception): LocalDate? {
+        return try {
+            log.warn("Decryption failed for LocalDate column — trying plaintext fallback. Cause: {}", cause.message)
+            LocalDate.parse(dbData)
+        } catch (parseEx: Exception) {
+            log.error("Failed to parse LocalDate value as both encrypted and plaintext: {}", parseEx.message)
+            null
+        }
+    }
+
+    private fun getKey(keyString: String): SecretKeySpec {
         val keyBytes = keyString.toByteArray(Charsets.UTF_8).copyOf(32)
         return SecretKeySpec(keyBytes, "AES")
     }

@@ -10,7 +10,7 @@ class AdminUserPrincipal(val adminUser: AdminUser) : UserDetails {
     val email: String = adminUser.email
 
     override fun getAuthorities(): Collection<GrantedAuthority> {
-        return listOf(SimpleGrantedAuthority("ROLE_\${adminUser.role.name}"))
+        return listOf(SimpleGrantedAuthority("ROLE_${adminUser.role.name}"))
     }
 
     override fun getPassword(): String = adminUser.passwordHash

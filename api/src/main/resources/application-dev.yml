@@ -19,7 +19,10 @@ spring:
 # 개발 서버 환경 URL 설정 (mannamsquare.com)
 app:
   encryption:
-    key: "${ENCRYPTION_KEY:dev-encryption-key-32-characters!}"
+    # Legacy; unused under dual-key shape. Remove in follow-up after prod rotation.
+    key: "${ENCRYPTION_KEY:MUST_BE_SET_VIA_ENV_VAR_DO_NOT_COMMIT}"
+    key-primary: "${ENCRYPTION_KEY_PRIMARY:${ENCRYPTION_KEY:MUST_BE_SET_VIA_ENV_VAR_DO_NOT_COMMIT}}"
+    key-secondary: "${ENCRYPTION_KEY_SECONDARY:}"
   frontend:
     url: https://app.mannamsquare.com
   admin:

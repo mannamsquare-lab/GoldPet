@@ -1,11 +1,15 @@
 package com.goldpet.domain.admin.controller
 
 import com.goldpet.config.crypto.BlindIndexUtil
+import com.goldpet.config.security.AdminUserPrincipal
+import com.goldpet.domain.admin.service.PiiKeyRotationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -13,7 +17,10 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/admin/migration")
-class UserMigrationController(private val userRepository: UserRepository) {
+class UserMigrationController(
+    private val userRepository: UserRepository,
+    private val piiKeyRotationService: PiiKeyRotationService
+) {
     private val log = LoggerFactory.getLogger(UserMigrationController::class.java)
 
     /**
@@ -167,5 +174,34 @@ class UserMigrationController(private val userRepository: UserRepository) {
                         "mergedUsersCount" to mergedCount
                 )
         )
+    }
+
+    // NOTE: No @Transactional here — PiiKeyRotationService.rotate() uses Propagation.NEVER.
+    @PostMapping("/rotate-encryption-key")
+    fun rotateEncryptionKey(
+        @AuthenticationPrincipal principal: AdminUserPrincipal
+    ): ResponseEntity<Any> = runRotation(dryRun = false, principalId = principal.id)
+
+    // NOTE: No @Transactional here — PiiKeyRotationService.rotate() uses Propagation.NEVER.
+    @PostMapping("/rotate-encryption-key/dry-run")
+    fun rotateEncryptionKeyDryRun(
+        @AuthenticationPrincipal principal: AdminUserPrincipal
+    ): ResponseEntity<Any> = runRotation(dryRun = true, principalId = principal.id)
+
+    private fun runRotation(dryRun: Boolean, principalId: Long): ResponseEntity<Any> {
+        return try {
+            val result = piiKeyRotationService.rotate(dryRun = dryRun, principalId = principalId)
+            val hasFailure = result.failed > 0 ||
+                result.mismatches.isNotEmpty() ||
+                result.verificationPass.mismatches.isNotEmpty()
+            if (hasFailure) {
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result)
+            } else {
+                ResponseEntity.ok(result)
+            }
+        } catch (e: PiiKeyRotationService.ConcurrentRotationException) {
+            ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("error" to (e.message ?: "advisory lock busy")))
+        }
     }
 }

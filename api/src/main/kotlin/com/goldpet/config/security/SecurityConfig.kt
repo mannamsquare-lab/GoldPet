@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -17,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 class SecurityConfig(
         private val customOAuth2UserService: CustomOAuth2UserService,
         private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
@@ -78,6 +80,8 @@ class SecurityConfig(
                             .permitAll() // Allow Swagger
                             .requestMatchers("/error")
                             .permitAll() // Allow Error dispatch
+                            .requestMatchers("/api/admin/migration/**")
+                            .hasAnyRole("SUPER_ADMIN") // Restrict PII key rotation endpoints
                             .anyRequest()
                             .authenticated()
                 }
