@@ -192,10 +192,9 @@ class SocialLoginService(
         val appleId = claims.subject
         val email = claims["email"] as? String
 
-        val attributes = mapOf(
-            "sub" to appleId,
-            "email" to (email ?: "")
-        )
+        val attributes = mutableMapOf<String, Any>("sub" to appleId).apply {
+            if (!email.isNullOrBlank()) put("email", email)
+        }
 
         // Apple private relay emails skip email matching
         val skipEmailMatch = email?.contains("@privaterelay.appleid.com") == true
@@ -252,7 +251,7 @@ class SocialLoginService(
         }
 
         // 2. Email match check
-        val emailMatchedUser = if (!skipEmailMatch && email != null) {
+        val emailMatchedUser = if (!skipEmailMatch && !email.isNullOrBlank()) {
             userRepository.findByEmailHash(BlindIndexUtil.hash(email)!!).orElse(null)
         } else null
 
@@ -341,7 +340,7 @@ class SocialLoginService(
         attributes: Map<String, Any>
     ): AuthResponse {
         var user = userRepository.findByOauthProviderAndOauthId(provider, oauthId).orElse(null)
-        if (user == null && email != null) {
+        if (user == null && !email.isNullOrBlank()) {
             user = userRepository.findByEmailHash(BlindIndexUtil.hash(email)!!).orElse(null)
         }
         if (user == null) {
@@ -390,7 +389,7 @@ class SocialLoginService(
 
     private fun syncUserFields(user: User, provider: String, oauthId: String, email: String?, nickname: String?, profileImage: String?) {
         var changed = false
-        if (email != null && user.email != email) { user.email = email; user.emailHash = BlindIndexUtil.hash(email); changed = true }
+        if (!email.isNullOrBlank() && user.email != email) { user.email = email; user.emailHash = BlindIndexUtil.hash(email); changed = true }
         if (nickname != null && user.nickname == null) { user.nickname = nickname; changed = true }
         if (profileImage != null && user.profileImages.isEmpty() && user.profileImageUrl != profileImage) {
             user.profileImageUrl = profileImage

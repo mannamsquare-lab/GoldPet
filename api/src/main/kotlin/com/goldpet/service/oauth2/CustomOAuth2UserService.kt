@@ -191,7 +191,7 @@ class CustomOAuth2UserService(private val userRepository: UserRepository) :
         } else {
             // Update user details if necessary (protect user-customized data)
             var changed = false
-            if (email != null && user.email != email) {
+            if (!email.isNullOrBlank() && user.email != email) {
                 user.email = email; user.emailHash = BlindIndexUtil.hash(email); changed = true
             }
             if (nickname != null && user.nickname == null) {
