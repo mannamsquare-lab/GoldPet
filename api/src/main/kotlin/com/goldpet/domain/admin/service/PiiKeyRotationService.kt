@@ -11,16 +11,19 @@ import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
+import java.sql.Connection
 import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import javax.sql.DataSource
 
 @Service
 class PiiKeyRotationService(
     private val jdbcTemplate: JdbcTemplate,
     private val transactionManager: PlatformTransactionManager,
-    private val adminAuditService: AdminAuditService
+    private val adminAuditService: AdminAuditService,
+    private val dataSource: DataSource
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val converter = EncryptionConverter()
@@ -52,21 +55,15 @@ class PiiKeyRotationService(
 
     @Transactional(propagation = Propagation.NEVER)
     fun rotate(dryRun: Boolean, principalId: Long): RotationResult {
-        // FIXME (before Phase 2 runtime rotation): Postgres advisory locks are session-scoped.
-        // queryForObject acquires on one pool connection, the finally block may release on a
-        // different one — silent no-op + lock stacks on the first connection. On subsequent
-        // rotations, most pool connections see the lock as held and ConcurrentRotationException
-        // fires spuriously. The IntegrationTestBase.clearAdvisoryLocks() @BeforeEach works
-        // around this for tests; production must switch to a pinned-connection pattern
-        // (DataSource.connection held across lock/unlock) before this endpoint is invoked live.
-        val locked = jdbcTemplate.queryForObject(
-            "SELECT pg_try_advisory_lock(?)", Boolean::class.java, ADVISORY_LOCK_KEY
-        ) ?: false
-        if (!locked) {
-            throw ConcurrentRotationException("Another rotation is in progress (advisory lock busy)")
-        }
-
-        try {
+        // Postgres advisory locks are session-scoped: acquire and release MUST hit the same
+        // connection. We hold one dedicated DataSource connection for the rotation lifetime
+        // so the lock state is guaranteed consistent regardless of pool borrowing.
+        dataSource.connection.use { lockConn ->
+            val locked = tryAcquireAdvisoryLock(lockConn)
+            if (!locked) {
+                throw ConcurrentRotationException("Another rotation is in progress (advisory lock busy)")
+            }
+            try {
             val primary = EncryptionConfig.instance.primaryKey
             val secondary = EncryptionConfig.instance.secondaryKey
 
@@ -124,14 +121,29 @@ class PiiKeyRotationService(
                 verificationPass = verification,
                 dryRun = dryRun
             )
-        } finally {
-            try {
-                jdbcTemplate.queryForObject(
-                    "SELECT pg_advisory_unlock(?)", Boolean::class.java, ADVISORY_LOCK_KEY
-                )
-            } catch (e: Exception) {
-                log.warn("Failed to release advisory lock: {}", e.message)
+            } finally {
+                releaseAdvisoryLock(lockConn)
             }
+        }
+    }
+
+    private fun tryAcquireAdvisoryLock(conn: Connection): Boolean {
+        conn.prepareStatement("SELECT pg_try_advisory_lock(?)").use { stmt ->
+            stmt.setLong(1, ADVISORY_LOCK_KEY)
+            stmt.executeQuery().use { rs ->
+                return rs.next() && rs.getBoolean(1)
+            }
+        }
+    }
+
+    private fun releaseAdvisoryLock(conn: Connection) {
+        try {
+            conn.prepareStatement("SELECT pg_advisory_unlock(?)").use { stmt ->
+                stmt.setLong(1, ADVISORY_LOCK_KEY)
+                stmt.executeQuery().close()
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to release advisory lock: {}", e.message)
         }
     }
 

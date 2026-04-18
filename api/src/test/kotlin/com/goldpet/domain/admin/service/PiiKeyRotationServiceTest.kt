@@ -26,6 +26,10 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.TransactionStatus
+import java.sql.Connection
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import javax.sql.DataSource
 
 @ExtendWith(MockitoExtension::class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -35,6 +39,10 @@ class PiiKeyRotationServiceTest {
     @Mock private lateinit var transactionManager: PlatformTransactionManager
     @Mock private lateinit var txStatus: TransactionStatus
     @Mock private lateinit var auditService: AdminAuditService
+    @Mock private lateinit var dataSource: DataSource
+    @Mock private lateinit var lockConnection: Connection
+    @Mock private lateinit var lockStmt: PreparedStatement
+    @Mock private lateinit var lockRs: ResultSet
 
     private lateinit var service: PiiKeyRotationService
 
@@ -46,22 +54,19 @@ class PiiKeyRotationServiceTest {
     @BeforeEach
     fun setUp() {
         EncryptionConfig(PRIMARY_KEY, SECONDARY_KEY).validate()
-        service = PiiKeyRotationService(jdbcTemplate, transactionManager, auditService)
+        service = PiiKeyRotationService(jdbcTemplate, transactionManager, auditService, dataSource)
 
         // Allow TransactionTemplate.execute() to run lambdas without a real DataSource
         doReturn(txStatus).`when`(transactionManager).getTransaction(
             Mockito.any(TransactionDefinition::class.java)
         )
 
-        // Default: advisory lock acquired (pg_try_advisory_lock → true, pg_advisory_unlock → true)
-        doAnswer { invoc: InvocationOnMock ->
-            val sql = invoc.getArgument<String>(0)
-            "pg_try_advisory_lock" in sql || "pg_advisory_unlock" in sql
-        }.`when`(jdbcTemplate).queryForObject(
-            anyString(),
-            Mockito.any(Class::class.java),
-            Mockito.any(Any::class.java)
-        )
+        // Wire advisory-lock Connection chain: dataSource → connection → stmt → rs → true
+        doReturn(lockConnection).`when`(dataSource).connection
+        doReturn(lockStmt).`when`(lockConnection).prepareStatement(anyString())
+        doReturn(lockRs).`when`(lockStmt).executeQuery()
+        doReturn(true).`when`(lockRs).next()
+        doReturn(true).`when`(lockRs).getBoolean(1)
 
         // Default: FOR UPDATE row-lock query (vararg version); result is not used by service
         doReturn(listOf<Map<String, Any>>()).`when`(jdbcTemplate).queryForList(
@@ -97,11 +102,7 @@ class PiiKeyRotationServiceTest {
 
     @Test
     fun `throws ConcurrentRotationException when advisory lock is contended`() {
-        doReturn(false).`when`(jdbcTemplate).queryForObject(
-            anyString(),
-            Mockito.any(Class::class.java),
-            Mockito.any(Any::class.java)
-        )
+        doReturn(false).`when`(lockRs).getBoolean(1)
 
         assertThrows<PiiKeyRotationService.ConcurrentRotationException> {
             service.rotate(dryRun = false, principalId = 1L)

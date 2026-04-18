@@ -44,6 +44,24 @@ abstract class IntegrationTestBase {
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
 
+    @Autowired
+    private lateinit var encryptionConfigBean: EncryptionConfig
+
+    /**
+     * Restores `EncryptionConfig.instance` to the Spring-managed bean before each test.
+     *
+     * Unit tests (e.g. `PiiKeyRotationServiceTest`) construct their own `EncryptionConfig`
+     * with unrelated key values and call `validate()`, which overwrites the static
+     * `instance` field. A subsequent integration test running in the same JVM would
+     * otherwise observe those polluted keys and fail to decrypt/encrypt correctly.
+     * Calling `validate()` on the autowired bean re-pins `instance` to the yml-configured
+     * test keys every time.
+     */
+    @BeforeEach
+    fun restoreEncryptionConfigSingleton() {
+        encryptionConfigBean.validate()
+    }
+
     /**
      * Clears any PostgreSQL advisory locks that leaked from a previous test.
      *
