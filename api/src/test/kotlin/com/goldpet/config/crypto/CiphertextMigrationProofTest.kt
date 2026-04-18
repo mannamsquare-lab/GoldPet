@@ -43,8 +43,7 @@ class CiphertextMigrationProofTest : IntegrationTestBase() {
     @Autowired private lateinit var piiKeyRotationService: PiiKeyRotationService
     @Autowired private lateinit var passwordEncoder: PasswordEncoder
 
-    // admin_audit_logs.action is VARCHAR(20); "ENCRYPTION_KEY_ROTATION" (24 chars) overflows.
-    // Mock to prevent DataIntegrityViolationException propagating out of rotate().
+    // Mock to keep audit writes out of the hot path for this proof-of-ciphertext test.
     @MockBean private lateinit var adminAuditService: AdminAuditService
 
     private val PRIMARY = "test-encryption-key-32-chars!!!"

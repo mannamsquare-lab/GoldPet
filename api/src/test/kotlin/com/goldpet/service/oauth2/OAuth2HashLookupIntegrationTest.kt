@@ -177,15 +177,14 @@ class OAuth2HashLookupIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `rotation audit log is written — adminAuditService log called with rotation action`() {
-        // admin_audit_logs.action is VARCHAR(20). The service calls adminAuditService.log() with
-        // "ENCRYPTION_KEY_ROTATION" (24 chars). We verify the call via the mock rather than the DB
-        // to avoid the overflow. The VARCHAR(20) constraint is a known production issue tracked
-        // separately — the important thing here is that the service invokes the audit call.
+        // admin_audit_logs.action is VARCHAR(20). Service uses "KEY_ROTATE" (10 chars) to
+        // stay under the column limit while matching the repo convention of short verbs
+        // (CREATE/UPDATE/DELETE/VIEW). Details payload carries the counts.
         piiKeyRotationService.rotate(dryRun = false, principalId = 999L)
 
         verify(adminAuditService).log(
             adminUserId = eq(999L),
-            action = eq("ENCRYPTION_KEY_ROTATION"),
+            action = eq("KEY_ROTATE"),
             targetType = any(),
             targetId = isNull(),
             ipAddress = isNull(),

@@ -108,7 +108,7 @@ class PiiKeyRotationService(
 
             adminAuditService.log(
                 adminUserId = principalId,
-                action = if (dryRun) "ENCRYPTION_KEY_ROTATION_DRY_RUN" else "ENCRYPTION_KEY_ROTATION",
+                action = if (dryRun) "KEY_ROTATE_DRYRUN" else "KEY_ROTATE",
                 targetType = "users",
                 details = "rotated=$rotated skipped=$skippedAlreadyNew failed=$failed verificationMismatches=${verification.mismatches.size}"
             )
