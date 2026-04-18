@@ -42,9 +42,9 @@ class AdminCommunityService(
             content = post.content,
             categoryId = post.category.id,
             categoryName = post.category.name,
-            authorId = post.user.id,
-            authorNickname = post.user.nickname ?: "",
-            authorProfileImage = post.user.profileImageUrl,
+            userId = post.user.id,
+            userNickname = post.user.nickname ?: "",
+            userProfileImage = post.user.profileImageUrl,
             imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
             viewCount = post.viewCount,
             likeCount = likeCount.toInt(),
@@ -56,8 +56,8 @@ class AdminCommunityService(
                 CommentAdminResponse(
                     id = comment.id,
                     content = comment.content,
-                    authorId = comment.user.id,
-                    authorNickname = comment.user.nickname ?: "",
+                    userId = comment.user.id,
+                    userNickname = comment.user.nickname ?: "",
                     isHidden = comment.isHidden,
                     createdAt = comment.createdAt.format(formatter)
                 )
@@ -84,8 +84,8 @@ class AdminCommunityService(
         return CommentAdminResponse(
             id = saved.id,
             content = saved.content,
-            authorId = saved.user.id,
-            authorNickname = saved.user.nickname ?: "",
+            userId = saved.user.id,
+            userNickname = saved.user.nickname ?: "",
             isHidden = saved.isHidden,
             createdAt = saved.createdAt.format(formatter)
         )
@@ -134,8 +134,8 @@ class AdminCommunityService(
             title = post.title,
             content = if (post.content.length > 100) post.content.take(100) + "..." else post.content,
             categoryName = post.category.name,
-            authorNickname = post.user.nickname ?: "",
-            authorId = post.user.id,
+            userNickname = post.user.nickname ?: "",
+            userId = post.user.id,
             viewCount = post.viewCount,
             likeCount = likeCount.toInt(),
             commentCount = commentCount.toInt(),

@@ -249,6 +249,7 @@ class CommunityService(
         }
     }
 
+    @Transactional
     fun getPostDetail(postId: Long, currentUserId: Long?): CommunityPostResponse {
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
         if (post.isHidden) throw NotFoundException("Post not found")
