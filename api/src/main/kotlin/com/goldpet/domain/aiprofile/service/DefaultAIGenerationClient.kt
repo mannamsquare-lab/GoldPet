@@ -10,7 +10,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 @Component
-@Profile("test")
+@Profile("test", "codegen")
 class DefaultAIGenerationClient(
     private val aiProfileRequestRepository: AIProfileRequestRepository
 ) : AIGenerationClient {

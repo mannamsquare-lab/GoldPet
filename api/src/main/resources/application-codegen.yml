@@ -1,0 +1,39 @@
+spring:
+  config:
+    activate:
+      on-profile: codegen
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: goldpet123
+
+app:
+  encryption:
+    key-primary: "codegen-dummy-key-32chars-padded!"
+    key-secondary: ""
+  frontend:
+    url: http://localhost:5173
+  admin:
+    url: http://localhost:5174
+  cors:
+    allowed-origins: "*"
+
+S3_ENDPOINT: http://localhost:9100
+S3_PUBLIC_ENDPOINT: http://localhost:9100
+S3_ACCESS_KEY: codegen-access-key
+S3_SECRET_KEY: codegen-secret-key
+S3_PUBLIC_BUCKET_NAME: goldpet-public
+S3_PRIVATE_BUCKET_NAME: goldpet-private

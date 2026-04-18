@@ -16,7 +16,7 @@ interface FcmPushSender {
  * 로컬/개발/테스트 환경용 FCM 로깅 구현체
  */
 @Component
-@Profile("test")
+@Profile("test", "codegen")
 class LoggingFcmPushSender : FcmPushSender {
     private val log = LoggerFactory.getLogger(javaClass)
 

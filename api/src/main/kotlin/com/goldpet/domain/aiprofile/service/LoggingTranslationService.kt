@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 @Component
-@Profile("test")
+@Profile("test", "codegen")
 class LoggingTranslationService : TranslationService {
 
     private val log = LoggerFactory.getLogger(javaClass)
