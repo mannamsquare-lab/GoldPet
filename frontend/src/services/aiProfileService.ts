@@ -1,4 +1,4 @@
-import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type {
   AIStyleOption as AIStyleOptionDto,
   CreateAIProfileRequest as CreateAIProfileRequestDto,
@@ -17,41 +17,54 @@ export type ApplyToProfileRequest = ApplyProfileRequest;
 
 class AIProfileService {
   async getStyles(): Promise<AIStyleOption[]> {
-    const response = await apiClient.get<AIStyleOption[]>('/ai-profile/styles');
-    return response.data;
+    const response = await typedClient.get('/api/v1/ai-profile/styles');
+    return response.data as AIStyleOption[];
   }
 
   async createRequest(request: CreateAIProfileRequest): Promise<AIProfileRequestResponse> {
-    const response = await apiClient.post<AIProfileRequestResponse>('/ai-profile/requests', request);
-    return response.data;
+    const response = await typedClient.post('/api/v1/ai-profile/requests', request);
+    return response.data as AIProfileRequestResponse;
   }
 
   async getMyRequests(page: number): Promise<AIProfileRequestResponse[]> {
-    const response = await apiClient.get<AIProfileRequestResponse[]>(`/ai-profile/requests?page=${page}`);
-    return response.data;
+    const response = await typedClient.get('/api/v1/ai-profile/requests', {
+      params: { page },
+    });
+    return response.data as unknown as AIProfileRequestResponse[];
   }
 
   async getRequest(requestId: number): Promise<AIProfileRequestResponse> {
-    const response = await apiClient.get<AIProfileRequestResponse>(`/ai-profile/requests/${requestId}`);
-    return response.data;
+    const response = await typedClient.getPath(
+      '/api/v1/ai-profile/requests/{requestId}',
+      { requestId },
+    );
+    return response.data as AIProfileRequestResponse;
   }
 
   async getPendingCount(): Promise<number> {
-    const response = await apiClient.get<{ count: number }>('/ai-profile/pending-count');
-    return response.data.count;
+    const response = await typedClient.get('/api/v1/ai-profile/pending-count');
+    return (response.data as { count: number }).count;
   }
 
   async cancelRequest(requestId: number): Promise<void> {
-    await apiClient.delete(`/ai-profile/requests/${requestId}`);
+    await typedClient.deletePath(
+      '/api/v1/ai-profile/requests/{requestId}',
+      { requestId },
+    );
   }
 
   async applyToProfile(requestId: number, data: ApplyToProfileRequest): Promise<void> {
-    await apiClient.post(`/ai-profile/requests/${requestId}/apply`, data);
+    await typedClient.postPath(
+      '/api/v1/ai-profile/requests/{requestId}/apply',
+      { requestId },
+      data,
+    );
   }
 
   async getLoadingTips(): Promise<string[]> {
-    const response = await apiClient.get<{ id: number; content: string; displayOrder: number; isActive: boolean }[]>('/ai-profile/loading-tips');
-    return response.data.map(tip => tip.content);
+    const response = await typedClient.get('/api/v1/ai-profile/loading-tips');
+    const tips = response.data as { id: number; content: string; displayOrder: number; isActive: boolean }[];
+    return tips.map((tip) => tip.content);
   }
 }
 

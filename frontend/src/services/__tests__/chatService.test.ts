@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../api/client', () => ({
-  default: {
+vi.mock('../api/client', () => {
+  const client = {
     get: vi.fn(),
     post: vi.fn(),
     delete: vi.fn(),
@@ -9,10 +9,11 @@ vi.mock('../api/client', () => ({
       request: { use: vi.fn() },
       response: { use: vi.fn() },
     },
-  },
-}))
+  }
+  return { apiClient: client, default: client }
+})
 
-import apiClient from '../api/client'
+import { apiClient } from '../api/client'
 import { chatService } from '../chatService'
 
 const mockedClient = vi.mocked(apiClient)
@@ -31,7 +32,7 @@ describe('chatService', () => {
 
       const result = await chatService.getChatRooms()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/chat/rooms')
+      expect(mockedClient.get).toHaveBeenCalledWith('/chat/rooms', undefined)
       expect(result).toHaveLength(1)
       expect(result[0].id).toBe(1)
     })
@@ -46,7 +47,7 @@ describe('chatService', () => {
 
       const result = await chatService.getMessages('1', 0)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/chat/rooms/1/messages?page=0')
+      expect(mockedClient.get).toHaveBeenCalledWith('/chat/rooms/1/messages', { params: { page: 0 } })
       expect(result).toHaveLength(1)
     })
 
@@ -71,10 +72,10 @@ describe('chatService', () => {
       expect(mockedClient.post).toHaveBeenCalledWith('/chat/rooms/1/messages', {
         content: '안녕',
         messageType: 'TEXT',
-        fileId: null,
-        emoticonId: null,
-        replyToId: null,
-      })
+        fileId: undefined,
+        emoticonId: undefined,
+        replyToId: undefined,
+      }, undefined)
       expect(result.id).toBe(10)
     })
 
@@ -91,7 +92,7 @@ describe('chatService', () => {
 
       await chatService.markAsRead('5')
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/chat/rooms/5/read')
+      expect(mockedClient.post).toHaveBeenCalledWith('/chat/rooms/5/read', undefined, undefined)
     })
 
     it('silently ignores errors', async () => {
@@ -108,7 +109,7 @@ describe('chatService', () => {
 
       await chatService.leaveRoom('3')
 
-      expect(mockedClient.delete).toHaveBeenCalledWith('/chat/rooms/3/leave')
+      expect(mockedClient.delete).toHaveBeenCalledWith('/chat/rooms/3/leave', undefined)
     })
 
     it('throws on leave failure', async () => {
@@ -125,7 +126,7 @@ describe('chatService', () => {
 
       const result = await chatService.getOrCreateDirectRoom(42)
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/chat/rooms/direct/42')
+      expect(mockedClient.post).toHaveBeenCalledWith('/chat/rooms/direct/42', undefined, undefined)
       expect(result.id).toBe(99)
     })
 

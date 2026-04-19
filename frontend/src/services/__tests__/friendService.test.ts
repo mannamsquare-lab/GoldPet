@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../api/client', () => ({
-  default: {
+vi.mock('../api/client', () => {
+  const client = {
     get: vi.fn(),
     post: vi.fn(),
     delete: vi.fn(),
@@ -9,10 +9,11 @@ vi.mock('../api/client', () => ({
       request: { use: vi.fn() },
       response: { use: vi.fn() },
     },
-  },
-}))
+  }
+  return { apiClient: client, default: client }
+})
 
-import apiClient from '../api/client'
+import { apiClient } from '../api/client'
 import { friendService } from '../friendService'
 
 const mockedClient = vi.mocked(apiClient)
@@ -47,7 +48,9 @@ describe('friendService', () => {
 
       const result = await friendService.getFriends(JSON.stringify({ distance: 5000 }), 0, 20)
 
-      expect(mockedClient.get).toHaveBeenCalledWith(expect.stringContaining('/friends?'))
+      expect(mockedClient.get).toHaveBeenCalledWith('/friends', {
+        params: expect.objectContaining({ page: 0, size: 20, distance: 5000 }),
+      })
       expect(result.content).toHaveLength(1)
       expect(result.last).toBe(true)
     })
@@ -65,7 +68,9 @@ describe('friendService', () => {
 
       const result = await friendService.getNearbyFriends(37.5, 127.0, 5000)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/users/search/nearby?lat=37.5&lon=127&radius=5000')
+      expect(mockedClient.get).toHaveBeenCalledWith('/users/search/nearby', {
+        params: { lat: 37.5, lon: 127.0, radius: 5000 },
+      })
       expect(result).toHaveLength(1)
     })
   })
@@ -76,7 +81,9 @@ describe('friendService', () => {
 
       const result = await friendService.searchFriends('코코', 10)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/users/search?query=%EC%BD%94%EC%BD%94&limit=10')
+      expect(mockedClient.get).toHaveBeenCalledWith('/users/search', {
+        params: { query: '코코', limit: 10 },
+      })
       expect(result).toHaveLength(1)
     })
   })
@@ -104,7 +111,7 @@ describe('friendService', () => {
 
       const result = await friendService.likeUser(5)
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/friends/5/like')
+      expect(mockedClient.post).toHaveBeenCalledWith('/friends/5/like', undefined, undefined)
       expect(result.isMutual).toBe(false)
     })
   })
@@ -115,7 +122,7 @@ describe('friendService', () => {
 
       const result = await friendService.getMutualLikes()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/friends/likes/mutual')
+      expect(mockedClient.get).toHaveBeenCalledWith('/friends/likes/mutual', undefined)
       expect(result).toHaveLength(1)
     })
   })
@@ -126,7 +133,7 @@ describe('friendService', () => {
 
       const result = await friendService.checkLikeStatus(10)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/friends/10/like/status')
+      expect(mockedClient.get).toHaveBeenCalledWith('/friends/10/like/status', undefined)
       expect(result).toBe(true)
     })
 

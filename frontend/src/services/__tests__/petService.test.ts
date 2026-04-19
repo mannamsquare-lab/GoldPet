@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../api/client', () => ({
-  default: {
+vi.mock('../api/client', () => {
+  const client = {
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
@@ -10,13 +10,14 @@ vi.mock('../api/client', () => ({
       request: { use: vi.fn() },
       response: { use: vi.fn() },
     },
-  },
-}))
+  }
+  return { apiClient: client, default: client }
+})
 
 // Ensure USE_MOCK is false
 vi.stubEnv('VITE_USE_MOCK', 'false')
 
-import apiClient from '../api/client'
+import { apiClient } from '../api/client'
 import { petService } from '../petService'
 
 const mockedClient = vi.mocked(apiClient)
@@ -41,12 +42,12 @@ describe('petService', () => {
 
   describe('getSpecies', () => {
     it('fetches species list', async () => {
-      const mockSpecies = [{ id: 1, code: 'DOG', name: '강아지' }]
+      const mockSpecies = [{ id: 1, code: 'DOG', name: '강아지', breedCount: 0 }]
       mockedClient.get.mockResolvedValueOnce({ data: mockSpecies })
 
       const result = await petService.getSpecies()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/pets/species')
+      expect(mockedClient.get).toHaveBeenCalledWith('/pets/species', undefined)
       expect(result).toHaveLength(1)
       expect(result[0].code).toBe('DOG')
     })
@@ -58,7 +59,7 @@ describe('petService', () => {
 
       const result = await petService.getBreeds()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/pets/breeds')
+      expect(mockedClient.get).toHaveBeenCalledWith('/pets/breeds', { params: undefined })
       expect(result).toHaveLength(1)
     })
 
@@ -67,7 +68,7 @@ describe('petService', () => {
 
       await petService.getBreeds(1)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/pets/breeds?speciesId=1')
+      expect(mockedClient.get).toHaveBeenCalledWith('/pets/breeds', { params: { speciesId: 1 } })
     })
   })
 
@@ -77,7 +78,7 @@ describe('petService', () => {
 
       const result = await petService.getMyPets()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/pets/my')
+      expect(mockedClient.get).toHaveBeenCalledWith('/pets/my', undefined)
       expect(result[0].name).toBe('코코')
     })
   })
@@ -88,7 +89,7 @@ describe('petService', () => {
 
       const result = await petService.getPet(1)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/pets/1')
+      expect(mockedClient.get).toHaveBeenCalledWith('/pets/1', undefined)
       expect(result.id).toBe(1)
     })
 
@@ -105,7 +106,7 @@ describe('petService', () => {
 
       const result = await petService.createPet({ name: '코코', speciesId: 1 })
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/pets', { name: '코코', speciesId: 1 })
+      expect(mockedClient.post).toHaveBeenCalledWith('/pets', { name: '코코', speciesId: 1 }, undefined)
       expect(result.name).toBe('코코')
     })
 
@@ -123,7 +124,7 @@ describe('petService', () => {
 
       const result = await petService.updatePet(1, { name: '초코' })
 
-      expect(mockedClient.put).toHaveBeenCalledWith('/pets/1', { name: '초코' })
+      expect(mockedClient.put).toHaveBeenCalledWith('/pets/1', { name: '초코' }, undefined)
       expect(result.name).toBe('초코')
     })
   })
@@ -134,7 +135,7 @@ describe('petService', () => {
 
       await petService.deletePet(1)
 
-      expect(mockedClient.delete).toHaveBeenCalledWith('/pets/1')
+      expect(mockedClient.delete).toHaveBeenCalledWith('/pets/1', undefined)
     })
 
     it('throws on delete failure', async () => {

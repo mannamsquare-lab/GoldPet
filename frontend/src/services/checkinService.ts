@@ -1,4 +1,4 @@
-import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type {
   PlaceResponse,
   CheckInResponse,
@@ -109,10 +109,10 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.get('/checkin/places/nearby', {
+      const response = await typedClient.get('/api/v1/checkin/places/nearby', {
         params: { latitude: lat, longitude: lng, radiusMeters },
       });
-      return response.data;
+      return response.data as Place[];
     } catch {
       return mockPlaces;
     }
@@ -132,10 +132,10 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.get('/checkin/places', {
+      const response = await typedClient.get('/api/v1/checkin/places', {
         params: { category, page, size },
       });
-      return response.data;
+      return response.data as Place[];
     } catch {
       return mockPlaces;
     }
@@ -150,8 +150,11 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.get(`/checkin/places/${placeId}`);
-      return response.data;
+      const response = await typedClient.getPath(
+        '/api/v1/checkin/places/{placeId}',
+        { placeId },
+      );
+      return response.data as Place;
     } catch (error) {
       const place = mockPlaces.find((p) => p.id === placeId);
       if (!place) throw error;
@@ -172,10 +175,10 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.get('/checkin/places/search', {
+      const response = await typedClient.get('/api/v1/checkin/places/search', {
         params: { name, page, size },
       });
-      return response.data;
+      return response.data as Place[];
     } catch {
       return mockPlaces.filter((p) =>
         p.name.toLowerCase().includes(name.toLowerCase())
@@ -197,8 +200,8 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.post('/checkin/places', request);
-      return response.data;
+      const response = await typedClient.post('/api/v1/checkin/places', request);
+      return response.data as Place;
     } catch {
       const newPlace: Place = {
         id: mockPlaces.length + 1,
@@ -228,8 +231,8 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.post('/checkin', request);
-      return response.data;
+      const response = await typedClient.post('/api/v1/checkin', request);
+      return response.data as CheckIn;
     } catch {
       const place = mockPlaces.find((p) => p.id === request.placeId);
       const newCheckIn: CheckIn = {
@@ -252,10 +255,10 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.get('/checkin/my', {
+      const response = await typedClient.get('/api/v1/checkin/my', {
         params: { page, size },
       });
-      return response.data;
+      return response.data as CheckIn[];
     } catch {
       return mockCheckIns;
     }
@@ -272,13 +275,12 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.get(
-        `/checkin/places/${placeId}/checkins`,
-        {
-          params: { page, size },
-        }
+      const response = await typedClient.getPath(
+        '/api/v1/checkin/places/{placeId}/checkins',
+        { placeId },
+        { params: { page, size } },
       );
-      return response.data;
+      return response.data as CheckIn[];
     } catch {
       return mockCheckIns.filter((c) => c.placeId === placeId);
     }
@@ -291,8 +293,8 @@ export const checkinService = {
     }
 
     try {
-      const response = await apiClient.get('/checkin/count');
-      return response.data.count;
+      const response = await typedClient.get('/api/v1/checkin/count');
+      return (response.data as { count: number }).count;
     } catch {
       return mockCheckIns.length;
     }

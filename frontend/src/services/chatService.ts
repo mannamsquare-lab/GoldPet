@@ -1,6 +1,7 @@
 // Chat Service - API integration for Chat features
 
 import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type { ChatRoomType, FileInfo } from '../types/api';
 
 export interface ChatRoom {
@@ -62,13 +63,18 @@ export interface ChatRequestItem {
 
 export const chatService = {
   getChatRooms: async (): Promise<ChatRoom[]> => {
-    const response = await apiClient.get('/chat/rooms');
-    return response.data;
+    const response = await typedClient.get('/api/v1/chat/rooms');
+    return response.data as unknown as ChatRoom[];
   },
 
   getMessages: async (roomId: string, page = 0): Promise<ChatMessage[]> => {
-    const response = await apiClient.get(`/chat/rooms/${roomId}/messages?page=${page}`);
-    const messages: ChatMessage[] = response.data.content || response.data;
+    const response = await typedClient.getPath(
+      '/api/v1/chat/rooms/{roomId}/messages',
+      { roomId },
+      { params: { page } },
+    );
+    const data = response.data as { content?: ChatMessage[] } | ChatMessage[];
+    const messages: ChatMessage[] = Array.isArray(data) ? data : (data.content ?? []);
 
     // Resolve presigned URLs for private bucket files
     const fileKeysToResolve = new Set<string>();
@@ -86,8 +92,11 @@ export const chatService = {
       await Promise.all(
         Array.from(fileKeysToResolve).map(async (fileKey) => {
           try {
-            const res = await apiClient.get(`/files/${encodeURIComponent(fileKey)}/url`);
-            resolvedUrls.set(fileKey, res.data.url);
+            const res = await typedClient.getPath(
+              '/api/v1/files/{fileKey}/url',
+              { fileKey },
+            );
+            resolvedUrls.set(fileKey, (res.data as { url: string }).url);
           } catch { /* ignore resolution failures */ }
         })
       );
@@ -111,14 +120,18 @@ export const chatService = {
     options?: { messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number; replyToId?: number }
   ): Promise<ChatMessage> => {
     try {
-      const response = await apiClient.post(`/chat/rooms/${roomId}/messages`, {
-        content: content || null,
-        messageType: options?.messageType || 'TEXT',
-        fileId: options?.fileId || null,
-        emoticonId: options?.emoticonId || null,
-        replyToId: options?.replyToId || null,
-      });
-      return response.data;
+      const response = await typedClient.postPath(
+        '/api/v1/chat/rooms/{roomId}/messages',
+        { roomId },
+        {
+          content: content ?? undefined,
+          messageType: options?.messageType ?? 'TEXT',
+          fileId: options?.fileId,
+          emoticonId: options?.emoticonId,
+          replyToId: options?.replyToId,
+        },
+      );
+      return response.data as unknown as ChatMessage;
     } catch {
       throw new Error('메시지 전송에 실패했습니다.');
     }
@@ -134,6 +147,7 @@ export const chatService = {
       formData.append('file', file);
       formData.append('category', 'chat');
 
+      // Multipart — stays on apiClient; typedClient is JSON-only.
       const response = await apiClient.post('/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -145,12 +159,12 @@ export const chatService = {
 
   createRoom: async (participantIds: number[], name?: string): Promise<ChatRoom> => {
     try {
-      const response = await apiClient.post('/chat/rooms', {
+      const response = await typedClient.post('/api/v1/chat/rooms', {
         roomType: 'GROUP',
-        title: name || null,
+        title: name,
         participantUserIds: participantIds,
-      });
-      return response.data;
+      } as unknown as Parameters<typeof typedClient.post<'/api/v1/chat/rooms'>>[1]);
+      return response.data as unknown as ChatRoom;
     } catch {
       throw new Error('채팅방 생성에 실패했습니다.');
     }
@@ -158,7 +172,11 @@ export const chatService = {
 
   markAsRead: async (roomId: string): Promise<void> => {
     try {
-      await apiClient.post(`/chat/rooms/${roomId}/read`);
+      await typedClient.postPath(
+        '/api/v1/chat/rooms/{roomId}/read',
+        { roomId },
+        undefined,
+      );
     } catch {
       // Ignore read marking errors
     }
@@ -166,7 +184,10 @@ export const chatService = {
 
   leaveRoom: async (roomId: string): Promise<void> => {
     try {
-      await apiClient.delete(`/chat/rooms/${roomId}/leave`);
+      await typedClient.deletePath(
+        '/api/v1/chat/rooms/{roomId}/leave',
+        { roomId },
+      );
     } catch {
       throw new Error('채팅방 나가기에 실패했습니다.');
     }
@@ -174,8 +195,12 @@ export const chatService = {
 
   inviteToRoom: async (roomId: number, userId: number): Promise<{ roomType: string }> => {
     try {
-      const response = await apiClient.post(`/chat/rooms/${roomId}/invite`, { userId });
-      return response.data;
+      const response = await typedClient.postPath(
+        '/api/v1/chat/rooms/{roomId}/invite',
+        { roomId },
+        { userId } as unknown as Parameters<typeof typedClient.postPath<'/api/v1/chat/rooms/{roomId}/invite'>>[2],
+      );
+      return response.data as unknown as { roomType: string };
     } catch {
       throw new Error('초대에 실패했습니다.');
     }
@@ -187,8 +212,12 @@ export const chatService = {
    */
   getOrCreateDirectRoom: async (targetUserId: number): Promise<ChatRoom> => {
     try {
-      const response = await apiClient.post(`/chat/rooms/direct/${targetUserId}`);
-      return response.data;
+      const response = await typedClient.postPath(
+        '/api/v1/chat/rooms/direct/{targetUserId}',
+        { targetUserId },
+        undefined,
+      );
+      return response.data as unknown as ChatRoom;
     } catch (error: unknown) {
       const err = error as { response?: { status?: number } };
       if (err.response?.status === 400) {
@@ -199,18 +228,32 @@ export const chatService = {
   },
 
   getChatRequests: async (): Promise<ChatRequestItem[]> =>
-    apiClient.get('/chat/rooms/requests').then(r => r.data),
+    typedClient.get('/api/v1/chat/rooms/requests').then(r => r.data as unknown as ChatRequestItem[]),
 
   acceptChatRequest: async (requestId: number): Promise<ChatRoom> =>
-    apiClient.post(`/chat/rooms/requests/${requestId}/accept`).then(r => r.data),
+    typedClient
+      .postPath('/api/v1/chat/rooms/requests/{requestId}/accept', { requestId }, undefined)
+      .then(r => r.data as unknown as ChatRoom),
 
-  rejectChatRequest: async (requestId: number): Promise<void> =>
-    apiClient.post(`/chat/rooms/requests/${requestId}/reject`).then(r => r.data),
+  rejectChatRequest: async (requestId: number): Promise<void> => {
+    await typedClient.postPath(
+      '/api/v1/chat/rooms/requests/{requestId}/reject',
+      { requestId },
+      undefined,
+    );
+  },
 
-  deleteChatRequest: async (requestId: number): Promise<void> =>
-    apiClient.delete(`/chat/rooms/requests/${requestId}`).then(r => r.data),
+  deleteChatRequest: async (requestId: number): Promise<void> => {
+    await typedClient.deletePath(
+      '/api/v1/chat/rooms/requests/{requestId}',
+      { requestId },
+    );
+  },
 
   deleteMessage: async (roomId: string, messageId: number): Promise<void> => {
-    await apiClient.delete(`/chat/rooms/${roomId}/messages/${messageId}`);
+    await typedClient.deletePath(
+      '/api/v1/chat/rooms/{roomId}/messages/{messageId}',
+      { roomId, messageId },
+    );
   },
 };

@@ -1,4 +1,4 @@
-import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type {
   AnalysisStatus,
   StoolAnalysisResponse,
@@ -22,21 +22,28 @@ export interface PageResponse<T> {
 
 export const stoolAnalysisService = {
   getAnalysisHistory: async (petId: number, page: number): Promise<PageResponse<StoolAnalysisResponse>> => {
-    const response = await apiClient.get(`/health/stool-analyses/pet/${petId}`, {
-      params: { page, size: 20 },
-    });
-    return response.data;
+    const response = await typedClient.getPath(
+      '/api/v1/health/stool-analyses/pet/{petId}',
+      { petId },
+      { params: { page, size: 20 } },
+    );
+    return response.data as PageResponse<StoolAnalysisResponse>;
   },
 
   getAnalysis: async (id: number): Promise<StoolAnalysisResponse> => {
-    const response = await apiClient.get(`/health/stool-analyses/${id}`);
+    const response = await typedClient.getPath(
+      '/api/v1/health/stool-analyses/{id}',
+      { id },
+    );
     return response.data;
   },
 
   getHealthTrend: async (petId: number, months = 6): Promise<HealthTrendResponse> => {
-    const response = await apiClient.get(`/health/stool-analyses/pet/${petId}/trend`, {
-      params: { months },
-    });
+    const response = await typedClient.getPath(
+      '/api/v1/health/stool-analyses/pet/{petId}/trend',
+      { petId },
+      { params: { months } },
+    );
     return response.data;
   },
 };

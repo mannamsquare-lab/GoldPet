@@ -1,6 +1,7 @@
 // Community Service - API integration for Community features
 
 import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 
 export interface CommunityPost {
   id: number;
@@ -66,8 +67,8 @@ export interface CreatePostRequest {
 export const communityService = {
   getCategories: async (): Promise<CommunityCategory[]> => {
     try {
-      const response = await apiClient.get('/community/categories');
-      return response.data;
+      const response = await typedClient.get('/api/v1/community/categories');
+      return response.data as unknown as CommunityCategory[];
     } catch (error: unknown) {
       console.error('Failed to fetch categories:', error);
       throw error;
@@ -76,13 +77,16 @@ export const communityService = {
 
   getPosts: async (categoryId?: number, page = 0, size = 20): Promise<{ posts: CommunityPost[]; hasMore: boolean; totalCount?: number }> => {
     try {
-      const params = new URLSearchParams();
-      if (categoryId) params.append('categoryId', categoryId.toString());
-      params.append('page', page.toString());
-      params.append('size', size.toString());
+      const params: Record<string, number> = { page, size };
+      if (categoryId) params.categoryId = categoryId;
 
-      const response = await apiClient.get(`/community/posts?${params}`);
-      const rawPosts = response.data.content || response.data;
+      const response = await typedClient.get('/api/v1/community/posts', { params });
+      const data = response.data as {
+        content?: unknown[];
+        last?: boolean;
+        totalElements?: number;
+      };
+      const rawPosts = data.content ?? data;
 
       // Backend DTO (Phase 3 community rename) already emits authorId/authorNickname/
       // authorProfileUrl/isLiked directly — no remap needed.
@@ -90,8 +94,8 @@ export const communityService = {
 
       return {
         posts,
-        hasMore: !response.data.last,
-        totalCount: response.data.totalElements,
+        hasMore: !data.last,
+        totalCount: data.totalElements,
       };
     } catch (error: unknown) {
       console.error('Failed to fetch posts:', error);
@@ -101,9 +105,12 @@ export const communityService = {
 
   getPostDetail: async (postId: number): Promise<CommunityPost & { comments: CommunityComment[] }> => {
     try {
-      const response = await apiClient.get(`/community/posts/${postId}`);
+      const response = await typedClient.getPath(
+        '/api/v1/community/posts/{postId}',
+        { postId },
+      );
       // Backend DTO (Phase 3 community rename) already emits author*/isLiked directly.
-      return response.data as CommunityPost & { comments: CommunityComment[] };
+      return response.data as unknown as CommunityPost & { comments: CommunityComment[] };
     } catch {
       throw new Error('게시글을 불러올 수 없습니다.');
     }
@@ -121,14 +128,14 @@ export const communityService = {
       }
 
       // 2. Create post with image URLs
-      const response = await apiClient.post('/community/posts', {
+      const response = await typedClient.post('/api/v1/community/posts', {
         categoryId: data.categoryId,
         title: data.title,
         content: data.content,
         postType: data.postType,
         imageUrls: imageUrls,
-      });
-      return { success: true, postId: response.data.id };
+      } as unknown as Parameters<typeof typedClient.post<'/api/v1/community/posts'>>[1]);
+      return { success: true, postId: (response.data as { id: number }).id };
     } catch (error: unknown) {
       console.error('Create post error:', error);
       throw new Error('게시글 등록에 실패했습니다.');
@@ -145,6 +152,7 @@ export const communityService = {
       formData.append('file', file);
       formData.append('category', 'community');
 
+      // Multipart — stays on apiClient; typedClient is JSON-only.
       const response = await apiClient.post('/files/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -159,8 +167,12 @@ export const communityService = {
 
   toggleLike: async (postId: number): Promise<{ isLiked: boolean; likeCount: number }> => {
     try {
-      const response = await apiClient.post(`/community/posts/${postId}/like`);
-      return response.data;
+      const response = await typedClient.postPath(
+        '/api/v1/community/posts/{postId}/like',
+        { postId },
+        undefined,
+      );
+      return response.data as unknown as { isLiked: boolean; likeCount: number };
     } catch {
       throw new Error('좋아요 처리에 실패했습니다.');
     }
@@ -168,11 +180,12 @@ export const communityService = {
 
   createComment: async (postId: number, content: string, parentId?: number): Promise<CommunityComment> => {
     try {
-      const response = await apiClient.post(`/community/posts/${postId}/comments`, {
-        content,
-        parentCommentId: parentId,
-      });
-      return response.data;
+      const response = await typedClient.postPath(
+        '/api/v1/community/posts/{postId}/comments',
+        { postId },
+        { content, parentCommentId: parentId } as unknown as Parameters<typeof typedClient.postPath<'/api/v1/community/posts/{postId}/comments'>>[2],
+      );
+      return response.data as unknown as CommunityComment;
     } catch {
       throw new Error('댓글 등록에 실패했습니다.');
     }
@@ -180,7 +193,11 @@ export const communityService = {
 
   toggleCommentLike: async (commentId: number): Promise<void> => {
     try {
-      await apiClient.post(`/community/comments/${commentId}/like`);
+      await typedClient.postPath(
+        '/api/v1/community/comments/{commentId}/like',
+        { commentId },
+        undefined,
+      );
     } catch {
       throw new Error('댓글 좋아요 처리에 실패했습니다.');
     }
@@ -188,50 +205,65 @@ export const communityService = {
 
   deletePost: async (postId: number): Promise<void> => {
     try {
-        await apiClient.delete(`/community/posts/${postId}`);
+      await typedClient.deletePath('/api/v1/community/posts/{postId}', { postId });
     } catch {
-        throw new Error('게시글 삭제에 실패했습니다.');
+      throw new Error('게시글 삭제에 실패했습니다.');
     }
   },
 
   deleteComment: async (commentId: number): Promise<void> => {
-      try {
-          await apiClient.delete(`/community/comments/${commentId}`);
-      } catch {
-          throw new Error('댓글 삭제에 실패했습니다.');
-      }
+    try {
+      await typedClient.deletePath('/api/v1/community/comments/{commentId}', { commentId });
+    } catch {
+      throw new Error('댓글 삭제에 실패했습니다.');
+    }
   },
 
   updatePost: async (postId: number, data: { title: string; content: string; imageUrls?: string[] }): Promise<void> => {
-      try {
-          await apiClient.put(`/community/posts/${postId}`, data);
-      } catch {
-          throw new Error('게시글 수정에 실패했습니다.');
-      }
+    try {
+      await typedClient.putPath(
+        '/api/v1/community/posts/{postId}',
+        { postId },
+        data as unknown as Parameters<typeof typedClient.putPath<'/api/v1/community/posts/{postId}'>>[2],
+      );
+    } catch {
+      throw new Error('게시글 수정에 실패했습니다.');
+    }
   },
 
   updateComment: async (commentId: number, content: string): Promise<void> => {
-      try {
-          await apiClient.put(`/community/comments/${commentId}`, { content });
-      } catch {
-          throw new Error('댓글 수정에 실패했습니다.');
-      }
+    try {
+      await typedClient.putPath(
+        '/api/v1/community/comments/{commentId}',
+        { commentId },
+        { content } as unknown as Parameters<typeof typedClient.putPath<'/api/v1/community/comments/{commentId}'>>[2],
+      );
+    } catch {
+      throw new Error('댓글 수정에 실패했습니다.');
+    }
   },
 
   getMyPosts: async (page = 0, size = 20): Promise<{ posts: CommunityPost[]; hasMore: boolean; totalCount: number }> => {
     try {
-      const response = await apiClient.get(`/community/posts/me?page=${page}&size=${size}`);
-      const rawPosts = response.data.content || [];
+      const response = await typedClient.get('/api/v1/community/posts/me', {
+        params: { page, size },
+      });
+      const data = response.data as {
+        content?: unknown[];
+        last?: boolean;
+        totalElements?: number;
+      };
+      const rawPosts = data.content ?? [];
 
       // Backend DTO emits author*/isLiked directly (Phase 3 community rename).
       const posts = Array.isArray(rawPosts)
-        ? rawPosts.map((p: Record<string, unknown>) => ({ ...p, isMine: true }) as unknown as CommunityPost)
+        ? rawPosts.map((p) => ({ ...(p as Record<string, unknown>), isMine: true }) as unknown as CommunityPost)
         : [];
 
       return {
         posts,
-        hasMore: !response.data.last,
-        totalCount: response.data.totalElements || 0,
+        hasMore: !data.last,
+        totalCount: data.totalElements || 0,
       };
     } catch (error: unknown) {
       console.error('Failed to fetch my posts:', error);
@@ -241,22 +273,32 @@ export const communityService = {
 
   getMyComments: async (page = 0, size = 20): Promise<{ comments: CommunityComment[]; hasMore: boolean; totalCount: number }> => {
     try {
-      const response = await apiClient.get(`/community/comments/me?page=${page}&size=${size}`);
-      const rawComments = response.data.content || [];
+      const response = await typedClient.get('/api/v1/community/comments/me', {
+        params: { page, size },
+      });
+      const data = response.data as {
+        content?: unknown[];
+        last?: boolean;
+        totalElements?: number;
+      };
+      const rawComments = data.content ?? [];
 
       // Backend DTO emits author*/isLiked directly; only set UI-local isMine fallback.
       const comments = Array.isArray(rawComments)
-        ? rawComments.map((c: Record<string, unknown>) => ({
-            ...c,
-            isMine: true,
-            postTitle: c.postTitle ?? '',
-          }) as unknown as CommunityComment)
+        ? rawComments.map((c) => {
+            const rec = c as Record<string, unknown>;
+            return {
+              ...rec,
+              isMine: true,
+              postTitle: rec.postTitle ?? '',
+            } as unknown as CommunityComment;
+          })
         : [];
 
       return {
         comments,
-        hasMore: !response.data.last,
-        totalCount: response.data.totalElements || 0,
+        hasMore: !data.last,
+        totalCount: data.totalElements || 0,
       };
     } catch (error: unknown) {
       console.error('Failed to fetch my comments:', error);

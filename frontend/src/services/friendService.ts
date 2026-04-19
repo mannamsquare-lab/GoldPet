@@ -1,6 +1,7 @@
 // Friend Service - API integration for Friend features
 
 import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type { FriendResponse, SpeciesResponse } from '../types/api';
 
 // Generated aliases (Phase 3.10 + follow-up). Backend `petGender`/`status` are
@@ -9,30 +10,21 @@ export type Friend = FriendResponse;
 // Backend SpeciesResponse extended with description + breedCount (follow-up).
 export type Species = SpeciesResponse;
 
-// Mock data
-
-
 export const friendService = {
   getFriends: async (filterJson: string, page = 0, size = 20): Promise<{ content: Friend[], last: boolean }> => {
     try {
       const filters = JSON.parse(filterJson);
-      const params = new URLSearchParams();
+      const params: Record<string, string | number | string[]> = { page, size };
 
-      if (filters.distance) params.append('distance', filters.distance);
-      if (filters.sortOrder) params.append('sort', filters.sortOrder);
-      if (filters.petTypes?.length) params.append('petTypes', filters.petTypes.join(','));
-      if (filters.genders?.length) params.append('genders', filters.genders.join(','));
+      if (filters.distance) params.distance = filters.distance;
+      if (filters.sortOrder) params.sort = filters.sortOrder;
+      if (filters.petTypes?.length) params.petTypes = filters.petTypes.join(',');
+      if (filters.genders?.length) params.genders = filters.genders.join(',');
+      if (filters.lat) params.lat = filters.lat;
+      if (filters.lng) params.lng = filters.lng;
 
-      // Add location params for distance-based search
-      if (filters.lat) params.append('lat', filters.lat.toString());
-      if (filters.lng) params.append('lng', filters.lng.toString());
-
-      // Pagination
-      params.append('page', page.toString());
-      params.append('size', size.toString());
-
-      const response = await apiClient.get(`/friends?${params}`);
-      return response.data;
+      const response = await typedClient.get('/api/v1/friends', { params });
+      return response.data as { content: Friend[]; last: boolean };
     } catch (error: unknown) {
       console.error('Failed to fetch friends:', error);
       throw error;
@@ -41,9 +33,10 @@ export const friendService = {
 
   getNearbyFriends: async (lat: number, lng: number, radiusMeters = 5000): Promise<Friend[]> => {
     try {
-      // Correct endpoint: GET /users/search/nearby with lon (not lng)
-      const response = await apiClient.get(`/users/search/nearby?lat=${lat}&lon=${lng}&radius=${radiusMeters}`);
-      return response.data;
+      const response = await typedClient.get('/api/v1/users/search/nearby', {
+        params: { lat, lon: lng, radius: radiusMeters },
+      });
+      return response.data as unknown as Friend[];
     } catch (error: unknown) {
       console.error('Failed to fetch nearby friends:', error);
       throw error;
@@ -52,9 +45,10 @@ export const friendService = {
 
   searchFriends: async (query: string, limit = 10): Promise<Friend[]> => {
     try {
-      // Correct endpoint: GET /users/search with query and limit params
-      const response = await apiClient.get(`/users/search?query=${encodeURIComponent(query)}&limit=${limit}`);
-      return response.data;
+      const response = await typedClient.get('/api/v1/users/search', {
+        params: { query, limit },
+      });
+      return response.data as unknown as Friend[];
     } catch (error: unknown) {
       console.error('Failed to search friends:', error);
       throw error;
@@ -63,7 +57,8 @@ export const friendService = {
 
   sendFriendRequest: async (userId: number): Promise<{ success: boolean }> => {
     try {
-      // Correct endpoint: POST /likes with { toUserId } (LikeController)
+      // POST /likes is legacy and not in the OpenAPI spec; keep on apiClient until
+      // backend removes it or exposes it via Springdoc.
       await apiClient.post(`/likes`, { toUserId: userId });
       return { success: true };
     } catch {
@@ -71,7 +66,6 @@ export const friendService = {
     }
   },
 
-  // TODO: 백엔드 API 구현 필요 - 수락은 mutual like(MatchController)로 자동 처리됨
   // TODO: 백엔드 API 구현 필요 - 수락은 mutual like(MatchController)로 자동 처리됨
   acceptFriendRequest: async (requestId: number): Promise<{ success: boolean }> => {
     void requestId;
@@ -92,40 +86,47 @@ export const friendService = {
 
   getSpecies: async (): Promise<Species[]> => {
     try {
-        const response = await apiClient.get('/pets/species');
-        return response.data;
+      const response = await typedClient.get('/api/v1/pets/species');
+      return response.data as Species[];
     } catch (error: unknown) {
-        console.error('Failed to fetch species:', error);
-        throw error;
+      console.error('Failed to fetch species:', error);
+      throw error;
     }
   },
 
-  // Like a user (좋아요)
   likeUser: async (targetUserId: number): Promise<{ likeId: number; toUserId: number; isMutual: boolean }> => {
     try {
-      const response = await apiClient.post(`/friends/${targetUserId}/like`);
-      return response.data;
+      const response = await typedClient.postPath(
+        '/api/v1/friends/{targetUserId}/like',
+        { targetUserId },
+        undefined,
+      );
+      return response.data as { likeId: number; toUserId: number; isMutual: boolean };
     } catch (error: unknown) {
       console.error('Failed to like user:', error);
       throw error;
     }
   },
 
-  // Unlike/dislike a user (싫어요)
   unlikeUser: async (targetUserId: number): Promise<{ success: boolean }> => {
     try {
-      const response = await apiClient.delete(`/friends/${targetUserId}/like`);
-      return response.data;
+      const response = await typedClient.deletePath(
+        '/api/v1/friends/{targetUserId}/like',
+        { targetUserId },
+      );
+      return response.data as unknown as { success: boolean };
     } catch (error: unknown) {
       console.error('Failed to unlike user:', error);
       throw error;
     }
   },
 
-  // Reject a received like (거절)
   rejectLike: async (senderUserId: number): Promise<{ success: boolean }> => {
     try {
-      await apiClient.delete(`/friends/likes/received/${senderUserId}`);
+      await typedClient.deletePath(
+        '/api/v1/friends/likes/received/{senderId}',
+        { senderId: senderUserId },
+      );
       return { success: true };
     } catch (error: unknown) {
       console.error('Failed to reject like:', error);
@@ -133,45 +134,43 @@ export const friendService = {
     }
   },
 
-  // Get users I liked (내가 좋아해)
   getMyLikes: async (): Promise<Friend[]> => {
     try {
-      const response = await apiClient.get('/friends/likes/my');
-      return response.data;
+      const response = await typedClient.get('/api/v1/friends/likes/my');
+      return response.data as Friend[];
     } catch (error: unknown) {
       console.error('Failed to get my likes:', error);
       throw error;
     }
   },
 
-  // Get mutual likes (서로 좋아해)
   getMutualLikes: async (): Promise<Friend[]> => {
     try {
-      const response = await apiClient.get('/friends/likes/mutual');
-      return response.data;
+      const response = await typedClient.get('/api/v1/friends/likes/mutual');
+      return response.data as Friend[];
     } catch (error: unknown) {
       console.error('Failed to get mutual likes:', error);
       throw error;
     }
   },
 
-  // Get received likes (나를 좋아해)
   getReceivedLikes: async (): Promise<Friend[]> => {
     try {
-      const response = await apiClient.get('/friends/likes/received');
-      return response.data;
+      const response = await typedClient.get('/api/v1/friends/likes/received');
+      return response.data as Friend[];
     } catch (error: unknown) {
       console.error('Failed to get received likes:', error);
       throw error;
     }
   },
 
-
-  // Check if I liked a user
   checkLikeStatus: async (targetUserId: number): Promise<boolean> => {
     try {
-      const response = await apiClient.get(`/friends/${targetUserId}/like/status`);
-      return response.data.hasLiked;
+      const response = await typedClient.getPath(
+        '/api/v1/friends/{targetUserId}/like/status',
+        { targetUserId },
+      );
+      return (response.data as { hasLiked: boolean }).hasLiked;
     } catch {
       return false;
     }

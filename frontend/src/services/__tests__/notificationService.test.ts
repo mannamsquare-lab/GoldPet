@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../api/client', () => ({
-  default: {
+vi.mock('../api/client', () => {
+  const client = {
     get: vi.fn(),
     post: vi.fn(),
     delete: vi.fn(),
@@ -9,10 +9,11 @@ vi.mock('../api/client', () => ({
       request: { use: vi.fn() },
       response: { use: vi.fn() },
     },
-  },
-}))
+  }
+  return { apiClient: client, default: client }
+})
 
-import apiClient from '../api/client'
+import { apiClient } from '../api/client'
 import { notificationService } from '../notificationService'
 
 const mockedClient = vi.mocked(apiClient)
@@ -32,7 +33,9 @@ describe('notificationService', () => {
 
       const result = await notificationService.getNotifications('ALL', 0, 20)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/notifications?category=ALL&page=0&size=20')
+      expect(mockedClient.get).toHaveBeenCalledWith('/notifications', {
+        params: { category: 'ALL', page: 0, size: 20 },
+      })
       expect(result.notifications).toHaveLength(1)
       expect(result.hasMore).toBe(true)
     })
@@ -53,7 +56,7 @@ describe('notificationService', () => {
 
       const count = await notificationService.getUnreadCount()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/notifications/unread-count')
+      expect(mockedClient.get).toHaveBeenCalledWith('/notifications/unread-count', undefined)
       expect(count).toBe(5)
     })
 
@@ -72,7 +75,7 @@ describe('notificationService', () => {
 
       await notificationService.markAsRead(42)
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/notifications/42/read')
+      expect(mockedClient.post).toHaveBeenCalledWith('/notifications/42/read', undefined, undefined)
     })
 
     it('silently ignores errors', async () => {
@@ -88,7 +91,7 @@ describe('notificationService', () => {
 
       await notificationService.markAllAsRead()
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/notifications/read-all')
+      expect(mockedClient.post).toHaveBeenCalledWith('/notifications/read-all', undefined, undefined)
     })
   })
 
@@ -98,7 +101,7 @@ describe('notificationService', () => {
 
       await notificationService.deleteNotification(7)
 
-      expect(mockedClient.delete).toHaveBeenCalledWith('/notifications/7')
+      expect(mockedClient.delete).toHaveBeenCalledWith('/notifications/7', undefined)
     })
 
     it('throws on delete failure', async () => {

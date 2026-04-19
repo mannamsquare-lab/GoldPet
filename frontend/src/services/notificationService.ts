@@ -1,70 +1,28 @@
-// Notification Service - API integration for Notifications
-
-import apiClient from './api/client';
-import type { NotificationType } from '../types/api';
+import { typedClient } from './api/typedClient';
+import type {
+  NotificationType,
+  NotificationResponse,
+  PageNotificationResponse,
+  UnreadCountResponse,
+} from '../types/api';
 
 export type { NotificationType };
-
-export interface Notification {
-  id: number;
-  type: NotificationType;
-  title: string;
-  message: string;
-  targetId?: number;
-  targetType?: string;
-  senderId?: number;
-  senderNickname?: string;
-  senderProfileImage?: string;
-  isRead: boolean;
-  createdAt: string;
-}
-
-// Mock data
-const mockNotifications: Notification[] = [
-  {
-    id: 1,
-    type: 'MESSAGE',
-    title: '새 메시지',
-    message: '강아지조아님이 메시지를 보냈습니다.',
-    senderNickname: '강아지조아',
-    isRead: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-  },
-  {
-    id: 2,
-    type: 'LIKE',
-    title: '친구 요청',
-    message: '멍멍이맘님이 좋아요를 보냈습니다.',
-    senderNickname: '멍멍이맘',
-    isRead: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-  },
-  {
-    id: 3,
-    type: 'COMMENT',
-    title: '댓글 알림',
-    message: '내 게시글에 새 댓글이 달렸습니다.',
-    isRead: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-  },
-];
-
-// Set USE_MOCK to false to use real API by default
-const USE_MOCK = false;
+export type Notification = NotificationResponse;
 
 export const notificationService = {
-  getNotifications: async (category = 'ALL', page = 0, size = 20): Promise<{ notifications: Notification[]; hasMore: boolean }> => {
-    if (USE_MOCK) {
-      // Mock filtering could be added here if needed, but we focus on API
-      await new Promise((r) => setTimeout(r, 400));
-      return { notifications: mockNotifications, hasMore: false };
-    }
-
+  getNotifications: async (
+    category = 'ALL',
+    page = 0,
+    size = 20,
+  ): Promise<{ notifications: Notification[]; hasMore: boolean }> => {
     try {
-      const response = await apiClient.get(`/notifications?category=${category}&page=${page}&size=${size}`);
+      const response = await typedClient.get('/api/v1/notifications', {
+        params: { category, page, size },
+      });
+      const data = response.data as PageNotificationResponse;
       return {
-        notifications: response.data.content || response.data,
-        hasMore: !response.data.last,
+        notifications: data.content ?? [],
+        hasMore: !(data.last ?? true),
       };
     } catch {
       return { notifications: [], hasMore: false };
@@ -72,52 +30,41 @@ export const notificationService = {
   },
 
   getUnreadCount: async (): Promise<number> => {
-    if (USE_MOCK) {
-      return mockNotifications.filter((n) => !n.isRead).length;
-    }
-
     try {
-      const response = await apiClient.get('/notifications/unread-count');
-      return response.data.count || 0;
+      const response = await typedClient.get('/api/v1/notifications/unread-count');
+      const data = response.data as UnreadCountResponse;
+      return data.count ?? 0;
     } catch {
       return 0;
     }
   },
 
   markAsRead: async (notificationId: number): Promise<void> => {
-    if (USE_MOCK) {
-      console.log('Marking notification as read (mock):', notificationId);
-      return;
-    }
-
     try {
-      await apiClient.post(`/notifications/${notificationId}/read`);
+      await typedClient.postPath(
+        '/api/v1/notifications/{notificationId}/read',
+        { notificationId },
+        undefined,
+      );
     } catch {
       // Ignore
     }
   },
 
   markAllAsRead: async (): Promise<void> => {
-    if (USE_MOCK) {
-      console.log('Marking all notifications as read (mock)');
-      return;
-    }
-
     try {
-      await apiClient.post('/notifications/read-all');
+      await typedClient.post('/api/v1/notifications/read-all', undefined);
     } catch {
       // Ignore
     }
   },
 
   deleteNotification: async (notificationId: number): Promise<void> => {
-    if (USE_MOCK) {
-      console.log('Deleting notification (mock):', notificationId);
-      return;
-    }
-
     try {
-      await apiClient.delete(`/notifications/${notificationId}`);
+      await typedClient.deletePath(
+        '/api/v1/notifications/{notificationId}',
+        { notificationId },
+      );
     } catch {
       throw new Error('알림 삭제에 실패했습니다.');
     }

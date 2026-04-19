@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../api/client', () => ({
-  default: {
+vi.mock('../api/client', () => {
+  const client = {
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
@@ -10,10 +10,11 @@ vi.mock('../api/client', () => ({
       request: { use: vi.fn() },
       response: { use: vi.fn() },
     },
-  },
-}))
+  }
+  return { apiClient: client, default: client }
+})
 
-import apiClient from '../api/client'
+import { apiClient } from '../api/client'
 import { communityService } from '../communityService'
 
 const mockedClient = vi.mocked(apiClient)
@@ -49,7 +50,7 @@ describe('communityService', () => {
 
       const result = await communityService.getCategories()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/community/categories')
+      expect(mockedClient.get).toHaveBeenCalledWith('/community/categories', undefined)
       expect(result).toHaveLength(1)
       expect(result[0].name).toBe('자유')
     })
@@ -64,7 +65,9 @@ describe('communityService', () => {
 
       const result = await communityService.getPosts(2, 0, 20)
 
-      expect(mockedClient.get).toHaveBeenCalledWith(expect.stringContaining('/community/posts?'))
+      expect(mockedClient.get).toHaveBeenCalledWith('/community/posts', {
+        params: { page: 0, size: 20, categoryId: 2 },
+      })
       expect(result.posts[0].authorNickname).toBe('매핑작성자')
       expect(result.posts[0].isLiked).toBe(true)
       expect(result.hasMore).toBe(true)
@@ -83,7 +86,7 @@ describe('communityService', () => {
 
       const result = await communityService.getPostDetail(1)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/community/posts/1')
+      expect(mockedClient.get).toHaveBeenCalledWith('/community/posts/1', undefined)
       expect(result.comments).toHaveLength(1)
       expect(result.comments[0].authorNickname).toBe('댓글러')
     })
@@ -101,7 +104,7 @@ describe('communityService', () => {
 
       const result = await communityService.toggleLike(1)
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/community/posts/1/like')
+      expect(mockedClient.post).toHaveBeenCalledWith('/community/posts/1/like', undefined, undefined)
       expect(result.isLiked).toBe(true)
       expect(result.likeCount).toBe(4)
     })
@@ -117,7 +120,7 @@ describe('communityService', () => {
       expect(mockedClient.post).toHaveBeenCalledWith('/community/posts/1/comments', {
         content: '좋아요',
         parentCommentId: undefined,
-      })
+      }, undefined)
       expect(result.id).toBe(5)
     })
 
@@ -134,7 +137,7 @@ describe('communityService', () => {
 
       await communityService.deletePost(1)
 
-      expect(mockedClient.delete).toHaveBeenCalledWith('/community/posts/1')
+      expect(mockedClient.delete).toHaveBeenCalledWith('/community/posts/1', undefined)
     })
 
     it('throws on delete failure', async () => {
@@ -153,7 +156,7 @@ describe('communityService', () => {
       expect(mockedClient.put).toHaveBeenCalledWith('/community/posts/1', {
         title: '수정된 제목',
         content: '수정된 내용',
-      })
+      }, undefined)
     })
   })
 })

@@ -1,17 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../api/client', () => ({
-  default: {
+vi.mock('../api/client', () => {
+  const client = {
     get: vi.fn(),
     post: vi.fn(),
     interceptors: {
       request: { use: vi.fn() },
       response: { use: vi.fn() },
     },
-  },
-}))
+  }
+  return { apiClient: client, default: client }
+})
 
-import apiClient from '../api/client'
+import { apiClient } from '../api/client'
 import { goldService } from '../goldService'
 
 const mockedClient = vi.mocked(apiClient)
@@ -28,7 +29,7 @@ describe('goldService', () => {
 
       const result = await goldService.getBalance()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/gold/balance')
+      expect(mockedClient.get).toHaveBeenCalledWith('/gold/balance', undefined)
       expect(result.balance).toBe(1000)
       expect(result.totalCharged).toBe(5000)
     })
@@ -43,7 +44,7 @@ describe('goldService', () => {
 
       const result = await goldService.getProducts()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/gold/products')
+      expect(mockedClient.get).toHaveBeenCalledWith('/gold/products', undefined)
       expect(result).toHaveLength(1)
       expect(result[0].goldAmount).toBe(100)
     })
@@ -89,7 +90,7 @@ describe('goldService', () => {
 
       const result = await goldService.chargeGold({ amount: 500, paymentMethod: 'CARD' })
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/gold/charge', { amount: 500, paymentMethod: 'CARD' })
+      expect(mockedClient.post).toHaveBeenCalledWith('/gold/charge', { amount: 500, paymentMethod: 'CARD' }, undefined)
       expect(result.type).toBe('CHARGE')
       expect(result.amount).toBe(500)
     })
@@ -102,7 +103,7 @@ describe('goldService', () => {
 
       const result = await goldService.spendGold({ amount: 100, description: '프리미엄 기능' })
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/gold/spend', { amount: 100, description: '프리미엄 기능' })
+      expect(mockedClient.post).toHaveBeenCalledWith('/gold/spend', { amount: 100, description: '프리미엄 기능' }, undefined)
       expect(result.type).toBe('SPEND')
       expect(result.balanceAfter).toBe(900)
     })

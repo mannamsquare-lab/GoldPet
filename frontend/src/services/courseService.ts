@@ -1,6 +1,6 @@
 // Course Service - API integration for Walk Course Platform
 
-import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type {
   CourseDifficulty,
   CourseSpotType,
@@ -47,22 +47,22 @@ export const courseService = {
   // ── Course CRUD ──
 
   getCourseDetail: async (courseId: number): Promise<CourseResponse> => {
-    const response = await apiClient.get(`/courses/${courseId}`);
-    return response.data;
+    const response = await typedClient.getPath('/api/v1/courses/{courseId}', { courseId });
+    return response.data as CourseResponse;
   },
 
   createCourse: async (request: CreateCourseRequest): Promise<CourseResponse> => {
-    const response = await apiClient.post('/courses', request);
-    return response.data;
+    const response = await typedClient.post('/api/v1/courses', request);
+    return response.data as CourseResponse;
   },
 
   updateCourse: async (courseId: number, request: UpdateCourseRequest): Promise<CourseResponse> => {
-    const response = await apiClient.put(`/courses/${courseId}`, request);
-    return response.data;
+    const response = await typedClient.putPath('/api/v1/courses/{courseId}', { courseId }, request);
+    return response.data as CourseResponse;
   },
 
   deleteCourse: async (courseId: number): Promise<void> => {
-    await apiClient.delete(`/courses/${courseId}`);
+    await typedClient.deletePath('/api/v1/courses/{courseId}', { courseId });
   },
 
   // ── Course Search & List ──
@@ -75,8 +75,8 @@ export const courseService = {
     page?: number;
     size?: number;
   }): Promise<PageResponse<CourseResponse>> => {
-    const response = await apiClient.get('/courses/search', { params });
-    return response.data;
+    const response = await typedClient.get('/api/v1/courses/search', { params });
+    return response.data as PageResponse<CourseResponse>;
   },
 
   getPopularCourses: async (params?: {
@@ -86,35 +86,46 @@ export const courseService = {
     page?: number;
     size?: number;
   }): Promise<PageResponse<CourseResponse>> => {
-    const response = await apiClient.get('/courses/popular', { params });
-    return response.data;
+    const response = await typedClient.get('/api/v1/courses/popular', { params });
+    return response.data as PageResponse<CourseResponse>;
   },
 
   getMyCourses: async (params?: {
     page?: number;
     size?: number;
   }): Promise<PageResponse<CourseResponse>> => {
-    const response = await apiClient.get('/courses/my', { params });
-    return response.data;
+    const response = await typedClient.get('/api/v1/courses/my', { params });
+    return response.data as PageResponse<CourseResponse>;
   },
 
   // ── Course from Walk ──
 
   createCourseFromWalk: async (walkId: number, request: CreateCourseRequest): Promise<CourseResponse> => {
-    const response = await apiClient.post(`/courses/from-walk/${walkId}`, request);
-    return response.data;
+    const response = await typedClient.postPath(
+      '/api/v1/courses/from-walk/{walkId}',
+      { walkId },
+      request,
+    );
+    return response.data as CourseResponse;
   },
 
   // ── Like ──
 
   toggleCourseLike: async (courseId: number): Promise<CourseLikeStatusResponse> => {
-    const response = await apiClient.post(`/courses/${courseId}/likes`);
-    return response.data;
+    const response = await typedClient.postPath(
+      '/api/v1/courses/{courseId}/likes',
+      { courseId },
+      undefined,
+    );
+    return response.data as CourseLikeStatusResponse;
   },
 
   getCourseLikeStatus: async (courseId: number): Promise<CourseLikeStatusResponse> => {
-    const response = await apiClient.get(`/courses/${courseId}/likes/status`);
-    return response.data;
+    const response = await typedClient.getPath(
+      '/api/v1/courses/{courseId}/likes/status',
+      { courseId },
+    );
+    return response.data as CourseLikeStatusResponse;
   },
 
   // ── Comments ──
@@ -123,26 +134,45 @@ export const courseService = {
     page?: number;
     size?: number;
   }): Promise<PageResponse<CourseCommentResponse>> => {
-    const response = await apiClient.get(`/courses/${courseId}/comments`, { params });
-    return response.data;
+    const response = await typedClient.getPath(
+      '/api/v1/courses/{courseId}/comments',
+      { courseId },
+      { params },
+    );
+    return response.data as PageResponse<CourseCommentResponse>;
   },
 
   createCourseComment: async (courseId: number, request: CreateCourseCommentRequest): Promise<CourseCommentResponse> => {
-    const response = await apiClient.post(`/courses/${courseId}/comments`, request);
-    return response.data;
+    const response = await typedClient.postPath(
+      '/api/v1/courses/{courseId}/comments',
+      { courseId },
+      request,
+    );
+    return response.data as CourseCommentResponse;
   },
 
   updateCourseComment: async (courseId: number, commentId: number, request: UpdateCourseCommentRequest): Promise<CourseCommentResponse> => {
-    const response = await apiClient.put(`/courses/${courseId}/comments/${commentId}`, request);
-    return response.data;
+    const response = await typedClient.putPath(
+      '/api/v1/courses/{courseId}/comments/{commentId}',
+      { courseId, commentId },
+      request,
+    );
+    return response.data as CourseCommentResponse;
   },
 
   deleteCourseComment: async (courseId: number, commentId: number): Promise<void> => {
-    await apiClient.delete(`/courses/${courseId}/comments/${commentId}`);
+    await typedClient.deletePath(
+      '/api/v1/courses/{courseId}/comments/{commentId}',
+      { courseId, commentId },
+    );
   },
 
   toggleCommentLike: async (courseId: number, commentId: number): Promise<boolean> => {
-    const response = await apiClient.post(`/courses/${courseId}/comments/${commentId}/like`);
-    return response.data;
+    const response = await typedClient.postPath(
+      '/api/v1/courses/{courseId}/comments/{commentId}/like',
+      { courseId, commentId },
+      undefined,
+    );
+    return response.data as unknown as boolean;
   },
 };

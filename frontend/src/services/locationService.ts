@@ -10,11 +10,14 @@ export const locationService = {
    * Update user's main location
    */
   updateMyLocation: async (lat: number, lng: number, text: string) => {
-    const response = await typedClient.put('/api/v1/users/me', {
+    // Spec marks interests/hobbies required; backend accepts partial updates.
+    // Cast to the spec body to satisfy typedClient.
+    const body = {
       mainLocationText: text,
       mainLocationLat: lat,
-      mainLocationLng: lng
-    });
+      mainLocationLng: lng,
+    } as unknown as Parameters<typeof typedClient.put<'/api/v1/users/me'>>[1];
+    const response = await typedClient.put('/api/v1/users/me', body);
     return response.data;
   },
 

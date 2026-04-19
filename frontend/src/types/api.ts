@@ -63,6 +63,8 @@ export type HealthTrendResponse = Schemas['HealthTrendResponse'];
 export type NotificationType = Schemas['NotificationResponse']['type'];
 // e.g. 'MATCH'|'MESSAGE'|'LIKE'|'COMMENT'|'FOLLOW'|'WALK'|'NOTICE'|'EVENT'|'SYSTEM'|'REPORT_RESOLVED'
 export type NotificationResponse = Schemas['NotificationResponse'];
+export type PageNotificationResponse = Schemas['PageNotificationResponse'];
+export type UnreadCountResponse = Schemas['UnreadCountResponse'];
 
 // --- Report domain (Phase 3.6) ---
 
@@ -129,6 +131,7 @@ export type EmoticonResponse = Schemas['EmoticonResponse'];
 // `FriendResponse[]` that the frontend reshapes into its own `HomeRecommendation`
 // display model — keep that conversion local to homeService.ts.
 export type HomeRecentWalkResponse = Schemas['HomeRecentWalkResponse'];
+export type HomeResponse = Schemas['HomeResponse'];
 
 // --- Friend domain (Phase 3.10) ---
 // Backend exposes `petGender`/`status` as plain `string`; the frontend narrows to

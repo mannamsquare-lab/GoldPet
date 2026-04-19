@@ -1,5 +1,6 @@
 
 import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import { type User } from '../stores/authStore';
 import type { UserStats } from '../types/api';
 
@@ -24,8 +25,8 @@ export interface UpdateProfileRequest {
 export const userService = {
     getMe: async (): Promise<User> => {
         try {
-            const response = await apiClient.get('/users/me');
-            return response.data;
+            const response = await typedClient.get('/api/v1/users/me');
+            return response.data as unknown as User;
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
             throw new Error(err.response?.data?.message || '사용자 정보를 가져오는데 실패했습니다.');
@@ -34,8 +35,10 @@ export const userService = {
 
     updateProfile: async (data: UpdateProfileRequest): Promise<User> => {
         try {
-            const response = await apiClient.put('/users/me', data);
-            return response.data;
+            // Spec marks interests/hobbies required; backend accepts partial updates.
+            const body = data as unknown as Parameters<typeof typedClient.put<'/api/v1/users/me'>>[1];
+            const response = await typedClient.put('/api/v1/users/me', body);
+            return response.data as unknown as User;
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
              throw new Error(err.response?.data?.message || '프로필 수정에 실패했습니다.');
@@ -44,8 +47,11 @@ export const userService = {
 
     updateProfileImages: async (imageUrls: string[]): Promise<User> => {
         try {
-            const response = await apiClient.put('/users/me/profile-image', { profileImageUrls: imageUrls });
-            return response.data;
+            const response = await typedClient.put(
+                '/api/v1/users/me/profile-image',
+                { profileImageUrls: imageUrls },
+            );
+            return response.data as unknown as User;
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
              throw new Error(err.response?.data?.message || '프로필 이미지 수정에 실패했습니다.');
@@ -59,6 +65,7 @@ export const userService = {
             const formData = new FormData();
             formData.append('file', compressed);
             formData.append('category', 'profile');
+            // Multipart — stays on apiClient; typedClient is JSON-only.
             const response = await apiClient.post('/files/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
@@ -70,8 +77,8 @@ export const userService = {
 
     getInterests: async (): Promise<{id: number, name: string}[]> => {
         try {
-            const response = await apiClient.get('/users/interests');
-            return response.data;
+            const response = await typedClient.get('/api/v1/users/interests');
+            return response.data as { id: number; name: string }[];
         } catch (error: unknown) {
             console.error('Failed to fetch interests', error);
             throw error;
@@ -80,8 +87,8 @@ export const userService = {
 
     getHobbies: async (): Promise<{id: number, name: string}[]> => {
         try {
-            const response = await apiClient.get('/users/hobbies');
-            return response.data;
+            const response = await typedClient.get('/api/v1/users/hobbies');
+            return response.data as { id: number; name: string }[];
         } catch (error: unknown) {
             console.error('Failed to fetch hobbies', error);
             throw error;
@@ -90,8 +97,10 @@ export const userService = {
 
     checkNickname: async (nickname: string): Promise<boolean> => {
         try {
-            const response = await apiClient.get(`/users/check-nickname?nickname=${encodeURIComponent(nickname)}`);
-            return response.data.available;
+            const response = await typedClient.get('/api/v1/users/check-nickname', {
+                params: { nickname },
+            });
+            return (response.data as { available: boolean }).available;
         } catch (error: unknown) {
             console.error('Failed to check nickname:', error);
             throw error;
@@ -100,8 +109,11 @@ export const userService = {
 
     requestVerificationCode: async (phoneNumber: string): Promise<string | null> => {
         try {
-            const response = await apiClient.post('/auth/verification/request', { phoneNumber });
-            return response.data.code || null;
+            const response = await typedClient.post(
+                '/api/v1/auth/verification/request',
+                { phoneNumber },
+            );
+            return (response.data as { code?: string }).code || null;
         } catch (error: unknown) {
             console.error('Failed to request verification code:', error);
             throw error;
@@ -110,8 +122,11 @@ export const userService = {
 
     confirmVerificationCode: async (phoneNumber: string, code: string): Promise<boolean> => {
         try {
-            const response = await apiClient.post('/auth/verification/confirm', { phoneNumber, code });
-            return response.data.success;
+            const response = await typedClient.post(
+                '/api/v1/auth/verification/confirm',
+                { phoneNumber, code },
+            );
+            return (response.data as { success: boolean }).success;
         } catch (error: unknown) {
             console.error('Failed to confirm verification code:', error);
             return false;
@@ -120,8 +135,11 @@ export const userService = {
 
     updateNotification: async (enabled: boolean): Promise<User> => {
         try {
-            const response = await apiClient.patch('/users/me/notification', { enabled });
-            return response.data;
+            const response = await typedClient.patch(
+                '/api/v1/users/me/notification',
+                { enabled },
+            );
+            return response.data as unknown as User;
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
              throw new Error(err.response?.data?.message || '알림 설정 변경에 실패했습니다.');
@@ -129,11 +147,11 @@ export const userService = {
     },
 
     getMyStats: async (): Promise<UserStats> => {
-        const response = await apiClient.get('/users/me/stats');
-        return response.data;
+        const response = await typedClient.get('/api/v1/users/me/stats');
+        return response.data as UserStats;
     },
 
     changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
-        await apiClient.put('/users/me/password', { currentPassword, newPassword });
+        await typedClient.put('/api/v1/users/me/password', { currentPassword, newPassword });
     },
 };

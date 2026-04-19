@@ -11,7 +11,7 @@ vi.mock('../api/client', () => {
       response: { use: vi.fn() },
     },
   }
-  return { default: client }
+  return { apiClient: client, default: client }
 })
 
 // Mock nativeBridge
@@ -59,7 +59,7 @@ describe('authService', () => {
       expect(mockedClient.post).toHaveBeenCalledWith('/auth/login', {
         username: 'testuser',
         password: 'password',
-      })
+      }, undefined)
       expect(result.accessToken).toBe('access-token')
       expect(result.user.id).toBe(1)
     })
@@ -104,7 +104,7 @@ describe('authService', () => {
         phoneNumber: '010-1234-5678',
       })
 
-      expect(mockedClient.post).toHaveBeenCalledWith('/auth/signup', expect.objectContaining({ username: 'newuser' }))
+      expect(mockedClient.post).toHaveBeenCalledWith('/auth/signup', expect.objectContaining({ username: 'newuser' }), undefined)
       expect(result.accessToken).toBe('token')
     })
 
@@ -177,7 +177,7 @@ describe('authService', () => {
       })
 
       const result = await authService.refreshToken()
-      expect(mockedClient.post).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'stored-refresh-token' })
+      expect(mockedClient.post).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'stored-refresh-token' }, undefined)
       expect(result.accessToken).toBe('new-token')
     })
   })

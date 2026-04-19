@@ -1,6 +1,7 @@
 // Walk Service - API integration for Walk features
 
 import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type {
   WalkSpotDto,
   WalkPhotoResponse,
@@ -131,8 +132,12 @@ export interface PageResponse<T> {
 export const walkService = {
   getWalkStats: async (): Promise<WalkStats> => {
     try {
-      const response = await apiClient.get('/walks/my/stats');
-      const data = response.data;
+      const response = await typedClient.get('/api/v1/walks/my/stats');
+      const data = response.data as {
+        totalDistanceKm?: number;
+        totalCalories?: number;
+        totalWalks?: number;
+      };
       return {
         todayDistance: data.totalDistanceKm?.toFixed(1) || '0.0',
         todayCalories: data.totalCalories?.toLocaleString() || '0',
@@ -146,8 +151,8 @@ export const walkService = {
 
   getWalkRecords: async (): Promise<WalkRecord[]> => {
     try {
-      const response = await apiClient.get('/walks/my', { params: { size: 2000 } });
-      const data = response.data;
+      const response = await typedClient.get('/api/v1/walks/my', { params: { size: 2000 } });
+      const data = response.data as WalkResponse[] | { content?: WalkResponse[] };
       const walks = Array.isArray(data) ? data : (data.content ?? []);
       return walks.map(toWalkRecord);
     } catch (error: unknown) {
@@ -158,8 +163,10 @@ export const walkService = {
 
   getWalkRecordsPaged: async (page: number, size = 10, yearMonth?: string): Promise<PageResponse<WalkRecord>> => {
     try {
-      const response = await apiClient.get('/walks/my', { params: { page, size, yearMonth } });
-      const data = response.data;
+      const response = await typedClient.get('/api/v1/walks/my', {
+        params: { page, size, yearMonth },
+      });
+      const data = response.data as PageResponse<WalkResponse>;
       return {
         ...data,
         content: data.content.map(toWalkRecord),
@@ -172,8 +179,10 @@ export const walkService = {
 
   getPublicWalksPaged: async (page: number, size = 10, yearMonth?: string, province?: string): Promise<PageResponse<WalkRecord>> => {
     try {
-      const response = await apiClient.get('/walks/public', { params: { page, size, yearMonth, province } });
-      const data = response.data;
+      const response = await typedClient.get('/api/v1/walks/public', {
+        params: { page, size, yearMonth, province },
+      });
+      const data = response.data as PageResponse<WalkResponse>;
       return {
         ...data,
         content: data.content.map(toWalkRecord),
@@ -186,8 +195,16 @@ export const walkService = {
 
   getWalkDetail: async (walkId: number): Promise<WalkSession> => {
     try {
-      const response = await apiClient.get(`/walks/${walkId}`);
-      const data = response.data;
+      const response = await typedClient.getPath('/api/v1/walks/{walkId}', { walkId });
+      const data = response.data as WalkResponse & {
+        userId?: number;
+        startLatitude?: number;
+        startLongitude?: number;
+        endLatitude?: number;
+        endLongitude?: number;
+        petIds?: number[];
+        spots?: WalkSpot[];
+      };
       return {
         id: data.id,
         userId: data.userId,
@@ -198,7 +215,7 @@ export const walkService = {
         durationSeconds: data.durationSeconds,
         pathPoints: data.path ? pathToCoords(data.path) : undefined,
         spots: data.spots ?? [],
-        startAddress: data.startAddress,
+        startAddress: data.startAddress ?? undefined,
         startLatitude: data.startLatitude,
         startLongitude: data.startLongitude,
         endLatitude: data.endLatitude,
@@ -214,8 +231,10 @@ export const walkService = {
 
   getWalkRanking: async (period: 'weekly' | 'monthly' = 'weekly'): Promise<WalkRankingEntry[]> => {
     try {
-      const response = await apiClient.get(`/walks/ranking?period=${period}`);
-      return response.data;
+      const response = await typedClient.get('/api/v1/walks/ranking', {
+        params: { period },
+      });
+      return response.data as unknown as WalkRankingEntry[];
     } catch (error: unknown) {
       console.error('Failed to fetch walk ranking:', error);
       throw error;
@@ -223,40 +242,51 @@ export const walkService = {
   },
 
   getMonthlyRanking: async (yearMonth: string, size: number = 10, province?: string): Promise<WalkCoupleRanking> => {
-    const response = await apiClient.get('/walks/ranking/calendar', {
+    const response = await typedClient.get('/api/v1/walks/ranking/calendar', {
       params: { yearMonth, size, province },
     });
-    return response.data;
+    return response.data as unknown as WalkCoupleRanking;
   },
 
   getMyPhotos: async (params: { yearMonth?: string; page: number; size: number }): Promise<PageResponse<WalkPhotoItem>> => {
-    const response = await apiClient.get('/walks/my/photos', { params });
-    return response.data;
+    const response = await typedClient.get('/api/v1/walks/my/photos', { params });
+    return response.data as unknown as PageResponse<WalkPhotoItem>;
   },
 
   getPublicPhotos: async (params: { page: number; size: number }): Promise<PageResponse<WalkPhotoItem>> => {
-    const response = await apiClient.get('/walks/public/photos', { params });
-    return response.data;
+    const response = await typedClient.get('/api/v1/walks/public/photos', { params });
+    return response.data as unknown as PageResponse<WalkPhotoItem>;
   },
 
   updateSpotNote: async (walkId: number, spotId: number, note: string | null): Promise<WalkPhotoItem> => {
-    const response = await apiClient.patch(`/walks/${walkId}/spots/${spotId}`, { note });
-    return response.data;
+    const response = await typedClient.patchPath(
+      '/api/v1/walks/{walkId}/spots/{spotId}',
+      { walkId, spotId },
+      { note } as unknown as Parameters<typeof typedClient.patchPath<'/api/v1/walks/{walkId}/spots/{spotId}'>>[2],
+    );
+    return response.data as unknown as WalkPhotoItem;
   },
 
   updateSpotVisibility: async (walkId: number, spotId: number, hiddenFromPublic: boolean): Promise<WalkPhotoItem> => {
-    const response = await apiClient.patch(`/walks/${walkId}/spots/${spotId}/visibility`, { hiddenFromPublic });
-    return response.data;
+    const response = await typedClient.patchPath(
+      '/api/v1/walks/{walkId}/spots/{spotId}/visibility',
+      { walkId, spotId },
+      { hiddenFromPublic } as unknown as Parameters<typeof typedClient.patchPath<'/api/v1/walks/{walkId}/spots/{spotId}/visibility'>>[2],
+    );
+    return response.data as unknown as WalkPhotoItem;
   },
 
   getUserPublicWalksRaw: async (userId: number): Promise<unknown[]> => {
-    const response = await apiClient.get('/walks/public', { params: { userId, size: 2000 } });
-    const data = response.data;
+    const response = await typedClient.get('/api/v1/walks/public', {
+      params: { userId, size: 2000 },
+    });
+    const data = response.data as unknown[] | { content?: unknown[] };
     return Array.isArray(data) ? data : (data.content ?? []);
   },
 
   getStaticMapImage: async (walkId: number, width: number, height: number): Promise<string | null> => {
     try {
+      // Blob response — stays on apiClient; typedClient is JSON-only.
       const response = await apiClient.get(`/maps/static/${walkId}?w=${width}&h=${height}`, {
         responseType: 'blob',
       });

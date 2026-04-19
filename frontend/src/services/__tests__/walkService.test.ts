@@ -1,18 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { pathToCoords, getTodayStats } from '../walkService'
 
-vi.mock('../api/client', () => ({
-  default: {
+vi.mock('../api/client', () => {
+  const client = {
     get: vi.fn(),
     post: vi.fn(),
     interceptors: {
       request: { use: vi.fn() },
       response: { use: vi.fn() },
     },
-  },
-}))
+  }
+  return { apiClient: client, default: client }
+})
 
-import apiClient from '../api/client'
+import { apiClient } from '../api/client'
 import { walkService } from '../walkService'
 
 const mockedClient = vi.mocked(apiClient)
@@ -30,7 +31,7 @@ describe('walkService', () => {
 
       const result = await walkService.getWalkStats()
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/walks/my/stats')
+      expect(mockedClient.get).toHaveBeenCalledWith('/walks/my/stats', undefined)
       expect(result.todayDistance).toBe('3.6')
       expect(result.todayCalories).toBe('250')
       expect(result.totalWalks).toBe(10)
@@ -108,7 +109,7 @@ describe('walkService', () => {
 
       const result = await walkService.getWalkDetail(5)
 
-      expect(mockedClient.get).toHaveBeenCalledWith('/walks/5')
+      expect(mockedClient.get).toHaveBeenCalledWith('/walks/5', undefined)
       expect(result.id).toBe(5)
       expect(result.pathPoints).toEqual([{ lat: 37.5, lng: 127.0 }, { lat: 37.51, lng: 127.01 }])
     })

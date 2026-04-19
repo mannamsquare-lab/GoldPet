@@ -1,6 +1,7 @@
 // Auth Service - API integration for Authentication
 
 import apiClient from "./api/client";
+import { typedClient } from "./api/typedClient";
 import { nativeBridge } from "../bridge/nativeBridge";
 import { useAuthStore } from "../stores/authStore";
 import type {
@@ -22,14 +23,14 @@ export type {
 export const authService = {
   signup: async (data: SignupRequest): Promise<AuthResponse> => {
     // Preserve axios error shape so UI can read error.response.data.message / status
-    const response = await apiClient.post("/auth/signup", data);
-    return response.data;
+    const response = await typedClient.post("/api/v1/auth/signup", data);
+    return response.data as AuthResponse;
   },
 
   snsSignup: async (data: SnsSignupRequest): Promise<AuthResponse> => {
     try {
-      const response = await apiClient.post("/auth/sns-signup", data);
-      return response.data;
+      const response = await typedClient.post("/api/v1/auth/sns-signup", data);
+      return response.data as AuthResponse;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       throw new Error(
@@ -40,8 +41,8 @@ export const authService = {
 
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     try {
-      const response = await apiClient.post("/auth/login", data);
-      return response.data;
+      const response = await typedClient.post("/api/v1/auth/login", data);
+      return response.data as AuthResponse;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       throw new Error(
@@ -52,10 +53,10 @@ export const authService = {
 
   checkUsername: async (username: string): Promise<{ available: boolean }> => {
     try {
-      const response = await apiClient.post("/auth/check-username", {
+      const response = await typedClient.post("/api/v1/auth/check-username", {
         username,
       });
-      return response.data;
+      return response.data as { available: boolean };
     } catch {
       return { available: false };
     }
@@ -63,8 +64,8 @@ export const authService = {
 
   checkEmail: async (email: string): Promise<{ available: boolean; provider?: string }> => {
     try {
-      const response = await apiClient.post("/auth/check-email", { email });
-      return response.data;
+      const response = await typedClient.post("/api/v1/auth/check-email", { email });
+      return response.data as { available: boolean; provider?: string };
     } catch {
       return { available: false };
     }
@@ -72,10 +73,10 @@ export const authService = {
 
   checkNickname: async (nickname: string): Promise<{ available: boolean }> => {
     try {
-      const response = await apiClient.post("/auth/check-nickname", {
+      const response = await typedClient.post("/api/v1/auth/check-nickname", {
         nickname,
       });
-      return response.data;
+      return response.data as { available: boolean };
     } catch {
       return { available: false };
     }
@@ -83,7 +84,8 @@ export const authService = {
 
   openLoginPopup: (provider: string, email?: string): Promise<AuthResponse> => {
     return new Promise((resolve, reject) => {
-      // If email is provided, forcibly use test login (Dev Login)
+      // If email is provided, forcibly use test login (Dev Login).
+      // DevAuthController is @OpenApiInternal so the spec omits it; stays on apiClient.
       if (email) {
           apiClient
             .post("/auth/dev-login", { email })
@@ -169,8 +171,8 @@ export const authService = {
 
   confirmLink: async (tempToken: string): Promise<AuthResponse> => {
     try {
-      const response = await apiClient.post("/auth/confirm-link", { tempToken });
-      return response.data;
+      const response = await typedClient.post("/api/v1/auth/confirm-link", { tempToken });
+      return response.data as AuthResponse;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       throw new Error(
@@ -186,8 +188,8 @@ export const authService = {
     }
 
     try {
-      const response = await apiClient.post("/auth/refresh", { refreshToken });
-      return response.data;
+      const response = await typedClient.post("/api/v1/auth/refresh", { refreshToken });
+      return response.data as AuthResponse;
     } catch {
       useAuthStore.getState().logout();
       throw new Error("세션이 만료되었습니다. 다시 로그인해주세요.");

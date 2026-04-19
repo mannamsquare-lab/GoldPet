@@ -1,6 +1,7 @@
 // Pet Service - API integration for Pet features
 
 import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type {
   PetResponse,
   SpeciesResponse,
@@ -22,9 +23,9 @@ export type PetAttribute = PetAttributeResponse;
 
 // Mock data
 const mockSpecies: PetSpecies[] = [
-  { id: 1, code: 'DOG', name: '강아지' },
-  { id: 2, code: 'CAT', name: '고양이' },
-  { id: 3, code: 'OTHER', name: '기타' },
+  { id: 1, code: 'DOG', name: '강아지', breedCount: 0 },
+  { id: 2, code: 'CAT', name: '고양이', breedCount: 0 },
+  { id: 3, code: 'OTHER', name: '기타', breedCount: 0 },
 ];
 
 const mockBreeds: PetBreed[] = [
@@ -45,6 +46,7 @@ const mockBreeds: PetBreed[] = [
 const mockPets: Pet[] = [
   {
     id: 1,
+    ownerId: 1,
     name: 'Goldie',
     species: '강아지',
     speciesId: 1,
@@ -55,6 +57,7 @@ const mockPets: Pet[] = [
     weightKg: 32,
     isNeutered: true,
     profileImageUrl: '/assets/images/main/main_slide_img01.png',
+    profileImageUrls: ['/assets/images/main/main_slide_img01.png'],
     temperamentTags: ['활발함', '친화적', '산책 좋아함'],
   },
 ];
@@ -69,7 +72,7 @@ export const FALLBACK_ATTRIBUTES_SCHEMA = [
     { code: 'Training', name: '훈련 상태', category: 'TRAIT', inputType: 'SELECT', options: [{label: '전문 교육 수료', value: 'PROFESSIONAL'}, {label: '기본 매너 숙지', value: 'BASIC'}, {label: '현재 교육 중', value: 'TRAINING'}, {label: '자유로운 영혼', value: 'FREE_SPIRIT'}] },
     { code: 'Barking', name: '소음(짖음) 수준', category: 'TRAIT', inputType: 'SELECT', options: [{label: '표현이 풍부함', value: 'VOCAL'}, {label: '필요할 때만', value: 'NECESSARY'}, {label: '거의 없음', value: 'QUIET'}] },
     { code: 'Note', name: '특이사항', category: 'TRAIT', inputType: 'TEXT', options: [] },
-    
+
     // INTEREST
     { code: 'Toy', name: '장난감 놀이', category: 'INTEREST', inputType: 'SELECT', options: [{label: '장난감 마니아', value: 'MANIA'}, {label: '즐겨 노는 편', value: 'LIKE'}, {label: '보통', value: 'NORMAL'}, {label: '관심 낮음', value: 'DISLIKE'}] },
     { code: 'Walk', name: '야외 활동', category: 'INTEREST', inputType: 'SELECT', options: [{label: '산책 중독', value: 'ADDICTED'}, {label: '산책을 즐김', value: 'ENJOY'}, {label: '적당히 즐김', value: 'MODERATE'}, {label: '실내파', value: 'INDOOR'}] },
@@ -88,8 +91,8 @@ export const petService = {
   getSpecies: async (): Promise<PetSpecies[]> => {
     if (USE_MOCK) return mockSpecies;
 
-    const response = await apiClient.get('/pets/species');
-    return response.data;
+    const response = await typedClient.get('/api/v1/pets/species');
+    return response.data as PetSpecies[];
   },
 
   getBreeds: async (speciesId?: number): Promise<PetBreed[]> => {
@@ -100,23 +103,24 @@ export const petService = {
       return mockBreeds;
     }
 
-    const url = speciesId ? `/pets/breeds?speciesId=${speciesId}` : '/pets/breeds';
-    const response = await apiClient.get(url);
-    return response.data;
+    const response = await typedClient.get('/api/v1/pets/breeds', {
+      params: speciesId ? { speciesId } : undefined,
+    });
+    return response.data as PetBreed[];
   },
 
   getMyPets: async (): Promise<Pet[]> => {
     if (USE_MOCK) return mockPets;
 
-    const response = await apiClient.get('/pets/my');
-    return response.data;
+    const response = await typedClient.get('/api/v1/pets/my');
+    return response.data as Pet[];
   },
 
   getPetAttributes: async (): Promise<PetAttribute[]> => {
-      if (USE_MOCK) return []; // Or mock attributes if needed
+    if (USE_MOCK) return []; // Or mock attributes if needed
 
-      const response = await apiClient.get('/pets/attributes');
-      return response.data;
+    const response = await typedClient.get('/api/v1/pets/attributes');
+    return response.data as PetAttribute[];
   },
 
   getPet: async (petId: number): Promise<Pet> => {
@@ -127,8 +131,8 @@ export const petService = {
     }
 
     try {
-      const response = await apiClient.get(`/pets/${petId}`);
-      return response.data;
+      const response = await typedClient.getPath('/api/v1/pets/{petId}', { petId });
+      return response.data as Pet;
     } catch {
       throw new Error('반려동물 정보를 불러올 수 없습니다.');
     }
@@ -139,6 +143,7 @@ export const petService = {
       console.log('Creating pet (mock):', data);
       return {
         id: Date.now(),
+        ownerId: 0,
         name: data.name,
         species: mockSpecies.find((s) => s.id === data.speciesId)?.name || '',
         speciesId: data.speciesId,
@@ -149,13 +154,14 @@ export const petService = {
         weightKg: data.weightKg,
         isNeutered: data.isNeutered,
         profileImageUrl: data.profileImageUrl,
-        temperamentTags: data.temperamentTags?.split(','),
+        profileImageUrls: data.profileImageUrl ? [data.profileImageUrl] : [],
+        temperamentTags: data.temperamentTags?.split(',') ?? [],
       };
     }
 
     try {
-      const response = await apiClient.post('/pets', data);
-      return response.data;
+      const response = await typedClient.post('/api/v1/pets', data);
+      return response.data as Pet;
     } catch {
       throw new Error('반려동물 등록에 실패했습니다.');
     }
@@ -169,8 +175,8 @@ export const petService = {
     }
 
     try {
-      const response = await apiClient.put(`/pets/${petId}`, data);
-      return response.data;
+      const response = await typedClient.putPath('/api/v1/pets/{petId}', { petId }, data);
+      return response.data as Pet;
     } catch {
       throw new Error('반려동물 정보 수정에 실패했습니다.');
     }
@@ -183,7 +189,7 @@ export const petService = {
     }
 
     try {
-      await apiClient.delete(`/pets/${petId}`);
+      await typedClient.deletePath('/api/v1/pets/{petId}', { petId });
     } catch {
       throw new Error('반려동물 삭제에 실패했습니다.');
     }
@@ -201,6 +207,7 @@ export const petService = {
       const formData = new FormData();
       formData.append('file', compressed);
       formData.append('category', 'pet');
+      // Multipart — stays on apiClient; typedClient is JSON-only.
       const response = await apiClient.post('/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });

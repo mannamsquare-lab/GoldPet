@@ -121,7 +121,8 @@ const NotificationPage = () => {
         queryClient.invalidateQueries({ queryKey: ['notificationUnread'] });
     };
 
-    const formatTime = (isoString: string) => {
+    const formatTime = (isoString?: string) => {
+        if (!isoString) return '';
         const date = new Date(isoString);
         const now = new Date();
         const diff = now.getTime() - date.getTime();
