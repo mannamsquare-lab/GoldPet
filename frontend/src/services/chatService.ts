@@ -1,6 +1,7 @@
 // Chat Service - API integration for Chat features
 
 import apiClient from './api/client';
+import type { ChatRoomType } from '../types/api';
 
 export interface ChatRoom {
   id: number;
@@ -14,7 +15,8 @@ export interface ChatRoom {
     profileImageUrl?: string;
   }[];
   isGroup: boolean;
-  roomType?: 'DIRECT' | 'GROUP';
+  // Sourced from OpenAPI schema via types/api.ts; AI_PET added in Phase 3.3.
+  roomType?: ChatRoomType;
 }
 
 export interface FileInfo {

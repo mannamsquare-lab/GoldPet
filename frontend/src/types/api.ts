@@ -41,3 +41,12 @@ export type SignupRequest = Omit<Schemas['SignupRequest'], 'gender'> & {
 export type SnsSignupRequest = Omit<Schemas['SnsSignupRequest'], 'gender'> & {
   gender: Gender;
 };
+
+// --- Chat domain (Phase 3.3) ---
+
+export type ChatRoomType = Schemas['ChatRoomResponse']['roomType']; // 'DIRECT' | 'GROUP' | 'AI_PET'
+export type ChatRoomResponse = Schemas['ChatRoomResponse'];
+export type ChatMessageResponse = Schemas['ChatMessageResponse'];
+export type MessageType = Schemas['ChatMessageResponse']['messageType']; // uppercase backend enum
+export type ParticipantInfo = Schemas['ParticipantInfo'];
+export type FileInfo = Schemas['FileInfo'];
