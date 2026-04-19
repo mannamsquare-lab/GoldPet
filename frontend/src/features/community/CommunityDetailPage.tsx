@@ -457,7 +457,7 @@ export default function CommunityDetailPage() {
                   <div className="like_comment_count">
                       <div className="count_wrap">
                         <div 
-                          className={`icon_img like_icon ${comment.isLikedByMe ? 'active' : ''}`}
+                          className={`icon_img like_icon ${comment.isLiked ? 'active' : ''}`}
                           onClick={() => commentLikeMutation.mutate(comment.id)}
                           style={{ cursor: 'pointer' }}
                         ></div> 

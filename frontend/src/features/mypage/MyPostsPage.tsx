@@ -174,7 +174,7 @@ export default function MyPostsPage() {
 
                     <div className="mp-post-reactions">
                       <div className="mp-reaction-item">
-                        <HeartIcon filled={comment.isLikedByMe} />
+                        <HeartIcon filled={comment.isLiked} />
                         <span>{comment.likeCount}</span>
                       </div>
                       <div className="mp-reaction-item">

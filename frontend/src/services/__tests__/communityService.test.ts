@@ -57,7 +57,7 @@ describe('communityService', () => {
 
   describe('getPosts', () => {
     it('fetches posts with field mapping applied', async () => {
-      const rawPost = { ...mockPost, userId: 99, userNickname: '매핑작성자', isLikedByMe: true }
+      const rawPost = { ...mockPost, authorId: 99, authorNickname: '매핑작성자', isLiked: true }
       mockedClient.get.mockResolvedValueOnce({
         data: { content: [rawPost], last: false, totalElements: 1 },
       })
@@ -75,9 +75,9 @@ describe('communityService', () => {
     it('fetches post detail with comments', async () => {
       const mockDetail = {
         ...mockPost,
-        userId: 1,
-        userNickname: '작성자',
-        comments: [{ id: 10, content: '댓글', userNickname: '댓글러', isMine: false, replyCount: 0, isLikedByMe: false, isRepliedByMe: false }],
+        authorId: 1,
+        authorNickname: '작성자',
+        comments: [{ id: 10, content: '댓글', authorNickname: '댓글러', isMine: false, replyCount: 0, isLiked: false, isRepliedByMe: false }],
       }
       mockedClient.get.mockResolvedValueOnce({ data: mockDetail })
 
@@ -109,7 +109,7 @@ describe('communityService', () => {
 
   describe('createComment', () => {
     it('posts comment to post endpoint', async () => {
-      const mockComment = { id: 5, postId: 1, content: '좋아요', authorNickname: '유저', isAdopted: false, createdAt: '2024-01-01', likeCount: 0, isLikedByMe: false, isRepliedByMe: false, depth: 0, replyCount: 0, isMine: true }
+      const mockComment = { id: 5, postId: 1, content: '좋아요', authorNickname: '유저', isAdopted: false, createdAt: '2024-01-01', likeCount: 0, isLiked: false, isRepliedByMe: false, depth: 0, replyCount: 0, isMine: true }
       mockedClient.post.mockResolvedValueOnce({ data: mockComment })
 
       const result = await communityService.createComment(1, '좋아요')

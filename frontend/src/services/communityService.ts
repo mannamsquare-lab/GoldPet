@@ -46,7 +46,7 @@ export interface CommunityComment {
   replyTo?: number;
   replies?: CommunityComment[];
   likeCount: number;
-  isLikedByMe: boolean;
+  isLiked: boolean;
   isRepliedByMe: boolean;
   depth: number;
   replyCount: number;
@@ -84,22 +84,9 @@ export const communityService = {
       const response = await apiClient.get(`/community/posts?${params}`);
       const rawPosts = response.data.content || response.data;
 
-      /**
-       * Field mapping: API → Frontend
-       * - userId           → authorId
-       * - userNickname     → authorNickname
-       * - userProfileImage → authorProfileUrl
-       * - isLikedByMe      → isLiked
-       */
-      const posts = Array.isArray(rawPosts) ? rawPosts.map((p: Record<string, unknown>) => ({
-        ...p,
-        authorId: p.userId,
-        authorNickname: p.userNickname ?? p.authorNickname ?? '',
-        authorProfileUrl: p.userProfileImage ?? p.authorProfileUrl,
-        isLiked: p.isLikedByMe ?? p.isLiked ?? false,
-        isCommentedByMe: p.isCommentedByMe ?? false,
-        isMine: p.isMine ?? false,
-      }) as unknown as CommunityPost) : [];
+      // Backend DTO (Phase 3 community rename) already emits authorId/authorNickname/
+      // authorProfileUrl/isLiked directly — no remap needed.
+      const posts = Array.isArray(rawPosts) ? (rawPosts as CommunityPost[]) : [];
 
       return {
         posts,
@@ -115,28 +102,8 @@ export const communityService = {
   getPostDetail: async (postId: number): Promise<CommunityPost & { comments: CommunityComment[] }> => {
     try {
       const response = await apiClient.get(`/community/posts/${postId}`);
-      const data = response.data;
-
-      const comments = data.comments?.map((c: Record<string, unknown>) => ({
-          ...c,
-          authorNickname: c.userNickname ?? c.authorNickname ?? '',
-          authorProfileUrl: c.userProfileImage ?? c.authorProfileUrl,
-          isLikedByMe: c.isLikedByMe ?? false,
-          isRepliedByMe: c.isRepliedByMe ?? false,
-          isMine: c.isMine ?? false,
-          replyCount: c.replyCount || 0
-      })) || [];
-
-      return {
-        ...data,
-        authorId: data.userId,
-        authorNickname: data.userNickname ?? data.authorNickname ?? '',
-        authorProfileUrl: data.userProfileImage ?? data.authorProfileUrl,
-        isLiked: data.isLikedByMe ?? data.isLiked ?? false,
-        isCommentedByMe: data.isCommentedByMe ?? false,
-        isMine: data.isMine ?? false,
-        comments
-      };
+      // Backend DTO (Phase 3 community rename) already emits author*/isLiked directly.
+      return response.data as CommunityPost & { comments: CommunityComment[] };
     } catch {
       throw new Error('게시글을 불러올 수 없습니다.');
     }
@@ -256,14 +223,10 @@ export const communityService = {
       const response = await apiClient.get(`/community/posts/me?page=${page}&size=${size}`);
       const rawPosts = response.data.content || [];
 
-      const posts = Array.isArray(rawPosts) ? rawPosts.map((p: Record<string, unknown>) => ({
-        ...p,
-        authorNickname: p.userNickname ?? p.authorNickname ?? '',
-        authorProfileUrl: p.userProfileImage ?? p.authorProfileUrl,
-        isLiked: p.isLikedByMe ?? p.isLiked ?? false,
-        isCommentedByMe: p.isCommentedByMe ?? false,
-        isMine: true,
-      }) as unknown as CommunityPost) : [];
+      // Backend DTO emits author*/isLiked directly (Phase 3 community rename).
+      const posts = Array.isArray(rawPosts)
+        ? rawPosts.map((p: Record<string, unknown>) => ({ ...p, isMine: true }) as unknown as CommunityPost)
+        : [];
 
       return {
         posts,
@@ -281,13 +244,14 @@ export const communityService = {
       const response = await apiClient.get(`/community/comments/me?page=${page}&size=${size}`);
       const rawComments = response.data.content || [];
 
-      const comments = Array.isArray(rawComments) ? rawComments.map((c: Record<string, unknown>) => ({
-        ...c,
-        authorNickname: c.userNickname ?? c.authorNickname ?? '',
-        authorProfileUrl: c.userProfileImage ?? c.authorProfileUrl,
-        isMine: true,
-        postTitle: c.postTitle ?? '',
-      }) as unknown as CommunityComment) : [];
+      // Backend DTO emits author*/isLiked directly; only set UI-local isMine fallback.
+      const comments = Array.isArray(rawComments)
+        ? rawComments.map((c: Record<string, unknown>) => ({
+            ...c,
+            isMine: true,
+            postTitle: c.postTitle ?? '',
+          }) as unknown as CommunityComment)
+        : [];
 
       return {
         comments,

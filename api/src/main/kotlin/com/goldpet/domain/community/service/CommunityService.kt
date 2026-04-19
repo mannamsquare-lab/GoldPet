@@ -79,9 +79,9 @@ class CommunityService(
 
             CommunityPostResponse(
                 id = post.id,
-                userId = post.user.id,
-                userNickname = post.user.nickname,
-                userProfileImage = post.user.profileImageUrl.toHttps(),
+                authorId = post.user.id,
+                authorNickname = post.user.nickname,
+                authorProfileUrl = post.user.profileImageUrl.toHttps(),
                 categoryId = post.category.id,
                 categoryName = post.category.name,
                 title = post.title,
@@ -92,7 +92,7 @@ class CommunityService(
                 likeCount = post.likeCount,
                 commentCount = commentCount,
                 createdAt = post.createdAt,
-                isLikedByMe = isLiked,
+                isLiked = isLiked,
                 isCommentedByMe = isCommented,
                 imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
                 isMine = currentUser?.id == post.user.id
@@ -157,9 +157,9 @@ class CommunityService(
 
         return CommunityPostResponse(
             id = savedPost.id,
-            userId = user.id,
-            userNickname = user.nickname,
-            userProfileImage = user.profileImageUrl.toHttps(),
+            authorId = user.id,
+            authorNickname = user.nickname,
+            authorProfileUrl = user.profileImageUrl.toHttps(),
             categoryId = category.id,
             categoryName = category.name,
             title = savedPost.title,
@@ -221,9 +221,9 @@ class CommunityService(
         return CommunityCommentResponse(
             id = savedComment.id,
             postId = post.id,
-            userId = user.id,
-            userNickname = user.nickname,
-            userProfileImage = user.profileImageUrl.toHttps(),
+            authorId = user.id,
+            authorNickname = user.nickname,
+            authorProfileUrl = user.profileImageUrl.toHttps(),
             content = savedComment.content,
             createdAt = savedComment.createdAt,
             parentCommentId = parentComment?.id,
@@ -297,14 +297,14 @@ class CommunityService(
                     CommunityCommentResponse(
                         id = comment.id,
                         postId = post.id,
-                        userId = comment.user.id,
-                        userNickname = comment.user.nickname,
-                        userProfileImage = comment.user.profileImageUrl.toHttps(),
+                        authorId = comment.user.id,
+                        authorNickname = comment.user.nickname,
+                        authorProfileUrl = comment.user.profileImageUrl.toHttps(),
                         content = comment.content,
                         createdAt = comment.createdAt,
                         parentCommentId = comment.parentComment?.id,
                         likeCount = comment.likeCount,
-                        isLikedByMe = isCommentLiked,
+                        isLiked = isCommentLiked,
                         isRepliedByMe = isReplied,
                         depth = depth,
                         replyCount = commentMap[comment.id]?.size ?: 0,
@@ -324,9 +324,9 @@ class CommunityService(
 
         return CommunityPostResponse(
             id = post.id,
-            userId = post.user.id,
-            userNickname = post.user.nickname,
-            userProfileImage = post.user.profileImageUrl.toHttps(),
+            authorId = post.user.id,
+            authorNickname = post.user.nickname,
+            authorProfileUrl = post.user.profileImageUrl.toHttps(),
             categoryId = post.category.id,
             categoryName = post.category.name,
             title = post.title,
@@ -337,7 +337,7 @@ class CommunityService(
             likeCount = post.likeCount,
             commentCount = commentCount,
             createdAt = post.createdAt,
-            isLikedByMe = isLiked,
+            isLiked = isLiked,
             isCommentedByMe = isCommented,
             imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
             comments = comments,
@@ -352,9 +352,9 @@ class CommunityService(
             CommunityCommentResponse(
                 id = comment.id,
                 postId = post.id,
-                userId = comment.user.id,
-                userNickname = comment.user.nickname,
-                userProfileImage = comment.user.profileImageUrl.toHttps(),
+                authorId = comment.user.id,
+                authorNickname = comment.user.nickname,
+                authorProfileUrl = comment.user.profileImageUrl.toHttps(),
                 content = comment.content,
                 createdAt = comment.createdAt,
                 parentCommentId = comment.parentComment?.id
@@ -392,9 +392,9 @@ class CommunityService(
 
         return CommunityPostResponse(
             id = savedPost.id,
-            userId = savedPost.user.id,
-            userNickname = savedPost.user.nickname,
-            userProfileImage = savedPost.user.profileImageUrl.toHttps(),
+            authorId = savedPost.user.id,
+            authorNickname = savedPost.user.nickname,
+            authorProfileUrl = savedPost.user.profileImageUrl.toHttps(),
             categoryId = savedPost.category.id,
             categoryName = savedPost.category.name,
             title = savedPost.title,
@@ -436,9 +436,9 @@ class CommunityService(
 
             CommunityPostResponse(
                 id = post.id,
-                userId = post.user.id,
-                userNickname = post.user.nickname,
-                userProfileImage = post.user.profileImageUrl.toHttps(),
+                authorId = post.user.id,
+                authorNickname = post.user.nickname,
+                authorProfileUrl = post.user.profileImageUrl.toHttps(),
                 categoryId = post.category.id,
                 categoryName = post.category.name,
                 title = post.title,
@@ -462,9 +462,9 @@ class CommunityService(
             CommunityCommentResponse(
                 id = comment.id,
                 postId = comment.post.id,
-                userId = comment.user.id,
-                userNickname = comment.user.nickname,
-                userProfileImage = comment.user.profileImageUrl.toHttps(),
+                authorId = comment.user.id,
+                authorNickname = comment.user.nickname,
+                authorProfileUrl = comment.user.profileImageUrl.toHttps(),
                 content = comment.content,
                 createdAt = comment.createdAt,
                 parentCommentId = comment.parentComment?.id,
@@ -488,9 +488,9 @@ class CommunityService(
             val isLiked = currentUser?.let { likeRepository.existsByPostAndUser(post, it) } ?: false
             CommunityPostResponse(
                 id = post.id,
-                userId = post.user.id,
-                userNickname = post.user.nickname,
-                userProfileImage = post.user.profileImageUrl.toHttps(),
+                authorId = post.user.id,
+                authorNickname = post.user.nickname,
+                authorProfileUrl = post.user.profileImageUrl.toHttps(),
                 categoryId = post.category.id,
                 categoryName = post.category.name,
                 title = post.title,
@@ -501,7 +501,7 @@ class CommunityService(
                 likeCount = post.likeCount,
                 commentCount = 0,
                 createdAt = post.createdAt,
-                isLikedByMe = isLiked,
+                isLiked = isLiked,
                 isMine = currentUser?.id == post.user.id
             )
         }
@@ -522,9 +522,9 @@ class CommunityService(
         return CommunityCommentResponse(
             id = saved.id,
             postId = saved.post.id,
-            userId = saved.user.id,
-            userNickname = saved.user.nickname,
-            userProfileImage = saved.user.profileImageUrl.toHttps(),
+            authorId = saved.user.id,
+            authorNickname = saved.user.nickname,
+            authorProfileUrl = saved.user.profileImageUrl.toHttps(),
             content = saved.content,
             createdAt = saved.createdAt,
             parentCommentId = saved.parentComment?.id,
