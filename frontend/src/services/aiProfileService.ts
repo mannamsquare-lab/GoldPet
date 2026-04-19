@@ -1,42 +1,19 @@
 import apiClient from './api/client';
+import type {
+  AIStyleOption as AIStyleOptionDto,
+  CreateAIProfileRequest as CreateAIProfileRequestDto,
+  AIProfileRequestResponse as AIProfileRequestResponseDto,
+  AIRequestType as AIRequestTypeAlias,
+  ApplyProfileRequest,
+} from '../types/api';
 
-export interface AIStyleOption {
-  id: string;
-  name: string;
-  description: string;
-  previewUrl: string;
-  goldCost: number;
-}
-
-export type AIRequestType = 'IMAGE' | 'VIDEO' | 'AVATAR';
-
-export interface CreateAIProfileRequest {
-  petId: number | null;
-  type: AIRequestType;
-  sourceImageUrl: string;
-  stylePrompt?: string | null;
-  mode?: 'SIMPLE' | 'CUSTOM';
-  petType?: 'dog' | 'cat' | 'other';
-}
-
-export interface AIProfileRequestResponse {
-  id: number;
-  petId: number | null;
-  petName: string | null;
-  type: AIRequestType;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-  sourceImageUrl: string;
-  resultUrl: string | null;
-  stylePrompt: string | null;
-  errorMessage: string | null;
-  goldCost: number;
-  createdAt: string;
-}
-
-export interface ApplyToProfileRequest {
-  applyAs: 'MAIN' | 'ADDITIONAL';
-  petId: number;
-}
+// Generated aliases (Phase 3.10).
+export type AIStyleOption = AIStyleOptionDto;
+export type AIRequestType = AIRequestTypeAlias;
+export type CreateAIProfileRequest = CreateAIProfileRequestDto;
+export type AIProfileRequestResponse = AIProfileRequestResponseDto;
+// Backend type is `ApplyProfileRequest`; legacy frontend name kept.
+export type ApplyToProfileRequest = ApplyProfileRequest;
 
 class AIProfileService {
   async getStyles(): Promise<AIStyleOption[]> {

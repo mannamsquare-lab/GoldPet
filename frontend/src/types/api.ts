@@ -104,3 +104,59 @@ export type PageWalkPhotoResponse = Schemas['PageWalkPhotoResponse'];
 // `WalkController.getWalkRanking` returns `ResponseEntity<Any>`. Tracked as a follow-up
 // (split endpoint into /walks/ranking + /walks/ranking/calendar) — keep manual interfaces
 // in walkService.ts until then.
+
+// --- Gamification domain (Phase 3.10) ---
+
+export type BadgeResponse = Schemas['BadgeResponse'];
+
+// --- Emoticon domain (Phase 3.10) ---
+
+export type EmoticonResponse = Schemas['EmoticonResponse'];
+
+// --- Home domain (Phase 3.10, partial) ---
+// Only the recent-walk slice maps cleanly. `HomeResponse.recommendations` is a
+// `FriendResponse[]` that the frontend reshapes into its own `HomeRecommendation`
+// display model — keep that conversion local to homeService.ts.
+export type HomeRecentWalkResponse = Schemas['HomeRecentWalkResponse'];
+
+// --- Friend domain (Phase 3.10) ---
+// Backend exposes `petGender`/`status` as plain `string`; the frontend narrows to
+// known unions at the call site (FriendCard etc.). Keep alias + cast as needed.
+export type FriendResponse = Schemas['FriendResponse'];
+// Note: Species has frontend-only fields (`description`, `breedCount`); backend
+// `SpeciesResponse` only carries id/code/name. Manual interface stays in friendService.ts
+// until a follow-up extends the backend DTO.
+
+// --- Gold domain (Phase 3.10) ---
+// Backend types are named `ChargeRequest`/`SpendRequest` (not `ChargeGoldRequest`).
+export type GoldBalanceResponse = Schemas['GoldBalanceResponse'];
+export type GoldProductResponse = Schemas['GoldProductResponse'];
+export type TransactionResponse = Schemas['TransactionResponse'];
+export type ChargeRequest = Schemas['ChargeRequest'];
+export type SpendRequest = Schemas['SpendRequest'];
+export type GoldTransactionType = Schemas['TransactionResponse']['type']; // CHARGE|SPEND|REWARD|REFUND|ADMIN_ADJUST
+export type GoldTransactionStatus = Schemas['TransactionResponse']['status']; // PENDING|COMPLETED|FAILED|CANCELLED
+
+// --- Pet domain (Phase 3.10) ---
+export type PetResponse = Schemas['PetResponse'];
+export type SpeciesResponse = Schemas['SpeciesResponse'];
+export type BreedResponse = Schemas['BreedResponse'];
+export type CreatePetRequest = Schemas['CreatePetRequest'];
+export type UpdatePetRequest = Schemas['UpdatePetRequest'];
+export type AttributeOption = Schemas['AttributeOption'];
+export type PetAttributeResponse = Schemas['PetAttributeResponse'];
+
+// --- Checkin domain (Phase 3.10) ---
+export type PlaceResponse = Schemas['PlaceResponse'];
+export type CheckInResponse = Schemas['CheckInResponse'];
+export type CreateCheckInRequest = Schemas['CreateCheckInRequest'];
+export type CreatePlaceRequest = Schemas['CreatePlaceRequest'];
+export type PlaceCategory = Schemas['PlaceResponse']['category']; // PARK|CAFE|RESTAURANT|...
+
+// --- AI Profile domain (Phase 3.10) ---
+export type AIStyleOption = Schemas['AIStyleOption'];
+export type CreateAIProfileRequest = Schemas['CreateAIProfileRequest'];
+export type AIProfileRequestResponse = Schemas['AIProfileRequestResponse'];
+export type AIRequestType = Schemas['CreateAIProfileRequest']['type']; // IMAGE|VIDEO|AVATAR
+export type AIRequestStatus = Schemas['AIProfileRequestResponse']['status']; // PENDING|PROCESSING|COMPLETED|FAILED|REFUNDED
+export type ApplyProfileRequest = Schemas['ApplyProfileRequest'];

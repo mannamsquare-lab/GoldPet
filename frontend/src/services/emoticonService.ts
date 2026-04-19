@@ -1,13 +1,8 @@
 import apiClient from './api/client';
+import type { EmoticonResponse } from '../types/api';
 
-export interface Emoticon {
-  id: number;
-  name: string | null;
-  category: string;
-  imageUrl: string;
-  sortOrder: number;
-  packId: number;
-}
+// Generated alias (Phase 3.10).
+export type Emoticon = EmoticonResponse;
 
 export const emoticonService = {
   getEmoticons: async (): Promise<Emoticon[]> => {

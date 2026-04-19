@@ -1,36 +1,14 @@
 // Friend Service - API integration for Friend features
 
 import apiClient from './api/client';
+import type { FriendResponse } from '../types/api';
 
-export interface Friend {
-  id: number;
-  nickname: string;
-  profileImageUrl?: string;
-  profileImages: string[];  // Owner's all profile images
-  ownerGender?: string;
-  ownerAge?: number;
-  ownerIntro?: string;
-  ownerMbti?: string;
-  ownerInterests: string[];
-  ownerHobbies: string[];
-  petName: string;
-  petBreed: string;
-  petAge: number;
-  petGender: 'MALE' | 'FEMALE';
-  isNeutered: boolean;
-  onWalking: boolean;
-  description: string;
-  tags: string[];
-  images: string[];
-  distance: number; // meters
-  status: 'online' | 'offline' | 'walking';
-  location?: {
-    lat: number;
-    lng: number;
-  };
-  locationText?: string;
-}
+// Generated alias (Phase 3.10). Backend `petGender`/`status` are plain strings;
+// narrow at the consumption site if needed.
+export type Friend = FriendResponse;
 
+// Manual: frontend pet selector needs `description` + `breedCount` that backend
+// `SpeciesResponse` does not currently expose. See open-questions.md for follow-up.
 export interface Species {
   id: number;
   code: string;

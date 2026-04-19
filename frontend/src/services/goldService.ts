@@ -1,47 +1,19 @@
 import apiClient from './api/client';
+import type {
+  GoldBalanceResponse,
+  GoldProductResponse,
+  TransactionResponse,
+  ChargeRequest,
+  SpendRequest,
+} from '../types/api';
 
-// Interfaces - aligned with backend DTOs
-export interface GoldBalance {
-  balance: number;
-  totalCharged: number;
-  totalSpent: number;
-}
-
-export interface GoldProduct {
-  id: string;
-  name: string;
-  goldAmount: number;
-  price: number;
-  bonus: number;
-  productType: 'SUBSCRIPTION' | 'ONE_TIME';
-  durationMonths: number | null;
-  discountPercent: number;
-  monthlyPrice: number | null;
-}
-
-export interface GoldTransaction {
-  id: number;
-  type: 'CHARGE' | 'SPEND' | 'REWARD' | 'REFUND' | 'ADMIN_ADJUST';
-  amount: number;
-  description: string;
-  createdAt: string;
-  balanceAfter: number;
-  status: 'COMPLETED' | 'PENDING' | 'FAILED' | 'CANCELLED' | 'REFUNDED';
-}
-
-export interface ChargeGoldRequest {
-  amount: number;
-  bonus?: number;
-  paymentMethod: string;
-  externalTransactionId?: string;
-}
-
-export interface SpendGoldRequest {
-  amount: number;
-  description: string;
-  referenceType?: string;
-  referenceId?: number;
-}
+// Generated aliases (Phase 3.10). Backend names are `ChargeRequest`/`SpendRequest`
+// (no "Gold" prefix); legacy frontend names kept for caller-side compatibility.
+export type GoldBalance = GoldBalanceResponse;
+export type GoldProduct = GoldProductResponse;
+export type GoldTransaction = TransactionResponse;
+export type ChargeGoldRequest = ChargeRequest;
+export type SpendGoldRequest = SpendRequest;
 
 // Service - real API calls only, no mock fallbacks
 export const goldService = {

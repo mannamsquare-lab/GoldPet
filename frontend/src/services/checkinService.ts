@@ -1,43 +1,16 @@
 import apiClient from './api/client';
+import type {
+  PlaceResponse,
+  CheckInResponse,
+  CreateCheckInRequest as CreateCheckInRequestDto,
+  CreatePlaceRequest as CreatePlaceRequestDto,
+} from '../types/api';
 
-// Interfaces
-export interface Place {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  imageUrl: string | null;
-  checkinCount: number;
-  isVerified: boolean;
-}
-
-export interface CheckIn {
-  id: number;
-  placeId: number;
-  placeName: string;
-  userId: number;
-  userNickname: string;
-  createdAt: string;
-  memo: string | null;
-}
-
-export interface CreateCheckInRequest {
-  placeId: number;
-  memo?: string;
-}
-
-export interface CreatePlaceRequest {
-  name: string;
-  description: string;
-  category: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  imageUrl?: string;
-}
+// Generated aliases (Phase 3.10).
+export type Place = PlaceResponse;
+export type CheckIn = CheckInResponse;
+export type CreateCheckInRequest = CreateCheckInRequestDto;
+export type CreatePlaceRequest = CreatePlaceRequestDto;
 
 // Mock Data
 const mockPlaces: Place[] = [

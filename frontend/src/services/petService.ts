@@ -1,77 +1,24 @@
 // Pet Service - API integration for Pet features
 
 import apiClient from './api/client';
+import type {
+  PetResponse,
+  SpeciesResponse,
+  BreedResponse,
+  CreatePetRequest as CreatePetRequestDto,
+  UpdatePetRequest as UpdatePetRequestDto,
+  AttributeOption as AttributeOptionDto,
+  PetAttributeResponse,
+} from '../types/api';
 
-export interface PetSpecies {
-  id: number;
-  code: string;
-  name: string;
-}
-
-export interface PetBreed {
-  id: number;
-  speciesId: number;
-  name: string;
-  category?: string;
-}
-
-export interface Pet {
-  id: number;
-  name: string;
-  species: string;
-  speciesId?: number;
-  breed?: string;
-  breedId?: number;
-  gender?: 'MALE' | 'FEMALE';
-  birthDate?: string;
-  weightKg?: number;
-  isNeutered?: boolean;
-  profileImageUrl?: string;
-  profileImageUrls?: string[];
-  temperamentTags?: string[];
-  ownerId?: number;
-}
-
-export interface CreatePetRequest {
-  name: string;
-  speciesId: number;
-  breedId?: number;
-  gender?: 'MALE' | 'FEMALE';
-  birthDate?: string;
-  weightKg?: number;
-  isNeutered?: boolean;
-  profileImageUrl?: string;
-  profileImageUrls?: string[];
-  temperamentTags?: string;
-}
-
-export interface UpdatePetRequest {
-  name?: string;
-  speciesId?: number;
-  breedId?: number;
-  gender?: 'MALE' | 'FEMALE';
-  birthDate?: string;
-  weightKg?: number;
-  isNeutered?: boolean;
-  profileImageUrl?: string;
-  profileImageUrls?: string[];
-  temperamentTags?: string;
-}
-
-export interface AttributeOption {
-  label: string;
-  value: string;
-}
-
-export interface PetAttribute {
-  id: number;
-  category: 'TRAIT' | 'INTEREST' | 'ALLERGY';
-  code: string;
-  name: string;
-  inputType: 'SELECT' | 'RADIO' | 'TEXT';
-  displayOrder: number;
-  options: AttributeOption[];
-}
+// Generated aliases (Phase 3.10).
+export type PetSpecies = SpeciesResponse;
+export type PetBreed = BreedResponse;
+export type Pet = PetResponse;
+export type CreatePetRequest = CreatePetRequestDto;
+export type UpdatePetRequest = UpdatePetRequestDto;
+export type AttributeOption = AttributeOptionDto;
+export type PetAttribute = PetAttributeResponse;
 
 // Mock data
 const mockSpecies: PetSpecies[] = [
