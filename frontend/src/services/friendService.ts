@@ -1,21 +1,13 @@
 // Friend Service - API integration for Friend features
 
 import apiClient from './api/client';
-import type { FriendResponse } from '../types/api';
+import type { FriendResponse, SpeciesResponse } from '../types/api';
 
-// Generated alias (Phase 3.10). Backend `petGender`/`status` are plain strings;
-// narrow at the consumption site if needed.
+// Generated aliases (Phase 3.10 + follow-up). Backend `petGender`/`status` are
+// plain strings — narrow at the consumption site if needed.
 export type Friend = FriendResponse;
-
-// Manual: frontend pet selector needs `description` + `breedCount` that backend
-// `SpeciesResponse` does not currently expose. See open-questions.md for follow-up.
-export interface Species {
-  id: number;
-  code: string;
-  name: string;
-  description: string;
-  breedCount: number;
-}
+// Backend SpeciesResponse extended with description + breedCount (follow-up).
+export type Species = SpeciesResponse;
 
 // Mock data
 

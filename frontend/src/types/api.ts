@@ -134,9 +134,8 @@ export type HomeRecentWalkResponse = Schemas['HomeRecentWalkResponse'];
 // Backend exposes `petGender`/`status` as plain `string`; the frontend narrows to
 // known unions at the call site (FriendCard etc.). Keep alias + cast as needed.
 export type FriendResponse = Schemas['FriendResponse'];
-// Note: Species has frontend-only fields (`description`, `breedCount`); backend
-// `SpeciesResponse` only carries id/code/name. Manual interface stays in friendService.ts
-// until a follow-up extends the backend DTO.
+// SpeciesResponse re-export moved next to Pet domain (used by both friend selector
+// and pet management).
 
 // --- Gold domain (Phase 3.10) ---
 // Backend types are named `ChargeRequest`/`SpendRequest` (not `ChargeGoldRequest`).

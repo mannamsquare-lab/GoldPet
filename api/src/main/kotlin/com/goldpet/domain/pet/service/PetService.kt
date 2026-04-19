@@ -82,7 +82,9 @@ class PetService(
 
     @Cacheable("pet:species")
     fun getAllSpecies(): List<SpeciesResponse> {
-        return petSpeciesRepository.findAll().map { SpeciesResponse.from(it) }
+        return petSpeciesRepository.findAll().map { species ->
+            SpeciesResponse.from(species, petBreedRepository.countByPetSpeciesId(species.id))
+        }
     }
 
     @Cacheable("breeds", key = "#speciesId")

@@ -6,13 +6,17 @@ import com.goldpet.domain.pet.entity.PetSpecies
 data class SpeciesResponse(
     val id: Int,
     val code: String,
-    val name: String
+    val name: String,
+    val description: String? = null,
+    val breedCount: Long = 0
 ) {
     companion object {
-        fun from(entity: PetSpecies) = SpeciesResponse(
+        fun from(entity: PetSpecies, breedCount: Long = 0) = SpeciesResponse(
             id = entity.id,
             code = entity.code,
-            name = entity.name
+            name = entity.name,
+            description = entity.description,
+            breedCount = breedCount
         )
     }
 }
