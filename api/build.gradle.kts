@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.security.MessageDigest
 
 plugins {
     id("org.springframework.boot") version "3.4.3"
@@ -80,5 +81,68 @@ openApi {
     waitTimeInSeconds.set(60)
     customBootRun {
         args.set(listOf("--spring.profiles.active=codegen"))
+    }
+}
+
+/**
+ * OpenAPI drift gate.
+ *
+ * Regenerates openapi.json and compares a canonicalized sha256 against the committed
+ * snapshot staged at `build/openapi-committed.json`. Intended to run in CI after the
+ * Jenkins shell stashes the committed version:
+ *
+ *   mkdir -p api/build && cp api/openapi.json api/build/openapi-committed.json
+ *   ./gradlew -p api verifyOpenApiSpec
+ *
+ * Can also be invoked locally the same way to prove your branch's spec matches the
+ * regenerated output.
+ */
+tasks.register("verifyOpenApiSpec") {
+    group = "openapi"
+    description = "Fails if the committed openapi.json disagrees with a freshly generated one."
+    dependsOn("generateOpenApiDocs")
+
+    doLast {
+        val committed = file("build/openapi-committed.json")
+        val generated = file("openapi.json")
+        if (!committed.exists()) {
+            throw GradleException(
+                "Missing build/openapi-committed.json. In CI, Jenkins must run:\n" +
+                "  cp api/openapi.json api/build/openapi-committed.json\n" +
+                "before invoking ./gradlew verifyOpenApiSpec."
+            )
+        }
+        if (!generated.exists()) {
+            throw GradleException("openapi.json missing after generateOpenApiDocs — plugin failed silently?")
+        }
+
+        fun canonicalize(f: File): String {
+            // Normalize via jq: sort object keys recursively + sort arrays by toString.
+            // Eliminates JVM-reflection-order nondeterminism (parameters/tags/enum arrays).
+            val tmp = file("build/${f.nameWithoutExtension}.canonical.json")
+            val filter = "walk(if type == \"array\" then sort_by(tostring) else . end)"
+            val exitCode = project.exec {
+                commandLine("jq", "-S", filter)
+                standardInput = f.inputStream()
+                standardOutput = tmp.outputStream()
+                isIgnoreExitValue = true
+            }.exitValue
+            if (exitCode != 0) throw GradleException("jq canonicalization failed (exit $exitCode) for ${f.path}")
+            val digest: ByteArray = MessageDigest.getInstance("SHA-256").digest(tmp.readBytes())
+            return digest.joinToString("") { b -> "%02x".format(b) }
+        }
+
+        val committedHash = canonicalize(committed)
+        val generatedHash = canonicalize(generated)
+
+        if (committedHash != generatedHash) {
+            throw GradleException(
+                "openapi.json drift detected.\n" +
+                "  committed sha256 = $committedHash\n" +
+                "  generated sha256 = $generatedHash\n" +
+                "Fix: run `./gradlew -p api generateOpenApiDocs` and commit the updated api/openapi.json + regenerated schema.d.ts files."
+            )
+        }
+        logger.lifecycle("✓ verifyOpenApiSpec: committed spec matches freshly-generated (sha256=${committedHash.take(12)}…)")
     }
 }
