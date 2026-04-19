@@ -5,6 +5,7 @@ import com.goldpet.config.crypto.EncryptionConfig
 import com.goldpet.config.crypto.EncryptionConverter
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.annotation.Profile
 import org.springframework.context.event.EventListener
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
@@ -21,6 +22,7 @@ import javax.crypto.spec.SecretKeySpec
  * 불가. 수동 SQL 대신 앱 시작 시 자동 복구되도록 한다. 이미 암호화+해시가 올바르면 no-op.
  */
 @Component
+@Profile("!codegen")
 class AdminPiiBootstrap(
     private val jdbcTemplate: JdbcTemplate
 ) {

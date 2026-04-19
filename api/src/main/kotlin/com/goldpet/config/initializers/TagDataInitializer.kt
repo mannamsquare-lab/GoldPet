@@ -5,9 +5,11 @@ import com.goldpet.domain.user.entity.Interest
 import com.goldpet.domain.user.repository.HobbyRepository
 import com.goldpet.domain.user.repository.InterestRepository
 import org.springframework.boot.CommandLineRunner
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 @Component
+@Profile("!codegen")
 class TagDataInitializer(
     private val interestRepository: InterestRepository,
     private val hobbyRepository: HobbyRepository
