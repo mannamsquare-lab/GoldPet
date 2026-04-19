@@ -1,25 +1,14 @@
 import { apiClient } from './apiClient';
+import type {
+  CacheInfoResponse,
+  CacheClearResult,
+  CacheClearLogResponse,
+} from '../types/api';
 
-export interface CacheInfo {
-  name: string;
-  description: string;
-  ttlSeconds: number;
-  isActive: boolean;
-}
-
-export interface CacheClearResult {
-  success: boolean;
-  cacheName: string;
-  message: string;
-  clearedAt: string;
-}
-
-export interface CacheClearLog {
-  cacheName: string;
-  clearedBy: string;
-  clearedAt: string;
-  reason: string | null;
-}
+// Generated aliases (Phase 3.11.4).
+export type CacheInfo = CacheInfoResponse;
+export type { CacheClearResult };
+export type CacheClearLog = CacheClearLogResponse;
 
 export const cacheService = {
   async getStatus(): Promise<CacheInfo[]> {

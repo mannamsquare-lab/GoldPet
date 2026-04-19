@@ -1,36 +1,19 @@
 import { apiClient } from './apiClient';
+import type {
+  DashboardStatsResponse,
+  DashboardChartsResponse,
+  RecentActivityItem,
+} from '../types/api';
 
-export interface DashboardStats {
-  totalUsers: number;
-  newUsersToday: number;
-  newUsersThisWeek: number;
-  totalPets: number;
-  totalWalks: number;
-  totalDistance: number;
-  totalPosts: number;
-  totalComments: number;
-  totalReports: number;
-  pendingReports: number;
-  revenue: number;
-  goldCirculation: number;
-}
+// Generated aliases (Phase 3.11.4).
+export type DashboardStats = DashboardStatsResponse;
+export type DashboardCharts = DashboardChartsResponse;
+export type RecentActivity = RecentActivityItem;
 
+// Manual: not in spec (chart series points are inline number/date pairs).
 export interface ChartDataPoint {
   date: string;
   value: number;
-}
-
-export interface DashboardCharts {
-  userGrowth: ChartDataPoint[];
-  walkActivity: ChartDataPoint[];
-  revenue: ChartDataPoint[];
-}
-
-export interface RecentActivity {
-  id: number;
-  type: string;
-  description: string;
-  createdAt: string;
 }
 
 export const dashboardService = {

@@ -1,16 +1,11 @@
 import { apiClient } from './apiClient';
+import type { SystemInfoResponse, AppConfigResponse } from '../types/api';
 
-export interface SystemInfo {
-  version: string;
-  environment: string;
-  serverTime: string;
-  uptime: string;
-  dbStatus: string;
-  cacheStatus: string;
-  storageUsed: number;
-  storageTotal: number;
-}
+// Generated aliases (Phase 3.11.4).
+export type SystemInfo = SystemInfoResponse;
+export type AppConfig = AppConfigResponse;
 
+// Manual: not in spec.
 export interface AdminUser {
   id: number;
   email: string;
@@ -49,8 +44,3 @@ export const systemService = {
   },
 };
 
-export interface AppConfig {
-    key: string;
-    value: string;
-    description?: string;
-}

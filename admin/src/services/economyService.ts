@@ -1,54 +1,19 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type {
+  PageResponse,
+  EconomyStatsResponse,
+  TransactionResponse,
+  GoldProductAdminResponse,
+  GoldProductCreateRequest,
+  GoldProductUpdateRequest,
+} from '../types/api';
 
-export interface EconomyStats {
-  totalGoldCirculation: number;
-  totalRevenue: number;
-  todayRevenue: number;
-  activeSubscriptions: number;
-  pendingPayouts: number;
-}
-
-export interface TransactionItem {
-  id: number;
-  userId: number;
-  userNickname: string;
-  type: 'CHARGE' | 'SPEND' | 'REWARD' | 'REFUND' | 'ADMIN_ADJUST';
-  amount: number;
-  description: string;
-  createdAt: string | null;
-  status: string;
-  balanceAfter: number;
-}
-
-export interface GoldProductAdmin {
-  id: number;
-  productCode: string;
-  name: string;
-  goldAmount: number;
-  price: number;
-  bonus: number;
-  isActive: boolean;
-  displayOrder: number;
-}
-
-export interface GoldProductCreateRequest {
-  productCode: string;
-  name: string;
-  goldAmount: number;
-  price: number;
-  bonus?: number;
-  displayOrder?: number;
-}
-
-export interface GoldProductUpdateRequest {
-  name?: string;
-  goldAmount?: number;
-  price?: number;
-  bonus?: number;
-  isActive?: boolean;
-  displayOrder?: number;
-}
+// Generated aliases (Phase 3.11.4). TransactionItem (admin tx list rows) maps to
+// the shared TransactionResponse; admin schema does NOT expose userNickname there.
+export type EconomyStats = EconomyStatsResponse;
+export type TransactionItem = TransactionResponse;
+export type GoldProductAdmin = GoldProductAdminResponse;
+export type { GoldProductCreateRequest, GoldProductUpdateRequest };
 
 export const economyService = {
   async getStats(): Promise<EconomyStats> {

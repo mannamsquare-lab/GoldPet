@@ -1,29 +1,14 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type {
+  PageResponse,
+  StoolAnalysisStatsResponse,
+  DailyCount,
+  AdminStoolAnalysisItem,
+} from '../types/api';
 
-export interface StoolAnalysisStats {
-  totalCount: number;
-  dailyCounts: DailyCount[];
-  avgOverallScore: number | null;
-  statusDistribution: Record<string, number>;
-  estimatedCostKrw: number;
-}
-
-export interface DailyCount {
-  date: string;
-  count: number;
-}
-
-export interface AdminStoolAnalysisItem {
-  id: number;
-  petId: number;
-  petName: string;
-  userId: number;
-  userNickname: string;
-  overallScore: number | null;
-  status: string;
-  createdAt: string | null;
-}
+// Generated aliases (Phase 3.11.4).
+export type StoolAnalysisStats = StoolAnalysisStatsResponse;
+export type { DailyCount, AdminStoolAnalysisItem };
 
 export const stoolAnalysisAdminService = {
   async getStats(): Promise<StoolAnalysisStats> {

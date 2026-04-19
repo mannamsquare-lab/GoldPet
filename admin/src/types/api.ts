@@ -95,3 +95,44 @@ export type CourseListItemResponse = Schemas['CourseListItemResponse'];
 export type CourseDetailAdminResponse = Schemas['CourseDetailAdminResponse'];
 export type CourseSpotAdminResponse = Schemas['CourseSpotAdminResponse'];
 export type CourseCommentAdminResponse = Schemas['CourseCommentAdminResponse'];
+
+// --- System / Operations admin (Phase 3.11.4) ---
+
+// System
+export type SystemInfoResponse = Schemas['SystemInfoResponse'];
+export type AppConfigResponse = Schemas['AppConfigResponse'];
+
+// Cache
+export type CacheInfoResponse = Schemas['CacheInfoResponse'];
+export type CacheClearResult = Schemas['CacheClearResult'];
+export type CacheClearLogResponse = Schemas['CacheClearLogResponse'];
+
+// Dashboard
+export type DashboardStatsResponse = Schemas['DashboardStatsResponse'];
+export type DashboardChartsResponse = Schemas['DashboardChartsResponse'];
+export type RecentActivityItem = Schemas['RecentActivityItem'];
+
+// LBS
+export type LBSStatsResponse = Schemas['LBSStatsResponse'];
+
+// Notice
+export type AppNoticeResponse = Schemas['AppNoticeResponse'];
+export type CreateAppNoticeRequest = Schemas['CreateAppNoticeRequest'];
+export type UpdateAppNoticeRequest = Schemas['UpdateAppNoticeRequest'];
+
+// Economy
+export type EconomyStatsResponse = Schemas['EconomyStatsResponse'];
+export type GoldProductAdminResponse = Schemas['GoldProductAdminResponse'];
+export type GoldProductCreateRequest = Schemas['GoldProductCreateRequest'];
+export type GoldProductUpdateRequest = Schemas['GoldProductUpdateRequest'];
+export type TransactionResponse = Schemas['TransactionResponse'];
+
+// Stool analysis admin
+export type StoolAnalysisStatsResponse = Schemas['StoolAnalysisStatsResponse'];
+export type DailyCount = Schemas['DailyCount'];
+export type AdminStoolAnalysisItem = Schemas['AdminStoolAnalysisItem'];
+
+// Note: AdminUser (system), Place/LBSStats.topSpots (lbs), DataItem (data),
+// FileUploadResponse (file), NotificationTemplate / SendNotificationRequest /
+// DeliveryLog / Banner / Campaign (marketing), ChartDataPoint (dashboard) are
+// not in the spec — kept as manual interfaces in their service files.

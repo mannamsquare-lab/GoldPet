@@ -1,34 +1,11 @@
 import { apiClient } from './apiClient';
+import type {
+  AppNoticeResponse,
+  CreateAppNoticeRequest,
+} from '../types/api';
 
-export interface AppNoticeResponse {
-  id: number;
-  type: string;
-  title: string;
-  content?: string;
-  imageUrls: string[];
-  linkUrl?: string;
-  targetScreen?: string;
-  priority: number;
-  isDismissible: boolean;
-  isActive: boolean;
-  startAt: string;
-  endAt?: string;
-  createdAt?: string;
-}
-
-export interface CreateAppNoticeRequest {
-  type: string;
-  title: string;
-  content?: string;
-  imageUrls?: string[];
-  linkUrl?: string;
-  targetScreen: string;
-  priority: number;
-  isDismissible: boolean;
-  isActive?: boolean;
-  startAt: string;
-  endAt?: string;
-}
+// Re-export under historical local names (Phase 3.11.4).
+export type { AppNoticeResponse, CreateAppNoticeRequest };
 
 export const noticeService = {
   getAllNotices: async (): Promise<AppNoticeResponse[]> => {
