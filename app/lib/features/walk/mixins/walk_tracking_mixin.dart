@@ -82,8 +82,12 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   static const double _minDistanceMeters = 5.0;
 
   // Platform channels
-  static const _walkWidgetChannel = MethodChannel('com.mannam.goldpet/walk_notification');
-  static const _liveActivityChannel = MethodChannel('com.mannam.goldpet/walk_live_activity');
+  static const _walkWidgetChannel = MethodChannel(
+    'com.mannam.goldpet/walk_notification',
+  );
+  static const _liveActivityChannel = MethodChannel(
+    'com.mannam.goldpet/walk_live_activity',
+  );
 
   // --- Abstract / overridable ---
 
@@ -124,7 +128,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     trackingDistanceNotifier.dispose();
 
     // Best-effort local save if walk was active
-    if ((trackingIsWalking || trackingIsSaving) && _trackingStartTime != null && trackingPath.length >= 2) {
+    if ((trackingIsWalking || trackingIsSaving) &&
+        _trackingStartTime != null &&
+        trackingPath.length >= 2) {
       try {
         final request = _buildWalkRequest(DateTime.now());
         WalkLocalStorage.saveWalkDataBestEffort(request);
@@ -167,7 +173,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(timeLimit: Duration(seconds: 5)),
+        locationSettings: const LocationSettings(
+          timeLimit: Duration(seconds: 5),
+        ),
       );
       trackingInitialPosition = LatLng(position.latitude, position.longitude);
     } catch (e) {
@@ -200,10 +208,16 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         final data = res.data as Map;
         final prefs = await SharedPreferences.getInstance();
         if (data.containsKey('walkMinDurationSeconds')) {
-          await prefs.setInt('walk_min_duration_seconds', (data['walkMinDurationSeconds'] as num).toInt());
+          await prefs.setInt(
+            'walk_min_duration_seconds',
+            (data['walkMinDurationSeconds'] as num).toInt(),
+          );
         }
         if (data.containsKey('walkMinDistanceMeters')) {
-          await prefs.setDouble('walk_min_distance_meters', (data['walkMinDistanceMeters'] as num).toDouble());
+          await prefs.setDouble(
+            'walk_min_distance_meters',
+            (data['walkMinDistanceMeters'] as num).toDouble(),
+          );
         }
       }
     } catch (_) {
@@ -274,11 +288,14 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     _trackingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_trackingStartTime != null && !trackingIsPaused) {
         final elapsed = DateTime.now().difference(_trackingStartTime!);
-        final elapsedSeconds = (elapsed - _trackingTotalPauseDuration).inSeconds;
+        final elapsedSeconds =
+            (elapsed - _trackingTotalPauseDuration).inSeconds;
         trackingDurationNotifier.value = elapsedSeconds;
         _updateWalkWidget(elapsedSeconds, trackingDistanceNotifier.value);
 
-        if (elapsedSeconds > 0 && elapsedSeconds % 60 == 0 && trackingPath.length >= 2) {
+        if (elapsedSeconds > 0 &&
+            elapsedSeconds % 60 == 0 &&
+            trackingPath.length >= 2) {
           _saveWalkDataLocally();
         }
       }
@@ -287,7 +304,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     // GPS stream
     late final LocationSettings locationSettings;
     if (Platform.isAndroid) {
-      locationSettings = AndroidSettings(accuracy: LocationAccuracy.best, distanceFilter: 3);
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 3,
+      );
     } else if (Platform.isIOS) {
       locationSettings = AppleSettings(
         accuracy: LocationAccuracy.best,
@@ -298,19 +318,24 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         showBackgroundLocationIndicator: true,
       );
     } else {
-      locationSettings = const LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 3);
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 3,
+      );
     }
 
-    _trackingPositionSub = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-      (Position position) => _updateLocation(position),
-    );
+    _trackingPositionSub = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).listen((Position position) => _updateLocation(position));
   }
 
   void _updateLocation(Position position) {
     if (trackingIsPaused) return;
 
     if (position.accuracy > _maxAccuracyMeters) {
-      debugPrint('[Walk] Rejected: accuracy ${position.accuracy.toStringAsFixed(1)}m');
+      debugPrint(
+        '[Walk] Rejected: accuracy ${position.accuracy.toStringAsFixed(1)}m',
+      );
       return;
     }
 
@@ -319,17 +344,22 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     if (trackingPath.isNotEmpty && _trackingLastAccepted != null) {
       final last = _trackingLastAccepted!;
       final dist = Geolocator.distanceBetween(
-        last.latitude, last.longitude,
-        position.latitude, position.longitude,
+        last.latitude,
+        last.longitude,
+        position.latitude,
+        position.longitude,
       );
 
       if (dist < _minDistanceMeters) return;
 
-      final timeDiffSec = position.timestamp.difference(last.timestamp).inMilliseconds / 1000.0;
+      final timeDiffSec =
+          position.timestamp.difference(last.timestamp).inMilliseconds / 1000.0;
       if (timeDiffSec > 0) {
         final speedMps = dist / timeDiffSec;
         if (speedMps > _maxWalkSpeedMps) {
-          debugPrint('[Walk] Rejected: speed ${(speedMps * 3.6).toStringAsFixed(1)}km/h');
+          debugPrint(
+            '[Walk] Rejected: speed ${(speedMps * 3.6).toStringAsFixed(1)}km/h',
+          );
           return;
         }
       }
@@ -365,7 +395,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       width: 5,
     );
     setState(() {
-      trackingPolylines = {...trackingPolylines.where((p) => p.polylineId.value != 'walk_path'), polyline};
+      trackingPolylines = {
+        ...trackingPolylines.where((p) => p.polylineId.value != 'walk_path'),
+        polyline,
+      };
     });
   }
 
@@ -378,7 +411,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   void recenterCamera() {
     trackingIsFollowing = true;
     if (trackingPath.isNotEmpty) {
-      trackingMapController?.animateCamera(CameraUpdate.newLatLng(trackingPath.last));
+      trackingMapController?.animateCamera(
+        CameraUpdate.newLatLng(trackingPath.last),
+      );
     }
   }
 
@@ -387,7 +422,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   void togglePause() {
     setState(() {
       if (trackingIsPaused) {
-        _trackingTotalPauseDuration += DateTime.now().difference(_trackingPauseStartTime!);
+        _trackingTotalPauseDuration += DateTime.now().difference(
+          _trackingPauseStartTime!,
+        );
         _trackingPauseStartTime = null;
         trackingIsPaused = false;
         _trackingPositionSub?.resume();
@@ -404,7 +441,8 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   void handleAppResumed() {
     if (trackingIsWalking && _trackingStartTime != null && !trackingIsPaused) {
       final elapsed = DateTime.now().difference(_trackingStartTime!);
-      trackingDurationNotifier.value = (elapsed - _trackingTotalPauseDuration).inSeconds;
+      trackingDurationNotifier.value =
+          (elapsed - _trackingTotalPauseDuration).inSeconds;
     }
   }
 
@@ -417,20 +455,27 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     final savedPauseStartTime = _trackingPauseStartTime;
 
     if (trackingIsPaused && _trackingPauseStartTime != null) {
-      _trackingTotalPauseDuration += DateTime.now().difference(_trackingPauseStartTime!);
+      _trackingTotalPauseDuration += DateTime.now().difference(
+        _trackingPauseStartTime!,
+      );
       _trackingPauseStartTime = null;
       trackingIsPaused = false;
     }
 
     final endTime = DateTime.now();
-    final startTime = _trackingStartTime ?? endTime.subtract(Duration(seconds: trackingDurationNotifier.value));
-    final durationSeconds = (endTime.difference(startTime) - _trackingTotalPauseDuration).inSeconds;
+    final startTime =
+        _trackingStartTime ??
+        endTime.subtract(Duration(seconds: trackingDurationNotifier.value));
+    final durationSeconds =
+        (endTime.difference(startTime) - _trackingTotalPauseDuration).inSeconds;
 
     if (durationSeconds < 1) {
       if (wasPaused) {
         trackingIsPaused = true;
         _trackingPauseStartTime = savedPauseStartTime;
-        _trackingTotalPauseDuration -= DateTime.now().difference(savedPauseStartTime!);
+        _trackingTotalPauseDuration -= DateTime.now().difference(
+          savedPauseStartTime!,
+        );
       }
       if (mounted) showTrackingSnackBar('산책 시간이 너무 짧습니다. 조금 더 걸어주세요!');
       return;
@@ -455,7 +500,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         if (wasPaused) {
           trackingIsPaused = true;
           _trackingPauseStartTime = savedPauseStartTime;
-          _trackingTotalPauseDuration -= DateTime.now().difference(savedPauseStartTime!);
+          _trackingTotalPauseDuration -= DateTime.now().difference(
+            savedPauseStartTime!,
+          );
         }
         return;
       }
@@ -484,14 +531,17 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     if (trackingPath.length < 2) {
       try {
         final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(timeLimit: Duration(seconds: 3)),
+          locationSettings: const LocationSettings(
+            timeLimit: Duration(seconds: 3),
+          ),
         );
         final currentLatLng = LatLng(pos.latitude, pos.longitude);
         if (trackingPath.isEmpty) trackingPath.add(currentLatLng);
         if (trackingPath.length < 2) trackingPath.add(trackingPath.first);
       } catch (e) {
         if (trackingPath.isEmpty) {
-          final fallback = trackingInitialPosition ?? const LatLng(37.5665, 126.9780);
+          final fallback =
+              trackingInitialPosition ?? const LatLng(37.5665, 126.9780);
           trackingPath.add(fallback);
           trackingPath.add(fallback);
         } else {
@@ -500,7 +550,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       }
     }
 
-    final request = _buildWalkRequest(endTime, durationOverride: durationSeconds);
+    final request = _buildWalkRequest(
+      endTime,
+      durationOverride: durationSeconds,
+    );
 
     setState(() {
       trackingIsWalking = false;
@@ -515,7 +568,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         savedWalkId = walk.id as int?;
       } else {
         // Fallback: direct API call
-        final response = await ApiClient().dio.post('/api/v1/walks', data: request.toJson());
+        final response = await ApiClient().dio.post(
+          '/api/v1/walks',
+          data: request.toJson(),
+        );
         final data = response.data;
         if (data is Map && data['id'] is num) {
           savedWalkId = (data['id'] as num).toInt();
@@ -549,7 +605,8 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
           await WalkLocalStorage.clearWalkData();
           final prefs400 = await SharedPreferences.getInstance();
           final minDur = prefs400.getInt('walk_min_duration_seconds') ?? 30;
-          final minDist = prefs400.getDouble('walk_min_distance_meters') ?? 10.0;
+          final minDist =
+              prefs400.getDouble('walk_min_distance_meters') ?? 10.0;
           showTrackingSnackBar(
             '산책 저장 조건 미충족: $minDur초 이상, ${minDist.toInt()}m 이상 필요',
           );
@@ -561,9 +618,16 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  CreateWalkRequest _buildWalkRequest(DateTime endTime, {int? durationOverride}) {
-    final startTime = _trackingStartTime ?? endTime.subtract(Duration(seconds: trackingDurationNotifier.value));
-    final durationSeconds = durationOverride ?? (endTime.difference(startTime) - _trackingTotalPauseDuration).inSeconds;
+  CreateWalkRequest _buildWalkRequest(
+    DateTime endTime, {
+    int? durationOverride,
+  }) {
+    final startTime =
+        _trackingStartTime ??
+        endTime.subtract(Duration(seconds: trackingDurationNotifier.value));
+    final durationSeconds =
+        durationOverride ??
+        (endTime.difference(startTime) - _trackingTotalPauseDuration).inSeconds;
     return CreateWalkRequest(
       startTime: startTime,
       endTime: endTime,
@@ -624,7 +688,8 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
             setState(() => trackingIsSaving = false);
             final prefs400 = await SharedPreferences.getInstance();
             final minDur = prefs400.getInt('walk_min_duration_seconds') ?? 30;
-            final minDist = prefs400.getDouble('walk_min_distance_meters') ?? 10.0;
+            final minDist =
+                prefs400.getDouble('walk_min_distance_meters') ?? 10.0;
             showTrackingSnackBar(
               '산책 저장 조건 미충족: $minDur초 이상, ${minDist.toInt()}m 이상 필요',
             );
@@ -729,10 +794,14 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         if (!mounted) return;
 
         if (result == null) {
-          try { await File(croppedPath).delete(); } catch (_) {}
+          try {
+            await File(croppedPath).delete();
+          } catch (_) {}
           return;
         } else if (result['retake'] == true) {
-          try { await File(croppedPath).delete(); } catch (_) {}
+          try {
+            await File(croppedPath).delete();
+          } catch (_) {}
           continue;
         } else {
           finalCroppedPath = croppedPath;
@@ -745,14 +814,22 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       try {
         final fileName = finalCroppedPath.split('/').last;
         final formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(finalCroppedPath, filename: fileName),
+          'file': await MultipartFile.fromFile(
+            finalCroppedPath,
+            filename: fileName,
+          ),
         });
-        final response = await ApiClient().dio.post('/api/v1/files/upload', data: formData);
+        final response = await ApiClient().dio.post(
+          '/api/v1/files/upload',
+          data: formData,
+        );
         imageUrl = response.data['url'] as String?;
       } catch (e) {
         debugPrint('Photo upload failed: $e');
       } finally {
-        try { await File(finalCroppedPath).delete(); } catch (_) {}
+        try {
+          await File(finalCroppedPath).delete();
+        } catch (_) {}
       }
 
       if (!mounted) return;
@@ -802,11 +879,12 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       if (_externalPetIds != null && _externalPetIds!.isNotEmpty) {
         // Use pet IDs selected by user in React WebView
         _trackingPetIds = _externalPetIds!;
-        final selectedPets = pets.where(
-          (p) => _externalPetIds!.contains(p['id'] as int)
-        ).toList();
+        final selectedPets = pets
+            .where((p) => _externalPetIds!.contains(p['id'] as int))
+            .toList();
         if (selectedPets.isNotEmpty) {
-          _trackingPetImageUrl = selectedPets.first['profileImageUrl'] as String?;
+          _trackingPetImageUrl =
+              selectedPets.first['profileImageUrl'] as String?;
         } else if (pets.isNotEmpty) {
           _trackingPetImageUrl = pets.first['profileImageUrl'] as String?;
         }
@@ -828,7 +906,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     ui.Image? petImage;
     if (_trackingPetImageUrl != null) {
       try {
-        final imageUrl = _trackingPetImageUrl!.replaceFirst('http://', 'https://');
+        final imageUrl = _trackingPetImageUrl!.replaceFirst(
+          'http://',
+          'https://',
+        );
         final response = await http.get(Uri.parse(imageUrl));
         if (response.statusCode == 200) {
           final codec = await ui.instantiateImageCodec(response.bodyBytes);
@@ -848,57 +929,105 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     const circleRadius = 54.0;
     const borderWidth = 6.0;
 
-    final borderPaint = Paint()..color = AppColors.primary..style = PaintingStyle.fill;
+    final borderPaint = Paint()
+      ..color = AppColors.primary
+      ..style = PaintingStyle.fill;
     canvas.drawCircle(circleCenter, circleRadius + borderWidth, borderPaint);
 
     if (petImage != null) {
       canvas.save();
-      canvas.clipPath(Path()..addOval(Rect.fromCircle(center: circleCenter, radius: circleRadius)));
-      final srcRect = Rect.fromLTWH(0, 0, petImage.width.toDouble(), petImage.height.toDouble());
-      final dstRect = Rect.fromCircle(center: circleCenter, radius: circleRadius);
+      canvas.clipPath(
+        Path()..addOval(
+          Rect.fromCircle(center: circleCenter, radius: circleRadius),
+        ),
+      );
+      final srcRect = Rect.fromLTWH(
+        0,
+        0,
+        petImage.width.toDouble(),
+        petImage.height.toDouble(),
+      );
+      final dstRect = Rect.fromCircle(
+        center: circleCenter,
+        radius: circleRadius,
+      );
       canvas.drawImageRect(petImage, srcRect, dstRect, Paint());
       canvas.restore();
     } else {
-      canvas.drawCircle(circleCenter, circleRadius, Paint()..color = Colors.white);
-      canvas.drawCircle(circleCenter, 24, Paint()..color = AppColors.primary.withValues(alpha: 0.3));
+      canvas.drawCircle(
+        circleCenter,
+        circleRadius,
+        Paint()..color = Colors.white,
+      );
+      canvas.drawCircle(
+        circleCenter,
+        24,
+        Paint()..color = AppColors.primary.withValues(alpha: 0.3),
+      );
     }
 
     final badgePaint = Paint()..color = AppColors.primary;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTWH(48, 150, 84, 36), const Radius.circular(18)),
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(48, 150, 84, 36),
+        const Radius.circular(18),
+      ),
       badgePaint,
     );
     final textPainter = TextPainter(
       text: const TextSpan(
         text: '출발',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    textPainter.paint(canvas, Offset((markerWidth - textPainter.width) / 2, 157));
+    textPainter.paint(
+      canvas,
+      Offset((markerWidth - textPainter.width) / 2, 157),
+    );
 
-    final linePaint = Paint()..color = AppColors.primary..strokeWidth = 3;
+    final linePaint = Paint()
+      ..color = AppColors.primary
+      ..strokeWidth = 3;
     canvas.drawLine(const Offset(90, 186), const Offset(90, 204), linePaint);
 
     const hereDotCenter = Offset(90, 216);
     canvas.drawCircle(hereDotCenter, 12, Paint()..color = Colors.white);
-    canvas.drawCircle(hereDotCenter, 10, Paint()..color = const Color(0xFFFF5005));
-    canvas.drawCircle(hereDotCenter, 7, Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3);
+    canvas.drawCircle(
+      hereDotCenter,
+      10,
+      Paint()..color = const Color(0xFFFF5005),
+    );
+    canvas.drawCircle(
+      hereDotCenter,
+      7,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
 
     final picture = recorder.endRecording();
-    final img = await picture.toImage(markerWidth.toInt(), markerHeight.toInt());
+    final img = await picture.toImage(
+      markerWidth.toInt(),
+      markerHeight.toInt(),
+    );
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
     _trackingPetMarkerBytes = byteData!.buffer.asUint8List();
   }
 
   Future<void> addPetStartMarker() async {
-    if (_trackingPetMarkerBytes == null || trackingInitialPosition == null) return;
+    if (_trackingPetMarkerBytes == null || trackingInitialPosition == null)
+      return;
     try {
-      final overlayImage = BitmapDescriptor.bytes(_trackingPetMarkerBytes!,
-        width: 60, height: 80,
+      final overlayImage = BitmapDescriptor.bytes(
+        _trackingPetMarkerBytes!,
+        width: 60,
+        height: 80,
       );
       final marker = Marker(
         markerId: const MarkerId('pet_start'),
@@ -907,7 +1036,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         anchor: const Offset(0.5, 1.0),
       );
       setState(() {
-        trackingMarkers = {...trackingMarkers.where((m) => m.markerId.value != 'pet_start'), marker};
+        trackingMarkers = {
+          ...trackingMarkers.where((m) => m.markerId.value != 'pet_start'),
+          marker,
+        };
       });
     } catch (e) {
       debugPrint('[WalkTracking] Failed to add pet marker: $e');
@@ -917,7 +1049,8 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   // --- Helpers ---
 
   Future<BitmapDescriptor> _getSpotMarkerImage(String type) async {
-    if (_trackingSpotMarkerImages.containsKey(type)) return _trackingSpotMarkerImages[type]!;
+    if (_trackingSpotMarkerImages.containsKey(type))
+      return _trackingSpotMarkerImages[type]!;
     final pngAsset = switch (type) {
       'POOP' => 'assets/images/walk/marker_poop.png',
       'PEE' => 'assets/images/walk/marker_pee.png',
@@ -935,7 +1068,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
   Future<void> _updateAddress(double lat, double lng) async {
     final now = DateTime.now();
-    if (_trackingLastGeocodingTime != null && now.difference(_trackingLastGeocodingTime!).inSeconds < 10) return;
+    if (_trackingLastGeocodingTime != null &&
+        now.difference(_trackingLastGeocodingTime!).inSeconds < 10)
+      return;
     _trackingLastGeocodingTime = now;
 
     try {
@@ -944,7 +1079,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         queryParameters: {'lat': lat, 'lng': lng},
       );
       if (mounted) {
-        setState(() => trackingCurrentAddress = response.data['address'] as String? ?? '');
+        setState(
+          () => trackingCurrentAddress =
+              response.data['address'] as String? ?? '',
+        );
       }
     } catch (e) {
       debugPrint('[WalkTracking] Reverse geocode failed: $e');
@@ -963,10 +1101,14 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
   String _getSpotLabel(String type) {
     switch (type) {
-      case 'PEE': return '쉬';
-      case 'POOP': return '응가';
-      case 'PHOTO': return '사진';
-      default: return '스팟';
+      case 'PEE':
+        return '쉬';
+      case 'POOP':
+        return '응가';
+      case 'PHOTO':
+        return '사진';
+      default:
+        return '스팟';
     }
   }
 
@@ -983,7 +1125,8 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
     final s = seconds % 60;
-    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    if (h > 0)
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
@@ -1183,15 +1326,22 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
           'file': await MultipartFile.fromFile(croppedPath, filename: fileName),
           'category': 'pet',
         });
-        final response = await ApiClient().dio.post('/api/v1/files/upload', data: formData);
+        final response = await ApiClient().dio.post(
+          '/api/v1/files/upload',
+          data: formData,
+        );
         imageUrl = response.data['url'] as String?;
       } catch (e) {
         debugPrint('[WalkTracking] Stool photo upload failed: $e');
         if (mounted) showTrackingSnackBar('사진 업로드에 실패했습니다.');
         return;
       } finally {
-        try { await File(croppedPath).delete(); } catch (_) {}
-        try { await File(photo.path).delete(); } catch (_) {}
+        try {
+          await File(croppedPath).delete();
+        } catch (_) {}
+        try {
+          await File(photo.path).delete();
+        } catch (_) {}
       }
 
       if (imageUrl == null || imageUrl.isEmpty) {
@@ -1234,7 +1384,11 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
               const SizedBox(height: 20),
               const Text(
                 '어떤 반려동물인가요?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF614108)),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF614108),
+                ),
               ),
               const SizedBox(height: 8),
               ...selectablePets.map((pet) {
@@ -1252,7 +1406,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
                   ),
                   title: Text(
                     pet['name'] as String? ?? '반려동물',
-                    style: const TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF1A1A1A)),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
                   onTap: () => Navigator.of(ctx).pop(pet['id'] as int),
                 );
@@ -1540,7 +1697,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         if (!mounted) return;
 
         try {
-          final poll = await ApiClient().dio.get('/api/v1/health/stool-analyses/$analysisId');
+          final poll = await ApiClient().dio.get(
+            '/api/v1/health/stool-analyses/$analysisId',
+          );
           final data = poll.data as Map<String, dynamic>;
           final status = data['status'] as String;
           if (status == 'COMPLETED') {
@@ -1555,7 +1714,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       }
 
       if (!mounted) return;
-      Navigator.of(context, rootNavigator: true).pop(); // close analyzing dialog
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pop(); // close analyzing dialog
 
       if (result != null) {
         final overallScore = result['overallScore'] as int? ?? 0;
@@ -1583,7 +1745,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     } catch (e) {
       debugPrint('[WalkTracking] Analysis error: $e');
       if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // close analyzing dialog
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pop(); // close analyzing dialog
         showTrackingSnackBar('분석 요청에 실패했습니다.');
       }
     }
@@ -1643,64 +1808,101 @@ class _AnalysisResultDialogState extends State<_AnalysisResultDialog> {
     final coatingScore = widget.result['coatingScore'] as int? ?? 0;
     final contentsScore = widget.result['contentsScore'] as int? ?? 0;
     final colorAssessment = widget.result['colorAssessment'] as String? ?? '';
-    final consistencyAssessment = widget.result['consistencyAssessment'] as String? ?? '';
-    final coatingAssessment = widget.result['coatingAssessment'] as String? ?? '';
-    final contentsAssessment = widget.result['contentsAssessment'] as String? ?? '';
+    final consistencyAssessment =
+        widget.result['consistencyAssessment'] as String? ?? '';
+    final coatingAssessment =
+        widget.result['coatingAssessment'] as String? ?? '';
+    final contentsAssessment =
+        widget.result['contentsAssessment'] as String? ?? '';
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: const Color(0xFFFFF7E6),
       insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context, rootNavigator: true).pop(),
-                child: const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Icon(Icons.close, size: 20, color: Color(0xFF614108)),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context, rootNavigator: true).pop(),
+                  child: const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: Color(0xFF614108),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 0),
-              child: Text(
-                '건강 분석 결과',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF614108),
-                  letterSpacing: -0.32,
-                  height: 1.4,
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 0),
+                child: Text(
+                  '건강 분석 결과',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF614108),
+                    letterSpacing: -0.32,
+                    height: 1.4,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 25),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: _buildCategoryCard('색상(Color)', colorScore, colorAssessment)),
-                const SizedBox(width: 16),
-                Expanded(child: _buildCategoryCard('농도(Consistency)', consistencyScore, consistencyAssessment)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: _buildCategoryCard('코팅(Coating)', coatingScore, coatingAssessment)),
-                const SizedBox(width: 16),
-                Expanded(child: _buildCategoryCard('내용물(Contents)', contentsScore, contentsAssessment)),
-              ],
-            ),
-          ],
+              const SizedBox(height: 25),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _buildCategoryCard(
+                        '색상(Color)',
+                        colorScore,
+                        colorAssessment,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildCategoryCard(
+                        '농도(Consistency)',
+                        consistencyScore,
+                        consistencyAssessment,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _buildCategoryCard(
+                        '코팅(Coating)',
+                        coatingScore,
+                        coatingAssessment,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildCategoryCard(
+                        '내용물(Contents)',
+                        contentsScore,
+                        contentsAssessment,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1726,7 +1928,7 @@ class _AnalysisResultDialogState extends State<_AnalysisResultDialog> {
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -1792,9 +1994,11 @@ class _AnalysisResultDialogState extends State<_AnalysisResultDialog> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
               Text(
                 description,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
