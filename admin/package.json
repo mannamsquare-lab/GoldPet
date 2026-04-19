@@ -13,7 +13,8 @@
     "test:debug": "playwright test --debug",
     "test:unit": "vitest",
     "test:unit:coverage": "vitest run --coverage",
-    "generate:api": "openapi-typescript ../api/openapi.json -o src/api/schema.d.ts"
+    "generate:api": "openapi-typescript ../api/openapi.json -o src/api/schema.d.ts",
+    "lint:contract": "bash ../frontend/build-scripts/check-no-literal-enums.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
