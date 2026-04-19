@@ -1,113 +1,35 @@
 // Course Service - API integration for Walk Course Platform
 
 import apiClient from './api/client';
-import type { CourseDifficulty, CourseSpotType } from '../types/api';
+import type {
+  CourseDifficulty,
+  CourseSpotType,
+  CourseSpotDto,
+  CourseSpotResponse,
+  CourseResponse,
+  CreateCourseRequest,
+  UpdateCourseRequest,
+  CourseCommentResponse,
+  CreateCourseCommentRequest,
+  UpdateCourseCommentRequest,
+  CourseLikeStatusResponse,
+} from '../types/api';
 
-// ── Types ──
+// ── Types ── (Phase 4 sweep — generated re-exports)
 
-export type { CourseDifficulty, CourseSpotType };
-
-export interface CourseSpotDto {
-  id?: number;
-  latitude: number;
-  longitude: number;
-  type: CourseSpotType;
-  name?: string;
-  description?: string;
-  imageUrl?: string;
-  orderIndex: number;
-}
-
-export interface CourseSpotResponse {
-  id: number;
-  latitude: number;
-  longitude: number;
-  type: CourseSpotType;
-  name: string | null;
-  description: string | null;
-  imageUrl: string | null;
-  orderIndex: number;
-}
-
-export interface CourseResponse {
-  id: number;
-  title: string;
-  description: string | null;
-  path: number[][]; // [[lat, lng], ...]
-  distanceKm: number;
-  estimatedMinutes: number;
-  difficulty: CourseDifficulty;
-  region: string;
-  startAddress: string | null;
-  endAddress: string | null;
-  thumbnailUrl: string | null;
-  likeCount: number;
-  commentCount: number;
-  walkCount: number;
-  rating: number;
-  ratingCount: number;
-  isPublished: boolean;
-  originWalkId: number | null;
-  authorId: number;
-  authorNickname: string;
-  authorProfileImageUrl: string | null;
-  spots: CourseSpotResponse[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateCourseRequest {
-  title: string;
-  description?: string;
-  path: number[][]; // [[lat, lng], ...]
-  distanceKm: number;
-  estimatedMinutes: number;
-  difficulty?: CourseDifficulty;
-  spots?: CourseSpotDto[];
-  originWalkId?: number;
-}
-
-export interface UpdateCourseRequest {
-  title: string;
-  description?: string;
-  path: number[][];
-  distanceKm: number;
-  estimatedMinutes: number;
-  difficulty: CourseDifficulty;
-  spots?: CourseSpotDto[];
-}
-
-export interface CourseCommentResponse {
-  id: number;
-  courseId: number;
-  userId: number;
-  userNickname: string;
-  userProfileImageUrl: string | null;
-  parentCommentId: number | null;
-  content: string;
-  rating: number | null;
-  likeCount: number;
-  isHidden: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateCourseCommentRequest {
-  content: string;
-  rating?: number; // 1-5, null for replies
-  parentCommentId?: number;
-}
-
-export interface UpdateCourseCommentRequest {
-  content: string;
-  rating?: number;
-}
-
-export interface CourseLikeStatusResponse {
-  courseId: number;
-  liked: boolean;
-  likeCount: number;
-}
+export type {
+  CourseDifficulty,
+  CourseSpotType,
+  CourseSpotDto,
+  CourseSpotResponse,
+  CourseResponse,
+  CreateCourseRequest,
+  UpdateCourseRequest,
+  CourseCommentResponse,
+  CreateCourseCommentRequest,
+  UpdateCourseCommentRequest,
+  CourseLikeStatusResponse,
+};
 
 export interface PageResponse<T> {
   content: T[];

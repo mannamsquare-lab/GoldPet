@@ -71,12 +71,23 @@ export type ReportStatus = Schemas['ReportResponse']['status']; // 'PENDING'|'RE
 export type CreateReportRequest = Schemas['CreateReportRequest'];
 export type ReportResponse = Schemas['ReportResponse'];
 
-// --- Course domain (Phase 3.7) ---
+// --- Course domain (Phase 3.7, completed in Phase 4 sweep) ---
 
 export type CourseDifficulty = Schemas['CourseResponse']['difficulty']; // 'EASY'|'MODERATE'|'HARD'
 export type CourseSpotType = Schemas['CourseSpotResponse']['type']; // 10-value enum
 export type CourseResponse = Schemas['CourseResponse'];
 export type CourseSpotResponse = Schemas['CourseSpotResponse'];
+export type CourseSpotDto = Schemas['CourseSpotDto'];
+export type CourseCommentResponse = Schemas['CourseCommentResponse'];
+export type CourseLikeStatusResponse = Schemas['CourseLikeStatusResponse'];
+export type CreateCourseRequest = Schemas['CreateCourseRequest'];
+export type UpdateCourseRequest = Schemas['UpdateCourseRequest'];
+export type CreateCourseCommentRequest = Schemas['CreateCourseCommentRequest'];
+export type UpdateCourseCommentRequest = Schemas['UpdateCourseCommentRequest'];
+
+// --- Notice domain (Phase 4 sweep) ---
+export type AppNoticeResponse = Schemas['AppNoticeResponse'];
+export type NoticeType = Schemas['AppNoticeResponse']['type']; // POPUP_MODAL|MAINTENANCE|EVENT_BANNER|NOTICE
 
 // --- User domain (Phase 3.8, frontend-side /users/me family) ---
 

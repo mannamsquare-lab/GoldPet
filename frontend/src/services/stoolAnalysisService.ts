@@ -1,43 +1,14 @@
 import apiClient from './api/client';
-import type { AnalysisStatus } from '../types/api';
+import type {
+  AnalysisStatus,
+  StoolAnalysisResponse,
+  HealthTrendResponse,
+  MonthlyScore,
+} from '../types/api';
 
-export type { AnalysisStatus };
-
-export interface StoolAnalysisResponse {
-  id: number;
-  petId: number;
-  imageUrl: string;
-  status: AnalysisStatus;
-  colorScore: number | null;
-  consistencyScore: number | null;
-  coatingScore: number | null;
-  contentsScore: number | null;
-  overallScore: number | null;
-  colorAssessment: string | null;
-  consistencyAssessment: string | null;
-  coatingAssessment: string | null;
-  contentsAssessment: string | null;
-  healthSummary: string | null;
-  healthTips: string | null;
-  warnings: string | null;
-  errorMessage: string | null;
-  analyzedAt: string | null;
-  createdAt: string | null;
-  disclaimer: string;
-}
-
-export interface MonthlyScore {
-  yearMonth: string;
-  averageScore: number;
-  count: number;
-}
-
-export interface HealthTrendResponse {
-  petId: number;
-  petName: string;
-  monthlyScores: MonthlyScore[];
-  totalAnalyses: number;
-}
+// Generated re-exports (Phase 4 sweep — Phase 3.4 finished the enum migration but
+// the DTO interfaces had been kept as duplicates here).
+export type { AnalysisStatus, StoolAnalysisResponse, HealthTrendResponse, MonthlyScore };
 
 export interface PageResponse<T> {
   content: T[];

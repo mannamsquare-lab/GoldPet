@@ -1,19 +1,8 @@
 import apiClient from './api/client';
+import type { AppNoticeResponse } from '../types/api';
 
-export interface AppNoticeResponse {
-  id: number;
-  type: 'POPUP_MODAL' | 'MAINTENANCE' | 'EVENT_BANNER' | 'NOTICE';
-  title: string;
-  content?: string;
-  imageUrls: string[];
-  linkUrl?: string;
-  targetScreen?: string;
-  priority: number;
-  isDismissible: boolean;
-  isActive: boolean;
-  startAt: string;
-  endAt?: string;
-}
+// Generated alias (Phase 4 sweep).
+export type { AppNoticeResponse };
 
 export const noticeService = {
   getActiveNotices: async (screen?: string): Promise<AppNoticeResponse[]> => {

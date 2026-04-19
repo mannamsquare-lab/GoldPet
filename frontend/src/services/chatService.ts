@@ -1,7 +1,7 @@
 // Chat Service - API integration for Chat features
 
 import apiClient from './api/client';
-import type { ChatRoomType } from '../types/api';
+import type { ChatRoomType, FileInfo } from '../types/api';
 
 export interface ChatRoom {
   id: number;
@@ -19,16 +19,8 @@ export interface ChatRoom {
   roomType?: ChatRoomType;
 }
 
-export interface FileInfo {
-  id: number;
-  url: string;
-  fileType: string;
-  mimeType: string;
-  originalFileName?: string;
-  sizeBytes?: number;
-  width?: number;
-  height?: number;
-}
+// Generated alias (Phase 4 sweep).
+export type { FileInfo };
 
 export interface ChatMessage {
   id: number;
