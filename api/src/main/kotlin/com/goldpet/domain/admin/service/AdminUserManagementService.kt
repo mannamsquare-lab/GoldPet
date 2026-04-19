@@ -52,7 +52,7 @@ class AdminUserManagementService(
             nickname = user.nickname ?: "",
             intro = user.intro,
             profileImageUrl = user.profileImageUrl,
-            status = user.status.name,
+            status = user.status,
             oauthProvider = user.oauthProvider,
             goldBalance = user.goldBalance.toLong(),
             createdAt = user.createdAt.format(formatter),
@@ -76,11 +76,11 @@ class AdminUserManagementService(
     }
 
     @Transactional
-    fun updateUserStatus(userId: Long, status: String, reason: String?) {
+    fun updateUserStatus(userId: Long, status: UserStatus, reason: String?) {
         val user = userRepository.findById(userId)
             .orElseThrow { NotFoundException("User not found: $userId") }
 
-        user.status = UserStatus.valueOf(status)
+        user.status = status
         userRepository.save(user)
     }
 
@@ -113,7 +113,7 @@ class AdminUserManagementService(
             email = safeEmail(user.email),
             nickname = user.nickname ?: "",
             profileImageUrl = user.profileImageUrl,
-            status = user.status.name,
+            status = user.status,
             petCount = petCount.toInt(),
             walkCount = walkCount.toInt(),
             postCount = postCount.toInt(),

@@ -14832,7 +14832,13 @@
         "type": "object",
         "properties": {
           "status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DORMANT",
+              "WITHDRAWN",
+              "SUSPENDED"
+            ]
           },
           "reason": {
             "type": "string"
@@ -16942,7 +16948,13 @@
             "type": "string"
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DORMANT",
+              "WITHDRAWN",
+              "SUSPENDED"
+            ]
           },
           "petCount": {
             "type": "integer",
@@ -17015,7 +17027,13 @@
             "type": "string"
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DORMANT",
+              "WITHDRAWN",
+              "SUSPENDED"
+            ]
           },
           "oauthProvider": {
             "type": "string"

@@ -1,12 +1,12 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type { PageResponse, UserStatus } from '../types/api';
 
 export interface UserListItem {
   id: number;
   email: string | null;
   nickname: string;
   profileImageUrl: string | null;
-  status: string;
+  status: UserStatus;
   petCount: number;
   walkCount: number;
   postCount: number;
@@ -20,7 +20,7 @@ export interface UserDetail {
   nickname: string;
   intro: string | null;
   profileImageUrl: string | null;
-  status: string;
+  status: UserStatus;
   oauthProvider: string | null;
   goldBalance: number;
   createdAt: string | null;
@@ -66,7 +66,7 @@ export const userManagementService = {
     return response.data;
   },
 
-  async updateUserStatus(userId: number, status: string, reason?: string): Promise<void> {
+  async updateUserStatus(userId: number, status: UserStatus, reason?: string): Promise<void> {
     await apiClient.patch(`/users/${userId}/status`, { status, reason });
   },
 

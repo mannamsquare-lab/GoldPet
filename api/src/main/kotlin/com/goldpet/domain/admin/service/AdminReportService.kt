@@ -3,6 +3,7 @@ package com.goldpet.domain.admin.service
 import com.goldpet.domain.admin.controller.ReportAdminResponse
 import com.goldpet.domain.admin.controller.ResolveReportRequest
 import com.goldpet.domain.admin.repository.AdminUserRepository
+import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.community.repository.CommunityCommentRepository
@@ -173,7 +174,7 @@ class AdminReportService(
             }
             ReportActionType.SUSPEND_USER -> {
                 val userId = getTargetUserId(report)
-                adminUserManagementService.updateUserStatus(userId, "SUSPENDED", "신고 처리에 의한 정지")
+                adminUserManagementService.updateUserStatus(userId, UserStatus.SUSPENDED, "신고 처리에 의한 정지")
             }
             ReportActionType.WARN_USER -> {
                 // 경고: 기록만 남김 (adminNote로 경고 내용 기재)

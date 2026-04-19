@@ -1,6 +1,7 @@
 package com.goldpet.domain.admin.controller
 
 import com.goldpet.domain.admin.service.AdminUserManagementService
+import com.goldpet.domain.user.entity.UserStatus
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -16,7 +17,7 @@ data class UserListItemResponse(
     val email: String?,
     val nickname: String,
     val profileImageUrl: String?,
-    val status: String,
+    val status: UserStatus,
     val petCount: Int,
     val walkCount: Int,
     val postCount: Int,
@@ -30,7 +31,7 @@ data class UserDetailResponse(
     val nickname: String,
     val intro: String?,
     val profileImageUrl: String?,
-    val status: String,
+    val status: UserStatus,
     val oauthProvider: String?,
     val goldBalance: Long,
     val createdAt: String?,
@@ -55,7 +56,7 @@ data class UserStats(
 )
 
 data class UpdateUserStatusRequest(
-    val status: String,
+    val status: UserStatus,
     val reason: String?
 )
 
