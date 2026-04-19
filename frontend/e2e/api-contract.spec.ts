@@ -20,8 +20,10 @@
 import { test, expect, request } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const BASE = process.env.OPENAPI_CONTRACT_BASE;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 test.describe('OpenAPI contract', () => {
   test.skip(!BASE, 'OPENAPI_CONTRACT_BASE not set — skipping live contract checks');
