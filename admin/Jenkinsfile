@@ -23,6 +23,16 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                // Post-merge smoke — UNSTABLE on fail, does not block deploy.
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    sh 'cd admin && npm run lint'
+                    sh 'cd admin && npm run lint:contract'
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('admin') {

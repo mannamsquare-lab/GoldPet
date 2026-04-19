@@ -11,6 +11,18 @@ pipeline {
     }
     
     stages {
+        stage('OpenAPI Spec Drift Gate') {
+            steps {
+                // Phase 2 / 4 — verifyOpenApiSpec regenerates the spec into a temp
+                // file and fails the build if the sha256 differs from the committed
+                // api/openapi.json. Catches "shipped backend change without
+                // regenerating the spec" before deploy.
+                dir('api') {
+                    sh './gradlew verifyOpenApiSpec'
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('api') {

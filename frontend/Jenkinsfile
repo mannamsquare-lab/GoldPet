@@ -30,7 +30,25 @@ pipeline {
                 // block deploy; real-device attestation is still required per PR checklist.
                 catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                     sh 'cd frontend && npm run lint'
+                    sh 'cd frontend && npm run lint:contract'
                     sh 'cd frontend && npm run test -- --run'
+                }
+            }
+        }
+
+        stage('OpenAPI Contract Test (dev)') {
+            when { expression { params.ENV == 'dev' } }
+            steps {
+                // Runtime drift check against the live dev API. UNSTABLE on fail —
+                // does NOT block deploy because the build artifact may still be
+                // valid; the alert is for ops to investigate.
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    dir('frontend') {
+                        sh '''
+                            OPENAPI_CONTRACT_BASE=https://api.mannamsquare.com \
+                                npx playwright test e2e/api-contract.spec.ts --reporter=line
+                        '''
+                    }
                 }
             }
         }
