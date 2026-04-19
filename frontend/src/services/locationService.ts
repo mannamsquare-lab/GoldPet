@@ -3,14 +3,14 @@
  * Handles location updates and reverse geocoding
  */
 
-import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 
 export const locationService = {
   /**
    * Update user's main location
    */
   updateMyLocation: async (lat: number, lng: number, text: string) => {
-    const response = await apiClient.put('/users/me', {
+    const response = await typedClient.put('/api/v1/users/me', {
       mainLocationText: text,
       mainLocationLat: lat,
       mainLocationLng: lng
@@ -22,8 +22,9 @@ export const locationService = {
    * Reverse geocode coordinates to address + province
    */
   reverseGeocode: async (lat: number, lng: number): Promise<{ address: string; province: string | null }> => {
-    const response = await apiClient.get(`/maps/reverse-geocode?lat=${lat}&lng=${lng}`);
-    return { address: response.data.address, province: response.data.province ?? null };
+    const response = await typedClient.get('/api/v1/maps/reverse-geocode', { params: { lat, lng } });
+    const data = response.data as { address: string; province?: string | null };
+    return { address: data.address, province: data.province ?? null };
   },
 
   /**
@@ -34,7 +35,7 @@ export const locationService = {
     lat: number;
     lng: number;
   }>> => {
-    const response = await apiClient.get(`/maps/geocode?address=${encodeURIComponent(address)}`);
-    return response.data.results;
+    const response = await typedClient.get('/api/v1/maps/geocode', { params: { address } });
+    return (response.data as { results: Array<{ address: string; lat: number; lng: number }> }).results;
   }
 };

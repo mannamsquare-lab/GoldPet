@@ -1,4 +1,4 @@
-import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type {
   GoldBalanceResponse,
   GoldProductResponse,
@@ -18,12 +18,12 @@ export type SpendGoldRequest = SpendRequest;
 // Service - real API calls only, no mock fallbacks
 export const goldService = {
   getBalance: async (): Promise<GoldBalance> => {
-    const response = await apiClient.get('/gold/balance');
+    const response = await typedClient.get('/api/v1/gold/balance');
     return response.data;
   },
 
   getProducts: async (): Promise<GoldProduct[]> => {
-    const response = await apiClient.get('/gold/products');
+    const response = await typedClient.get('/api/v1/gold/products');
     return response.data;
   },
 
@@ -34,21 +34,21 @@ export const goldService = {
   ): Promise<{ content: GoldTransaction[]; totalPages: number; totalElements: number }> => {
     const params: Record<string, string | number> = { page, size };
     if (type && type !== 'ALL') params.type = type;
-    const response = await apiClient.get('/gold/transactions', { params });
-    return response.data;
+    const response = await typedClient.get('/api/v1/gold/transactions', { params });
+    return response.data as { content: GoldTransaction[]; totalPages: number; totalElements: number };
   },
 
   chargeGold: async (
     request: ChargeGoldRequest
   ): Promise<GoldTransaction> => {
-    const response = await apiClient.post('/gold/charge', request);
+    const response = await typedClient.post('/api/v1/gold/charge', request);
     return response.data;
   },
 
   spendGold: async (
     request: SpendGoldRequest
   ): Promise<GoldTransaction> => {
-    const response = await apiClient.post('/gold/spend', request);
+    const response = await typedClient.post('/api/v1/gold/spend', request);
     return response.data;
   },
 };
