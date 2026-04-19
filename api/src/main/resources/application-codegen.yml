@@ -10,9 +10,21 @@ spring:
     properties:
       hibernate:
         format_sql: false
+        # Skip JDBC metadata probing — codegen has no running Postgres.
+        # Without this Hibernate still opens a connection to detect dialect,
+        # which floods the log with SQL 08001 errors on a clean agent.
+        boot:
+          allow_jdbc_metadata_access: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
     enabled: false
+
+  # Prevent HikariCP from eagerly probing the DB at startup.
+  datasource:
+    hikari:
+      initialization-fail-timeout: -1
+      connection-timeout: 1000
 
   data:
     redis:
