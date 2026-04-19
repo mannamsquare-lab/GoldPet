@@ -111,10 +111,10 @@ export type UpdateSpotVisibilityRequest = Schemas['UpdateSpotVisibilityRequest']
 export type PageWalkResponse = Schemas['PageWalkResponse'];
 export type PageWalkPhotoResponse = Schemas['PageWalkPhotoResponse'];
 
-// Note: WalkRankingResponse / WalkCoupleRankingResponse are not in the spec because
-// `WalkController.getWalkRanking` returns `ResponseEntity<Any>`. Tracked as a follow-up
-// (split endpoint into /walks/ranking + /walks/ranking/calendar) — keep manual interfaces
-// in walkService.ts until then.
+// Walk ranking — endpoint split (`/walks/ranking` + `/walks/ranking/calendar`)
+// resolved the prior `ResponseEntity<Any>` gap.
+export type WalkRankingResponse = Schemas['WalkRankingResponse'];
+export type WalkCoupleRankingResponse = Schemas['WalkCoupleRankingResponse'];
 
 // --- Gamification domain (Phase 3.10) ---
 

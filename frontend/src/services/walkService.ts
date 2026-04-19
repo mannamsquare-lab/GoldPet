@@ -5,6 +5,8 @@ import type {
   WalkSpotDto,
   WalkPhotoResponse,
   WalkResponse,
+  WalkRankingResponse,
+  WalkCoupleRankingResponse,
 } from '../types/api';
 
 export interface WalkRecord {
@@ -63,24 +65,9 @@ export interface WalkSession {
   petProfileImageUrls?: (string | null)[];
 }
 
-export interface WalkRankingEntry {
-  rank: number;
-  userId: number;
-  nickname: string;
-  profileImageUrl: string | null;
-  petName: string | null;
-  petProfileImageUrl: string | null;
-  totalDistanceKm: number;
-  totalMinutes: number;
-  totalGold: number;
-  walkCount: number;
-}
-
-export interface WalkCoupleRanking {
-  yearMonth: string;
-  bestCouple: WalkRankingEntry | null;
-  rankings: WalkRankingEntry[];
-}
+// Generated aliases (Phase 4 follow-up — endpoint split landed in commit cb0eeb2 era).
+export type WalkRankingEntry = WalkRankingResponse;
+export type WalkCoupleRanking = WalkCoupleRankingResponse;
 
 // Backend WalkResponse -> Frontend WalkRecord 변환
 function toWalkRecord(walk: WalkResponse): WalkRecord {
@@ -236,8 +223,8 @@ export const walkService = {
   },
 
   getMonthlyRanking: async (yearMonth: string, size: number = 10, province?: string): Promise<WalkCoupleRanking> => {
-    const response = await apiClient.get('/walks/ranking', {
-      params: { mode: 'calendar', yearMonth, size, province },
+    const response = await apiClient.get('/walks/ranking/calendar', {
+      params: { yearMonth, size, province },
     });
     return response.data;
   },

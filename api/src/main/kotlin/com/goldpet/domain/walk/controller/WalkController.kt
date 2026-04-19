@@ -151,27 +151,26 @@ class WalkController(
         return ResponseEntity.ok(response)
     }
 
-    @Operation(summary = "산책 랭킹 조회")
+    @Operation(summary = "산책 랭킹 조회 (weekly|monthly)")
     @GetMapping("/ranking")
     fun getWalkRanking(
-        @RequestParam(required = false) mode: String?,
         @RequestParam(required = false) period: String?,
-        @RequestParam(required = false) yearMonth: String?,
         @RequestParam(required = false) province: String?,
         @org.springframework.data.web.PageableDefault(size = 50) pageable: org.springframework.data.domain.Pageable
-    ): ResponseEntity<Any> {
-        // `mode` takes precedence; `period` is backward-compat alias
-        val effectiveMode = mode ?: period ?: "weekly"
+    ): ResponseEntity<List<WalkRankingResponse>> {
+        val effectivePeriod = period ?: "weekly"
+        val rankings = walkService.getWalkRanking(effectivePeriod, pageable, province)
+        return ResponseEntity.ok(rankings)
+    }
 
-        return if (effectiveMode == "calendar") {
-            if (yearMonth.isNullOrBlank()) {
-                return ResponseEntity.badRequest().body(mapOf("error" to "yearMonth is required for mode=calendar (format: YYYY-MM)"))
-            }
-            val result = walkService.getCalendarRanking(yearMonth, pageable, province)
-            ResponseEntity.ok(result)
-        } else {
-            val rankings = walkService.getWalkRanking(effectiveMode, pageable, province)
-            ResponseEntity.ok(rankings)
-        }
+    @Operation(summary = "월별(달력) 산책 랭킹 조회")
+    @GetMapping("/ranking/calendar")
+    fun getCalendarWalkRanking(
+        @RequestParam yearMonth: String,
+        @RequestParam(required = false) province: String?,
+        @org.springframework.data.web.PageableDefault(size = 50) pageable: org.springframework.data.domain.Pageable
+    ): ResponseEntity<WalkCoupleRankingResponse> {
+        val result = walkService.getCalendarRanking(yearMonth, pageable, province)
+        return ResponseEntity.ok(result)
     }
 }
