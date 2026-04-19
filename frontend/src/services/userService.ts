@@ -1,6 +1,10 @@
 
 import apiClient from './api/client';
 import { type User } from '../stores/authStore';
+import type { UserStats } from '../types/api';
+
+// Re-export for existing importers.
+export type { UserStats };
 
 export interface UpdateProfileRequest {
     nickname?: string;
@@ -15,12 +19,6 @@ export interface UpdateProfileRequest {
     mbti?: string;
     interests?: string[];
     hobbies?: string[];
-}
-
-export interface UserStats {
-  matchingCount: number;
-  likesCount: number;
-  friendsCount: number;
 }
 
 export const userService = {

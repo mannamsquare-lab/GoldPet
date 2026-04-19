@@ -1,22 +1,11 @@
 // Course Service - API integration for Walk Course Platform
 
 import apiClient from './api/client';
+import type { CourseDifficulty, CourseSpotType } from '../types/api';
 
 // ── Types ──
 
-export type CourseDifficulty = 'EASY' | 'MODERATE' | 'HARD';
-
-export type CourseSpotType =
-  | 'CONVENIENCE_STORE'
-  | 'WATER_FOUNTAIN'
-  | 'RESTROOM'
-  | 'PET_CAFE'
-  | 'PARK'
-  | 'DANGER_ZONE'
-  | 'REST_AREA'
-  | 'TRASH_CAN'
-  | 'PHOTO_SPOT'
-  | 'OTHER';
+export type { CourseDifficulty, CourseSpotType };
 
 export interface CourseSpotDto {
   id?: number;

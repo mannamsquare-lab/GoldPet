@@ -70,3 +70,18 @@ export type ReportType = Schemas['CreateReportRequest']['type']; // 'POST'|'COMM
 export type ReportStatus = Schemas['ReportResponse']['status']; // 'PENDING'|'RESOLVED'|'DISMISSED'
 export type CreateReportRequest = Schemas['CreateReportRequest'];
 export type ReportResponse = Schemas['ReportResponse'];
+
+// --- Course domain (Phase 3.7) ---
+
+export type CourseDifficulty = Schemas['CourseResponse']['difficulty']; // 'EASY'|'MODERATE'|'HARD'
+export type CourseSpotType = Schemas['CourseSpotResponse']['type']; // 10-value enum
+export type CourseResponse = Schemas['CourseResponse'];
+export type CourseSpotResponse = Schemas['CourseSpotResponse'];
+
+// --- User domain (Phase 3.8, frontend-side /users/me family) ---
+
+export type UserResponse = Schemas['UserResponse'];
+// Backend schema name is `UserStatsResponse`; expose as `UserStats` for local ergonomics.
+export type UserStats = Schemas['UserStatsResponse'];
+// Note: UpdateProfileRequest hand-rolled in userService.ts (frontend adds imageUrls,
+// backend UserProfileUpdateRequest adds mainLocation*; they're not a pure mirror).
