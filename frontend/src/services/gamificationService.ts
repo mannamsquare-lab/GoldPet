@@ -1,4 +1,4 @@
-import apiClient from './api/client';
+import { typedClient } from './api/typedClient';
 import type { BadgeResponse } from '../types/api';
 
 // Generated alias (Phase 3.10). Backend exposes nullable date/condition fields as
@@ -7,12 +7,12 @@ export type Badge = BadgeResponse;
 
 export const gamificationService = {
   getAllBadges: async (): Promise<Badge[]> => {
-    const response = await apiClient.get('/gamification/badges');
+    const response = await typedClient.get('/api/v1/gamification/badges');
     return response.data;
   },
 
   getMyBadges: async (): Promise<Badge[]> => {
-    const response = await apiClient.get('/gamification/badges/my');
+    const response = await typedClient.get('/api/v1/gamification/badges/my');
     return response.data;
   },
 };
