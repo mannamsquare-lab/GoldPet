@@ -9,7 +9,7 @@ interface Props {
   onClose: () => void;
 }
 
-function parseJsonArray(val: string | null): string[] {
+function parseJsonArray(val: string | null | undefined): string[] {
   if (!val) return [];
   try {
     const parsed = JSON.parse(val);
@@ -19,13 +19,13 @@ function parseJsonArray(val: string | null): string[] {
   }
 }
 
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null | undefined): string {
   if (!iso) return '';
   const d = new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function scoreColor(score: number | null): string {
+function scoreColor(score: number | null | undefined): string {
   if (score == null) return '#AAAAAA';
   if (score === 1) return '#ff0909';
   if (score === 2) return '#ff7f0f';
@@ -34,7 +34,7 @@ function scoreColor(score: number | null): string {
   return '#12dd00';
 }
 
-function scoreColorTinted(score: number | null): string {
+function scoreColorTinted(score: number | null | undefined): string {
   if (score == null) return 'rgba(170,170,170,0.1)';
   if (score === 1) return 'rgba(255,9,9,0.1)';
   if (score === 2) return 'rgba(255,127,15,0.1)';
@@ -43,7 +43,7 @@ function scoreColorTinted(score: number | null): string {
   return 'rgba(18,221,0,0.1)';
 }
 
-function scoreLabel(score: number | null): string {
+function scoreLabel(score: number | null | undefined): string {
   if (score == null) return '-';
   if (score === 1) return '위험';
   if (score === 2) return '주의';
@@ -52,7 +52,7 @@ function scoreLabel(score: number | null): string {
   return '매우 건강';
 }
 
-const ScoreData: React.FC<{ score: number | null }> = ({ score }) => {
+const ScoreData: React.FC<{ score: number | null | undefined }> = ({ score }) => {
   const pct = score != null ? (score / 5) * 100 : 0;
   const numSize = score === 1 ? 32 : 20;
   const unitSize = score === 1 ? 16 : 12;
@@ -76,8 +76,8 @@ const ScoreData: React.FC<{ score: number | null }> = ({ score }) => {
 
 const FourCCard: React.FC<{
   label: string;
-  score: number | null;
-  description: string | null;
+  score: number | null | undefined;
+  description: string | null | undefined;
 }> = ({ label, score, description }) => (
   <div className="hd_4c_cell">
     <p className="hd_4c_label">{label}</p>

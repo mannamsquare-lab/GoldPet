@@ -12,17 +12,16 @@ export type CheckIn = CheckInResponse;
 export type CreateCheckInRequest = CreateCheckInRequestDto;
 export type CreatePlaceRequest = CreatePlaceRequestDto;
 
-// Mock Data
+// Mock Data — categories use spec enum values; null fields replaced by undefined.
 const mockPlaces: Place[] = [
   {
     id: 1,
     name: '펫프렌즈 카페',
     description: '반려동물과 함께하는 편안한 카페',
-    category: '카페',
+    category: 'CAFE',
     address: '서울시 강남구 테헤란로 123',
     latitude: 37.5012,
     longitude: 127.0396,
-    imageUrl: null,
     checkinCount: 45,
     isVerified: false,
   },
@@ -30,11 +29,10 @@ const mockPlaces: Place[] = [
     id: 2,
     name: '24시 우리동물병원',
     description: '24시간 응급 진료 가능',
-    category: '동물병원',
+    category: 'HOSPITAL',
     address: '서울시 강남구 역삼로 456',
     latitude: 37.5003,
     longitude: 127.0365,
-    imageUrl: null,
     checkinCount: 32,
     isVerified: false,
   },
@@ -42,11 +40,10 @@ const mockPlaces: Place[] = [
     id: 3,
     name: '반려동물 놀이터 공원',
     description: '넓은 잔디밭이 있는 반려동물 전용 공원',
-    category: '공원',
+    category: 'PARK',
     address: '서울시 강남구 봉은사로 789',
     latitude: 37.5089,
     longitude: 127.0452,
-    imageUrl: null,
     checkinCount: 78,
     isVerified: false,
   },
@@ -54,11 +51,10 @@ const mockPlaces: Place[] = [
     id: 4,
     name: '펫샵 프렌즈',
     description: '고품질 반려동물 용품 전문점',
-    category: '반려동물용품점',
+    category: 'SHOP',
     address: '서울시 강남구 선릉로 321',
     latitude: 37.5045,
     longitude: 127.0412,
-    imageUrl: null,
     checkinCount: 23,
     isVerified: false,
   },
@@ -81,7 +77,6 @@ const mockCheckIns: CheckIn[] = [
     userId: 2,
     userNickname: '고양이사랑',
     createdAt: '2025-12-21T12:15:00',
-    memo: null,
   },
   {
     id: 3,
@@ -192,7 +187,6 @@ export const checkinService = {
       const newPlace: Place = {
         id: mockPlaces.length + 1,
         ...request,
-        imageUrl: request.imageUrl || null,
         checkinCount: 0,
         isVerified: false,
       };
@@ -206,7 +200,6 @@ export const checkinService = {
       const newPlace: Place = {
         id: mockPlaces.length + 1,
         ...request,
-        imageUrl: request.imageUrl || null,
         checkinCount: 0,
         isVerified: false,
       };
@@ -225,7 +218,7 @@ export const checkinService = {
         userId: 1,
         userNickname: '사용자',
         createdAt: new Date().toISOString(),
-        memo: request.memo || null,
+        memo: request.memo,
       };
       return newCheckIn;
     }
@@ -242,7 +235,7 @@ export const checkinService = {
         userId: 1,
         userNickname: '사용자',
         createdAt: new Date().toISOString(),
-        memo: request.memo || null,
+        memo: request.memo,
       };
       return newCheckIn;
     }

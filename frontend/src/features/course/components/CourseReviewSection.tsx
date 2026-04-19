@@ -199,7 +199,7 @@ function CommentItem({ comment, courseId, currentUserId, isReply = false, onRepl
         </div>
       </div>
 
-      {!isReply && comment.rating !== null && !editMode && (
+      {!isReply && comment.rating != null && !editMode && (
         <StarDisplay rating={comment.rating} />
       )}
 

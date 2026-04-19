@@ -190,7 +190,7 @@ export default function EmoticonManagementPage() {
         <button
           type="button"
           className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${value ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-          onClick={() => handleToggleActive(row.id, row.name, value)}
+          onClick={() => handleToggleActive(row.id, row.name ?? '', value)}
           title="클릭하여 상태 변경"
         >
           {value ? '활성' : '비활성'}
@@ -208,7 +208,7 @@ export default function EmoticonManagementPage() {
             variant="link"
             size="sm"
             className="text-red-600 hover:text-red-900"
-            onClick={() => handleDelete(row.id, row.name)}
+            onClick={() => handleDelete(row.id, row.name ?? '')}
           >
             삭제
           </Button>

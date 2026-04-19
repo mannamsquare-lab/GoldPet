@@ -15,13 +15,15 @@ function TransactionItem({ transaction }: TransactionItemProps) {
       <div className="tx-info">
         <div className="tx-desc">{transaction.description}</div>
         <div className="tx-date">
-          {new Date(transaction.createdAt).toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          {transaction.createdAt
+            ? new Date(transaction.createdAt).toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : ''}
         </div>
       </div>
       <div className={`tx-amount ${amountClass}`}>

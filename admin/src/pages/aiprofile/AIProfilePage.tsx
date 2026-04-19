@@ -516,7 +516,7 @@ export default function AIProfilePage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">요청일시</p>
-                  <p className="font-medium">{new Date(selectedRequest.createdAt).toLocaleString('ko-KR')}</p>
+                  <p className="font-medium">{selectedRequest.createdAt ? new Date(selectedRequest.createdAt).toLocaleString('ko-KR') : '-'}</p>
                 </div>
               </div>
               {selectedRequest.sourceImageUrl && (

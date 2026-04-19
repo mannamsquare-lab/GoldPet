@@ -5,8 +5,10 @@ import type {
   CacheClearLogResponse,
 } from '../types/api';
 
-// Generated aliases (Phase 3.11.4).
-export type CacheInfo = CacheInfoResponse;
+// Generated aliases (Phase 3.11.4). Backend runtime emits `isActive` + `ttlSeconds`
+// used by SystemPage, but the generated schema omits them — widen locally until
+// CacheInfoResponse is updated in the API spec.
+export type CacheInfo = CacheInfoResponse & { isActive?: boolean; ttlSeconds?: number };
 export type { CacheClearResult };
 export type CacheClearLog = CacheClearLogResponse;
 

@@ -126,6 +126,7 @@ export type GoldProductAdminResponse = Schemas['GoldProductAdminResponse'];
 export type GoldProductCreateRequest = Schemas['GoldProductCreateRequest'];
 export type GoldProductUpdateRequest = Schemas['GoldProductUpdateRequest'];
 export type TransactionResponse = Schemas['TransactionResponse'];
+export type TransactionAdminResponse = Schemas['TransactionAdminResponse'];
 
 // Stool analysis admin
 export type StoolAnalysisStatsResponse = Schemas['StoolAnalysisStatsResponse'];

@@ -143,7 +143,7 @@ const PlaceDetailPage: React.FC = () => {
               <div className="checkin-header">
                 <span className="nickname">{checkIn.userNickname}</span>
                 <span className="time">
-                  {formatCheckInTime(checkIn.createdAt)}
+                  {formatCheckInTime(checkIn.createdAt ?? '')}
                 </span>
               </div>
               {checkIn.memo && <div className="memo">{checkIn.memo}</div>}

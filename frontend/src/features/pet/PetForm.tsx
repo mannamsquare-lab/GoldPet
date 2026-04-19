@@ -87,7 +87,7 @@ const PetForm: React.FC<PetFormProps> = ({ petId, onSuccess, onCancel }) => {
             setName(pet.name);
             setSpeciesId(pet.speciesId);
             setBreedId(pet.breedId);
-            setGender(pet.gender);
+            setGender(pet.gender as 'MALE' | 'FEMALE' | undefined);
             setBirthDate(pet.birthDate || '');
             setIsBirthDateUnknown(!pet.birthDate);
             setWeightKg(pet.weightKg?.toString() || '');

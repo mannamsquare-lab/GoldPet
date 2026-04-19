@@ -126,7 +126,7 @@ export default function AIProfileCustomPage() {
     }
     const sourceImageUrl = filledImages[0] || null;
     createMutation.mutate({
-      petId: selectedPetId,
+      petId: selectedPetId ?? undefined,
       type: 'IMAGE',
       sourceImageUrl: sourceImageUrl ?? '/assets/images/common/pet_none_img.svg',
       stylePrompt: prompt.trim(),

@@ -125,7 +125,7 @@ export default function WalkRankingManagementPage() {
       header: '사용자',
       render: (_value, row) => (
         <div className="flex items-center gap-2">
-          <Avatar url={row.profileImageUrl} name={row.nickname} />
+          <Avatar url={row.profileImageUrl ?? null} name={row.nickname ?? null} />
           <div>
             <div className="font-medium text-sm">{row.nickname || '-'}</div>
             <div className="text-xs text-gray-400">ID: {row.userId}</div>
@@ -143,7 +143,7 @@ export default function WalkRankingManagementPage() {
       header: '반려동물',
       render: (_value, row) => (
         <div className="flex items-center gap-2">
-          <Avatar url={row.petProfileImageUrl} name={row.petName} size={32} />
+          <Avatar url={row.petProfileImageUrl ?? null} name={row.petName ?? null} size={32} />
           <span className="text-sm">{row.petName || '-'}</span>
         </div>
       ),
@@ -228,8 +228,8 @@ export default function WalkRankingManagementPage() {
               </div>
               <div className="flex items-center gap-3 mt-2">
                 <div className="flex items-center gap-2">
-                  <Avatar url={bestCouple.petProfileImageUrl} name={bestCouple.petName} size={40} />
-                  <Avatar url={bestCouple.profileImageUrl} name={bestCouple.nickname} size={40} />
+                  <Avatar url={bestCouple.petProfileImageUrl ?? null} name={bestCouple.petName ?? null} size={40} />
+                  <Avatar url={bestCouple.profileImageUrl ?? null} name={bestCouple.nickname ?? null} size={40} />
                 </div>
                 <div>
                   <div className="font-semibold text-gray-800">

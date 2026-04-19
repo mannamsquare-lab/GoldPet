@@ -301,7 +301,7 @@ const HealthHistoryPage = () => {
                         </div>
                         <div className="hh_list_item_right">
                           <span className="hh_list_item_date">
-                            {formatDate(analysis.createdAt)}
+                            {formatDate(analysis.createdAt ?? null)}
                           </span>
                           <ShareBtn onClick={e => {
                             e.stopPropagation();

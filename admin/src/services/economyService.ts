@@ -2,16 +2,17 @@ import { typedClient } from './typedClient';
 import type {
   PageResponse,
   EconomyStatsResponse,
-  TransactionResponse,
+  TransactionAdminResponse,
   GoldProductAdminResponse,
   GoldProductCreateRequest,
   GoldProductUpdateRequest,
 } from '../types/api';
 
 // Generated aliases (Phase 3.11.4). TransactionItem (admin tx list rows) maps to
-// the shared TransactionResponse; admin schema does NOT expose userNickname there.
+// TransactionAdminResponse — the admin response carries userNickname while the
+// user-facing TransactionResponse does not.
 export type EconomyStats = EconomyStatsResponse;
-export type TransactionItem = TransactionResponse;
+export type TransactionItem = TransactionAdminResponse;
 export type GoldProductAdmin = GoldProductAdminResponse;
 export type { GoldProductCreateRequest, GoldProductUpdateRequest };
 

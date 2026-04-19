@@ -133,10 +133,10 @@ export default function AIProfileSimplePage() {
       '/assets/images/common/pet_none_img.svg';
 
     createMutation.mutate({
-      petId: selectedPet?.id ?? null,
+      petId: selectedPet?.id ?? undefined,
       type: 'IMAGE',
       sourceImageUrl,
-      stylePrompt: null,
+      stylePrompt: undefined,
       mode: 'SIMPLE',
     });
   };

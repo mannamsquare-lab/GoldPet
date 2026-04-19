@@ -2,7 +2,7 @@ import { apiClient } from './apiClient';
 import { typedClient } from './typedClient';
 import type {
   PageResponse,
-  WalkAdminResponse,
+  WalkAdminResponse as WalkAdminResponseBase,
   WalkDetailResponse,
   WalkSpotAdminDto,
   WalkStatsDetailResponse,
@@ -10,7 +10,10 @@ import type {
 
 // Re-export OpenAPI-generated types (Phase 3.9). `WalkSpotDto` keeps its prior local
 // name for callers; underlying shape now comes from `Schemas['WalkSpotAdminDto']`.
-export type { WalkAdminResponse, WalkDetailResponse, WalkStatsDetailResponse };
+// WalkAdminResponse widened to carry `spotsCount` which the backend returns at
+// runtime (LBSPage consumes it) but is not declared in the spec yet.
+export type WalkAdminResponse = WalkAdminResponseBase & { spotsCount?: number };
+export type { WalkDetailResponse, WalkStatsDetailResponse };
 export type WalkSpotDto = WalkSpotAdminDto;
 
 export interface GetWalksParams {

@@ -3,10 +3,11 @@ import { typedClient } from './typedClient';
 import type {
   AppNoticeResponse,
   CreateAppNoticeRequest,
+  UpdateAppNoticeRequest,
 } from '../types/api';
 
 // Re-export under historical local names (Phase 3.11.4).
-export type { AppNoticeResponse, CreateAppNoticeRequest };
+export type { AppNoticeResponse, CreateAppNoticeRequest, UpdateAppNoticeRequest };
 
 export const noticeService = {
   getAllNotices: async (): Promise<AppNoticeResponse[]> => {
@@ -17,12 +18,11 @@ export const noticeService = {
     const response = await typedClient.post('/api/v1/admin/notices', request);
     return response.data as AppNoticeResponse;
   },
-  updateNotice: async (id: number, request: Partial<CreateAppNoticeRequest>): Promise<AppNoticeResponse> => {
-    const body = request as unknown as Parameters<typeof typedClient.putPath<'/api/v1/admin/notices/{id}'>>[2];
+  updateNotice: async (id: number, request: UpdateAppNoticeRequest): Promise<AppNoticeResponse> => {
     const response = await typedClient.putPath(
       '/api/v1/admin/notices/{id}',
       { id },
-      body,
+      request,
     );
     return response.data as AppNoticeResponse;
   },

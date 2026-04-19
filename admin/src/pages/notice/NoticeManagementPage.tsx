@@ -162,9 +162,9 @@ export default function NoticeManagementPage() {
         endAt: values.endAt || undefined,
       };
       if (editingNotice) {
-        await noticeService.updateNotice(editingNotice.id, payload);
+        await noticeService.updateNotice(editingNotice.id, payload as Parameters<typeof noticeService.updateNotice>[1]);
       } else {
-        await noticeService.createNotice(payload);
+        await noticeService.createNotice(payload as Parameters<typeof noticeService.createNotice>[0]);
       }
       closeForm();
       queryClient.invalidateQueries({ queryKey: ['notices'] });

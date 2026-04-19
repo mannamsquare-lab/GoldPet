@@ -1,10 +1,11 @@
 import { typedClient } from './typedClient';
 import type { BadgeResponse } from '../types/api';
 
-// Generated alias (Phase 3.11.1). Note: admin Badge previously included
-// frontend-only `isActive` and `earnedCount` fields not in backend BadgeResponse.
-// Restored manually if call sites need them; for now use generated shape directly.
-export type Badge = BadgeResponse;
+// Generated alias (Phase 3.11.1). Admin BadgeResponse is missing `isActive` /
+// `earnedCount` in the spec even though the backend returns isActive at runtime
+// (see GamificationPage usage). Widen the alias locally until the backend DTO
+// adds the field so call sites compile.
+export type Badge = BadgeResponse & { isActive?: boolean; earnedCount?: number };
 
 export const gamificationService = {
   async getBadges(): Promise<Badge[]> {

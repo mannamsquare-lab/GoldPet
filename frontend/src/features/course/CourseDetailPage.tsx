@@ -92,12 +92,12 @@ export const CourseDetailPage = () => {
           courseId: courseIdNum,
           title: course.title,
           path: course.path ?? [],
-          spots: (course.spots ?? []).map((s: { latitude: number; longitude: number; type: string; name: string | null; description: string | null }) => ({
+          spots: (course.spots ?? []).map((s) => ({
             latitude: s.latitude,
             longitude: s.longitude,
             type: s.type,
-            name: s.name,
-            description: s.description,
+            name: s.name ?? null,
+            description: s.description ?? null,
           })),
         });
         return;

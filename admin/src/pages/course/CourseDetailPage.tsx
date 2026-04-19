@@ -263,7 +263,7 @@ export default function CourseDetailPage() {
                     {comment.isHidden && (
                       <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded">숨김</span>
                     )}
-                    {comment.rating !== null && <RatingStars rating={comment.rating} />}
+                    {comment.rating != null && <RatingStars rating={comment.rating} />}
                     <span className="text-xs text-gray-400">{comment.createdAt ?? '-'}</span>
                   </div>
                   <p className="text-sm text-gray-700">{comment.content}</p>

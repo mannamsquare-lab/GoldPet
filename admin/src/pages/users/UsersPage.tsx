@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { userManagementService } from '../../services/userManagementService';
 import type { UserListItem } from '../../services/userManagementService';
+import type { UserStatus } from '../../types/api';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { useListParams } from '../../hooks/useListParams';
 import { DataTable } from '../../components/common/DataTable';
@@ -47,7 +48,7 @@ export default function UsersPage() {
 
   const handleStatusChange = async (userId: number, newStatus: string) => {
     try {
-      await userManagementService.updateUserStatus(userId, newStatus);
+      await userManagementService.updateUserStatus(userId, newStatus as UserStatus);
       queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
       console.error('Failed to update status:', error);
