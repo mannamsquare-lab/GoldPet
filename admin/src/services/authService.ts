@@ -1,23 +1,15 @@
 import axios from 'axios';
+import type {
+  AdminUserDto,
+  AdminLoginResponse,
+  Setup2faResponse,
+} from '../types/api';
 
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  role: 'SUPER_ADMIN' | 'OPERATOR' | 'VIEWER';
-  isTwoFactorEnabled: boolean;
-}
-
-export interface Setup2faResponse {
-  secret: string;
-  qrUrl: string;
-}
-
-export interface LoginResponse {
-  requiresTwoFactor: boolean;
-  token?: string;
-  user?: User;
-}
+// Generated aliases (Phase 3.11.2). Backend names are AdminUserDto / AdminLoginResponse;
+// keep historical local names (`User`, `LoginResponse`) for caller compatibility.
+export type User = AdminUserDto;
+export type LoginResponse = AdminLoginResponse;
+export type { Setup2faResponse };
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 const API_URL = `${API_BASE}/api/v1/admin/auth`;

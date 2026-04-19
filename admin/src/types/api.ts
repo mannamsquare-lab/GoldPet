@@ -67,3 +67,14 @@ export type UpdateBreedRequest = Schemas['UpdateBreedRequest'];
 export type PetAttributeResponse = Schemas['PetAttributeResponse'];
 export type AttributeOption = Schemas['AttributeOption'];
 export type PetAttributeRequest = Schemas['PetAttributeRequest'];
+
+// --- User & Auth & Report admin (Phase 3.11.2) ---
+
+// User management
+export type UserListItemResponse = Schemas['UserListItemResponse'];
+export type UserDetailResponse = Schemas['UserDetailResponse'];
+
+// Admin auth
+export type AdminUserDto = Schemas['AdminUserDto'];
+export type AdminLoginResponse = Schemas['AdminLoginResponse'];
+export type Setup2faResponse = Schemas['Setup2faResponse'];

@@ -1,21 +1,8 @@
 import { apiClient } from './apiClient';
-import type { PageResponse, ReportType, ReportStatus, ReportActionType } from '../types/api';
+import type { PageResponse, ReportAdminResponse } from '../types/api';
 
-export interface ReportItem {
-  id: number;
-  type: ReportType;
-  targetId: number;
-  targetPreview: string | null;
-  reason: string;
-  reporterNickname: string;
-  reporterId: number;
-  status: ReportStatus;
-  createdAt: string | null;
-  resolvedAt: string | null;
-  actionType: ReportActionType | null;
-  adminNote: string | null;
-  resolvedByName: string | null;
-}
+// Generated alias (Phase 3.11.2).
+export type ReportItem = ReportAdminResponse;
 
 export const reportService = {
   async getReports(params: { page?: number; status?: string }): Promise<PageResponse<ReportItem>> {

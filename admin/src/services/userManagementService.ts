@@ -1,44 +1,14 @@
 import { apiClient } from './apiClient';
-import type { PageResponse, UserStatus } from '../types/api';
+import type {
+  PageResponse,
+  UserStatus,
+  UserListItemResponse,
+  UserDetailResponse,
+} from '../types/api';
 
-export interface UserListItem {
-  id: number;
-  email: string | null;
-  nickname: string;
-  profileImageUrl: string | null;
-  status: UserStatus;
-  petCount: number;
-  walkCount: number;
-  postCount: number;
-  createdAt: string | null;
-  lastLoginAt: string | null;
-}
-
-export interface UserDetail {
-  id: number;
-  email: string | null;
-  nickname: string;
-  intro: string | null;
-  profileImageUrl: string | null;
-  status: UserStatus;
-  oauthProvider: string | null;
-  goldBalance: number;
-  createdAt: string | null;
-  lastLoginAt: string | null;
-  pets: Array<{
-    id: number;
-    name: string;
-    species: string;
-    breed: string | null;
-  }>;
-  stats: {
-    totalWalks: number;
-    totalDistance: number;
-    totalPosts: number;
-    totalComments: number;
-    badgeCount: number;
-  };
-}
+// Generated aliases (Phase 3.11.2).
+export type UserListItem = UserListItemResponse;
+export type UserDetail = UserDetailResponse;
 
 export const userManagementService = {
   async getUsers(params: {
