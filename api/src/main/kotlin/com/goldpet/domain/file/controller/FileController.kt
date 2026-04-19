@@ -2,6 +2,8 @@ package com.goldpet.domain.file.controller
 
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.file.service.FileService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.core.io.InputStreamResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -32,6 +34,7 @@ data class PresignedUrlResponse(
     val url: String
 )
 
+@Tag(name = "파일", description = "파일 업로드 및 다운로드")
 @RestController
 @RequestMapping("/api/v1/files")
 class FileController(
@@ -43,6 +46,7 @@ class FileController(
      * - "profile", "pet", "avatar" -> public bucket (returns direct URL)
      * - omitted or any other value -> private bucket (returns file key; use /files/{key}/url to access)
      */
+    @Operation(summary = "파일 업로드")
     @PostMapping("/upload")
     fun uploadFile(
         @RequestParam("file") file: MultipartFile,
@@ -71,6 +75,7 @@ class FileController(
     /**
      * Stream a private-bucket file through the API (proxy).
      */
+    @Operation(summary = "비공개 파일 스트리밍 다운로드")
     @GetMapping("/{fileKey}/content")
     fun getFileContent(
         @PathVariable fileKey: String,
@@ -84,6 +89,7 @@ class FileController(
             .body(InputStreamResource(s3Object.objectContent))
     }
 
+    @Operation(summary = "비공개 파일 Presigned URL 발급")
     @GetMapping("/{fileKey}/url")
     fun getPresignedUrl(
         @PathVariable fileKey: String,

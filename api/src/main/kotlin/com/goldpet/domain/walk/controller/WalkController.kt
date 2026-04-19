@@ -11,18 +11,22 @@ import com.goldpet.domain.walk.dto.WalkStatsResponse
 import com.goldpet.domain.walk.dto.UpdateSpotNoteRequest
 import com.goldpet.domain.walk.dto.UpdateSpotVisibilityRequest
 import com.goldpet.domain.walk.service.WalkService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.net.URI
 
+@Tag(name = "Walk", description = "산책 기록 및 통계 API")
 @RestController
 @RequestMapping("/api/v1/walks")
 class WalkController(
     private val walkService: WalkService
 ) {
 
+    @Operation(summary = "산책 기록 생성")
     @PostMapping
     fun createWalk(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -33,6 +37,7 @@ class WalkController(
         return ResponseEntity.created(URI.create("/api/v1/walks/${walkResponse.id}")).body(walkResponse)
     }
 
+    @Operation(summary = "산책 기록 조회")
     @GetMapping("/{walkId}")
     fun getWalk(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -42,6 +47,7 @@ class WalkController(
         return ResponseEntity.ok(walkResponse)
     }
 
+    @Operation(summary = "공개 산책 목록 조회")
     @GetMapping("/public")
     fun getPublicWalks(
         @org.springframework.data.web.PageableDefault(size = 10) pageable: org.springframework.data.domain.Pageable,
@@ -53,6 +59,7 @@ class WalkController(
         return ResponseEntity.ok(walkResponses)
     }
 
+    @Operation(summary = "내 산책 통계 조회")
     @GetMapping("/my/stats")
     fun getMyStats(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?
@@ -62,6 +69,7 @@ class WalkController(
         return ResponseEntity.ok(stats)
     }
 
+    @Operation(summary = "내 산책 목록 조회")
     @GetMapping("/my")
     fun getMyWalks(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -73,6 +81,7 @@ class WalkController(
         return ResponseEntity.ok(walkResponses)
     }
 
+    @Operation(summary = "영역 내 산책 검색")
     @GetMapping("/search")
     fun searchWalksInArea(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -82,6 +91,7 @@ class WalkController(
         return ResponseEntity.ok(walkResponses)
     }
 
+    @Operation(summary = "내 산책 사진 목록 조회")
     @GetMapping("/my/photos")
     fun getMyPhotos(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -93,6 +103,7 @@ class WalkController(
         return ResponseEntity.ok(photos)
     }
 
+    @Operation(summary = "산책 스팟 메모 수정")
     @PatchMapping("/{walkId}/spots/{spotId}")
     fun updateSpotNote(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -105,6 +116,7 @@ class WalkController(
         return ResponseEntity.ok(photo)
     }
 
+    @Operation(summary = "산책 스팟 공개 여부 변경")
     @PatchMapping("/{walkId}/spots/{spotId}/visibility")
     fun updateSpotVisibility(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -117,6 +129,7 @@ class WalkController(
         return ResponseEntity.ok(photo)
     }
 
+    @Operation(summary = "친구 산책 사진 조회")
     @GetMapping("/public/photos")
     fun getPublicPhotos(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -127,6 +140,7 @@ class WalkController(
         return ResponseEntity.ok(photos)
     }
 
+    @Operation(summary = "산책 사진 URL 발급")
     @GetMapping("/photos/{spotId}/url")
     fun mintPhotoUrl(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal?,
@@ -137,6 +151,7 @@ class WalkController(
         return ResponseEntity.ok(response)
     }
 
+    @Operation(summary = "산책 랭킹 조회")
     @GetMapping("/ranking")
     fun getWalkRanking(
         @RequestParam(required = false) mode: String?,

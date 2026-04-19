@@ -6,6 +6,7 @@ import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.emoticon.service.EmoticonService
+import com.goldpet.config.openapi.OpenApiInternal
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessageSendingOperations
@@ -17,6 +18,7 @@ data class TypingEvent(
     val isTyping: Boolean
 )
 
+@OpenApiInternal
 @Controller
 class WebSocketChatController(
     private val simpMessageSendingOperations: SimpMessageSendingOperations,

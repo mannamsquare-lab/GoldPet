@@ -11,6 +11,8 @@ import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.emoticon.service.EmoticonService
 import com.goldpet.domain.file.service.FileService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -18,6 +20,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
+@Tag(name = "Chat", description = "채팅방 및 메시지 API")
 @RestController
 @RequestMapping("/api/v1/chat/rooms")
 class ChatRoomController(
@@ -32,6 +35,7 @@ class ChatRoomController(
     private fun resolveFileUrl(url: String): String =
         if (url.startsWith("http")) url else fileService.getPresignedUrl(url)
 
+    @Operation(summary = "채팅방 생성")
     @PostMapping
     fun createChatRoom(
         @RequestBody request: ChatRoomCreateRequest,
@@ -41,6 +45,7 @@ class ChatRoomController(
         return ResponseEntity.status(HttpStatus.CREATED).body(ChatRoomResponse.from(chatRoom))
     }
 
+    @Operation(summary = "채팅방 목록 조회")
     @GetMapping
     fun getChatRooms(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
@@ -49,6 +54,7 @@ class ChatRoomController(
         return ResponseEntity.ok(chatRooms.map { ChatRoomResponse.from(it, userDetails.id) })
     }
 
+    @Operation(summary = "내 채팅방 목록 조회")
     @GetMapping("/my")
     fun getMyChatRooms(
         @AuthenticationPrincipal principal: org.springframework.security.core.userdetails.UserDetails
@@ -64,6 +70,7 @@ class ChatRoomController(
         return ResponseEntity.ok(chatRooms.map { ChatRoomResponse.from(it, userId) })
     }
 
+    @Operation(summary = "채팅 메시지 목록 조회")
     @GetMapping("/{roomId}/messages")
     fun getChatMessages(
         @PathVariable roomId: Long,
@@ -115,6 +122,7 @@ class ChatRoomController(
         })
     }
 
+    @Operation(summary = "메시지 전송")
     @PostMapping("/{roomId}/messages")
     fun sendMessage(
         @PathVariable roomId: Long,
@@ -165,6 +173,7 @@ class ChatRoomController(
         return ResponseEntity.status(HttpStatus.CREATED).body(chatMessageResponse)
     }
 
+    @Operation(summary = "메시지 삭제")
     @DeleteMapping("/{roomId}/messages/{messageId}")
     fun deleteMessage(
         @PathVariable roomId: Long,
@@ -179,6 +188,7 @@ class ChatRoomController(
         return ResponseEntity.noContent().build()
     }
 
+    @Operation(summary = "메시지 읽음 처리")
     @PostMapping("/{roomId}/read")
     fun markAsRead(
         @PathVariable roomId: Long,
@@ -222,6 +232,7 @@ class ChatRoomController(
         return ResponseEntity.ok().build()
     }
 
+    @Operation(summary = "채팅방 초대")
     @PostMapping("/{roomId}/invite")
     fun inviteToRoom(
         @PathVariable roomId: Long,
@@ -243,6 +254,7 @@ class ChatRoomController(
         return ResponseEntity.ok(mapOf("roomType" to chatRoom.roomType.name))
     }
 
+    @Operation(summary = "채팅방 나가기")
     @DeleteMapping("/{roomId}/leave")
     fun leaveRoom(
         @PathVariable roomId: Long,
@@ -252,10 +264,7 @@ class ChatRoomController(
         return ResponseEntity.ok().build()
     }
 
-    /**
-     * Get or create a direct chat room with a matched user.
-     * If chat room exists, returns it. Otherwise, creates a new one.
-     */
+    @Operation(summary = "1:1 채팅방 조회 또는 생성")
     @PostMapping("/direct/{targetUserId}")
     fun getOrCreateDirectRoom(
         @PathVariable targetUserId: Long,
@@ -265,6 +274,7 @@ class ChatRoomController(
         return ResponseEntity.ok(ChatRoomResponse.from(chatRoom, userDetails.id))
     }
 
+    @Operation(summary = "채팅 요청 목록 조회")
     @GetMapping("/requests")
     fun getChatRequests(
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
@@ -273,6 +283,7 @@ class ChatRoomController(
         return ResponseEntity.ok(requests.map { ChatRequestResponse.from(it) })
     }
 
+    @Operation(summary = "채팅 요청 수락")
     @PostMapping("/requests/{requestId}/accept")
     fun acceptChatRequest(
         @PathVariable requestId: Long,
@@ -282,6 +293,7 @@ class ChatRoomController(
         return ResponseEntity.ok(ChatRoomResponse.from(chatRoom, userDetails.id))
     }
 
+    @Operation(summary = "채팅 요청 거절")
     @PostMapping("/requests/{requestId}/reject")
     fun rejectChatRequest(
         @PathVariable requestId: Long,
@@ -291,6 +303,7 @@ class ChatRoomController(
         return ResponseEntity.ok().build()
     }
 
+    @Operation(summary = "채팅 요청 삭제")
     @DeleteMapping("/requests/{requestId}")
     fun deleteChatRequest(
         @PathVariable requestId: Long,

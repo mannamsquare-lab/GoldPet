@@ -5,10 +5,12 @@ import com.goldpet.domain.auth.service.AuthService
 import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.config.openapi.OpenApiInternal
 import org.springframework.context.annotation.Profile
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
+@OpenApiInternal
 @RestController
 @RequestMapping("/api/v1/auth")
 @Profile("local", "dev")

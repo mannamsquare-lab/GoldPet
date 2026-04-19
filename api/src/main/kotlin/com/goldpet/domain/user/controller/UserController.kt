@@ -29,6 +29,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import com.goldpet.domain.user.entity.User
 import com.goldpet.config.security.UserPrincipal
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 
 data class RecordConsentRequest(
     val consentType: String,
@@ -36,6 +38,7 @@ data class RecordConsentRequest(
     val version: String? = null
 )
 
+@Tag(name = "User", description = "사용자 프로필 및 계정 API")
 @RestController
 @RequestMapping("/api/v1/users")
 class UserController(
@@ -43,6 +46,7 @@ class UserController(
     private val consentService: ConsentService,
     private val userDataExportService: UserDataExportService
 ) {
+    @Operation(summary = "내 프로필 조회")
     @GetMapping("/me")
     fun getMyProfile(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<UserResponse> {
         val userId = if (principal is com.goldpet.config.security.UserPrincipal) {
@@ -50,7 +54,7 @@ class UserController(
         } else {
             userService.getUserIdFromPrincipal(principal)
         }
-        
+
         val user = userService.findUserById(userId)
         return if (user != null) {
             ResponseEntity.ok(UserResponse.from(user))
@@ -59,6 +63,7 @@ class UserController(
         }
     }
 
+    @Operation(summary = "내 프로필 수정")
     @RequestMapping(value = ["/me"], method = [RequestMethod.PUT, RequestMethod.PATCH])
     fun updateMyProfile(
         @AuthenticationPrincipal principal: UserDetails,
@@ -72,6 +77,7 @@ class UserController(
         return ResponseEntity.ok(UserResponse.from(updatedUser))
     }
 
+    @Operation(summary = "내 계정 탈퇴")
     @DeleteMapping("/me")
     fun deleteMyAccount(
         @AuthenticationPrincipal principal: UserDetails,
@@ -82,6 +88,7 @@ class UserController(
         return ResponseEntity.noContent().build()
     }
 
+    @Operation(summary = "프로필 이미지 수정")
     @PutMapping("/me/profile-image")
     fun updateMyProfileImage(
         @AuthenticationPrincipal principal: UserDetails,
@@ -95,6 +102,7 @@ class UserController(
         return ResponseEntity.ok(UserResponse.from(updatedUser))
     }
 
+    @Operation(summary = "알림 수신 여부 변경")
     @PatchMapping("/me/notification")
     fun updateNotification(
         @AuthenticationPrincipal principal: UserDetails,
@@ -105,6 +113,7 @@ class UserController(
         return ResponseEntity.ok(UserResponse.from(updatedUser))
     }
 
+    @Operation(summary = "알림 설정 조회")
     @GetMapping("/me/notification-settings")
     fun getNotificationSettings(
         @AuthenticationPrincipal principal: UserDetails
@@ -113,6 +122,7 @@ class UserController(
         return ResponseEntity.ok(userService.getNotificationSettings(userId))
     }
 
+    @Operation(summary = "알림 설정 변경")
     @PutMapping("/me/notification-settings")
     fun updateNotificationSettings(
         @AuthenticationPrincipal principal: UserDetails,
@@ -122,6 +132,7 @@ class UserController(
         return ResponseEntity.ok(userService.updateNotificationSettings(userId, request))
     }
 
+    @Operation(summary = "개인정보 공개 설정 조회")
     @GetMapping("/me/privacy-settings")
     fun getPrivacySettings(
         @AuthenticationPrincipal principal: UserDetails
@@ -130,6 +141,7 @@ class UserController(
         return ResponseEntity.ok(userService.getPrivacySettings(userId))
     }
 
+    @Operation(summary = "개인정보 공개 설정 변경")
     @PutMapping("/me/privacy-settings")
     fun updatePrivacySettings(
         @AuthenticationPrincipal principal: UserDetails,
@@ -139,6 +151,7 @@ class UserController(
         return ResponseEntity.ok(userService.updatePrivacySettings(userId, request))
     }
 
+    @Operation(summary = "FCM 토큰 등록/갱신")
     @PutMapping("/me/fcm-token")
     fun updateFcmToken(
         @AuthenticationPrincipal principal: UserDetails,
@@ -149,6 +162,7 @@ class UserController(
         return ResponseEntity.ok().build()
     }
 
+    @Operation(summary = "디바이스 등록")
     @PutMapping("/me/devices")
     fun registerDevice(
         @AuthenticationPrincipal principal: UserDetails,
@@ -168,6 +182,7 @@ class UserController(
         )
     }
 
+    @Operation(summary = "등록된 디바이스 목록 조회")
     @GetMapping("/me/devices")
     fun getActiveDevices(
         @AuthenticationPrincipal principal: UserDetails
@@ -176,6 +191,7 @@ class UserController(
         return ResponseEntity.ok(userService.getActiveDevices(userId))
     }
 
+    @Operation(summary = "디바이스 등록 해제")
     @DeleteMapping("/me/devices/{deviceId}")
     fun deactivateDevice(
         @AuthenticationPrincipal principal: UserDetails,
@@ -186,6 +202,7 @@ class UserController(
         return ResponseEntity.noContent().build()
     }
 
+    @Operation(summary = "비밀번호 변경")
     @PutMapping("/me/password")
     fun changePassword(
         @AuthenticationPrincipal principal: UserDetails,
@@ -196,6 +213,7 @@ class UserController(
         return ResponseEntity.ok().build()
     }
 
+    @Operation(summary = "영역 내 친구 위치 검색")
     @GetMapping("/search")
     fun searchFriendsInArea(
         @ModelAttribute @Valid request: BoundingBoxRequest
@@ -204,6 +222,7 @@ class UserController(
         return ResponseEntity.ok(friendLocations)
     }
 
+    @Operation(summary = "근처 친구 위치 검색")
     @GetMapping("/search/nearby")
     fun searchFriendsNearby(
         @RequestParam lat: Double,
@@ -214,28 +233,33 @@ class UserController(
         return ResponseEntity.ok(friendLocations)
     }
 
+    @Operation(summary = "관심사 목록 조회")
     @GetMapping("/interests")
     fun getAllInterests(): ResponseEntity<List<com.goldpet.domain.user.entity.Interest>> {
         return ResponseEntity.ok(userService.getAllInterests())
     }
 
+    @Operation(summary = "취미 목록 조회")
     @GetMapping("/hobbies")
     fun getAllHobbies(): ResponseEntity<List<com.goldpet.domain.user.entity.Hobby>> {
         return ResponseEntity.ok(userService.getAllHobbies())
     }
 
+    @Operation(summary = "닉네임 중복 확인")
     @GetMapping("/check-nickname")
     fun checkNicknameAvailability(@RequestParam nickname: String): ResponseEntity<Map<String, Boolean>> {
         val isAvailable = userService.isNicknameAvailable(nickname)
         return ResponseEntity.ok(mapOf("available" to isAvailable))
     }
 
+    @Operation(summary = "동의 이력 조회")
     @GetMapping("/me/consents")
     fun getConsentHistory(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<List<ConsentHistoryResponse>> {
         val userId = userService.getUserIdFromPrincipal(principal)
         return ResponseEntity.ok(consentService.getConsentHistory(userId))
     }
 
+    @Operation(summary = "동의 이력 기록")
     @PostMapping("/me/consents")
     fun recordConsent(
         @AuthenticationPrincipal principal: UserDetails,
@@ -253,12 +277,14 @@ class UserController(
         return ResponseEntity.ok(ConsentHistoryResponse.from(consent))
     }
 
+    @Operation(summary = "내 활동 통계 조회")
     @GetMapping("/me/stats")
     fun getMyStats(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<UserStatsResponse> {
         val userId = userService.getUserIdFromPrincipal(principal)
         return ResponseEntity.ok(userService.getUserStats(userId))
     }
 
+    @Operation(summary = "내 데이터 내보내기")
     @GetMapping("/me/data-export")
     fun exportMyData(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<Map<String, Any?>> {
         val userId = userService.getUserIdFromPrincipal(principal)

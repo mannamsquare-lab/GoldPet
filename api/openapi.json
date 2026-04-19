@@ -18,20 +18,12 @@
   ],
   "tags": [
     {
-      "name": "Admin User Management",
-      "description": "관리자 회원 관리 API"
+      "name": "이모티콘",
+      "description": "이모티콘 목록 조회"
     },
     {
       "name": "Admin Notices",
       "description": "관리자 공지/팝업 관리 API"
-    },
-    {
-      "name": "Gold",
-      "description": "골드/결제 API"
-    },
-    {
-      "name": "Course Comment",
-      "description": "코스 댓글 API"
     },
     {
       "name": "Admin AI Profile",
@@ -44,10 +36,6 @@
     {
       "name": "App Version",
       "description": "앱 버전 체크 및 강제 업데이트 API"
-    },
-    {
-      "name": "Admin Walk Management",
-      "description": "관리자 산책 관리 API"
     },
     {
       "name": "App Notices",
@@ -66,28 +54,20 @@
       "description": "관리자 인증 API"
     },
     {
-      "name": "CheckIn",
-      "description": "체크인 API"
+      "name": "Pet Metadata",
+      "description": "반려동물 종/품종 메타데이터 API"
     },
     {
       "name": "Admin Report Management",
       "description": "관리자 신고 관리 API"
     },
     {
-      "name": "Notification",
-      "description": "알림 API"
-    },
-    {
       "name": "Health",
       "description": "반려동물 건강 분석 API"
     },
     {
-      "name": "Admin Cache Management",
-      "description": "관리자 캐시 관리 API"
-    },
-    {
-      "name": "Admin Dashboard",
-      "description": "관리자 대시보드 API"
+      "name": "어드민: 사용자 마이그레이션",
+      "description": "PII 암호화 키 교체 및 이메일 해시 마이그레이션"
     },
     {
       "name": "Admin Chat Management",
@@ -98,10 +78,6 @@
       "description": "커뮤니티 API"
     },
     {
-      "name": "Admin System Management",
-      "description": "관리자 시스템 관리 API"
-    },
-    {
       "name": "Admin Stool Analysis",
       "description": "관리자 배변 분석 관리 API"
     },
@@ -110,24 +86,12 @@
       "description": "관리자 마케팅 관리 API"
     },
     {
-      "name": "Admin Economy Management",
-      "description": "관리자 Gold/결제 관리 API"
-    },
-    {
-      "name": "Admin Gamification Management",
-      "description": "관리자 게이미피케이션 관리 API"
-    },
-    {
       "name": "Admin Data",
       "description": "관리자 코드/마스터 데이터 관리 API"
     },
     {
       "name": "Admin - Loading Tips",
       "description": "AI 로딩 팁 관리 API"
-    },
-    {
-      "name": "System Settings",
-      "description": "Public System Configuration API"
     },
     {
       "name": "Admin LBS Management",
@@ -142,10 +106,6 @@
       "description": "산책 코스 API"
     },
     {
-      "name": "Match",
-      "description": "매칭/친구 관련 API"
-    },
-    {
       "name": "Course Like",
       "description": "코스 좋아요 API"
     },
@@ -154,20 +114,129 @@
       "description": "Authentication \u0026 Verification API"
     },
     {
+      "name": "Pet",
+      "description": "반려동물 관리 API"
+    },
+    {
       "name": "Like",
       "description": "좋아요 API"
     },
     {
       "name": "Friend",
       "description": "친구 찾기 API"
+    },
+    {
+      "name": "Admin User Management",
+      "description": "관리자 회원 관리 API"
+    },
+    {
+      "name": "Home",
+      "description": "홈 화면 데이터 API"
+    },
+    {
+      "name": "Gold",
+      "description": "골드/결제 API"
+    },
+    {
+      "name": "Course Comment",
+      "description": "코스 댓글 API"
+    },
+    {
+      "name": "어드민: 이모티콘 관리",
+      "description": "이모티콘 및 이모티콘 팩 CRUD"
+    },
+    {
+      "name": "Admin Walk Management",
+      "description": "관리자 산책 관리 API"
+    },
+    {
+      "name": "인증",
+      "description": "회원가입, 로그인, 토큰 갱신, SNS 소셜 로그인 관련 API"
+    },
+    {
+      "name": "클라이언트 로그",
+      "description": "프론트엔드/WebView 런타임 오류 수집 API"
+    },
+    {
+      "name": "파일",
+      "description": "파일 업로드 및 다운로드"
+    },
+    {
+      "name": "어드민: 반려동물 속성 관리",
+      "description": "반려동물 속성(성격, 특성 등) CRUD"
+    },
+    {
+      "name": "CheckIn",
+      "description": "체크인 API"
+    },
+    {
+      "name": "Map",
+      "description": "지도 및 지오코딩 API"
+    },
+    {
+      "name": "Notification",
+      "description": "알림 API"
+    },
+    {
+      "name": "Admin Cache Management",
+      "description": "관리자 캐시 관리 API"
+    },
+    {
+      "name": "Admin Dashboard",
+      "description": "관리자 대시보드 API"
+    },
+    {
+      "name": "어드민: 품종 관리",
+      "description": "반려동물 품종 CRUD"
+    },
+    {
+      "name": "어드민: 파일 관리",
+      "description": "어드민 파일 업로드 및 이미지 변형 백필"
+    },
+    {
+      "name": "Admin System Management",
+      "description": "관리자 시스템 관리 API"
+    },
+    {
+      "name": "게임화",
+      "description": "뱃지 등 게임화 기능"
+    },
+    {
+      "name": "Admin Economy Management",
+      "description": "관리자 Gold/결제 관리 API"
+    },
+    {
+      "name": "Admin Gamification Management",
+      "description": "관리자 게이미피케이션 관리 API"
+    },
+    {
+      "name": "Walk",
+      "description": "산책 기록 및 통계 API"
+    },
+    {
+      "name": "User",
+      "description": "사용자 프로필 및 계정 API"
+    },
+    {
+      "name": "System Settings",
+      "description": "Public System Configuration API"
+    },
+    {
+      "name": "Chat",
+      "description": "채팅방 및 메시지 API"
+    },
+    {
+      "name": "Match",
+      "description": "매칭/친구 관련 API"
     }
   ],
   "paths": {
     "/api/v1/users/me": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "내 프로필 조회",
         "operationId": "getMyProfile",
         "responses": {
           "200": {
@@ -184,8 +253,9 @@
       },
       "put": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "내 프로필 수정",
         "operationId": "updateMyProfile",
         "requestBody": {
           "content": {
@@ -212,8 +282,9 @@
       },
       "delete": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "내 계정 탈퇴",
         "operationId": "deleteMyAccount",
         "requestBody": {
           "content": {
@@ -232,8 +303,9 @@
       },
       "patch": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "내 프로필 수정",
         "operationId": "updateMyProfile_1",
         "requestBody": {
           "content": {
@@ -262,8 +334,9 @@
     "/api/v1/users/me/profile-image": {
       "put": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "프로필 이미지 수정",
         "operationId": "updateMyProfileImage",
         "requestBody": {
           "content": {
@@ -292,8 +365,9 @@
     "/api/v1/users/me/privacy-settings": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "개인정보 공개 설정 조회",
         "operationId": "getPrivacySettings",
         "responses": {
           "200": {
@@ -310,8 +384,9 @@
       },
       "put": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "개인정보 공개 설정 변경",
         "operationId": "updatePrivacySettings",
         "requestBody": {
           "content": {
@@ -340,8 +415,9 @@
     "/api/v1/users/me/password": {
       "put": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "비밀번호 변경",
         "operationId": "changePassword",
         "requestBody": {
           "content": {
@@ -363,8 +439,9 @@
     "/api/v1/users/me/notification-settings": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "알림 설정 조회",
         "operationId": "getNotificationSettings",
         "responses": {
           "200": {
@@ -381,8 +458,9 @@
       },
       "put": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "알림 설정 변경",
         "operationId": "updateNotificationSettings",
         "requestBody": {
           "content": {
@@ -411,8 +489,9 @@
     "/api/v1/users/me/fcm-token": {
       "put": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "FCM 토큰 등록/갱신",
         "operationId": "updateFcmToken",
         "requestBody": {
           "content": {
@@ -434,8 +513,9 @@
     "/api/v1/users/me/devices": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "등록된 디바이스 목록 조회",
         "operationId": "getActiveDevices",
         "responses": {
           "200": {
@@ -455,8 +535,9 @@
       },
       "put": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "디바이스 등록",
         "operationId": "registerDevice",
         "requestBody": {
           "content": {
@@ -485,8 +566,9 @@
     "/api/v1/pets/{petId}": {
       "get": {
         "tags": [
-          "pet-controller"
+          "Pet"
         ],
+        "summary": "반려동물 조회",
         "operationId": "getPet",
         "parameters": [
           {
@@ -514,8 +596,9 @@
       },
       "put": {
         "tags": [
-          "pet-controller"
+          "Pet"
         ],
+        "summary": "반려동물 정보 수정",
         "operationId": "updatePet",
         "parameters": [
           {
@@ -553,8 +636,9 @@
       },
       "delete": {
         "tags": [
-          "pet-controller"
+          "Pet"
         ],
+        "summary": "반려동물 삭제",
         "operationId": "deletePet",
         "parameters": [
           {
@@ -950,8 +1034,9 @@
     "/api/v1/admin/pet-attributes/{id}": {
       "put": {
         "tags": [
-          "admin-attribute-controller"
+          "어드민: 반려동물 속성 관리"
         ],
+        "summary": "반려동물 속성 수정",
         "operationId": "updateAttribute",
         "parameters": [
           {
@@ -989,8 +1074,9 @@
       },
       "delete": {
         "tags": [
-          "admin-attribute-controller"
+          "어드민: 반려동물 속성 관리"
         ],
+        "summary": "반려동물 속성 삭제",
         "operationId": "deleteAttribute",
         "parameters": [
           {
@@ -1186,8 +1272,9 @@
     "/api/v1/admin/emoticons/{id}": {
       "put": {
         "tags": [
-          "admin-emoticon-controller"
+          "어드민: 이모티콘 관리"
         ],
+        "summary": "이모티콘 수정",
         "operationId": "updateEmoticon",
         "parameters": [
           {
@@ -1225,8 +1312,9 @@
       },
       "delete": {
         "tags": [
-          "admin-emoticon-controller"
+          "어드민: 이모티콘 관리"
         ],
+        "summary": "이모티콘 삭제",
         "operationId": "deleteEmoticon",
         "parameters": [
           {
@@ -1314,8 +1402,9 @@
     "/api/v1/admin/breeds/{breedId}": {
       "get": {
         "tags": [
-          "admin-breed-controller"
+          "어드민: 품종 관리"
         ],
+        "summary": "품종 단건 조회",
         "operationId": "getBreed",
         "parameters": [
           {
@@ -1343,8 +1432,9 @@
       },
       "put": {
         "tags": [
-          "admin-breed-controller"
+          "어드민: 품종 관리"
         ],
+        "summary": "품종 수정",
         "operationId": "updateBreed",
         "parameters": [
           {
@@ -1382,8 +1472,9 @@
       },
       "delete": {
         "tags": [
-          "admin-breed-controller"
+          "어드민: 품종 관리"
         ],
+        "summary": "품종 삭제",
         "operationId": "deleteBreed",
         "parameters": [
           {
@@ -1534,8 +1625,9 @@
     "/api/v1/walks": {
       "post": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "산책 기록 생성",
         "operationId": "createWalk",
         "requestBody": {
           "content": {
@@ -1564,8 +1656,9 @@
     "/api/v1/users/me/consents": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "동의 이력 조회",
         "operationId": "getConsentHistory",
         "responses": {
           "200": {
@@ -1585,8 +1678,9 @@
       },
       "post": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "동의 이력 기록",
         "operationId": "recordConsent",
         "requestBody": {
           "content": {
@@ -1647,8 +1741,9 @@
     "/api/v1/pets": {
       "post": {
         "tags": [
-          "pet-controller"
+          "Pet"
         ],
+        "summary": "반려동물 등록",
         "operationId": "createPet",
         "requestBody": {
           "content": {
@@ -1980,8 +2075,9 @@
     "/api/v1/files/upload": {
       "post": {
         "tags": [
-          "file-controller"
+          "파일"
         ],
+        "summary": "파일 업로드",
         "operationId": "uploadFile",
         "parameters": [
           {
@@ -2467,8 +2563,9 @@
     "/api/v1/client-logs/error": {
       "post": {
         "tags": [
-          "client-log-controller"
+          "클라이언트 로그"
         ],
+        "summary": "클라이언트 오류 로그 수집 (ErrorBoundary / WebView 런타임 오류)",
         "operationId": "receiveClientError",
         "parameters": [
           {
@@ -2609,8 +2706,9 @@
     "/api/v1/chat/rooms": {
       "get": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅방 목록 조회",
         "operationId": "getChatRooms",
         "responses": {
           "200": {
@@ -2630,8 +2728,9 @@
       },
       "post": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅방 생성",
         "operationId": "createChatRoom",
         "requestBody": {
           "content": {
@@ -2660,8 +2759,9 @@
     "/api/v1/chat/rooms/{roomId}/read": {
       "post": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "메시지 읽음 처리",
         "operationId": "markAsRead_1",
         "parameters": [
           {
@@ -2684,8 +2784,9 @@
     "/api/v1/chat/rooms/{roomId}/messages": {
       "get": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅 메시지 목록 조회",
         "operationId": "getChatMessages",
         "parameters": [
           {
@@ -2736,8 +2837,9 @@
       },
       "post": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "메시지 전송",
         "operationId": "sendMessage",
         "parameters": [
           {
@@ -2777,8 +2879,9 @@
     "/api/v1/chat/rooms/{roomId}/invite": {
       "post": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅방 초대",
         "operationId": "inviteToRoom",
         "parameters": [
           {
@@ -2825,8 +2928,9 @@
     "/api/v1/chat/rooms/requests/{requestId}/reject": {
       "post": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅 요청 거절",
         "operationId": "rejectChatRequest",
         "parameters": [
           {
@@ -2849,8 +2953,9 @@
     "/api/v1/chat/rooms/requests/{requestId}/accept": {
       "post": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅 요청 수락",
         "operationId": "acceptChatRequest",
         "parameters": [
           {
@@ -2880,8 +2985,9 @@
     "/api/v1/chat/rooms/direct/{targetUserId}": {
       "post": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "1:1 채팅방 조회 또는 생성",
         "operationId": "getOrCreateDirectRoom",
         "parameters": [
           {
@@ -2911,8 +3017,9 @@
     "/api/v1/auth/verify-account": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "계정 본인 인증 (비밀번호 재설정 전 검증)",
         "operationId": "verifyAccount",
         "requestBody": {
           "content": {
@@ -3008,8 +3115,9 @@
     "/api/v1/auth/sns-signup": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "SNS 로그인 후 추가 정보 입력 (회원가입 완료)",
         "operationId": "snsSignup",
         "requestBody": {
           "content": {
@@ -3038,8 +3146,9 @@
     "/api/v1/auth/signup": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "자체 회원가입",
         "operationId": "signup",
         "requestBody": {
           "content": {
@@ -3068,8 +3177,9 @@
     "/api/v1/auth/reset-password": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "비밀번호 재설정",
         "operationId": "resetPassword",
         "requestBody": {
           "content": {
@@ -3101,8 +3211,9 @@
     "/api/v1/auth/refresh": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "액세스 토큰 갱신 (리프레시 토큰으로 재발급)",
         "operationId": "refreshToken",
         "requestBody": {
           "content": {
@@ -3131,8 +3242,9 @@
     "/api/v1/auth/logout": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "로그아웃 (클라이언트 토큰 무효화)",
         "operationId": "logout",
         "responses": {
           "200": {
@@ -3154,8 +3266,9 @@
     "/api/v1/auth/login": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "자체 로그인 (이메일/비밀번호)",
         "operationId": "login",
         "requestBody": {
           "content": {
@@ -3184,8 +3297,9 @@
     "/api/v1/auth/login/{provider}": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "SNS 소셜 로그인 (카카오/네이버/구글/애플)",
         "operationId": "nativeLogin",
         "parameters": [
           {
@@ -3224,8 +3338,9 @@
     "/api/v1/auth/find-username": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "아이디 찾기 (이메일/전화번호로 조회)",
         "operationId": "findUsername",
         "requestBody": {
           "content": {
@@ -3254,8 +3369,9 @@
     "/api/v1/auth/confirm-link": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "소셜 계정 연동 확인 (계정 병합 승인)",
         "operationId": "confirmLink",
         "requestBody": {
           "content": {
@@ -3284,8 +3400,9 @@
     "/api/v1/auth/check-username": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "아이디 중복 확인",
         "operationId": "checkUsername",
         "requestBody": {
           "content": {
@@ -3314,8 +3431,9 @@
     "/api/v1/auth/check-nickname": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "닉네임 중복 확인",
         "operationId": "checkNickname",
         "requestBody": {
           "content": {
@@ -3344,8 +3462,9 @@
     "/api/v1/auth/check-email": {
       "post": {
         "tags": [
-          "auth-controller"
+          "인증"
         ],
+        "summary": "이메일 중복 확인",
         "operationId": "checkEmail",
         "requestBody": {
           "content": {
@@ -3706,8 +3825,9 @@
     "/api/v1/admin/pet-attributes": {
       "get": {
         "tags": [
-          "admin-attribute-controller"
+          "어드민: 반려동물 속성 관리"
         ],
+        "summary": "전체 반려동물 속성 조회",
         "operationId": "getAllAttributes",
         "responses": {
           "200": {
@@ -3727,8 +3847,9 @@
       },
       "post": {
         "tags": [
-          "admin-attribute-controller"
+          "어드민: 반려동물 속성 관리"
         ],
+        "summary": "반려동물 속성 생성",
         "operationId": "createAttribute",
         "requestBody": {
           "content": {
@@ -4107,8 +4228,9 @@
     "/api/v1/admin/files/upload": {
       "post": {
         "tags": [
-          "admin-file-controller"
+          "어드민: 파일 관리"
         ],
+        "summary": "어드민 파일 업로드",
         "operationId": "uploadFile_1",
         "parameters": [
           {
@@ -4156,8 +4278,9 @@
     "/api/v1/admin/files/backfill-variants": {
       "post": {
         "tags": [
-          "admin-file-controller"
+          "어드민: 파일 관리"
         ],
+        "summary": "파일 이미지 변형 일괄 생성",
         "operationId": "backfillVariants",
         "parameters": [
           {
@@ -4188,8 +4311,9 @@
     "/api/v1/admin/emoticons": {
       "get": {
         "tags": [
-          "admin-emoticon-controller"
+          "어드민: 이모티콘 관리"
         ],
+        "summary": "전체 이모티콘 목록 조회",
         "operationId": "getAllEmoticons",
         "responses": {
           "200": {
@@ -4209,8 +4333,9 @@
       },
       "post": {
         "tags": [
-          "admin-emoticon-controller"
+          "어드민: 이모티콘 관리"
         ],
+        "summary": "이모티콘 생성",
         "operationId": "createEmoticon",
         "requestBody": {
           "content": {
@@ -4917,8 +5042,9 @@
     "/api/v1/admin/breeds": {
       "get": {
         "tags": [
-          "admin-breed-controller"
+          "어드민: 품종 관리"
         ],
+        "summary": "전체 품종 목록 조회",
         "operationId": "getAllBreeds",
         "parameters": [
           {
@@ -4949,8 +5075,9 @@
       },
       "post": {
         "tags": [
-          "admin-breed-controller"
+          "어드민: 품종 관리"
         ],
+        "summary": "품종 생성",
         "operationId": "createBreed_1",
         "requestBody": {
           "content": {
@@ -5278,8 +5405,9 @@
     "/api/admin/migration/rotate-encryption-key": {
       "post": {
         "tags": [
-          "user-migration-controller"
+          "어드민: 사용자 마이그레이션"
         ],
+        "summary": "PII 암호화 키 교체",
         "operationId": "rotateEncryptionKey",
         "responses": {
           "200": {
@@ -5298,8 +5426,9 @@
     "/api/admin/migration/rotate-encryption-key/dry-run": {
       "post": {
         "tags": [
-          "user-migration-controller"
+          "어드민: 사용자 마이그레이션"
         ],
+        "summary": "PII 암호화 키 교체 드라이런",
         "operationId": "rotateEncryptionKeyDryRun",
         "responses": {
           "200": {
@@ -5318,8 +5447,9 @@
     "/api/admin/migration/email-hash": {
       "post": {
         "tags": [
-          "user-migration-controller"
+          "어드민: 사용자 마이그레이션"
         ],
+        "summary": "이메일 해시 마이그레이션",
         "operationId": "migrateEmailHash",
         "responses": {
           "200": {
@@ -5341,8 +5471,9 @@
     "/api/admin/migration/email-hash/rehash": {
       "post": {
         "tags": [
-          "user-migration-controller"
+          "어드민: 사용자 마이그레이션"
         ],
+        "summary": "이메일 해시 전체 재계산",
         "operationId": "rehashAllEmailHashes",
         "responses": {
           "200": {
@@ -5364,8 +5495,9 @@
     "/api/v1/walks/{walkId}/spots/{spotId}": {
       "patch": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "산책 스팟 메모 수정",
         "operationId": "updateSpotNote",
         "parameters": [
           {
@@ -5414,8 +5546,9 @@
     "/api/v1/walks/{walkId}/spots/{spotId}/visibility": {
       "patch": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "산책 스팟 공개 여부 변경",
         "operationId": "updateSpotVisibility",
         "parameters": [
           {
@@ -5464,8 +5597,9 @@
     "/api/v1/users/me/notification": {
       "patch": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "알림 수신 여부 변경",
         "operationId": "updateNotification",
         "requestBody": {
           "content": {
@@ -5529,8 +5663,9 @@
     "/api/v1/admin/emoticons/{id}/toggle": {
       "patch": {
         "tags": [
-          "admin-emoticon-controller"
+          "어드민: 이모티콘 관리"
         ],
+        "summary": "이모티콘 활성/비활성 토글",
         "operationId": "toggleActive",
         "parameters": [
           {
@@ -5764,8 +5899,9 @@
     "/api/v1/walks/{walkId}": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "산책 기록 조회",
         "operationId": "getWalk",
         "parameters": [
           {
@@ -5795,8 +5931,9 @@
     "/api/v1/walks/search": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "영역 내 산책 검색",
         "operationId": "searchWalksInArea",
         "parameters": [
           {
@@ -5828,8 +5965,9 @@
     "/api/v1/walks/ranking": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "산책 랭킹 조회",
         "operationId": "getWalkRanking",
         "parameters": [
           {
@@ -5890,8 +6028,9 @@
     "/api/v1/walks/public": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "공개 산책 목록 조회",
         "operationId": "getPublicWalks",
         "parameters": [
           {
@@ -5945,8 +6084,9 @@
     "/api/v1/walks/public/photos": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "친구 산책 사진 조회",
         "operationId": "getPublicPhotos",
         "parameters": [
           {
@@ -5975,8 +6115,9 @@
     "/api/v1/walks/photos/{spotId}/url": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "산책 사진 URL 발급",
         "operationId": "mintPhotoUrl",
         "parameters": [
           {
@@ -6006,8 +6147,9 @@
     "/api/v1/walks/my": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "내 산책 목록 조회",
         "operationId": "getMyWalks",
         "parameters": [
           {
@@ -6044,8 +6186,9 @@
     "/api/v1/walks/my/stats": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "내 산책 통계 조회",
         "operationId": "getMyStats",
         "responses": {
           "200": {
@@ -6064,8 +6207,9 @@
     "/api/v1/walks/my/photos": {
       "get": {
         "tags": [
-          "walk-controller"
+          "Walk"
         ],
+        "summary": "내 산책 사진 목록 조회",
         "operationId": "getMyPhotos",
         "parameters": [
           {
@@ -6102,8 +6246,9 @@
     "/api/v1/users/search": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "영역 내 친구 위치 검색",
         "operationId": "searchFriendsInArea",
         "parameters": [
           {
@@ -6135,8 +6280,9 @@
     "/api/v1/users/search/nearby": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "근처 친구 위치 검색",
         "operationId": "searchFriendsNearby",
         "parameters": [
           {
@@ -6187,8 +6333,9 @@
     "/api/v1/users/me/stats": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "내 활동 통계 조회",
         "operationId": "getMyStats_1",
         "responses": {
           "200": {
@@ -6207,8 +6354,9 @@
     "/api/v1/users/me/data-export": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "내 데이터 내보내기",
         "operationId": "exportMyData",
         "responses": {
           "200": {
@@ -6230,8 +6378,9 @@
     "/api/v1/users/interests": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "관심사 목록 조회",
         "operationId": "getAllInterests",
         "responses": {
           "200": {
@@ -6253,8 +6402,9 @@
     "/api/v1/users/hobbies": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "취미 목록 조회",
         "operationId": "getAllHobbies",
         "responses": {
           "200": {
@@ -6276,8 +6426,9 @@
     "/api/v1/users/check-nickname": {
       "get": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "닉네임 중복 확인",
         "operationId": "checkNicknameAvailability",
         "parameters": [
           {
@@ -6359,8 +6510,9 @@
     "/api/v1/pets/species": {
       "get": {
         "tags": [
-          "pet-metadata-controller"
+          "Pet Metadata"
         ],
+        "summary": "동물 종 목록 조회",
         "operationId": "getAllSpecies",
         "responses": {
           "200": {
@@ -6382,8 +6534,9 @@
     "/api/v1/pets/my": {
       "get": {
         "tags": [
-          "pet-controller"
+          "Pet"
         ],
+        "summary": "내 반려동물 목록 조회",
         "operationId": "getMyPets",
         "responses": {
           "200": {
@@ -6405,8 +6558,9 @@
     "/api/v1/pets/breeds": {
       "get": {
         "tags": [
-          "pet-metadata-controller"
+          "Pet Metadata"
         ],
+        "summary": "품종 목록 조회",
         "operationId": "getBreeds_1",
         "parameters": [
           {
@@ -6439,8 +6593,9 @@
     "/api/v1/pets/attributes": {
       "get": {
         "tags": [
-          "pet-metadata-controller"
+          "Pet Metadata"
         ],
+        "summary": "반려동물 특성 목록 조회",
         "operationId": "getPetAttributes",
         "responses": {
           "200": {
@@ -6629,8 +6784,9 @@
     "/api/v1/maps/static/{walkId}": {
       "get": {
         "tags": [
-          "map-controller"
+          "Map"
         ],
+        "summary": "산책 경로 정적 지도 이미지 조회",
         "operationId": "getStaticMap",
         "parameters": [
           {
@@ -6681,8 +6837,9 @@
     "/api/v1/maps/reverse-geocode": {
       "get": {
         "tags": [
-          "map-controller"
+          "Map"
         ],
+        "summary": "역지오코딩 (좌표 → 주소)",
         "operationId": "reverseGeocode",
         "parameters": [
           {
@@ -6724,8 +6881,9 @@
     "/api/v1/maps/geocode": {
       "get": {
         "tags": [
-          "map-controller"
+          "Map"
         ],
+        "summary": "지오코딩 (주소 → 좌표)",
         "operationId": "geocode",
         "parameters": [
           {
@@ -6760,8 +6918,9 @@
     "/api/v1/home": {
       "get": {
         "tags": [
-          "home-controller"
+          "Home"
         ],
+        "summary": "홈 화면 데이터 조회",
         "operationId": "getHomeData",
         "responses": {
           "200": {
@@ -7016,8 +7175,9 @@
     "/api/v1/gamification/badges": {
       "get": {
         "tags": [
-          "gamification-controller"
+          "게임화"
         ],
+        "summary": "전체 뱃지 목록 조회",
         "operationId": "getAllBadges",
         "responses": {
           "200": {
@@ -7039,8 +7199,9 @@
     "/api/v1/gamification/badges/my": {
       "get": {
         "tags": [
-          "gamification-controller"
+          "게임화"
         ],
+        "summary": "내 획득 뱃지 조회",
         "operationId": "getMyBadges",
         "responses": {
           "200": {
@@ -7261,8 +7422,9 @@
     "/api/v1/files/{fileKey}/url": {
       "get": {
         "tags": [
-          "file-controller"
+          "파일"
         ],
+        "summary": "비공개 파일 Presigned URL 발급",
         "operationId": "getPresignedUrl",
         "parameters": [
           {
@@ -7301,8 +7463,9 @@
     "/api/v1/files/{fileKey}/content": {
       "get": {
         "tags": [
-          "file-controller"
+          "파일"
         ],
+        "summary": "비공개 파일 스트리밍 다운로드",
         "operationId": "getFileContent",
         "parameters": [
           {
@@ -7332,8 +7495,9 @@
     "/api/v1/emoticons": {
       "get": {
         "tags": [
-          "emoticon-controller"
+          "이모티콘"
         ],
+        "summary": "활성 이모티콘 목록 조회",
         "operationId": "getEmoticons",
         "responses": {
           "200": {
@@ -7897,8 +8061,9 @@
     "/api/v1/chat/rooms/requests": {
       "get": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅 요청 목록 조회",
         "operationId": "getChatRequests",
         "responses": {
           "200": {
@@ -7920,8 +8085,9 @@
     "/api/v1/chat/rooms/my": {
       "get": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "내 채팅방 목록 조회",
         "operationId": "getMyChatRooms",
         "responses": {
           "200": {
@@ -8948,8 +9114,9 @@
     "/api/v1/admin/emoticons/packs": {
       "get": {
         "tags": [
-          "admin-emoticon-controller"
+          "어드민: 이모티콘 관리"
         ],
+        "summary": "이모티콘 팩 목록 조회",
         "operationId": "getAllPacks",
         "responses": {
           "200": {
@@ -9654,8 +9821,9 @@
     "/api/v1/users/me/devices/{deviceId}": {
       "delete": {
         "tags": [
-          "user-controller"
+          "User"
         ],
+        "summary": "디바이스 등록 해제",
         "operationId": "deactivateDevice",
         "parameters": [
           {
@@ -9764,8 +9932,9 @@
     "/api/v1/chat/rooms/{roomId}/messages/{messageId}": {
       "delete": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "메시지 삭제",
         "operationId": "deleteMessage",
         "parameters": [
           {
@@ -9797,8 +9966,9 @@
     "/api/v1/chat/rooms/{roomId}/leave": {
       "delete": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅방 나가기",
         "operationId": "leaveRoom",
         "parameters": [
           {
@@ -9821,8 +9991,9 @@
     "/api/v1/chat/rooms/requests/{requestId}": {
       "delete": {
         "tags": [
-          "chat-room-controller"
+          "Chat"
         ],
+        "summary": "채팅 요청 삭제",
         "operationId": "deleteChatRequest",
         "parameters": [
           {
@@ -14864,18 +15035,11 @@
       "PageWalkResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -14884,6 +15048,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -14910,18 +15081,18 @@
       "PageableObject": {
         "type": "object",
         "properties": {
-          "pageNumber": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "unpaged": {
-            "type": "boolean"
-          },
           "pageSize": {
             "type": "integer",
             "format": "int32"
           },
           "paged": {
+            "type": "boolean"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unpaged": {
             "type": "boolean"
           },
           "offset": {
@@ -14950,18 +15121,11 @@
       "PageWalkPhotoResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -14970,6 +15134,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -15238,18 +15409,11 @@
       "PageNotificationResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -15258,6 +15422,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -15590,18 +15761,11 @@
       "PageStoolAnalysisResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -15610,6 +15774,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -15685,18 +15856,11 @@
       "PageTransactionResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -15705,6 +15869,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -15854,18 +16025,11 @@
       "PageFriendResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -15874,6 +16038,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -15911,18 +16082,11 @@
       "PageCourseCommentResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -15931,6 +16095,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -15957,18 +16128,11 @@
       "PageCourseResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -15977,6 +16141,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -16003,18 +16174,11 @@
       "PageCommunityPostResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -16023,6 +16187,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -16049,18 +16220,11 @@
       "PageCommunityCommentResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -16069,6 +16233,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -16120,18 +16291,11 @@
       "PagePlaceResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -16140,6 +16304,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -16166,18 +16337,11 @@
       "PageCheckInResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -16186,6 +16350,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -16306,18 +16477,11 @@
       "PageAIProfileRequestResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -16326,6 +16490,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -16352,18 +16523,11 @@
       "PageWalkAdminResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -16372,6 +16536,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -16711,18 +16882,11 @@
       "PageUserListItemResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -16731,6 +16895,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -17032,18 +17203,11 @@
       "PageAdminAuditLog": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -17052,6 +17216,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -17146,18 +17317,11 @@
       "PageAdminStoolAnalysisItem": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -17166,6 +17330,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -17245,18 +17416,11 @@
       "PageReportAdminResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -17265,6 +17429,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -17466,18 +17637,11 @@
       "PageTransactionAdminResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -17486,6 +17650,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -17791,18 +17962,11 @@
       "PageCourseListItemResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -17811,6 +17975,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -18013,18 +18184,11 @@
       "PagePostListItemResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -18033,6 +18197,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -18149,18 +18320,11 @@
       "PageChatRoomAdminResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -18169,6 +18333,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -18233,18 +18404,11 @@
       "PageChatMessageAdminResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -18253,6 +18417,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",
@@ -18407,18 +18578,11 @@
       "PageAIRequestAdminResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "numberOfElements": {
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           },
@@ -18427,6 +18591,13 @@
           },
           "last": {
             "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
           "size": {
             "type": "integer",

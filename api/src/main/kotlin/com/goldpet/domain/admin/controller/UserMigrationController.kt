@@ -6,6 +6,8 @@ import com.goldpet.domain.admin.service.PiiKeyRotationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+@Tag(name = "어드민: 사용자 마이그레이션", description = "PII 암호화 키 교체 및 이메일 해시 마이그레이션")
 @RestController
 @RequestMapping("/api/admin/migration")
 class UserMigrationController(
@@ -27,6 +30,7 @@ class UserMigrationController(
      * Re-compute emailHash for ALL users from their decrypted email.
      * Fixes double-hashing corruption caused by the old BlindIndexConverter.
      */
+    @Operation(summary = "이메일 해시 전체 재계산")
     @PostMapping("/email-hash/rehash")
     @Transactional
     fun rehashAllEmailHashes(): ResponseEntity<Map<String, Any>> {
@@ -83,6 +87,7 @@ class UserMigrationController(
         ))
     }
 
+    @Operation(summary = "이메일 해시 마이그레이션")
     @PostMapping("/email-hash")
     @Transactional
     fun migrateEmailHash(): ResponseEntity<Map<String, Any>> {
@@ -176,12 +181,14 @@ class UserMigrationController(
         )
     }
 
+    @Operation(summary = "PII 암호화 키 교체")
     // NOTE: No @Transactional here — PiiKeyRotationService.rotate() uses Propagation.NEVER.
     @PostMapping("/rotate-encryption-key")
     fun rotateEncryptionKey(
         @AuthenticationPrincipal principal: AdminUserPrincipal
     ): ResponseEntity<Any> = runRotation(dryRun = false, principalId = principal.id)
 
+    @Operation(summary = "PII 암호화 키 교체 드라이런")
     // NOTE: No @Transactional here — PiiKeyRotationService.rotate() uses Propagation.NEVER.
     @PostMapping("/rotate-encryption-key/dry-run")
     fun rotateEncryptionKeyDryRun(

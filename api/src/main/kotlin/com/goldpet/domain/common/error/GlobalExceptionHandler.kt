@@ -8,11 +8,13 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import com.goldpet.config.openapi.OpenApiInternal
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDateTime
 
+@OpenApiInternal
 @RestControllerAdvice
 class GlobalExceptionHandler {
 

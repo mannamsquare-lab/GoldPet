@@ -4,16 +4,20 @@ import com.goldpet.domain.admin.dto.CreateBreedRequest
 import com.goldpet.domain.admin.dto.UpdateBreedRequest
 import com.goldpet.domain.admin.service.BreedAdminService
 import com.goldpet.domain.pet.dto.BreedResponse
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.net.URI
 
+@Tag(name = "어드민: 품종 관리", description = "반려동물 품종 CRUD")
 @RestController
 @RequestMapping("/api/v1/admin/breeds")
 class AdminBreedController(
     private val breedAdminService: BreedAdminService
 ) {
 
+    @Operation(summary = "전체 품종 목록 조회")
     @GetMapping
     fun getAllBreeds(
         @RequestParam(required = false) speciesId: Int?
@@ -26,18 +30,21 @@ class AdminBreedController(
         return ResponseEntity.ok(breeds)
     }
 
+    @Operation(summary = "품종 단건 조회")
     @GetMapping("/{breedId}")
     fun getBreed(@PathVariable breedId: Int): ResponseEntity<BreedResponse> {
         val breed = breedAdminService.getBreed(breedId)
         return ResponseEntity.ok(breed)
     }
 
+    @Operation(summary = "품종 생성")
     @PostMapping
     fun createBreed(@RequestBody request: CreateBreedRequest): ResponseEntity<BreedResponse> {
         val created = breedAdminService.createBreed(request)
         return ResponseEntity.created(URI.create("/api/v1/admin/breeds/${created.id}")).body(created)
     }
 
+    @Operation(summary = "품종 수정")
     @PutMapping("/{breedId}")
     fun updateBreed(
         @PathVariable breedId: Int,
@@ -47,6 +54,7 @@ class AdminBreedController(
         return ResponseEntity.ok(updated)
     }
 
+    @Operation(summary = "품종 삭제")
     @DeleteMapping("/{breedId}")
     fun deleteBreed(@PathVariable breedId: Int): ResponseEntity<Void> {
         breedAdminService.deleteBreed(breedId)

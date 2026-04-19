@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.*
 import java.net.URI
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 
+@Tag(name = "Pet", description = "반려동물 관리 API")
 @RestController
 @RequestMapping("/api/v1/pets")
 class PetController(
@@ -18,6 +21,7 @@ class PetController(
     private val userService: com.goldpet.domain.user.service.UserService
 ) {
 
+    @Operation(summary = "반려동물 등록")
     @PostMapping
     fun createPet(
         @AuthenticationPrincipal principal: UserDetails?,
@@ -29,12 +33,14 @@ class PetController(
         return ResponseEntity.created(URI.create("/api/v1/pets/${petResponse.id}")).body(petResponse)
     }
 
+    @Operation(summary = "반려동물 조회")
     @GetMapping("/{petId}")
     fun getPet(@PathVariable petId: Long): ResponseEntity<PetResponse> {
         val petResponse = petService.getPet(petId)
         return ResponseEntity.ok(petResponse)
     }
 
+    @Operation(summary = "내 반려동물 목록 조회")
     @GetMapping("/my")
     fun getMyPets(@AuthenticationPrincipal principal: UserDetails?): ResponseEntity<List<PetResponse>> {
         if (principal == null) return ResponseEntity.status(401).build()
@@ -43,6 +49,7 @@ class PetController(
         return ResponseEntity.ok(petResponses)
     }
 
+    @Operation(summary = "반려동물 정보 수정")
     @PutMapping("/{petId}")
     fun updatePet(
         @AuthenticationPrincipal principal: UserDetails?,
@@ -55,6 +62,7 @@ class PetController(
         return ResponseEntity.ok(petResponse)
     }
 
+    @Operation(summary = "반려동물 삭제")
     @DeleteMapping("/{petId}")
     fun deletePet(
         @AuthenticationPrincipal principal: UserDetails?,

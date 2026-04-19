@@ -2,6 +2,8 @@ package com.goldpet.domain.admin.controller
 
 import com.goldpet.config.security.AdminUserPrincipal
 import com.goldpet.domain.file.service.FileService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -17,11 +19,13 @@ data class AdminFileUploadResponse(
     val originalFileName: String?
 )
 
+@Tag(name = "어드민: 파일 관리", description = "어드민 파일 업로드 및 이미지 변형 백필")
 @RestController
 @RequestMapping("/api/v1/admin/files")
 class AdminFileController(
     private val fileService: FileService
 ) {
+    @Operation(summary = "어드민 파일 업로드")
     @PostMapping("/upload")
     fun uploadFile(
         @RequestParam("file") file: MultipartFile,
@@ -39,6 +43,7 @@ class AdminFileController(
         return ResponseEntity.created(URI.create(fileAttachment.url)).body(response)
     }
 
+    @Operation(summary = "파일 이미지 변형 일괄 생성")
     @PostMapping("/backfill-variants")
     fun backfillVariants(
         @RequestParam(defaultValue = "100") batchSize: Int,

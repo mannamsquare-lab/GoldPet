@@ -26,8 +26,11 @@ import com.goldpet.domain.auth.dto.VerifyAccountRequest
 import com.goldpet.service.auth.SocialLoginService
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 
+@Tag(name = "인증", description = "회원가입, 로그인, 토큰 갱신, SNS 소셜 로그인 관련 API")
 @RestController
 @RequestMapping("/api/v1/auth")
 class AuthController(
@@ -36,18 +39,21 @@ class AuthController(
     private val socialLoginService: SocialLoginService,
     private val jwtTokenProvider: JwtTokenProvider
 ) {
+    @Operation(summary = "자체 회원가입")
     @PostMapping("/signup")
     fun signup(@Valid @RequestBody request: SignupRequest): ResponseEntity<AuthResponse> {
         val response = authService.signup(request)
         return ResponseEntity.status(201).body(response)
     }
 
+    @Operation(summary = "자체 로그인 (이메일/비밀번호)")
     @PostMapping("/login")
     fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<AuthResponse> {
         val response = authService.login(request)
         return ResponseEntity.ok(response)
     }
 
+    @Operation(summary = "SNS 로그인 후 추가 정보 입력 (회원가입 완료)")
     @PostMapping("/sns-signup")
     fun snsSignup(
         @org.springframework.security.core.annotation.AuthenticationPrincipal principal: org.springframework.security.core.userdetails.UserDetails,
@@ -58,6 +64,7 @@ class AuthController(
         return ResponseEntity.ok(response)
     }
 
+    @Operation(summary = "아이디 중복 확인")
     @PostMapping("/check-username")
     fun checkUsername(@Valid @RequestBody request: CheckUsernameRequest): ResponseEntity<AvailabilityResponse> {
         val username = request.username
@@ -65,6 +72,7 @@ class AuthController(
         return ResponseEntity.ok(AvailabilityResponse(!exists))
     }
 
+    @Operation(summary = "닉네임 중복 확인")
     @PostMapping("/check-nickname")
     fun checkNickname(
         @org.springframework.security.core.annotation.AuthenticationPrincipal principal: org.springframework.security.core.userdetails.UserDetails?,
@@ -84,6 +92,7 @@ class AuthController(
         return ResponseEntity.ok(AvailabilityResponse(available))
     }
 
+    @Operation(summary = "이메일 중복 확인")
     @PostMapping("/check-email")
     fun checkEmail(@Valid @RequestBody request: CheckEmailRequest): ResponseEntity<EmailAvailabilityResponse> {
         val emailHash = BlindIndexUtil.hash(request.email)!!
@@ -95,6 +104,7 @@ class AuthController(
         }
     }
 
+    @Operation(summary = "SNS 소셜 로그인 (카카오/네이버/구글/애플)")
     @PostMapping("/login/{provider}")
     fun nativeLogin(
         @PathVariable provider: String,
@@ -111,36 +121,42 @@ class AuthController(
         return ResponseEntity.ok(authResponse)
     }
 
+    @Operation(summary = "소셜 계정 연동 확인 (계정 병합 승인)")
     @PostMapping("/confirm-link")
     fun confirmLink(@Valid @RequestBody request: ConfirmLinkRequest): ResponseEntity<AuthResponse> {
         val response = socialLoginService.confirmLink(request.tempToken)
         return ResponseEntity.ok(response)
     }
 
+    @Operation(summary = "아이디 찾기 (이메일/전화번호로 조회)")
     @PostMapping("/find-username")
     fun findUsername(@Valid @RequestBody request: FindUsernameRequest): ResponseEntity<FindUsernameResponse> {
         val response = authService.findUsername(request)
         return ResponseEntity.ok(response)
     }
 
+    @Operation(summary = "계정 본인 인증 (비밀번호 재설정 전 검증)")
     @PostMapping("/verify-account")
     fun verifyAccount(@Valid @RequestBody request: VerifyAccountRequest): ResponseEntity<Map<String, Any>> {
         val resetToken = authService.verifyAccount(request)
         return ResponseEntity.ok(mapOf("verified" to true, "resetToken" to resetToken))
     }
 
+    @Operation(summary = "비밀번호 재설정")
     @PostMapping("/reset-password")
     fun resetPassword(@Valid @RequestBody request: ResetPasswordRequest): ResponseEntity<Map<String, Any>> {
         authService.resetPassword(request)
         return ResponseEntity.ok(mapOf("success" to true))
     }
 
+    @Operation(summary = "로그아웃 (클라이언트 토큰 무효화)")
     @PostMapping("/logout")
     fun logout(): ResponseEntity<Map<String, Boolean>> {
         // 클라이언트 측에서 토큰을 삭제하므로 서버에서는 성공 응답만 반환
         return ResponseEntity.ok(mapOf("success" to true))
     }
 
+    @Operation(summary = "액세스 토큰 갱신 (리프레시 토큰으로 재발급)")
     @PostMapping("/refresh")
     fun refreshToken(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<AuthResponse> {
         val refreshToken = request.refreshToken

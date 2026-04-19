@@ -4,6 +4,8 @@ import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.walk.repository.WalkRepository
 import com.goldpet.infra.GeocodingService
 import com.goldpet.infra.StaticMapService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -11,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.util.concurrent.TimeUnit
 
+@Tag(name = "Map", description = "지도 및 지오코딩 API")
 @RestController
 @RequestMapping("/api/v1/maps")
 class MapController(
@@ -18,6 +21,7 @@ class MapController(
     private val staticMapService: StaticMapService,
     private val walkRepository: WalkRepository
 ) {
+    @Operation(summary = "역지오코딩 (좌표 → 주소)")
     @GetMapping("/reverse-geocode")
     fun reverseGeocode(
         @RequestParam lat: Double,
@@ -27,6 +31,7 @@ class MapController(
         return ResponseEntity.ok(mapOf("address" to result.fullAddress, "province" to result.province))
     }
 
+    @Operation(summary = "지오코딩 (주소 → 좌표)")
     @GetMapping("/geocode")
     fun geocode(
         @RequestParam address: String
@@ -35,6 +40,7 @@ class MapController(
         return ResponseEntity.ok(mapOf("results" to results))
     }
 
+    @Operation(summary = "산책 경로 정적 지도 이미지 조회")
     @GetMapping("/static/{walkId}")
     fun getStaticMap(
         @AuthenticationPrincipal userDetails: UserPrincipal?,

@@ -1,8 +1,10 @@
 package com.goldpet.controller
 
+import com.goldpet.config.openapi.OpenApiInternal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
+@OpenApiInternal
 @RestController
 class RootController {
 
