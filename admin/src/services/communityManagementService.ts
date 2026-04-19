@@ -1,47 +1,15 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type {
+  PageResponse,
+  PostListItemResponse,
+  PostDetailAdminResponse,
+  CommentAdminResponse,
+} from '../types/api';
 
-export interface PostListItem {
-  id: number;
-  title: string;
-  content: string;
-  categoryName: string;
-  userNickname: string;
-  userId: number;
-  viewCount: number;
-  likeCount: number;
-  commentCount: number;
-  isHidden: boolean;
-  createdAt: string | null;
-}
-
-export interface PostDetail {
-  id: number;
-  title: string;
-  content: string;
-  categoryId: number;
-  categoryName: string;
-  userId: number;
-  userNickname: string;
-  userProfileImage: string | null;
-  imageUrls: string[];
-  viewCount: number;
-  likeCount: number;
-  commentCount: number;
-  isHidden?: boolean;
-  createdAt: string | null;
-  updatedAt: string | null;
-  comments: CommentItem[];
-}
-
-export interface CommentItem {
-  id: number;
-  content: string;
-  userId: number;
-  userNickname: string;
-  isHidden: boolean;
-  createdAt: string | null;
-}
+// Generated aliases (Phase 3.11.3).
+export type PostListItem = PostListItemResponse;
+export type PostDetail = PostDetailAdminResponse;
+export type CommentItem = CommentAdminResponse;
 
 export const communityManagementService = {
   async getPosts(params: {

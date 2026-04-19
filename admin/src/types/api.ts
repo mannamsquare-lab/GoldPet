@@ -78,3 +78,20 @@ export type UserDetailResponse = Schemas['UserDetailResponse'];
 export type AdminUserDto = Schemas['AdminUserDto'];
 export type AdminLoginResponse = Schemas['AdminLoginResponse'];
 export type Setup2faResponse = Schemas['Setup2faResponse'];
+
+// --- Community / Chat / Course admin (Phase 3.11.3) ---
+
+// Community management
+export type PostListItemResponse = Schemas['PostListItemResponse'];
+export type PostDetailAdminResponse = Schemas['PostDetailAdminResponse'];
+export type CommentAdminResponse = Schemas['CommentAdminResponse'];
+
+// Chat management
+export type ChatRoomAdminResponse = Schemas['ChatRoomAdminResponse'];
+export type ChatMessageAdminResponse = Schemas['ChatMessageAdminResponse'];
+
+// Course management
+export type CourseListItemResponse = Schemas['CourseListItemResponse'];
+export type CourseDetailAdminResponse = Schemas['CourseDetailAdminResponse'];
+export type CourseSpotAdminResponse = Schemas['CourseSpotAdminResponse'];
+export type CourseCommentAdminResponse = Schemas['CourseCommentAdminResponse'];

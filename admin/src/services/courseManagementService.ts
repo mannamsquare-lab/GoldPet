@@ -1,67 +1,17 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type {
+  PageResponse,
+  CourseListItemResponse,
+  CourseDetailAdminResponse,
+  CourseSpotAdminResponse,
+  CourseCommentAdminResponse,
+} from '../types/api';
 
-export interface CourseListItem {
-  id: number;
-  title: string;
-  authorNickname: string;
-  authorId: number;
-  difficulty: string;
-  region: string;
-  distanceKm: number;
-  estimatedMinutes: number;
-  likeCount: number;
-  commentCount: number;
-  walkCount: number;
-  rating: number;
-  ratingCount: number;
-  isHidden: boolean;
-  createdAt: string;
-}
-
-export interface CourseSpotItem {
-  id: number;
-  type: string;
-  name: string | null;
-  description: string | null;
-  latitude: number;
-  longitude: number;
-  orderIndex: number;
-}
-
-export interface CourseCommentItem {
-  id: number;
-  content: string;
-  rating: number | null;
-  authorId: number;
-  authorNickname: string;
-  likeCount: number;
-  isHidden: boolean;
-  createdAt: string;
-}
-
-export interface CourseDetail {
-  id: number;
-  title: string;
-  description: string | null;
-  authorId: number;
-  authorNickname: string;
-  difficulty: string;
-  region: string;
-  distanceKm: number;
-  estimatedMinutes: number;
-  likeCount: number;
-  commentCount: number;
-  walkCount: number;
-  rating: number;
-  ratingCount: number;
-  isHidden: boolean;
-  thumbnailUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
-  spots: CourseSpotItem[];
-  comments: CourseCommentItem[];
-}
+// Generated aliases (Phase 3.11.3).
+export type CourseListItem = CourseListItemResponse;
+export type CourseSpotItem = CourseSpotAdminResponse;
+export type CourseCommentItem = CourseCommentAdminResponse;
+export type CourseDetail = CourseDetailAdminResponse;
 
 export const courseManagementService = {
   async getCourses(params: {

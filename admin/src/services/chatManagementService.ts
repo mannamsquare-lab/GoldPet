@@ -1,25 +1,13 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type {
+  PageResponse,
+  ChatRoomAdminResponse,
+  ChatMessageAdminResponse,
+} from '../types/api';
 
-export interface ChatRoomItem {
-  id: number;
-  name: string;
-  type: 'DIRECT' | 'GROUP' | 'AI_PET';
-  participantCount: number;
-  lastMessage: string | null;
-  lastMessageTime: string | null;
-  createdAt: string;
-}
-
-export interface ChatMessageItem {
-  id: number;
-  roomId: number;
-  senderId: number;
-  senderNickname: string;
-  content: string;
-  type: 'TEXT' | 'IMAGE' | 'FILE';
-  createdAt: string;
-}
+// Generated aliases (Phase 3.11.3).
+export type ChatRoomItem = ChatRoomAdminResponse;
+export type ChatMessageItem = ChatMessageAdminResponse;
 
 export const chatManagementService = {
   async getChatRooms(params: { page?: number; size?: number }): Promise<PageResponse<ChatRoomItem>> {
