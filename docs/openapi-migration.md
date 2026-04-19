@@ -156,9 +156,10 @@ These are tracked in `.omc/plans/open-questions.md`:
 - **Phase 4 typedClient rollout** — Phase 3.x stopped at type alignment.
   Per-domain `apiClient` → `typedClient` swap is the next sweep, planned as
   one PR per domain so revert-friendly.
-- **Contract test in Jenkins** — Playwright e2e suite that hits
-  `api.mannamsquare.com` and validates the live response shape against the
-  shipped spec.
+- **Contract test wiring** — `frontend/e2e/api-contract.spec.ts` exists and
+  passes locally with `OPENAPI_CONTRACT_BASE=https://api.mannamsquare.com
+  npx playwright test e2e/api-contract.spec.ts`. Add it as an UNSTABLE-on-fail
+  Jenkins stage so contract drift in dev/prod environments surfaces in CI.
 
 ## Repository touchpoints
 
