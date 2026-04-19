@@ -19,3 +19,9 @@ export type Schemas = components['schemas'];
 
 // OpenAPI-derived enum types. Source of truth is backend Kotlin enums.
 export type UserStatus = Schemas['UserListItemResponse']['status'];
+
+// --- Report domain (Phase 3.6) ---
+export type ReportType = Schemas['CreateReportRequest']['type']; // POST|COMMENT|USER|CHAT|COURSE|WALK_SPOT
+export type ReportStatus = Schemas['ReportAdminResponse']['status']; // PENDING|RESOLVED|DISMISSED
+export type ReportActionType = Schemas['ResolveReportRequest']['actionType']; // DELETE_POST|HIDE_POST|...
+export type ReportAdminResponse = Schemas['ReportAdminResponse'];

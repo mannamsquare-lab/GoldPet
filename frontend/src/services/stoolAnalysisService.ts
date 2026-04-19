@@ -1,6 +1,7 @@
 import apiClient from './api/client';
+import type { AnalysisStatus } from '../types/api';
 
-export type AnalysisStatus = 'PENDING' | 'ANALYZING' | 'COMPLETED' | 'FAILED';
+export type { AnalysisStatus };
 
 export interface StoolAnalysisResponse {
   id: number;

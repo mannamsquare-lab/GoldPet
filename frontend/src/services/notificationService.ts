@@ -1,10 +1,13 @@
 // Notification Service - API integration for Notifications
 
 import apiClient from './api/client';
+import type { NotificationType } from '../types/api';
+
+export type { NotificationType };
 
 export interface Notification {
   id: number;
-  type: 'MATCH' | 'LIKE' | 'MESSAGE' | 'COMMENT' | 'FOLLOW' | 'WALK' | 'NOTICE' | 'EVENT' | 'SYSTEM' | 'REPORT_RESOLVED';
+  type: NotificationType;
   title: string;
   message: string;
   targetId?: number;

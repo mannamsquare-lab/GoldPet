@@ -83,10 +83,10 @@ class ReportService(
 
         return ReportResponse(
             id = saved.id,
-            type = saved.type.name,
+            type = saved.type,
             targetId = saved.targetId,
             reason = saved.reason,
-            status = saved.status.name,
+            status = saved.status,
             createdAt = saved.createdAt.format(formatter)
         )
     }
@@ -143,10 +143,10 @@ class ReportService(
         return reportRepository.findAllByReporterId(userId).map { report ->
             ReportResponse(
                 id = report.id,
-                type = report.type.name,
+                type = report.type,
                 targetId = report.targetId,
                 reason = report.reason,
-                status = report.status.name,
+                status = report.status,
                 createdAt = report.createdAt.format(formatter)
             )
         }

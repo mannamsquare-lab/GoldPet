@@ -50,3 +50,23 @@ export type ChatMessageResponse = Schemas['ChatMessageResponse'];
 export type MessageType = Schemas['ChatMessageResponse']['messageType']; // uppercase backend enum
 export type ParticipantInfo = Schemas['ParticipantInfo'];
 export type FileInfo = Schemas['FileInfo'];
+
+// --- Stool Analysis domain (Phase 3.4) ---
+
+export type AnalysisStatus = Schemas['StoolAnalysisResponse']['status']; // 'PENDING'|'ANALYZING'|'COMPLETED'|'FAILED'
+export type StoolAnalysisResponse = Schemas['StoolAnalysisResponse'];
+export type MonthlyScore = Schemas['MonthlyScore'];
+export type HealthTrendResponse = Schemas['HealthTrendResponse'];
+
+// --- Notification domain (Phase 3.5) ---
+
+export type NotificationType = Schemas['NotificationResponse']['type'];
+// e.g. 'MATCH'|'MESSAGE'|'LIKE'|'COMMENT'|'FOLLOW'|'WALK'|'NOTICE'|'EVENT'|'SYSTEM'|'REPORT_RESOLVED'
+export type NotificationResponse = Schemas['NotificationResponse'];
+
+// --- Report domain (Phase 3.6) ---
+
+export type ReportType = Schemas['CreateReportRequest']['type']; // 'POST'|'COMMENT'|'USER'|'CHAT'|'COURSE'|'WALK_SPOT'
+export type ReportStatus = Schemas['ReportResponse']['status']; // 'PENDING'|'RESOLVED'|'DISMISSED'
+export type CreateReportRequest = Schemas['CreateReportRequest'];
+export type ReportResponse = Schemas['ReportResponse'];

@@ -1,12 +1,7 @@
 import apiClient from './api/client';
+import type { ReportType, CreateReportRequest } from '../types/api';
 
-export type ReportType = 'POST' | 'COMMENT' | 'USER' | 'CHAT' | 'COURSE' | 'WALK_SPOT';
-
-export interface CreateReportRequest {
-  type: ReportType;
-  targetId: number;
-  reason: string;
-}
+export type { ReportType, CreateReportRequest };
 
 export const reportService = {
   createReport: async (request: CreateReportRequest) => {

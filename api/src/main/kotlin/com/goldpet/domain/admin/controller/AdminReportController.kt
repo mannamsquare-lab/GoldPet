@@ -2,6 +2,8 @@ package com.goldpet.domain.admin.controller
 
 import com.goldpet.domain.admin.service.AdminReportService
 import com.goldpet.domain.report.entity.ReportActionType
+import com.goldpet.domain.report.entity.ReportStatus
+import com.goldpet.domain.report.entity.ReportType
 import com.goldpet.config.security.AdminUserPrincipal
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -61,16 +63,16 @@ data class ResolveReportRequest(
 
 data class ReportAdminResponse(
     val id: Long,
-    val type: String,
+    val type: ReportType,
     val targetId: Long,
     val targetPreview: String?,
     val reason: String,
     val reporterNickname: String,
     val reporterId: Long,
-    val status: String,
+    val status: ReportStatus,
     val createdAt: String?,
     val resolvedAt: String?,
-    val actionType: String? = null,
+    val actionType: ReportActionType? = null,
     val adminNote: String? = null,
     val resolvedByName: String? = null,
     val targetImageUrl: String? = null,

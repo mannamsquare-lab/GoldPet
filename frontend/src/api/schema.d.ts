@@ -5098,11 +5098,13 @@ export interface components {
         ReportResponse: {
             /** Format: int64 */
             id: number;
-            type: string;
+            /** @enum {string} */
+            type: "POST" | "COMMENT" | "USER" | "CHAT" | "COURSE" | "WALK_SPOT";
             /** Format: int64 */
             targetId: number;
             reason: string;
-            status: string;
+            /** @enum {string} */
+            status: "PENDING" | "RESOLVED" | "DISMISSED";
             createdAt?: string;
         };
         CreatePetRequest: {
@@ -5950,9 +5952,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -5964,9 +5966,9 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
+            unpaged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
-            unpaged?: boolean;
             /** Format: int32 */
             pageSize?: number;
             paged?: boolean;
@@ -5984,9 +5986,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6084,9 +6086,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6195,9 +6197,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6228,9 +6230,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6291,9 +6293,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6312,9 +6314,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6330,9 +6332,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6348,9 +6350,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6366,9 +6368,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6392,9 +6394,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6410,9 +6412,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6455,9 +6457,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6473,9 +6475,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6601,9 +6603,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6710,9 +6712,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6750,9 +6752,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6786,9 +6788,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6802,7 +6804,8 @@ export interface components {
         ReportAdminResponse: {
             /** Format: int64 */
             id: number;
-            type: string;
+            /** @enum {string} */
+            type: "POST" | "COMMENT" | "USER" | "CHAT" | "COURSE" | "WALK_SPOT";
             /** Format: int64 */
             targetId: number;
             targetPreview?: string;
@@ -6810,10 +6813,12 @@ export interface components {
             reporterNickname: string;
             /** Format: int64 */
             reporterId: number;
-            status: string;
+            /** @enum {string} */
+            status: "PENDING" | "RESOLVED" | "DISMISSED";
             createdAt?: string;
             resolvedAt?: string;
-            actionType?: string;
+            /** @enum {string} */
+            actionType?: "DELETE_POST" | "DELETE_COMMENT" | "DELETE_MESSAGE" | "SUSPEND_USER" | "WARN_USER" | "HIDE_POST" | "HIDE_COMMENT" | "HIDE_COURSE";
             adminNote?: string;
             resolvedByName?: string;
             targetImageUrl?: string;
@@ -6861,9 +6866,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6972,9 +6977,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -7048,9 +7053,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -7095,9 +7100,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -7125,9 +7130,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -7184,9 +7189,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */

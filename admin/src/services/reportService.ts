@@ -1,18 +1,18 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type { PageResponse, ReportType, ReportStatus, ReportActionType } from '../types/api';
 
 export interface ReportItem {
   id: number;
-  type: 'POST' | 'COMMENT' | 'USER' | 'CHAT' | 'COURSE' | 'WALK_SPOT';
+  type: ReportType;
   targetId: number;
   targetPreview: string | null;
   reason: string;
   reporterNickname: string;
   reporterId: number;
-  status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
+  status: ReportStatus;
   createdAt: string | null;
   resolvedAt: string | null;
-  actionType: string | null;
+  actionType: ReportActionType | null;
   adminNote: string | null;
   resolvedByName: string | null;
 }
