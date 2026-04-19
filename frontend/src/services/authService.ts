@@ -3,51 +3,21 @@
 import apiClient from "./api/client";
 import { nativeBridge } from "../bridge/nativeBridge";
 import { useAuthStore } from "../stores/authStore";
+import type {
+  AuthResponse,
+  LoginRequest,
+  SignupRequest,
+  SnsSignupRequest,
+} from "../types/api";
 
-export interface SignupRequest {
-  username: string;
-  password: string;
-  nickname: string;
-  email?: string;
-  name: string;
-  birthDate: string; // YYYY-MM-DD
-  gender: "MALE" | "FEMALE";
-  phoneNumber: string;
-  mainLocationText?: string;
-}
-
-export interface SnsSignupRequest {
-  provider: string;
-  nickname: string;
-  name: string;
-  birthDate: string;
-  gender: "MALE" | "FEMALE";
-  phoneNumber: string;
-}
-
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
-
-export interface LinkSuggestionInfo {
-  maskedEmail: string;
-  existingProvider: string;
-  tempToken: string;
-}
-
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: number;
-    username: string;
-    nickname: string;
-    email: string | null;
-    phoneNumber: string | null;
-  };
-  linkSuggestion?: LinkSuggestionInfo;
-}
+// Re-export for existing importers during migration window.
+export type {
+  AuthResponse,
+  LoginRequest,
+  SignupRequest,
+  SnsSignupRequest,
+  LinkSuggestionInfo,
+} from "../types/api";
 
 export const authService = {
   signup: async (data: SignupRequest): Promise<AuthResponse> => {
