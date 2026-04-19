@@ -68,6 +68,13 @@ class CacheConfig {
     @EventListener(ApplicationReadyEvent::class)
     fun clearCachesOnStartup(event: ApplicationReadyEvent) {
         val log = LoggerFactory.getLogger(CacheConfig::class.java)
+        // Spec 생성(codegen) 시에는 실제 Redis 가 없어 예외가 SpringApplication 을
+        // 죽이므로 skip. Exception 을 던지면 EventPublishingRunListener.ready() 가
+        // run failure 로 승격시켜 앱이 tear-down 되면서 /v3/api-docs 도 닫혀버림.
+        if (event.applicationContext.environment.activeProfiles.contains("codegen")) {
+            log.info("Skipping Redis cache clear on codegen profile (no live Redis expected)")
+            return
+        }
         val cm = event.applicationContext.getBean(RedisCacheManager::class.java)
         cm.cacheNames.forEach { name ->
             cm.getCache(name)?.clear()
