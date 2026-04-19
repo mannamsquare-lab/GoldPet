@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type { BadgeResponse } from '../types/api';
 
 // Generated alias (Phase 3.11.1). Note: admin Badge previously included
@@ -8,8 +8,8 @@ export type Badge = BadgeResponse;
 
 export const gamificationService = {
   async getBadges(): Promise<Badge[]> {
-    const response = await apiClient.get('/gamification/badges');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/gamification/badges');
+    return response.data as Badge[];
   },
 
   async createBadge(data: {
@@ -24,8 +24,9 @@ export const gamificationService = {
     isRepeatable?: boolean;
     repeatCycle?: string;
   }): Promise<Badge> {
-    const response = await apiClient.post('/gamification/badges', data);
-    return response.data;
+    const body = data as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/gamification/badges'>>[1];
+    const response = await typedClient.post('/api/v1/admin/gamification/badges', body);
+    return response.data as Badge;
   },
 
   async updateBadge(badgeId: number, data: {
@@ -41,7 +42,12 @@ export const gamificationService = {
     isRepeatable?: boolean;
     repeatCycle?: string;
   }): Promise<Badge> {
-    const response = await apiClient.put(`/gamification/badges/${badgeId}`, data);
-    return response.data;
+    const body = data as unknown as Parameters<typeof typedClient.putPath<'/api/v1/admin/gamification/badges/{badgeId}'>>[2];
+    const response = await typedClient.putPath(
+      '/api/v1/admin/gamification/badges/{badgeId}',
+      { badgeId },
+      body,
+    );
+    return response.data as Badge;
   },
 };

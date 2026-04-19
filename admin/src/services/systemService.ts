@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type { SystemInfoResponse, AppConfigResponse } from '../types/api';
 
 // Generated aliases (Phase 3.11.4).
@@ -16,31 +16,30 @@ export interface AdminUser {
 
 export const systemService = {
   async getSystemInfo(): Promise<SystemInfo> {
-    const response = await apiClient.get('/system/info');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/system/info');
+    return response.data as SystemInfo;
   },
 
   async getAdmins(): Promise<AdminUser[]> {
-    const response = await apiClient.get('/system/admins');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/system/admins');
+    return response.data as unknown as AdminUser[];
   },
 
   async getMaintenanceStatus(): Promise<{ enabled: boolean }> {
-    const response = await apiClient.get('/system/maintenance');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/system/maintenance');
+    return response.data as unknown as { enabled: boolean };
   },
 
   async setMaintenanceMode(enabled: boolean): Promise<void> {
-    await apiClient.post('/system/maintenance', { enabled });
+    await typedClient.post('/api/v1/admin/system/maintenance', { enabled });
   },
 
   async getConfigs(): Promise<AppConfig[]> {
-    const response = await apiClient.get('/system/configs');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/system/configs');
+    return response.data as AppConfig[];
   },
 
   async updateConfig(key: string, value: string): Promise<void> {
-    await apiClient.post('/system/configs', { key, value });
+    await typedClient.post('/api/v1/admin/system/configs', { key, value });
   },
 };
-

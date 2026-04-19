@@ -40,6 +40,23 @@ const BASE_STRIP = '/api/v1/admin';
 const toAxiosPath = (p: string): string =>
   p.startsWith(BASE_STRIP) ? p.slice(BASE_STRIP.length) || '/' : p;
 
+// Dynamic path support — extract `{param}` segments from a spec path literal so the
+// caller is forced to supply each one. Type-level only; the runtime simply does
+// string replace. Mirrors frontend/src/services/api/typedClient.ts.
+type PathParams<P extends string> =
+  P extends `${string}{${infer Param}}${infer Rest}`
+    ? { [K in Param | keyof PathParams<Rest>]: string | number }
+    : Record<string, never>;
+
+const fillPathParams = (template: string, params: Record<string, string | number>): string =>
+  template.replace(/\{([^}]+)\}/g, (_, key: string) => {
+    const v = params[key];
+    if (v === undefined) {
+      throw new Error(`typedClient: missing path param "${key}" for "${template}"`);
+    }
+    return encodeURIComponent(String(v));
+  });
+
 export const typedClient = {
   get: <P extends PathsWithMethod<'get'>>(
     path: P,
@@ -73,6 +90,46 @@ export const typedClient = {
     config?: Config,
   ): Promise<AxiosResponse<ResponseOf<P, 'delete'>>> =>
     apiClient.delete(toAxiosPath(path as string), config),
+
+  // Dynamic path variants — spec path literal with `{param}` placeholders +
+  // typed param object. Response/body types are still derived from the spec.
+  getPath: <P extends PathsWithMethod<'get'>>(
+    path: P,
+    params: PathParams<P & string>,
+    config?: Config,
+  ): Promise<AxiosResponse<ResponseOf<P, 'get'>>> =>
+    apiClient.get(toAxiosPath(fillPathParams(path as string, params)), config),
+
+  postPath: <P extends PathsWithMethod<'post'>>(
+    path: P,
+    params: PathParams<P & string>,
+    body: OptionalBody<P, 'post'>,
+    config?: Config,
+  ): Promise<AxiosResponse<ResponseOf<P, 'post'>>> =>
+    apiClient.post(toAxiosPath(fillPathParams(path as string, params)), body, config),
+
+  putPath: <P extends PathsWithMethod<'put'>>(
+    path: P,
+    params: PathParams<P & string>,
+    body: OptionalBody<P, 'put'>,
+    config?: Config,
+  ): Promise<AxiosResponse<ResponseOf<P, 'put'>>> =>
+    apiClient.put(toAxiosPath(fillPathParams(path as string, params)), body, config),
+
+  patchPath: <P extends PathsWithMethod<'patch'>>(
+    path: P,
+    params: PathParams<P & string>,
+    body: OptionalBody<P, 'patch'>,
+    config?: Config,
+  ): Promise<AxiosResponse<ResponseOf<P, 'patch'>>> =>
+    apiClient.patch(toAxiosPath(fillPathParams(path as string, params)), body, config),
+
+  deletePath: <P extends PathsWithMethod<'delete'>>(
+    path: P,
+    params: PathParams<P & string>,
+    config?: Config,
+  ): Promise<AxiosResponse<ResponseOf<P, 'delete'>>> =>
+    apiClient.delete(toAxiosPath(fillPathParams(path as string, params)), config),
 };
 
 export default typedClient;

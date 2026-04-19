@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   DashboardStatsResponse,
   DashboardChartsResponse,
@@ -18,17 +18,21 @@ export interface ChartDataPoint {
 
 export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
-    const response = await apiClient.get('/dashboard/stats');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/dashboard/stats');
+    return response.data as DashboardStats;
   },
 
   async getCharts(days = 30): Promise<DashboardCharts> {
-    const response = await apiClient.get(`/dashboard/charts?days=${days}`);
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/dashboard/charts', {
+      params: { days },
+    });
+    return response.data as DashboardCharts;
   },
 
   async getRecentActivity(limit = 10): Promise<RecentActivity[]> {
-    const response = await apiClient.get(`/dashboard/recent-activity?limit=${limit}`);
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/dashboard/recent-activity', {
+      params: { limit },
+    });
+    return response.data as RecentActivity[];
   },
 };

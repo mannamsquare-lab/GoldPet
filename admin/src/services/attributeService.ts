@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   PetAttributeResponse,
   AttributeOption,
@@ -13,20 +13,27 @@ export type CreateAttributeRequest = PetAttributeRequest;
 export type UpdateAttributeRequest = PetAttributeRequest;
 
 export const getAttributes = async (): Promise<PetAttribute[]> => {
-    const response = await apiClient.get<PetAttribute[]>('/pet-attributes');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/pet-attributes');
+    return response.data as PetAttribute[];
 };
 
 export const createAttribute = async (data: CreateAttributeRequest): Promise<PetAttribute> => {
-    const response = await apiClient.post<PetAttribute>('/pet-attributes', data);
-    return response.data;
+    const response = await typedClient.post('/api/v1/admin/pet-attributes', data);
+    return response.data as PetAttribute;
 };
 
 export const updateAttribute = async (id: number, data: UpdateAttributeRequest): Promise<PetAttribute> => {
-    const response = await apiClient.put<PetAttribute>(`/pet-attributes/${id}`, data);
-    return response.data;
+    const response = await typedClient.putPath(
+        '/api/v1/admin/pet-attributes/{id}',
+        { id },
+        data,
+    );
+    return response.data as PetAttribute;
 };
 
 export const deleteAttribute = async (id: number): Promise<void> => {
-    await apiClient.delete(`/pet-attributes/${id}`);
+    await typedClient.deletePath(
+        '/api/v1/admin/pet-attributes/{id}',
+        { id },
+    );
 };

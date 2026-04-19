@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   CacheInfoResponse,
   CacheClearResult,
@@ -12,24 +12,24 @@ export type CacheClearLog = CacheClearLogResponse;
 
 export const cacheService = {
   async getStatus(): Promise<CacheInfo[]> {
-    const response = await apiClient.get('/cache/status');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/cache/status');
+    return response.data as CacheInfo[];
   },
 
   async clearCache(cacheName: string): Promise<CacheClearResult> {
-    const response = await apiClient.post('/cache/clear', { cacheName });
-    return response.data;
+    const response = await typedClient.post('/api/v1/admin/cache/clear', { cacheName });
+    return response.data as CacheClearResult;
   },
 
   async clearAll(): Promise<CacheClearResult> {
-    const response = await apiClient.post('/cache/clear-all');
-    return response.data;
+    const response = await typedClient.post('/api/v1/admin/cache/clear-all', undefined);
+    return response.data as CacheClearResult;
   },
 
   async getLogs(page: number = 0, size: number = 20): Promise<CacheClearLog[]> {
-    const response = await apiClient.get('/cache/logs', {
+    const response = await typedClient.get('/api/v1/admin/cache/logs', {
       params: { page, size }
     });
-    return response.data;
+    return response.data as CacheClearLog[];
   },
 };

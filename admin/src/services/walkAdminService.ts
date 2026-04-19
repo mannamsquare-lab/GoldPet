@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   PageResponse,
   WalkAdminResponse,
@@ -29,21 +30,25 @@ export interface GetDetailedStatsParams {
 
 export const walkAdminService = {
   async getWalks(params: GetWalksParams = {}): Promise<PageResponse<WalkAdminResponse>> {
-    const response = await apiClient.get('/walks', { params });
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/walks', { params });
+    return response.data as unknown as PageResponse<WalkAdminResponse>;
   },
 
   async getWalkDetail(id: number): Promise<WalkDetailResponse> {
-    const response = await apiClient.get(`/walks/${id}`);
-    return response.data;
+    const response = await typedClient.getPath(
+      '/api/v1/admin/walks/{walkId}',
+      { walkId: id },
+    );
+    return response.data as WalkDetailResponse;
   },
 
   async deleteWalk(id: number, reason: string): Promise<void> {
+    // DELETE with JSON body — typedClient Config disallows `data`, so stay on apiClient.
     await apiClient.delete(`/walks/${id}`, { data: { reason } });
   },
 
   async getDetailedStats(params: GetDetailedStatsParams = {}): Promise<WalkStatsDetailResponse> {
-    const response = await apiClient.get('/walks/stats/detailed', { params });
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/walks/stats/detailed', { params });
+    return response.data as WalkStatsDetailResponse;
   },
 };

@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   PageResponse,
   ChatRoomAdminResponse,
@@ -11,24 +11,27 @@ export type ChatMessageItem = ChatMessageAdminResponse;
 
 export const chatManagementService = {
   async getChatRooms(params: { page?: number; size?: number }): Promise<PageResponse<ChatRoomItem>> {
-    const queryParams = new URLSearchParams();
-    if (params.page !== undefined) queryParams.set('page', params.page.toString());
-    if (params.size !== undefined) queryParams.set('size', params.size.toString());
-
-    const response = await apiClient.get(`/chat/rooms?${queryParams.toString()}`);
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/chat/rooms', { params });
+    return response.data as unknown as PageResponse<ChatRoomItem>;
   },
 
   async getRoomMessages(roomId: number, page = 0): Promise<PageResponse<ChatMessageItem>> {
-    const response = await apiClient.get(`/chat/rooms/${roomId}/messages?page=${page}`);
-    return response.data;
+    const response = await typedClient.getPath(
+      '/api/v1/admin/chat/rooms/{roomId}/messages',
+      { roomId },
+      { params: { page } },
+    );
+    return response.data as unknown as PageResponse<ChatMessageItem>;
   },
 
   async deleteMessage(messageId: number): Promise<void> {
-    await apiClient.delete(`/chat/messages/${messageId}`);
+    await typedClient.deletePath(
+      '/api/v1/admin/chat/messages/{messageId}',
+      { messageId },
+    );
   },
 
   async deleteRoom(roomId: number): Promise<void> {
-    await apiClient.delete(`/chat/rooms/${roomId}`);
+    await typedClient.deletePath('/api/v1/admin/chat/rooms/{roomId}', { roomId });
   },
 };

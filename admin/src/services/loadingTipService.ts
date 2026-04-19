@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   AILoadingTipResponse,
   CreateLoadingTipRequest,
@@ -14,18 +14,25 @@ export type {
 
 export const loadingTipService = {
   getAllTips: async (): Promise<AILoadingTipResponse[]> => {
-    const response = await apiClient.get('/ai-profile/loading-tips');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/ai-profile/loading-tips');
+    return response.data as AILoadingTipResponse[];
   },
   createTip: async (request: CreateLoadingTipRequest): Promise<AILoadingTipResponse> => {
-    const response = await apiClient.post('/ai-profile/loading-tips', request);
-    return response.data;
+    const response = await typedClient.post('/api/v1/admin/ai-profile/loading-tips', request);
+    return response.data as AILoadingTipResponse;
   },
   updateTip: async (id: number, request: UpdateLoadingTipRequest): Promise<AILoadingTipResponse> => {
-    const response = await apiClient.put(`/ai-profile/loading-tips/${id}`, request);
-    return response.data;
+    const response = await typedClient.putPath(
+      '/api/v1/admin/ai-profile/loading-tips/{tipId}',
+      { tipId: id },
+      request,
+    );
+    return response.data as AILoadingTipResponse;
   },
   deleteTip: async (id: number): Promise<void> => {
-    await apiClient.delete(`/ai-profile/loading-tips/${id}`);
+    await typedClient.deletePath(
+      '/api/v1/admin/ai-profile/loading-tips/{tipId}',
+      { tipId: id },
+    );
   },
 };

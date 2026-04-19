@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 
 export interface LBSStats {
   totalWalks: number;
@@ -20,17 +20,18 @@ export interface Place {
 
 export const lbsService = {
   async getStats(): Promise<LBSStats> {
-    const response = await apiClient.get('/lbs/stats');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/lbs/stats');
+    return response.data as unknown as LBSStats;
   },
 
   async getPlaces(): Promise<Place[]> {
-    const response = await apiClient.get('/lbs/places');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/lbs/places');
+    return response.data as unknown as Place[];
   },
 
   async createPlace(data: { name: string; category: string; latitude: number; longitude: number }): Promise<Place> {
-    const response = await apiClient.post('/lbs/places', data);
-    return response.data;
+    const body = data as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/lbs/places'>>[1];
+    const response = await typedClient.post('/api/v1/admin/lbs/places', body);
+    return response.data as unknown as Place;
   },
 };

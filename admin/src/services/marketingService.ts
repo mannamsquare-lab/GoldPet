@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 
 interface NotificationTemplate {
   id: number;
@@ -37,60 +37,75 @@ interface DeliveryLog {
 
 export const marketingService = {
   getTemplates: async (): Promise<NotificationTemplate[]> => {
-    const response = await apiClient.get('/marketing/notifications/templates');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/marketing/notifications/templates');
+    return response.data as unknown as NotificationTemplate[];
   },
 
   createTemplate: async (request: NotificationTemplateRequest): Promise<NotificationTemplate> => {
-    const response = await apiClient.post('/marketing/notifications/templates', request);
-    return response.data;
+    const body = request as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/marketing/notifications/templates'>>[1];
+    const response = await typedClient.post('/api/v1/admin/marketing/notifications/templates', body);
+    return response.data as unknown as NotificationTemplate;
   },
 
   updateTemplate: async (id: number, request: NotificationTemplateRequest): Promise<NotificationTemplate> => {
-    const response = await apiClient.put(`/marketing/notifications/templates/${id}`, request);
-    return response.data;
+    const body = request as unknown as Parameters<typeof typedClient.putPath<'/api/v1/admin/marketing/notifications/templates/{id}'>>[2];
+    const response = await typedClient.putPath(
+      '/api/v1/admin/marketing/notifications/templates/{id}',
+      { id },
+      body,
+    );
+    return response.data as unknown as NotificationTemplate;
   },
 
   deleteTemplate: async (id: number): Promise<void> => {
-    await apiClient.delete(`/marketing/notifications/templates/${id}`);
+    await typedClient.deletePath(
+      '/api/v1/admin/marketing/notifications/templates/{id}',
+      { id },
+    );
   },
 
   sendNotification: async (request: SendNotificationRequest): Promise<SendNotificationResult> => {
-    const response = await apiClient.post('/marketing/notifications/send', request);
-    return response.data;
+    const body = request as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/marketing/notifications/send'>>[1];
+    const response = await typedClient.post('/api/v1/admin/marketing/notifications/send', body);
+    return response.data as unknown as SendNotificationResult;
   },
 
   getDeliveryLogs: async (page = 0, size = 20): Promise<DeliveryLog[]> => {
-    const response = await apiClient.get('/marketing/notifications/logs', {
-      params: { page, size }
+    const response = await typedClient.get('/api/v1/admin/marketing/notifications/logs', {
+      params: { page, size },
     });
-    return response.data;
+    return response.data as unknown as DeliveryLog[];
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getBanners: async (): Promise<any[]> => {
-    const response = await apiClient.get('/marketing/banners');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/marketing/banners');
+    return response.data as unknown as any[];
   },
 
   createBanner: async (request: Record<string, unknown>): Promise<Record<string, unknown>> => {
-    const response = await apiClient.post('/marketing/banners', request);
-    return response.data;
+    const body = request as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/marketing/banners'>>[1];
+    const response = await typedClient.post('/api/v1/admin/marketing/banners', body);
+    return response.data as unknown as Record<string, unknown>;
   },
 
   deleteBanner: async (id: number): Promise<void> => {
-    await apiClient.delete(`/marketing/banners/${id}`);
+    await typedClient.deletePath(
+      '/api/v1/admin/marketing/banners/{bannerId}',
+      { bannerId: id },
+    );
   },
 
   getCampaigns: async (): Promise<Record<string, unknown>[]> => {
-    const response = await apiClient.get('/marketing/campaigns');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/marketing/campaigns');
+    return response.data as unknown as Record<string, unknown>[];
   },
 
   createCampaign: async (request: Record<string, unknown>): Promise<Record<string, unknown>> => {
-    const response = await apiClient.post('/marketing/campaigns', request);
-    return response.data;
-  }
+    const body = request as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/marketing/campaigns'>>[1];
+    const response = await typedClient.post('/api/v1/admin/marketing/campaigns', body);
+    return response.data as unknown as Record<string, unknown>;
+  },
 };
 
 export type {
@@ -98,5 +113,5 @@ export type {
   NotificationTemplateRequest,
   SendNotificationRequest,
   SendNotificationResult,
-  DeliveryLog
+  DeliveryLog,
 };

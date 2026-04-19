@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   PageResponse,
   UserStatus,
@@ -19,33 +19,36 @@ export const userManagementService = {
     sortBy?: string;
     sortDir?: string;
   }): Promise<PageResponse<UserListItem>> {
-    const queryParams = new URLSearchParams();
-    if (params.page !== undefined) queryParams.set('page', params.page.toString());
-    if (params.size !== undefined) queryParams.set('size', params.size.toString());
-    if (params.search) queryParams.set('search', params.search);
-    if (params.status) queryParams.set('status', params.status);
-    if (params.sortBy) queryParams.set('sortBy', params.sortBy);
-    if (params.sortDir) queryParams.set('sortDir', params.sortDir);
-
-    const response = await apiClient.get(`/users?${queryParams.toString()}`);
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/users', {
+      params: params as Record<string, string | number | undefined>,
+    });
+    return response.data as unknown as PageResponse<UserListItem>;
   },
 
   async getUserDetail(userId: number): Promise<UserDetail> {
-    const response = await apiClient.get(`/users/${userId}`);
-    return response.data;
+    const response = await typedClient.getPath(
+      '/api/v1/admin/users/{userId}',
+      { userId },
+    );
+    return response.data as UserDetail;
   },
 
   async updateUserStatus(userId: number, status: UserStatus, reason?: string): Promise<void> {
-    await apiClient.patch(`/users/${userId}/status`, { status, reason });
+    await typedClient.patchPath(
+      '/api/v1/admin/users/{userId}/status',
+      { userId },
+      { status, reason } as unknown as Parameters<typeof typedClient.patchPath<'/api/v1/admin/users/{userId}/status'>>[2],
+    );
   },
 
   async deleteUser(userId: number): Promise<void> {
-    await apiClient.delete(`/users/${userId}`);
+    await typedClient.deletePath('/api/v1/admin/users/{userId}', { userId });
   },
 
   async searchUsers(query: string, limit = 10): Promise<UserListItem[]> {
-    const response = await apiClient.get(`/users/search?query=${encodeURIComponent(query)}&limit=${limit}`);
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/users/search', {
+      params: { query, limit },
+    });
+    return response.data as UserListItem[];
   },
 };

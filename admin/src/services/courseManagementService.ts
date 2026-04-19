@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   PageResponse,
   CourseListItemResponse,
@@ -21,42 +21,61 @@ export const courseManagementService = {
     difficulty?: string;
     isPublished?: boolean;
   }): Promise<PageResponse<CourseListItem>> {
-    const searchParams = new URLSearchParams();
-    searchParams.set('page', params.page.toString());
-    searchParams.set('size', params.size.toString());
-    if (params.search) searchParams.set('search', params.search);
-    if (params.difficulty) searchParams.set('difficulty', params.difficulty);
-    if (params.isPublished !== undefined) searchParams.set('isPublished', params.isPublished.toString());
-    const { data } = await apiClient.get(`/courses?${searchParams}`);
-    return data;
+    const { data } = await typedClient.get('/api/v1/admin/courses', { params });
+    return data as unknown as PageResponse<CourseListItem>;
   },
 
   async getCourseDetail(courseId: number): Promise<CourseDetail> {
-    const { data } = await apiClient.get(`/courses/${courseId}`);
-    return data;
+    const { data } = await typedClient.getPath(
+      '/api/v1/admin/courses/{courseId}',
+      { courseId },
+    );
+    return data as CourseDetail;
   },
 
   async hideCourse(courseId: number): Promise<void> {
-    await apiClient.post(`/courses/${courseId}/hide`);
+    await typedClient.postPath(
+      '/api/v1/admin/courses/{courseId}/hide',
+      { courseId },
+      undefined,
+    );
   },
 
   async unhideCourse(courseId: number): Promise<void> {
-    await apiClient.post(`/courses/${courseId}/unhide`);
+    await typedClient.postPath(
+      '/api/v1/admin/courses/{courseId}/unhide',
+      { courseId },
+      undefined,
+    );
   },
 
   async deleteCourse(courseId: number): Promise<void> {
-    await apiClient.delete(`/courses/${courseId}`);
+    await typedClient.deletePath(
+      '/api/v1/admin/courses/{courseId}',
+      { courseId },
+    );
   },
 
   async hideComment(commentId: number): Promise<void> {
-    await apiClient.post(`/courses/comments/${commentId}/hide`);
+    await typedClient.postPath(
+      '/api/v1/admin/courses/comments/{commentId}/hide',
+      { commentId },
+      undefined,
+    );
   },
 
   async unhideComment(commentId: number): Promise<void> {
-    await apiClient.post(`/courses/comments/${commentId}/unhide`);
+    await typedClient.postPath(
+      '/api/v1/admin/courses/comments/{commentId}/unhide',
+      { commentId },
+      undefined,
+    );
   },
 
   async deleteComment(commentId: number): Promise<void> {
-    await apiClient.delete(`/courses/comments/${commentId}`);
+    await typedClient.deletePath(
+      '/api/v1/admin/courses/comments/{commentId}',
+      { commentId },
+    );
   },
 };

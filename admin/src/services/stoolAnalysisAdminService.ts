@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   PageResponse,
   StoolAnalysisStatsResponse,
@@ -12,27 +12,24 @@ export type { DailyCount, AdminStoolAnalysisItem };
 
 export const stoolAnalysisAdminService = {
   async getStats(): Promise<StoolAnalysisStats> {
-    const response = await apiClient.get('/stool-analyses/stats');
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/stool-analyses/stats');
+    return response.data as StoolAnalysisStats;
   },
 
   async getAnalyses(params: { page?: number; status?: string }): Promise<PageResponse<AdminStoolAnalysisItem>> {
-    const queryParams = new URLSearchParams();
-    if (params.page !== undefined) queryParams.set('page', params.page.toString());
-    if (params.status) queryParams.set('status', params.status);
-    const response = await apiClient.get(`/stool-analyses?${queryParams.toString()}`);
-    return response.data;
+    const response = await typedClient.get('/api/v1/admin/stool-analyses', { params });
+    return response.data as unknown as PageResponse<AdminStoolAnalysisItem>;
   },
 
   async getDailyLimit(): Promise<number> {
-    const response = await apiClient.get('/system/configs');
-    const configs: { key: string; value: string }[] = response.data;
+    const response = await typedClient.get('/api/v1/admin/system/configs');
+    const configs = response.data as unknown as { key: string; value: string }[];
     const setting = configs.find((c) => c.key === 'stool.analysis.daily_limit');
     return setting ? parseInt(setting.value, 10) : 10;
   },
 
   async updateDailyLimit(value: number): Promise<void> {
-    await apiClient.post('/system/configs', {
+    await typedClient.post('/api/v1/admin/system/configs', {
       key: 'stool.analysis.daily_limit',
       value: value.toString(),
     });
