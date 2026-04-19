@@ -142,24 +142,33 @@ name.
 
 Reference: Phase 3.5 (`CommunityPostResponse.userId → authorId`).
 
-## Follow-ups (not yet shipped)
+## Follow-ups — shipped
 
-These are tracked in `.omc/plans/open-questions.md`:
+All Phase 4 follow-ups listed previously are now landed on `main`:
 
-- **`WalkController.getWalkRanking` split** — currently `ResponseEntity<Any>`,
-  so `WalkRankingResponse`/`WalkCoupleRankingResponse` are not in the spec.
-  Split into `/walks/ranking` (weekly|monthly) + `/walks/ranking/calendar` to
-  finish Principle 1 coverage for the walk domain.
-- **`Species` DTO extension** — frontend selector needs `description` +
-  `breedCount`. Backend `SpeciesResponse` only carries `id`/`code`/`name`;
-  extend the DTO and drop the manual `Species` interface.
-- **Phase 4 typedClient rollout** — Phase 3.x stopped at type alignment.
-  Per-domain `apiClient` → `typedClient` swap is the next sweep, planned as
-  one PR per domain so revert-friendly.
-- **Contract test wiring** — `frontend/e2e/api-contract.spec.ts` exists and
-  passes locally with `OPENAPI_CONTRACT_BASE=https://api.mannamsquare.com
-  npx playwright test e2e/api-contract.spec.ts`. Add it as an UNSTABLE-on-fail
-  Jenkins stage so contract drift in dev/prod environments surfaces in CI.
+- **`WalkController.getWalkRanking` split** — `c6580c0`. `/walks/ranking`
+  (weekly|monthly) + `/walks/ranking/calendar` both expose typed responses
+  (`WalkRankingResponse`, `WalkCoupleRankingResponse`) via Springdoc.
+- **`Species` DTO extension** — `0d2cd8f`. `SpeciesResponse` now carries
+  `description` + `breedCount`; the manual `Species` interface is gone.
+- **Phase 4 typedClient rollout** — `ee46343` (PoC) → `cd078a2` → `00d5cf7`
+  (frontend 22/22) → `0286c90` (admin 22/22). All JSON endpoints go through
+  `typedClient`; `apiClient` stays only for multipart, blob, DELETE-with-body,
+  and endpoints marked `@OpenApiInternal` or not in the spec.
+- **Contract test wiring** — `3f4b7bb`. Jenkins `OpenAPI Contract Test (dev)`
+  stage runs `frontend/e2e/api-contract.spec.ts` against `api.mannamsquare.com`
+  on dev builds, marks the build `UNSTABLE` on drift, does not block deploy.
+
+## Still open
+
+- **`@JsonAlias("userId")` removal** (see `.omc/plans/open-questions.md`) —
+  waits one release past the `CommunityPostDto.userId → authorId` rename
+  ship so legacy clients stop sending the old name. Schedule removal after
+  access logs confirm zero hits on `userId`.
+- **operationId strategy** — reactive decision; revisit the first time an
+  operationId churn breaks the generated TS (Pre-mortem Scenario 5).
+- **Admin husky adoption** — revisit 90d post-migration if admin contract-drift
+  incidents > 0.
 
 ## Repository touchpoints
 

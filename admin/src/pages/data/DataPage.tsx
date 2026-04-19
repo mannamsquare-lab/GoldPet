@@ -7,6 +7,7 @@ import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';
 import { Tabs } from '../../components/common/Tabs';
 import type { ColumnDef } from '../../components/common/DataTable';
+import type { SpeciesResponse } from '../../types/api';
 import { toast } from 'sonner'
 import { useConfirm } from '@/hooks/useConfirm'
 
@@ -16,11 +17,7 @@ const DATA_TABS = [
   { key: 'categories', label: '커뮤니티 카테고리' },
 ];
 
-interface SpeciesItem {
-  id: number;
-  code: string;
-  name: string;
-}
+type SpeciesItem = SpeciesResponse;
 
 interface CategoryItem {
   id: number;
