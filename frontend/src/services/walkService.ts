@@ -1,6 +1,11 @@
 // Walk Service - API integration for Walk features
 
 import apiClient from './api/client';
+import type {
+  WalkSpotDto,
+  WalkPhotoResponse,
+  WalkResponse,
+} from '../types/api';
 
 export interface WalkRecord {
   id: number;
@@ -32,38 +37,11 @@ export interface WalkStats {
   totalWalks?: number;
 }
 
-export interface WalkSpot {
-  id?: number;
-  latitude: number;
-  longitude: number;
-  type: 'PEE' | 'POOP' | 'PHOTO' | 'PROBLEM' | 'OTHER';
-  timestamp: string;
-  imageUrl?: string;
-  imageKey?: string;   // raw S3 key — additive field emitted alongside imageUrl once backend ships Option A
-  imageUrlViewer?: string | null;  // 1600px presigned variant
-  imageUrlThumb?: string | null;   // 200px presigned variant
-  imageKeyViewer?: string | null;  // raw S3 key for 1600px variant
-  imageKeyThumb?: string | null;   // raw S3 key for 200px variant
-  note?: string;
-  hiddenFromPublic?: boolean;
-}
-
-export interface WalkPhotoItem {
-  id: number;
-  imageUrl: string | null;           // original full-res (backward compat + share/save)
-  imageUrlViewer?: string | null;    // 1600px presigned variant — default viewer src
-  imageUrlThumb?: string | null;     // 200px presigned variant — grid tiles
-  imageKey?: string | null;          // raw S3 key — Option A additive field
-  imageKeyViewer?: string | null;    // raw S3 key for 1600px variant
-  imageKeyThumb?: string | null;     // raw S3 key for 200px variant
-  note: string | null;
-  walkDate: string;
-  walkId: number;
-  userId?: number;
-  petName: string | null;
-  petImageUrl: string | null;
-  hiddenFromPublic?: boolean;
-}
+// Re-export generated DTOs under their familiar local names. WalkSpot/WalkPhotoItem
+// were hand-written before Phase 3.9; the underlying shape now comes from the OpenAPI
+// spec via `Schemas['WalkSpotDto']` / `Schemas['WalkPhotoResponse']`.
+export type WalkSpot = WalkSpotDto;
+export type WalkPhotoItem = WalkPhotoResponse;
 
 export interface WalkSession {
   id: number;
@@ -105,23 +83,7 @@ export interface WalkCoupleRanking {
 }
 
 // Backend WalkResponse -> Frontend WalkRecord 변환
-function toWalkRecord(walk: {
-  id: number;
-  startTime: string;
-  endTime: string;
-  distanceKm: number;
-  durationSeconds: number;
-  caloriesBurned?: number;
-  path?: number[][];
-  startAddress?: string;
-  endAddress?: string;
-  isPublic?: boolean;
-  userNickname?: string;
-  userProfileImageUrl?: string;
-  hasPath?: boolean;
-  petNames?: string[];
-  petProfileImageUrls?: (string | null)[];
-}): WalkRecord {
+function toWalkRecord(walk: WalkResponse): WalkRecord {
   const date = new Date(walk.startTime);
   const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
   const minutes = Math.round(walk.durationSeconds / 60);

@@ -178,7 +178,7 @@ class WalkServiceTest {
                 WalkSpotDto(
                     latitude = 37.5668,
                     longitude = 126.9783,
-                    type = "PEE",
+                    type = WalkSpotType.PEE,
                     timestamp = startTime.plusMinutes(30),
                     imageUrl = null,
                     note = "공원 근처"

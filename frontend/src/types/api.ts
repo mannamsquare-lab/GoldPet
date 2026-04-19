@@ -85,3 +85,22 @@ export type UserResponse = Schemas['UserResponse'];
 export type UserStats = Schemas['UserStatsResponse'];
 // Note: UpdateProfileRequest hand-rolled in userService.ts (frontend adds imageUrls,
 // backend UserProfileUpdateRequest adds mainLocation*; they're not a pure mirror).
+
+// --- Walk domain (Phase 3.9) ---
+
+export type WalkSpotType = Schemas['WalkSpotDto']['type']; // 'PEE'|'POOP'|'PHOTO'|'PROBLEM'|'OTHER'
+export type WalkSpotDto = Schemas['WalkSpotDto'];
+export type WalkResponse = Schemas['WalkResponse'];
+export type WalkPhotoResponse = Schemas['WalkPhotoResponse'];
+export type WalkStatsResponse = Schemas['WalkStatsResponse'];
+export type CreateWalkRequest = Schemas['CreateWalkRequest'];
+export type PhotoMintResponse = Schemas['PhotoMintResponse'];
+export type UpdateSpotNoteRequest = Schemas['UpdateSpotNoteRequest'];
+export type UpdateSpotVisibilityRequest = Schemas['UpdateSpotVisibilityRequest'];
+export type PageWalkResponse = Schemas['PageWalkResponse'];
+export type PageWalkPhotoResponse = Schemas['PageWalkPhotoResponse'];
+
+// Note: WalkRankingResponse / WalkCoupleRankingResponse are not in the spec because
+// `WalkController.getWalkRanking` returns `ResponseEntity<Any>`. Tracked as a follow-up
+// (split endpoint into /walks/ranking + /walks/ranking/calendar) — keep manual interfaces
+// in walkService.ts until then.

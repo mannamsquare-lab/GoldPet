@@ -37,13 +37,14 @@ function isSlowNetwork(): boolean {
 function toPhotoItem(walk: WalkSession, spot: WalkSpot): WalkPhotoItem {
   return {
     id: spot.id ?? 0,
-    imageUrl: spot.imageUrl ?? null,
-    note: spot.note ?? null,
+    imageUrl: spot.imageUrl,
+    note: spot.note,
     walkDate: walk.startTime,
     walkId: walk.id,
-    petName: walk.petNames?.[0] ?? null,
-    petImageUrl: walk.petProfileImageUrls?.[0] ?? null,
-    hiddenFromPublic: spot.hiddenFromPublic,
+    userId: walk.userId ?? 0,
+    petName: walk.petNames?.[0],
+    petImageUrl: walk.petProfileImageUrls?.[0] ?? undefined,
+    hiddenFromPublic: spot.hiddenFromPublic ?? false,
   };
 }
 

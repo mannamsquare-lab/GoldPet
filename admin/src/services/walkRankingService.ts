@@ -1,36 +1,14 @@
 import { apiClient } from './apiClient';
+import type {
+  WalkRankingAdminResponse,
+  BestWalkCoupleResponse,
+  BestWalkCoupleRequest,
+} from '../types/api';
 
-export interface WalkRankingAdminEntry {
-  rank: number;
-  userId: number;
-  nickname: string | null;
-  profileImageUrl: string | null;
-  petId: number | null;
-  petName: string | null;
-  petProfileImageUrl: string | null;
-  totalDistanceKm: number;
-  totalMinutes: number;
-  totalGold: number;
-  walkCount: number;
-}
-
-export interface BestWalkCoupleResponse {
-  yearMonth: string;
-  userId: number;
-  nickname: string | null;
-  profileImageUrl: string | null;
-  petId: number;
-  petName: string;
-  petProfileImageUrl: string | null;
-  selectedBy: number | null;
-  createdAt: string;
-}
-
-export interface SetBestCoupleRequest {
-  yearMonth: string;
-  userId: number;
-  petId: number;
-}
+// Re-export under historical local names (Phase 3.9).
+export type WalkRankingAdminEntry = WalkRankingAdminResponse;
+export type { BestWalkCoupleResponse };
+export type SetBestCoupleRequest = BestWalkCoupleRequest;
 
 export const walkRankingService = {
   async getRanking(yearMonth: string, size = 50): Promise<WalkRankingAdminEntry[]> {

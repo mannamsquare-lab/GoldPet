@@ -1,53 +1,16 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type {
+  PageResponse,
+  WalkAdminResponse,
+  WalkDetailResponse,
+  WalkSpotAdminDto,
+  WalkStatsDetailResponse,
+} from '../types/api';
 
-export interface WalkAdminResponse {
-  id: number;
-  userId: number;
-  userNickname: string | null;
-  startTime: string;
-  endTime: string | null;
-  distanceKm: number;
-  durationSeconds: number;
-  caloriesBurned: number;
-  spotsCount: number;
-  createdAt: string;
-}
-
-export interface WalkSpotDto {
-  id: number;
-  type: 'PEE' | 'POOP' | 'PHOTO' | 'PROBLEM' | 'OTHER';
-  latitude: number;
-  longitude: number;
-  timestamp: string;
-  imageUrl: string | null;
-  note: string | null;
-}
-
-export interface WalkDetailResponse {
-  id: number;
-  userId: number;
-  userNickname: string | null;
-  startTime: string;
-  endTime: string | null;
-  distanceKm: number;
-  durationSeconds: number;
-  caloriesBurned: number;
-  spotsCount: number;
-  notes: string | null;
-  pathCoordinates: { latitude: number; longitude: number }[];
-  spots: WalkSpotDto[];
-  userPets: { petId: number; petName: string; breed: string; species: string }[];
-  createdAt: string;
-}
-
-export interface WalkStatsDetailResponse {
-  totalWalks: number;
-  totalDistanceKm: number;
-  averageDistanceKm: number;
-  averageDurationMinutes: number;
-  dailyBreakdown: { date: string; count: number; totalDistanceKm: number }[];
-}
+// Re-export OpenAPI-generated types (Phase 3.9). `WalkSpotDto` keeps its prior local
+// name for callers; underlying shape now comes from `Schemas['WalkSpotAdminDto']`.
+export type { WalkAdminResponse, WalkDetailResponse, WalkStatsDetailResponse };
+export type WalkSpotDto = WalkSpotAdminDto;
 
 export interface GetWalksParams {
   page?: number;

@@ -1,6 +1,7 @@
 package com.goldpet.domain.walk.dto
 
 import com.goldpet.domain.walk.entity.Walk
+import com.goldpet.domain.walk.entity.WalkSpotType
 import com.goldpet.domain.walk.service.PhotoUrlSigner
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
@@ -38,7 +39,7 @@ data class WalkSpotDto(
     val id: Long? = null,
     val latitude: Double,
     val longitude: Double,
-    val type: String,
+    val type: WalkSpotType,
     val timestamp: LocalDateTime,
     val imageUrl: String?,
     val imageKey: String? = null,
@@ -129,7 +130,7 @@ data class WalkResponse(
                         id = spot.id,
                         latitude = spot.location.y,
                         longitude = spot.location.x,
-                        type = spot.type.name,
+                        type = spot.type,
                         timestamp = spot.timestamp,
                         imageUrl = signedOriginal ?: rawKey,
                         imageKey = rawKey,
@@ -178,7 +179,7 @@ data class WalkResponse(
                             id = spot.id,
                             latitude = spot.location.y,
                             longitude = spot.location.x,
-                            type = spot.type.name,
+                            type = spot.type,
                             timestamp = spot.timestamp,
                             imageUrl = signedOriginal ?: rawKey,
                             imageKey = rawKey,

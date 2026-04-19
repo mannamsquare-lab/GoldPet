@@ -135,7 +135,7 @@ class WalkService(
             walk.spots.add(com.goldpet.domain.walk.entity.WalkSpot(
                 walk = walk,
                 location = point,
-                type = com.goldpet.domain.walk.entity.WalkSpotType.valueOf(spotDto.type),
+                type = spotDto.type,
                 timestamp = spotDto.timestamp,
                 imageUrl = spotDto.imageUrl,
                 note = spotDto.note,

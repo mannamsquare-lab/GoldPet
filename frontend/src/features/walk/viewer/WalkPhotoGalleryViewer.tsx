@@ -234,13 +234,14 @@ export function WalkPhotoGalleryViewer({
 
   const applyCacheNotePatch = useCallback(
     (spotId: number, note: string | null) => {
+      const noteValue = note ?? undefined;
       queryClient.setQueryData<InfiniteData<PageResponse<WalkPhotoItem>> | undefined>(
         ['walk', 'my', 'photos'],
-        (old) => mapPagesUpdateItemById(old, spotId, { note }),
+        (old) => mapPagesUpdateItemById(old, spotId, { note: noteValue }),
       );
       queryClient.setQueryData<PageResponse<WalkPhotoItem> | undefined>(
         ['walk', 'my', 'photos', 'mywalk-collection'],
-        (old) => mapArrayUpdateItemById(old, spotId, { note }),
+        (old) => mapArrayUpdateItemById(old, spotId, { note: noteValue }),
       );
     },
     [queryClient],

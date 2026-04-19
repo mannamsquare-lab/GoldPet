@@ -25,3 +25,12 @@ export type ReportType = Schemas['CreateReportRequest']['type']; // POST|COMMENT
 export type ReportStatus = Schemas['ReportAdminResponse']['status']; // PENDING|RESOLVED|DISMISSED
 export type ReportActionType = Schemas['ResolveReportRequest']['actionType']; // DELETE_POST|HIDE_POST|...
 export type ReportAdminResponse = Schemas['ReportAdminResponse'];
+
+// --- Walk admin domain (Phase 3.9) ---
+export type WalkAdminResponse = Schemas['WalkAdminResponse'];
+export type WalkDetailResponse = Schemas['WalkDetailResponse'];
+export type WalkSpotAdminDto = Schemas['WalkSpotAdminDto'];
+export type WalkStatsDetailResponse = Schemas['WalkStatsDetailResponse'];
+export type WalkRankingAdminResponse = Schemas['WalkRankingAdminResponse'];
+export type BestWalkCoupleResponse = Schemas['BestWalkCoupleResponse'];
+export type BestWalkCoupleRequest = Schemas['BestWalkCoupleRequest'];
