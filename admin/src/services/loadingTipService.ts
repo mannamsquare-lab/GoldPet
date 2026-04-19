@@ -1,22 +1,16 @@
 import { apiClient } from './apiClient';
+import type {
+  AILoadingTipResponse,
+  CreateLoadingTipRequest,
+  UpdateLoadingTipRequest,
+} from '../types/api';
 
-export interface AILoadingTipResponse {
-  id: number;
-  content: string;
-  displayOrder: number;
-  isActive: boolean;
-}
-
-export interface CreateLoadingTipRequest {
-  content: string;
-  displayOrder: number;
-}
-
-export interface UpdateLoadingTipRequest {
-  content?: string;
-  displayOrder?: number;
-  isActive?: boolean;
-}
+// Re-export under historical local names (Phase 3.11.1).
+export type {
+  AILoadingTipResponse,
+  CreateLoadingTipRequest,
+  UpdateLoadingTipRequest,
+};
 
 export const loadingTipService = {
   getAllTips: async (): Promise<AILoadingTipResponse[]> => {

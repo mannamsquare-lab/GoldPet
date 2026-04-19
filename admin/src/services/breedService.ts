@@ -1,33 +1,15 @@
 // Breed Service - API integration for Admin breed management
 
 import { apiClient } from './apiClient';
+import type {
+  BreedResponse,
+  SpeciesResponse,
+  CreateBreedRequest,
+  UpdateBreedRequest,
+} from '../types/api';
 
-export interface BreedResponse {
-  id: number;
-  speciesId: number;
-  name: string;
-  category?: string;
-  description?: string;
-}
-
-export interface SpeciesResponse {
-  id: number;
-  code: string;
-  name: string;
-}
-
-export interface CreateBreedRequest {
-  speciesId: number;
-  name: string;
-  category?: string;
-  description?: string;
-}
-
-export interface UpdateBreedRequest {
-  name: string;
-  category?: string;
-  description?: string;
-}
+// Re-export under historical local names (Phase 3.11.1).
+export type { BreedResponse, SpeciesResponse, CreateBreedRequest, UpdateBreedRequest };
 
 export const breedService = {
   // Get all species

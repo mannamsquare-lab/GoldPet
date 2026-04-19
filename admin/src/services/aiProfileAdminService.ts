@@ -1,56 +1,19 @@
 import { apiClient } from './apiClient';
-import type { PageResponse } from '../types/api';
+import type {
+  PageResponse,
+  AIRequestAdminResponse,
+  AIStyleAdminResponse,
+  AIStyleAdminRequest,
+  AIProfileStatsResponse,
+} from '../types/api';
 
-export interface AIRequestAdminResponse {
-  id: number;
-  userId: number;
-  userNickname: string | null;
-  petId: number;
-  petName: string;
-  type: string;
-  sourceImageUrl: string;
-  stylePrompt: string | null;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-  resultUrl: string | null;
-  errorMessage: string | null;
-  goldCost: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AIStyleAdminResponse {
-  id: string;
-  name: string;
-  description: string | null;
-  previewUrl: string | null;
-  goldCost: number;
-  isActive: boolean;
-  displayOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AIStyleAdminRequest {
-  id: string;
-  name: string;
-  description: string;
-  previewUrl: string;
-  goldCost: number;
-  isActive: boolean;
-  displayOrder: number;
-}
-
-export interface AIProfileStatsResponse {
-  totalRequests: number;
-  pendingRequests: number;
-  completedRequests: number;
-  failedRequests: number;
-  refundedRequests: number;
-  totalGoldSpent: number;
-  successRate: number;
-  dailyBreakdown: { date: string; count: number; totalDistance: number }[];
-  popularStyles: { styleId: string; styleName: string; count: number }[];
-}
+// Re-export under historical local names (Phase 3.11.1).
+export type {
+  AIRequestAdminResponse,
+  AIStyleAdminResponse,
+  AIStyleAdminRequest,
+  AIProfileStatsResponse,
+};
 
 export const aiProfileAdminService = {
   async getRequests(page: number = 0, size: number = 20, status?: string): Promise<PageResponse<AIRequestAdminResponse>> {

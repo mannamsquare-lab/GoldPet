@@ -34,3 +34,36 @@ export type WalkStatsDetailResponse = Schemas['WalkStatsDetailResponse'];
 export type WalkRankingAdminResponse = Schemas['WalkRankingAdminResponse'];
 export type BestWalkCoupleResponse = Schemas['BestWalkCoupleResponse'];
 export type BestWalkCoupleRequest = Schemas['BestWalkCoupleRequest'];
+
+// --- Content domain (Phase 3.11.1) — admin content management ---
+
+// AI Profile admin
+export type AIRequestAdminResponse = Schemas['AIRequestAdminResponse'];
+export type AIStyleAdminResponse = Schemas['AIStyleAdminResponse'];
+export type AIStyleAdminRequest = Schemas['AIStyleAdminRequest'];
+export type AIProfileStatsResponse = Schemas['AIProfileStatsResponse'];
+
+// Emoticon admin
+export type EmoticonResponse = Schemas['EmoticonResponse'];
+export type EmoticonPackResponse = Schemas['EmoticonPackResponse'];
+export type CreateEmoticonRequest = Schemas['CreateEmoticonRequest'];
+export type UpdateEmoticonRequest = Schemas['UpdateEmoticonRequest'];
+
+// Gamification (admin uses same Badge as frontend)
+export type BadgeResponse = Schemas['BadgeResponse'];
+
+// AI loading tip
+export type AILoadingTipResponse = Schemas['AILoadingTipResponse'];
+export type CreateLoadingTipRequest = Schemas['CreateLoadingTipRequest'];
+export type UpdateLoadingTipRequest = Schemas['UpdateLoadingTipRequest'];
+
+// Pet breed
+export type BreedResponse = Schemas['BreedResponse'];
+export type SpeciesResponse = Schemas['SpeciesResponse'];
+export type CreateBreedRequest = Schemas['CreateBreedRequest'];
+export type UpdateBreedRequest = Schemas['UpdateBreedRequest'];
+
+// Pet attribute (backend uses single PetAttributeRequest for both create + update)
+export type PetAttributeResponse = Schemas['PetAttributeResponse'];
+export type AttributeOption = Schemas['AttributeOption'];
+export type PetAttributeRequest = Schemas['PetAttributeRequest'];

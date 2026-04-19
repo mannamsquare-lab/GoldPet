@@ -1,34 +1,18 @@
 import { apiClient } from './apiClient';
+import type {
+  EmoticonResponse,
+  EmoticonPackResponse,
+  CreateEmoticonRequest,
+  UpdateEmoticonRequest,
+} from '../types/api';
 
-export interface EmoticonResponse {
-  id: number;
-  name: string;
-  packId: number;
-  category: string;
-  imageUrl: string;
-  sortOrder: number;
-  isActive: boolean;
-  createdAt?: string;
-}
-
-export interface EmoticonPackResponse {
-  id: number;
-  name: string;
-}
-
-export interface CreateEmoticonRequest {
-  name: string;
-  packId: number;
-  imageUrl: string;
-  sortOrder: number;
-}
-
-export interface UpdateEmoticonRequest {
-  name?: string;
-  packId?: number;
-  imageUrl?: string;
-  sortOrder?: number;
-}
+// Re-export under historical local names (Phase 3.11.1).
+export type {
+  EmoticonResponse,
+  EmoticonPackResponse,
+  CreateEmoticonRequest,
+  UpdateEmoticonRequest,
+};
 
 export const emoticonService = {
   getAll: async (): Promise<EmoticonResponse[]> => {

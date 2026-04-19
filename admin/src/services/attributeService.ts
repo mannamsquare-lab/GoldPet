@@ -1,22 +1,16 @@
 import { apiClient } from './apiClient';
+import type {
+  PetAttributeResponse,
+  AttributeOption,
+  PetAttributeRequest,
+} from '../types/api';
 
-export interface AttributeOption {
-    label: string;
-    value: string;
-}
-
-export interface PetAttribute {
-    id: number;
-    category: 'TRAIT' | 'INTEREST' | 'ALLERGY';
-    code: string;
-    name: string;
-    inputType: 'SELECT' | 'RADIO' | 'TEXT';
-    displayOrder: number;
-    options: AttributeOption[];
-}
-
-export type CreateAttributeRequest = Omit<PetAttribute, 'id'>;
-export type UpdateAttributeRequest = Partial<CreateAttributeRequest>;
+// Generated aliases (Phase 3.11.1). Backend uses single PetAttributeRequest for
+// both create + update; matches Partial<...> semantics at the call site.
+export type { AttributeOption };
+export type PetAttribute = PetAttributeResponse;
+export type CreateAttributeRequest = PetAttributeRequest;
+export type UpdateAttributeRequest = PetAttributeRequest;
 
 export const getAttributes = async (): Promise<PetAttribute[]> => {
     const response = await apiClient.get<PetAttribute[]>('/pet-attributes');

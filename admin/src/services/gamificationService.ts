@@ -1,20 +1,10 @@
 import { apiClient } from './apiClient';
+import type { BadgeResponse } from '../types/api';
 
-export interface Badge {
-  id: number;
-  name: string;
-  description: string;
-  imageUrl: string | null;
-  conditionType: string | null;
-  conditionValue: number | null;
-  isActive: boolean;
-  rewardGold: number | null;
-  startDate: string | null;
-  endDate: string | null;
-  isRepeatable: boolean;
-  repeatCycle: string | null;
-  earnedCount: number;
-}
+// Generated alias (Phase 3.11.1). Note: admin Badge previously included
+// frontend-only `isActive` and `earnedCount` fields not in backend BadgeResponse.
+// Restored manually if call sites need them; for now use generated shape directly.
+export type Badge = BadgeResponse;
 
 export const gamificationService = {
   async getBadges(): Promise<Badge[]> {
