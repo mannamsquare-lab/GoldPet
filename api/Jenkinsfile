@@ -13,11 +13,13 @@ pipeline {
     stages {
         stage('OpenAPI Spec Drift Gate') {
             steps {
-                // Phase 2 / 4 — verifyOpenApiSpec regenerates the spec into a temp
-                // file and fails the build if the sha256 differs from the committed
-                // api/openapi.json. Catches "shipped backend change without
-                // regenerating the spec" before deploy.
+                // Phase 2 / 4 — verifyOpenApiSpec regenerates the spec and fails
+                // the build if the sha256 differs from the committed version.
+                // The task expects a stashed copy at build/openapi-committed.json
+                // because its own `generateOpenApiDocs` dep overwrites openapi.json
+                // during execution. Stash BEFORE invoking gradle.
                 dir('api') {
+                    sh 'mkdir -p build && cp openapi.json build/openapi-committed.json'
                     sh './gradlew verifyOpenApiSpec'
                 }
             }
