@@ -74,7 +74,7 @@ export function useWalkPhotoGallery(spots: WalkSpot[] | undefined): UseWalkPhoto
         setIsLoading(true);
         setGalleryOpen(true);
 
-        Promise.allSettled(photoSpots.map(s => resolvePhotoUrl(s.imageUrl)))
+        Promise.allSettled(photoSpots.map(s => resolvePhotoUrl(s.imageUrlViewer ?? s.imageUrl)))
             .then(results => {
                 const urls = results.map(r => r.status === 'fulfilled' ? r.value : '');
                 resolvedUrlsRef.current = urls;
@@ -96,7 +96,7 @@ export function useWalkPhotoGallery(spots: WalkSpot[] | undefined): UseWalkPhoto
         setPreviewLoading(true);
         setPreviewError(false);
 
-        resolvePhotoUrl(spot.imageUrl)
+        resolvePhotoUrl(spot.imageUrlViewer ?? spot.imageUrl)
             .then(url => {
                 previewUrlRef.current = url;
                 setPreviewUrl(url);

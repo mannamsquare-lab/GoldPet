@@ -38,6 +38,8 @@ function toPhotoItem(walk: WalkSession, spot: WalkSpot): WalkPhotoItem {
   return {
     id: spot.id ?? 0,
     imageUrl: spot.imageUrl,
+    imageUrlViewer: spot.imageUrlViewer,
+    imageUrlThumb: spot.imageUrlThumb,
     note: spot.note,
     walkDate: walk.startTime,
     walkId: walk.id,
