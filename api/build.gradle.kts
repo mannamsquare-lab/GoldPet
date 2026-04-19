@@ -75,12 +75,17 @@ tasks.withType<Test> {
 }
 
 openApi {
-    apiDocsUrl.set("http://localhost:8081/v3/api-docs")
+    // Use a non-standard port so `generateOpenApiDocs` does not collide with
+    // the deployed API on 8081 when Jenkins runs on the same host.
+    apiDocsUrl.set("http://localhost:18081/v3/api-docs")
     outputDir.set(file("$projectDir"))
     outputFileName.set("openapi.json")
     waitTimeInSeconds.set(60)
     customBootRun {
-        args.set(listOf("--spring.profiles.active=codegen"))
+        args.set(listOf(
+            "--spring.profiles.active=codegen",
+            "--server.port=18081",
+        ))
     }
 }
 
