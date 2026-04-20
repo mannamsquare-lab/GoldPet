@@ -5,6 +5,7 @@ import com.goldpet.domain.emoticon.repository.EmoticonRepository
 import com.goldpet.domain.file.service.FileService
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.core.env.Environment
@@ -67,6 +68,7 @@ class EmoticonSeedS3MigrationService(
     }
 
     @Transactional
+    @CacheEvict(value = ["emoticons"], allEntries = true)
     fun migrateAll(): Result {
         val emoticons = emoticonRepository.findAll()
         var migrated = 0
