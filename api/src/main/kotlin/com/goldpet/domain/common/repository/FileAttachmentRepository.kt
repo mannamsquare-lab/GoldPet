@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
@@ -32,6 +33,7 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
     fun findImagesForRetry(@Param("cutoff") cutoff: LocalDateTime, pageable: Pageable): Page<FileAttachment>
 
     @Modifying(clearAutomatically = true)
+    @Transactional
     @Query("UPDATE file_attachments SET thumbnail_url = :thumbUrl, medium_url = :medUrl, width = :width, height = :height, updated_at = CURRENT_TIMESTAMP WHERE id = :id", nativeQuery = true)
     fun updateVariantUrls(
         @Param("id") id: Long,
@@ -42,6 +44,7 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
     )
 
     @Modifying(clearAutomatically = true)
+    @Transactional
     @Query("UPDATE file_attachments SET thumbnail_url = :thumbUrl, medium_url = :medUrl, viewer_url = :viewerUrl, width = :width, height = :height, updated_at = CURRENT_TIMESTAMP WHERE id = :id", nativeQuery = true)
     fun updateAllVariantUrls(
         @Param("id") id: Long,
