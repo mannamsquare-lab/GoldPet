@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.core.env.Environment
 import org.springframework.core.io.ClassPathResource
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
@@ -31,6 +32,7 @@ class EmoticonSeedS3MigrationService(
     private val emoticonRepository: EmoticonRepository,
     private val fileService: FileService,
     private val systemSettingService: SystemSettingService,
+    private val environment: Environment,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -45,6 +47,14 @@ class EmoticonSeedS3MigrationService(
     @EventListener(ApplicationReadyEvent::class)
     @Order(Ordered.LOWEST_PRECEDENCE)
     fun onApplicationReady() {
+        // codegen profile 은 Redis/MinIO 없는 minimal 환경. SystemSettingService(@Cacheable)
+        // + FileService(S3) 모두 호출 불가이므로 자동 실행 skip.
+        // Jenkins verifyOpenApiSpec 가 ApplicationReadyEvent 에서 실패하면 OpenAPI codegen
+        // 파이프라인 전체가 깨진다.
+        if (environment.activeProfiles.any { it.equals("codegen", ignoreCase = true) }) {
+            log.info("Emoticon S3 migration skipped: codegen profile active")
+            return
+        }
         if (!systemSettingService.getBoolean(ENABLED_KEY, true)) {
             log.info("Emoticon S3 migration skipped: {}=false", ENABLED_KEY)
             return
