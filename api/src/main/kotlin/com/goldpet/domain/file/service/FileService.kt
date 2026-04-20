@@ -494,11 +494,11 @@ class FileService(
      */
     fun backfillVariants(scope: BackfillScope, batchSize: Int, dryRun: Boolean = false): BackfillResult {
         return when (scope) {
-            BackfillScope.FILE_ATTACHMENTS -> backfillFileAttachments(batchSize)
+            BackfillScope.FILE_ATTACHMENTS -> backfillFileAttachments(batchSize, dryRun)
             BackfillScope.FILE_ATTACHMENTS_RETRY -> backfillFileAttachmentsRetry(batchSize, dryRun)
             BackfillScope.WALK_SPOTS -> backfillWalkSpots(batchSize, dryRun)
             BackfillScope.ALL -> {
-                val a = backfillFileAttachments(batchSize)
+                val a = backfillFileAttachments(batchSize, dryRun)
                 val b = backfillWalkSpots(batchSize, dryRun)
                 BackfillResult(
                     total = a.total + b.total,
@@ -575,7 +575,7 @@ class FileService(
     fun backfillVariants(batchSize: Int): BackfillResult = backfillFileAttachments(batchSize)
 
     @org.springframework.transaction.annotation.Transactional
-    private fun backfillFileAttachments(batchSize: Int): BackfillResult {
+    private fun backfillFileAttachments(batchSize: Int, dryRun: Boolean = false): BackfillResult {
         val startMs = System.currentTimeMillis()
         val pageable = org.springframework.data.domain.PageRequest.of(0, batchSize)
         val page = fileAttachmentRepository.findImagesWithoutVariants(pageable)
@@ -584,15 +584,29 @@ class FileService(
         var skipped = 0
         var failed = 0
 
+        if (dryRun) {
+            return BackfillResult(
+                total = total,
+                processed = 0,
+                skipped = page.content.size,
+                failed = 0,
+                durationMs = System.currentTimeMillis() - startMs
+            )
+        }
+
         for (fileAttachment in page.content) {
             try {
                 val uri = java.net.URI(fileAttachment.url)
                 val pathParts = uri.path.removePrefix("/").split("/", limit = 2)
                 if (pathParts.size < 2) {
-                    // URL 파싱 실패 → 원본 URL로 채워서 재조회 방지
-                    fileAttachmentRepository.updateVariantUrls(
-                        id = fileAttachment.id, thumbUrl = fileAttachment.url, medUrl = fileAttachment.url,
-                        width = fileAttachment.width ?: 0, height = fileAttachment.height ?: 0
+                    // URL 파싱 실패 → 원본 URL로 채워서 재조회 방지 (viewer 포함 3종 모두)
+                    fileAttachmentRepository.updateAllVariantUrls(
+                        id = fileAttachment.id,
+                        thumbUrl = fileAttachment.url,
+                        medUrl = fileAttachment.url,
+                        viewerUrl = fileAttachment.url,
+                        width = fileAttachment.width ?: 0,
+                        height = fileAttachment.height ?: 0
                     )
                     skipped++; continue
                 }
@@ -603,9 +617,13 @@ class FileService(
                 val image = ImageIO.read(s3Object.objectContent)
                 if (image == null) {
                     // 디코딩 실패 → 원본 URL로 채워서 재조회 방지
-                    fileAttachmentRepository.updateVariantUrls(
-                        id = fileAttachment.id, thumbUrl = fileAttachment.url, medUrl = fileAttachment.url,
-                        width = fileAttachment.width ?: 0, height = fileAttachment.height ?: 0
+                    fileAttachmentRepository.updateAllVariantUrls(
+                        id = fileAttachment.id,
+                        thumbUrl = fileAttachment.url,
+                        medUrl = fileAttachment.url,
+                        viewerUrl = fileAttachment.url,
+                        width = fileAttachment.width ?: 0,
+                        height = fileAttachment.height ?: 0
                     )
                     skipped++; continue
                 }
@@ -619,22 +637,28 @@ class FileService(
 
                 val thumbUrl = variantUrls["thumb"] ?: fileAttachment.url
                 val medUrl = variantUrls["medium"] ?: fileAttachment.url
+                val viewerUrl = variantUrls["viewer"] ?: fileAttachment.url
 
-                fileAttachmentRepository.updateVariantUrls(
+                fileAttachmentRepository.updateAllVariantUrls(
                     id = fileAttachment.id,
                     thumbUrl = thumbUrl,
                     medUrl = medUrl,
+                    viewerUrl = viewerUrl,
                     width = fileAttachment.width ?: image.width,
                     height = fileAttachment.height ?: image.height
                 )
                 if (variantUrls.isEmpty()) skipped++ else processed++
             } catch (e: Exception) {
                 log.warn("Backfill failed for FileAttachment id={}: {}", fileAttachment.id, e.message)
-                // 실패해도 원본 URL로 채워서 무한 반복 방지
+                // 실패해도 원본 URL로 채워서 무한 반복 방지 (viewer 포함)
                 try {
-                    fileAttachmentRepository.updateVariantUrls(
-                        id = fileAttachment.id, thumbUrl = fileAttachment.url, medUrl = fileAttachment.url,
-                        width = fileAttachment.width ?: 0, height = fileAttachment.height ?: 0
+                    fileAttachmentRepository.updateAllVariantUrls(
+                        id = fileAttachment.id,
+                        thumbUrl = fileAttachment.url,
+                        medUrl = fileAttachment.url,
+                        viewerUrl = fileAttachment.url,
+                        width = fileAttachment.width ?: 0,
+                        height = fileAttachment.height ?: 0
                     )
                 } catch (_: Exception) { }
                 failed++
