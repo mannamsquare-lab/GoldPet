@@ -46,5 +46,12 @@ class FileAttachment(
     val durationSec: Int? = null,
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    /**
+     * Bumped by updateVariantUrls/updateAllVariantUrls native statements. Used by the
+     * FILE_ATTACHMENTS_RETRY backfill scope to enforce a cooldown on permanent failures.
+     */
+    @Column(name = "updated_at", nullable = false)
+    var updatedAt: LocalDateTime = LocalDateTime.now()
 )

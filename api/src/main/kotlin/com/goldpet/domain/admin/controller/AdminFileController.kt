@@ -54,4 +54,28 @@ class AdminFileController(
         val result = fileService.backfillVariants(effectiveBatchSize)
         return ResponseEntity.ok(result)
     }
+
+    @Operation(summary = "스코프 지정 백필", description = "scope=ALL|FILE_ATTACHMENTS|FILE_ATTACHMENTS_RETRY|WALK_SPOTS")
+    @PostMapping("/backfill")
+    fun backfillScoped(
+        @RequestParam scope: FileService.BackfillScope,
+        @RequestParam(defaultValue = "200") batchSize: Int,
+        @RequestParam(defaultValue = "false") dryRun: Boolean,
+        @AuthenticationPrincipal principal: AdminUserPrincipal?
+    ): ResponseEntity<FileService.BackfillResult> {
+        principal ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        val effectiveBatchSize = batchSize.coerceIn(1, 500)
+        val result = fileService.backfillVariants(scope, effectiveBatchSize, dryRun)
+        return ResponseEntity.ok(result)
+    }
+
+    @Operation(summary = "재처리 백필 중지", description = "image.backfill.retry_enabled = false")
+    @PostMapping("/backfill/stop")
+    fun stopBackfillRetry(
+        @AuthenticationPrincipal principal: AdminUserPrincipal?
+    ): ResponseEntity<Map<String, String>> {
+        principal ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        fileService.stopBackfillRetry()
+        return ResponseEntity.ok(mapOf("status" to "stopped", "flag" to FileService.RETRY_ENABLED_KEY))
+    }
 }

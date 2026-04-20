@@ -60,7 +60,9 @@ class FileService(
     @org.springframework.beans.factory.annotation.Qualifier("variantExecutor")
     private val variantExecutor: ThreadPoolTaskExecutor,
     private val meterRegistry: MeterRegistry,
-    @Lazy private val walkSpotBackfillWorker: com.goldpet.domain.walk.service.WalkSpotBackfillWorker
+    @Lazy private val walkSpotBackfillWorker: com.goldpet.domain.walk.service.WalkSpotBackfillWorker,
+    @Lazy private val fileAttachmentRetryWorker: FileAttachmentRetryWorker,
+    private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -478,7 +480,12 @@ class FileService(
         val durationMs: Long
     )
 
-    enum class BackfillScope { ALL, FILE_ATTACHMENTS, WALK_SPOTS }
+    enum class BackfillScope { ALL, FILE_ATTACHMENTS, FILE_ATTACHMENTS_RETRY, WALK_SPOTS }
+
+    companion object {
+        const val RETRY_ENABLED_KEY = "image.backfill.retry_enabled"
+        private const val RETRY_COOLDOWN_DAYS = 7L
+    }
 
     /**
      * Scoped backfill. Per-row work executes through `WalkSpotBackfillWorker` (REQUIRES_NEW)
@@ -488,6 +495,7 @@ class FileService(
     fun backfillVariants(scope: BackfillScope, batchSize: Int, dryRun: Boolean = false): BackfillResult {
         return when (scope) {
             BackfillScope.FILE_ATTACHMENTS -> backfillFileAttachments(batchSize)
+            BackfillScope.FILE_ATTACHMENTS_RETRY -> backfillFileAttachmentsRetry(batchSize, dryRun)
             BackfillScope.WALK_SPOTS -> backfillWalkSpots(batchSize, dryRun)
             BackfillScope.ALL -> {
                 val a = backfillFileAttachments(batchSize)
@@ -501,6 +509,54 @@ class FileService(
                 )
             }
         }
+    }
+
+    /**
+     * T0-6 retry sweep. Only runs when `image.backfill.retry_enabled` system setting is true
+     * (default true; admin /stop endpoint flips it to false). Targets rows where original
+     * backfill skip-marked (thumb=url / medium=url / viewer NULL w/ thumb set), cooled off
+     * by 7 days so permanent failures don't loop.
+     */
+    fun backfillFileAttachmentsRetry(batchSize: Int, dryRun: Boolean): BackfillResult {
+        val startMs = System.currentTimeMillis()
+        val enabled = systemSettingService.getBoolean(RETRY_ENABLED_KEY, true)
+        if (!enabled) {
+            log.info("backfillFileAttachmentsRetry skipped: {}=false", RETRY_ENABLED_KEY)
+            return BackfillResult(total = 0, processed = 0, skipped = 0, failed = 0, durationMs = 0)
+        }
+        val cutoff = java.time.LocalDateTime.now().minusDays(RETRY_COOLDOWN_DAYS)
+        val pageable = org.springframework.data.domain.PageRequest.of(0, batchSize)
+        val page = fileAttachmentRepository.findImagesForRetry(cutoff, pageable)
+        val total = page.totalElements
+        var processed = 0
+        var skipped = 0
+        var failed = 0
+        for (fa in page.content) {
+            when (fileAttachmentRetryWorker.processRow(fa.id, dryRun)) {
+                FileAttachmentRetryWorker.Outcome.PROCESSED -> processed++
+                FileAttachmentRetryWorker.Outcome.SKIPPED,
+                FileAttachmentRetryWorker.Outcome.NOT_FOUND -> skipped++
+                FileAttachmentRetryWorker.Outcome.FAILED -> failed++
+            }
+        }
+        return BackfillResult(
+            total = total,
+            processed = processed,
+            skipped = skipped,
+            failed = failed,
+            durationMs = System.currentTimeMillis() - startMs
+        )
+    }
+
+    /**
+     * Admin kill switch: flips the retry feature flag off. Next sweep tick will short-circuit.
+     */
+    fun stopBackfillRetry() {
+        systemSettingService.setValue(
+            RETRY_ENABLED_KEY,
+            "false",
+            description = "T0-6 retry sweep kill switch (set to true to resume)"
+        )
     }
 
     private fun backfillWalkSpots(batchSize: Int, dryRun: Boolean): BackfillResult {

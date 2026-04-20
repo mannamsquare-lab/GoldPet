@@ -2,6 +2,7 @@ package com.goldpet.domain.file.service
 
 import com.amazonaws.services.s3.AmazonS3
 import com.goldpet.domain.common.repository.FileAttachmentRepository
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.walk.service.WalkSpotBackfillWorker
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,6 +26,8 @@ class FileServiceTest {
     private lateinit var fileAttachmentRepository: FileAttachmentRepository
     private lateinit var variantExecutor: ThreadPoolTaskExecutor
     private lateinit var walkSpotBackfillWorker: WalkSpotBackfillWorker
+    private lateinit var fileAttachmentRetryWorker: FileAttachmentRetryWorker
+    private lateinit var systemSettingService: SystemSettingService
     private lateinit var meterRegistry: SimpleMeterRegistry
     private lateinit var fileService: FileService
 
@@ -37,6 +40,8 @@ class FileServiceTest {
         fileAttachmentRepository = mock()
         variantExecutor = mock()
         walkSpotBackfillWorker = mock()
+        fileAttachmentRetryWorker = mock()
+        systemSettingService = mock()
         meterRegistry = SimpleMeterRegistry()
 
         whenever(amazonS3.doesBucketExistV2(any())).thenReturn(true)
@@ -50,7 +55,9 @@ class FileServiceTest {
             fileAttachmentRepository = fileAttachmentRepository,
             variantExecutor = variantExecutor,
             meterRegistry = meterRegistry,
-            walkSpotBackfillWorker = walkSpotBackfillWorker
+            walkSpotBackfillWorker = walkSpotBackfillWorker,
+            fileAttachmentRetryWorker = fileAttachmentRetryWorker,
+            systemSettingService = systemSettingService
         )
     }
 
