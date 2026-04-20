@@ -318,6 +318,7 @@ class CourseService(
             val metadata = ObjectMetadata().apply {
                 contentType = "image/png"
                 contentLength = imageBytes.size.toLong()
+                cacheControl = "public, max-age=31536000, immutable"
             }
             amazonS3.putObject(publicBucketName, key, ByteArrayInputStream(imageBytes), metadata)
             "$publicEndpoint/$publicBucketName/$key"

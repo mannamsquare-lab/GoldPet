@@ -67,6 +67,7 @@ class AIGenerationEventListener(
             val metadata = ObjectMetadata().apply {
                 contentType = "image/jpeg"
                 contentLength = jpegBytes.size.toLong()
+                cacheControl = "public, max-age=31536000, immutable"
             }
             amazonS3.putObject(publicBucketName, s3Key, ByteArrayInputStream(jpegBytes), metadata)
 

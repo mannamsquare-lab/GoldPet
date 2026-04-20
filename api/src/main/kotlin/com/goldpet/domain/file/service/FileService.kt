@@ -85,6 +85,18 @@ class FileService(
         presignedExpiredFallbackCounter
     }
 
+    /**
+     * Builds S3 ObjectMetadata with the variant/static-image Cache-Control.
+     * All image bytes uploaded via FileService are UUID-keyed and effectively immutable,
+     * so "public, max-age=31536000, immutable" is safe for browsers and CDN.
+     */
+    private fun objectMetadataWithCache(contentType: String, length: Long): ObjectMetadata =
+        ObjectMetadata().apply {
+            this.contentType = contentType
+            this.contentLength = length
+            this.cacheControl = "public, max-age=31536000, immutable"
+        }
+
     private fun recordVariantOutcome(
         result: String,
         category: String,
@@ -242,10 +254,7 @@ class FileService(
                     .toOutputStream(output)
 
                 val variantBytes = output.toByteArray()
-                val variantMetadata = ObjectMetadata().apply {
-                    contentType = "image/jpeg"
-                    contentLength = variantBytes.size.toLong()
-                }
+                val variantMetadata = objectMetadataWithCache("image/jpeg", variantBytes.size.toLong())
                 amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)
 
                 val url = "$publicEndpoint/$bucket/$variantFilename"
@@ -296,10 +305,7 @@ class FileService(
                     .toOutputStream(output)
 
                 val variantBytes = output.toByteArray()
-                val variantMetadata = ObjectMetadata().apply {
-                    contentType = "image/jpeg"
-                    contentLength = variantBytes.size.toLong()
-                }
+                val variantMetadata = objectMetadataWithCache("image/jpeg", variantBytes.size.toLong())
                 amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)
 
                 val stored = if (isPublic) "$publicEndpoint/$bucket/$variantFilename" else variantFilename
@@ -359,10 +365,7 @@ class FileService(
             // Decode image once: strip EXIF GPS + read BufferedImage + dimensions
             val processed = processImageFile(file.bytes, mimeType)
 
-            val metadata = ObjectMetadata().apply {
-                contentType = mimeType
-                contentLength = processed.bytes.size.toLong()
-            }
+            val metadata = objectMetadataWithCache(mimeType, processed.bytes.size.toLong())
 
             val bucket = determineBucket(category)
             val targetBucket = if (bucket == StorageBucket.PUBLIC) publicBucketName else privateBucketName

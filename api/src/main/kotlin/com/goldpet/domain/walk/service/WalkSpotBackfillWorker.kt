@@ -100,6 +100,7 @@ class WalkSpotBackfillWorker(
                     val metadata = ObjectMetadata().apply {
                         contentType = "image/jpeg"
                         contentLength = bytes.size.toLong()
+                        cacheControl = "public, max-age=31536000, immutable"
                     }
                     amazonS3.putObject(privateBucketName, variantFilename, ByteArrayInputStream(bytes), metadata)
                 }
