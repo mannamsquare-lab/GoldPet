@@ -18,6 +18,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        # T1-1a: 통합 테스트에서 Hibernate Statistics 로 N+1 쿼리 카운트 가능하도록 활성화.
+        # 운영(dev/prod) 은 이 설정 없음 — 테스트 전용.
+        generate_statistics: true
   flyway:
     enabled: true
     baseline-on-migrate: true

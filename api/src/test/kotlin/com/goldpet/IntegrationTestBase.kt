@@ -4,6 +4,10 @@ import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.config.crypto.EncryptionConfig
 import com.goldpet.config.crypto.EncryptionConverter
 import com.zaxxer.hikari.HikariDataSource
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
+import org.hibernate.SessionFactory
+import org.hibernate.stat.Statistics
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -160,5 +164,50 @@ abstract class IntegrationTestBase {
             "Integration tests refuse to run against non-local host '$host'. " +
                 "Full URL: $url. Integration tests must target a local test database."
         }
+    }
+
+    // ------------------------------------------------------------------
+    // T1-1a: Hibernate Statistics 기반 쿼리 카운트 헬퍼
+    // ------------------------------------------------------------------
+    // `application-test.yml` 의 `hibernate.generate_statistics=true` 가 활성화돼 있을 때
+    // 동작한다. N+1 방지용 통합 테스트(특히 `findAllByUrlIn` 같은 배치 lookup) 에서
+    // `withinStatementBudget(1) { ... }` 로 prepared statement 개수를 강제.
+    //
+    // 예:
+    // ```
+    // withinStatementBudget(max = 1) {
+    //     val result = fileAttachmentRepository.findAllByUrlIn(urls)
+    //     assertEquals(urls.size, result.size)
+    // }
+    // ```
+    // ------------------------------------------------------------------
+
+    @PersistenceContext
+    protected lateinit var entityManager: EntityManager
+
+    protected val hibernateStatistics: Statistics
+        get() = entityManager.entityManagerFactory
+            .unwrap(SessionFactory::class.java)
+            .statistics
+
+    /**
+     * Executes [block] while measuring prepared statement count via Hibernate Statistics.
+     *
+     * @param max maximum allowed prepared statements during [block] execution (inclusive).
+     * @throws IllegalStateException if actual count exceeds [max].
+     */
+    protected fun <T> withinStatementBudget(max: Long, block: () -> T): T {
+        val stats = hibernateStatistics
+        check(stats.isStatisticsEnabled) {
+            "Hibernate statistics is disabled. Add `hibernate.generate_statistics=true` to application-test.yml."
+        }
+        val before = stats.prepareStatementCount
+        val result = block()
+        val actual = stats.prepareStatementCount - before
+        check(actual <= max) {
+            "Statement budget exceeded: expected ≤$max but observed $actual prepared statements. " +
+                "Likely N+1 — inspect service layer for missing batch lookup."
+        }
+        return result
     }
 }
