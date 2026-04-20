@@ -77,11 +77,12 @@ export const marketingService = {
     return response.data as unknown as DeliveryLog[];
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   getBanners: async (): Promise<any[]> => {
     const response = await typedClient.get('/api/v1/admin/marketing/banners');
     return response.data as unknown as any[];
   },
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   createBanner: async (request: Record<string, unknown>): Promise<Record<string, unknown>> => {
     const body = request as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/marketing/banners'>>[1];
