@@ -60,7 +60,13 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     const useDirect = images.length <= 1;
     const singleImage = images[0] || "/assets/images/main/main_slide_img01.png";
 
-    // For direct rendering: SVG uses background-image (iOS WKWebView compat), others use <img>
+    // Returns WebP variant path for known static /assets/images/ files
+    const staticWebp = (src: string) =>
+        src.startsWith('/assets/images/') && /\.(png|jpg)$/i.test(src)
+            ? src.replace(/\.(png|jpg)$/i, '.webp')
+            : null;
+
+    // For direct rendering: SVG uses background-image (iOS WKWebView compat), others use <picture>
     const directContent = isSvg(singleImage) ? (
         <div
             className="pet_img"
@@ -78,22 +84,27 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             }}
         />
     ) : (
-        <img
-            src={getImageUrl(singleImage, 'medium')}
-            className="pet_img"
-            alt="프로필 이미지"
-            onClick={(e) => handleMainImageClick(e, 0)}
-            loading={priority ? 'eager' : 'lazy'}
-            decoding={priority ? 'sync' : 'async'}
-            fetchPriority={priority ? 'high' : 'auto'}
-            style={{ cursor: onMainImageClick ? 'pointer' : undefined }}
-            onError={(e) => {
-                if (!e.currentTarget.dataset.fallback) {
-                    e.currentTarget.dataset.fallback = 'true';
-                    e.currentTarget.src = singleImage;
-                }
-            }}
-        />
+        <picture>
+            {staticWebp(singleImage) && (
+                <source type="image/webp" srcSet={staticWebp(singleImage)!} />
+            )}
+            <img
+                src={getImageUrl(singleImage, 'medium')}
+                className="pet_img"
+                alt="프로필 이미지"
+                onClick={(e) => handleMainImageClick(e, 0)}
+                loading={priority ? 'eager' : 'lazy'}
+                decoding={priority ? 'sync' : 'async'}
+                fetchPriority={priority ? 'high' : 'auto'}
+                style={{ cursor: onMainImageClick ? 'pointer' : undefined }}
+                onError={(e) => {
+                    if (!e.currentTarget.dataset.fallback) {
+                        e.currentTarget.dataset.fallback = 'true';
+                        e.currentTarget.src = singleImage;
+                    }
+                }}
+            />
+        </picture>
     );
 
     const swiperContent = (
