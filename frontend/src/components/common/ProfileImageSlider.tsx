@@ -20,6 +20,7 @@ interface ProfileImageSliderProps {
     innerChildren?: React.ReactNode;
     swiperProps?: Record<string, unknown> & { onSlideChange?: (swiper: SwiperType) => void; modules?: SwiperModule[]; navigation?: boolean | Record<string, string> };
     navigation?: boolean;
+    priority?: boolean;
 }
 
 const isSvg = (src: string) => src.endsWith('.svg');
@@ -36,7 +37,8 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     children,
     innerChildren,
     swiperProps,
-    navigation = false
+    navigation = false,
+    priority = false,
 }) => {
     const activeIndexRef = useRef(0);
 
@@ -81,7 +83,9 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             className="pet_img"
             alt="프로필 이미지"
             onClick={(e) => handleMainImageClick(e, 0)}
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding={priority ? 'sync' : 'async'}
+            fetchPriority={priority ? 'high' : 'auto'}
             style={{ cursor: onMainImageClick ? 'pointer' : undefined }}
             onError={(e) => {
                 if (!e.currentTarget.dataset.fallback) {
@@ -118,7 +122,9 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                             objectPosition: 'center 20%',
                             cursor: onMainImageClick ? 'pointer' : undefined,
                         }}
-                        loading="lazy"
+                        loading={priority && index === 0 ? 'eager' : 'lazy'}
+                        decoding={priority && index === 0 ? 'sync' : 'async'}
+                        fetchPriority={priority && index === 0 ? 'high' : 'auto'}
                         onError={(e) => {
                             if (!e.currentTarget.dataset.fallback) {
                                 e.currentTarget.dataset.fallback = 'true';

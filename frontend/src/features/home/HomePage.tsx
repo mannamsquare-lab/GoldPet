@@ -206,7 +206,9 @@ export default function HomePage() {
                                                                     src={getImageUrl(img, 'medium')}
                                                                     alt=""
                                                                     data-clickable="true"
-                                                                    loading="lazy"
+                                                                    loading={index === 0 && imgIdx === 0 ? 'eager' : 'lazy'}
+                                                                    decoding={index === 0 && imgIdx === 0 ? 'sync' : 'async'}
+                                                                    fetchPriority={index === 0 && imgIdx === 0 ? 'high' : 'auto'}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         setGalleryState({ open: true, images: currentImages, index: imgIdx });
@@ -243,6 +245,7 @@ export default function HomePage() {
                                                 <img
                                                     src={butlerSrc}
                                                     alt=""
+                                                    decoding="async"
                                                     onError={(e) => { e.currentTarget.src = OWNER_FALLBACK; }}
                                                 />
                                             </div>
@@ -375,7 +378,7 @@ export default function HomePage() {
             {/* 중간 배너 */}
             <section className="ai_profile_banner">
                 <a href="">
-                    <img src="/assets/images/main/ai_banner_img.png" alt="블러 처리된 사진" />
+                    <img src="/assets/images/main/ai_banner_img.png" alt="블러 처리된 사진" loading="lazy" decoding="async" />
                     <div className="txt_wrap">
                         <h2>아직 AI 프로필이 없으시네요?</h2>
                         <p>{homeData.myPetNames.length > 0
@@ -399,6 +402,8 @@ export default function HomePage() {
                                     ? getImageUrl(homeData.recentWalk.petProfileImageUrls[0], 'thumbnail')
                                     : '/assets/images/common/pet_none_img02.svg'}
                                 alt=""
+                                loading="lazy"
+                                decoding="async"
                                 onError={(e) => { e.currentTarget.src = '/assets/images/common/pet_none_img02.svg'; }}
                             />
                         </div>

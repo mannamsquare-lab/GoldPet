@@ -368,6 +368,7 @@ export default function CommunityDetailPage() {
                          alt={`Post image ${index + 1}`}
                          style={{ marginBottom: '16px', cursor: 'pointer' }}
                          loading="lazy"
+                         decoding="async"
                          onClick={() => setGalleryState({ open: true, images: resolvedUrls, index })}
                          onError={(e) => {
                              if (!e.currentTarget.dataset.fallback) {

@@ -110,7 +110,7 @@ export default function CommunityListPage() {
               <li key={post.id} onClick={() => navigate(`/community/${post.id}`)}>
                 <div className="list_profile">
                   <div className="profile_img">
-                      <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
+                      <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" decoding="async" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
                   </div>
                   <div className="txt_wrap">
                       <strong>{post.authorNickname}</strong>
@@ -132,6 +132,7 @@ export default function CommunityListPage() {
                                 src={getImageUrl(fullUrl, 'thumbnail')}
                                 alt=""
                                 loading="lazy"
+                                decoding="async"
                                 onError={(e) => {
                                     if (!e.currentTarget.dataset.fallback) {
                                         e.currentTarget.dataset.fallback = 'true';

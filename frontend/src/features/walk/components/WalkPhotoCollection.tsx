@@ -73,7 +73,7 @@ export function WalkPhotoCollection() {
               onClick={() => setModalPhoto(photo)}
             >
               {src ? (
-                <img src={src} alt="" loading="lazy" />
+                <img src={src} alt="" loading="lazy" decoding="async" />
               ) : (
                 <div className="walk_photo_collection_placeholder" />
               )}
