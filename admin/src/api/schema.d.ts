@@ -1558,6 +1558,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/files/backfill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 스코프 지정 백필
+         * @description scope=ALL|FILE_ATTACHMENTS|FILE_ATTACHMENTS_RETRY|WALK_SPOTS
+         */
+        post: operations["backfillScoped"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/files/backfill/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 재처리 백필 중지
+         * @description image.backfill.retry_enabled = false
+         */
+        post: operations["stopBackfillRetry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/files/backfill-variants": {
         parameters: {
             query?: never;
@@ -6007,12 +6047,12 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
-            unpaged?: boolean;
             /** Format: int32 */
             pageSize?: number;
             paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
+            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"];
@@ -10243,6 +10283,52 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AdminFileUploadResponse"];
+                };
+            };
+        };
+    };
+    backfillScoped: {
+        parameters: {
+            query: {
+                scope: "ALL" | "FILE_ATTACHMENTS" | "FILE_ATTACHMENTS_RETRY" | "WALK_SPOTS";
+                batchSize?: number;
+                dryRun?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BackfillResult"];
+                };
+            };
+        };
+    };
+    stopBackfillRetry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    };
                 };
             };
         };
