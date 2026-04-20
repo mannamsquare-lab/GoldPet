@@ -7,7 +7,9 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.drew.imaging.ImageMetadataReader
 import com.drew.metadata.exif.GpsDirectory
 import com.goldpet.domain.common.exception.*
+import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Timer
 import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -68,9 +70,36 @@ class FileService(
         ImageVariant("_viewer", 1600, 0.82)
     )
 
+    // Pre-registered so /actuator/prometheus exposes the meter with value 0 before
+    // T1-6 refresh endpoint wires the increment path.
+    private val presignedExpiredFallbackCounter: Counter by lazy {
+        Counter.builder("file_presigned_expired_fallback_total")
+            .description("Presigned URL re-issued after client reports expiration")
+            .register(meterRegistry)
+    }
+
     init {
         ensureBucket(publicBucketName, isPublic = true)
         ensureBucket(privateBucketName, isPublic = false)
+        // Force lazy counter init so the meter is exposed even before first increment.
+        presignedExpiredFallbackCounter
+    }
+
+    private fun recordVariantOutcome(
+        result: String,
+        category: String,
+        sample: Timer.Sample
+    ) {
+        meterRegistry.counter(
+            "file_variant_generate_total",
+            "result", result,
+            "category", category
+        ).increment()
+        sample.stop(
+            Timer.builder("file_variant_generate_latency")
+                .tag("category", category)
+                .register(meterRegistry)
+        )
     }
 
     private fun ensureBucket(bucket: String, isPublic: Boolean) {
@@ -107,7 +136,7 @@ class FileService(
      */
     private fun determineBucket(category: String?): StorageBucket {
         return when (category?.lowercase()) {
-            "profile", "pet", "avatar", "community", "notice", "ai-profile", "chat", "badge" -> StorageBucket.PUBLIC
+            "profile", "pet", "avatar", "community", "notice", "ai-profile", "chat", "badge", "emoticon" -> StorageBucket.PUBLIC
             else -> StorageBucket.PRIVATE
         }
     }
@@ -184,36 +213,50 @@ class FileService(
         image: BufferedImage,
         baseFilename: String,
         mimeType: String,
-        bucket: String
+        bucket: String,
+        metricCategory: String = "backfill"
     ): Map<String, String> {
-        if (mimeType == "image/gif") return emptyMap()
-
-        val urls = mutableMapOf<String, String>()
-        val shortSide = minOf(image.width, image.height)
-
-        for (variant in IMAGE_VARIANTS) {
-            if (shortSide <= variant.maxDimension) continue  // Already smaller than threshold
-
-            val variantFilename = "${baseFilename}${variant.suffix}.jpg"
-            val output = ByteArrayOutputStream()
-
-            Thumbnails.of(image)
-                .size(variant.maxDimension, variant.maxDimension)
-                .outputFormat("JPEG")
-                .outputQuality(variant.quality)
-                .toOutputStream(output)
-
-            val variantBytes = output.toByteArray()
-            val variantMetadata = ObjectMetadata().apply {
-                contentType = "image/jpeg"
-                contentLength = variantBytes.size.toLong()
-            }
-            amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)
-
-            val url = "$publicEndpoint/$bucket/$variantFilename"
-            urls[variant.suffix.removePrefix("_")] = url  // "thumb" -> url, "medium" -> url
+        val sample = Timer.start(meterRegistry)
+        if (mimeType == "image/gif") {
+            recordVariantOutcome("skip", metricCategory, sample)
+            return emptyMap()
         }
-        return urls
+
+        // Always generate: Thumbnailator never upscales, so a sub-threshold source
+        // produces a re-encoded JPEG at source dimensions. This preserves the PNG→JPEG
+        // compression benefit and fixes the portrait-aspect viewer bug (shortSide ≤
+        // maxDim previously skipped viewer generation for any narrow image).
+        return try {
+            val urls = mutableMapOf<String, String>()
+            @Suppress("UNUSED_VARIABLE")
+            val longSide = maxOf(image.width, image.height)
+
+            for (variant in IMAGE_VARIANTS) {
+                val variantFilename = "${baseFilename}${variant.suffix}.jpg"
+                val output = ByteArrayOutputStream()
+
+                Thumbnails.of(image)
+                    .size(variant.maxDimension, variant.maxDimension)
+                    .outputFormat("JPEG")
+                    .outputQuality(variant.quality)
+                    .toOutputStream(output)
+
+                val variantBytes = output.toByteArray()
+                val variantMetadata = ObjectMetadata().apply {
+                    contentType = "image/jpeg"
+                    contentLength = variantBytes.size.toLong()
+                }
+                amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)
+
+                val url = "$publicEndpoint/$bucket/$variantFilename"
+                urls[variant.suffix.removePrefix("_")] = url  // "thumb" -> url, "medium" -> url
+            }
+            recordVariantOutcome(if (urls.isEmpty()) "skip" else "success", metricCategory, sample)
+            urls
+        } catch (e: Exception) {
+            recordVariantOutcome("error", metricCategory, sample)
+            throw e
+        }
     }
 
     /**
@@ -228,44 +271,58 @@ class FileService(
         baseFilename: String,
         mimeType: String,
         bucket: String,
-        isPublic: Boolean
+        isPublic: Boolean,
+        category: String? = null
     ) {
-        if (mimeType == "image/gif") return
-        val results = mutableMapOf<String, String>()
-        val shortSide = minOf(image.width, image.height)
-
-        for (variant in IMAGE_VARIANTS) {
-            if (shortSide <= variant.maxDimension) continue
-
-            val variantFilename = "${baseFilename}${variant.suffix}.jpg"
-            val output = ByteArrayOutputStream()
-
-            Thumbnails.of(image)
-                .size(variant.maxDimension, variant.maxDimension)
-                .outputFormat("JPEG")
-                .outputQuality(variant.quality)
-                .toOutputStream(output)
-
-            val variantBytes = output.toByteArray()
-            val variantMetadata = ObjectMetadata().apply {
-                contentType = "image/jpeg"
-                contentLength = variantBytes.size.toLong()
-            }
-            amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)
-
-            val stored = if (isPublic) "$publicEndpoint/$bucket/$variantFilename" else variantFilename
-            results[variant.suffix.removePrefix("_")] = stored
+        val metricCategory = category?.lowercase() ?: if (isPublic) "public" else "walk-photo"
+        val sample = Timer.start(meterRegistry)
+        if (mimeType == "image/gif") {
+            recordVariantOutcome("skip", metricCategory, sample)
+            return
         }
+        try {
+            val results = mutableMapOf<String, String>()
+            @Suppress("UNUSED_VARIABLE")
+            val longSide = maxOf(image.width, image.height)
 
-        if (results.isEmpty()) return
-        fileAttachmentRepository.updateAllVariantUrls(
-            id = attachmentId,
-            thumbUrl = results["thumb"],
-            medUrl = results["medium"],
-            viewerUrl = results["viewer"],
-            width = image.width,
-            height = image.height
-        )
+            for (variant in IMAGE_VARIANTS) {
+                val variantFilename = "${baseFilename}${variant.suffix}.jpg"
+                val output = ByteArrayOutputStream()
+
+                Thumbnails.of(image)
+                    .size(variant.maxDimension, variant.maxDimension)
+                    .outputFormat("JPEG")
+                    .outputQuality(variant.quality)
+                    .toOutputStream(output)
+
+                val variantBytes = output.toByteArray()
+                val variantMetadata = ObjectMetadata().apply {
+                    contentType = "image/jpeg"
+                    contentLength = variantBytes.size.toLong()
+                }
+                amazonS3.putObject(bucket, variantFilename, ByteArrayInputStream(variantBytes), variantMetadata)
+
+                val stored = if (isPublic) "$publicEndpoint/$bucket/$variantFilename" else variantFilename
+                results[variant.suffix.removePrefix("_")] = stored
+            }
+
+            if (results.isEmpty()) {
+                recordVariantOutcome("skip", metricCategory, sample)
+                return
+            }
+            fileAttachmentRepository.updateAllVariantUrls(
+                id = attachmentId,
+                thumbUrl = results["thumb"],
+                medUrl = results["medium"],
+                viewerUrl = results["viewer"],
+                width = image.width,
+                height = image.height
+            )
+            recordVariantOutcome("success", metricCategory, sample)
+        } catch (e: Exception) {
+            recordVariantOutcome("error", metricCategory, sample)
+            throw e
+        }
     }
 
     /**
@@ -362,6 +419,13 @@ class FileService(
                                     val s3Object = amazonS3.getObject(targetBucket, s3Key)
                                     val reloaded: BufferedImage? = s3Object.objectContent.use { ImageIO.read(it) }
                                     if (reloaded == null) {
+                                        val metricCategory = category?.lowercase()
+                                            ?: if (isPublic) "public" else "walk-photo"
+                                        meterRegistry.counter(
+                                            "file_variant_generate_total",
+                                            "result", "skip",
+                                            "category", metricCategory
+                                        ).increment()
                                         log.warn("async variant-gen could not decode S3 object for attachment={} key={}", attachmentId, s3Key)
                                         return@submit
                                     }
@@ -371,7 +435,8 @@ class FileService(
                                         baseFilename = baseFilename,
                                         mimeType = mimeType,
                                         bucket = targetBucket,
-                                        isPublic = isPublic
+                                        isPublic = isPublic,
+                                        category = category
                                     )
                                 } catch (e: Exception) {
                                     log.warn("async variant-gen failed for attachment={}: {}", attachmentId, e.message, e)
