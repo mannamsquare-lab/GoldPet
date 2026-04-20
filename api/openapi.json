@@ -4442,6 +4442,43 @@
         }
       }
     },
+    "/api/v1/admin/emoticons/migrate-to-s3": {
+      "post": {
+        "tags": [
+          "어드민: 이모티콘 관리"
+        ],
+        "summary": "이모티콘 S3 마이그레이션 수동 실행 (T1-9)",
+        "description": "기존 V32 seed 이모티콘(정적 경로) 을 S3 PUBLIC 버킷으로 이관. 멱등. 기동 시 ApplicationReadyEvent 로 1회 자동 실행되지만 실패/재실행용으로 노출.",
+        "operationId": "migrateToS3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/emoticons/migrate-to-s3/stop": {
+      "post": {
+        "tags": [
+          "어드민: 이모티콘 관리"
+        ],
+        "summary": "이모티콘 S3 자동 마이그레이션 중단",
+        "description": "image.emoticon.migration.enabled flag 를 false 로 설정. 기동 시 자동 재실행을 끈다 (수동 migrate-to-s3 는 여전히 호출 가능).",
+        "operationId": "disableMigration",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/economy/refund": {
       "post": {
         "tags": [
@@ -14477,6 +14514,33 @@
           "name",
           "packId",
           "sortOrder"
+        ]
+      },
+      "Result": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "migrated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "failed",
+          "migrated",
+          "skipped",
+          "total"
         ]
       },
       "AdminRefundRequest": {

@@ -5,6 +5,7 @@ import com.goldpet.domain.admin.service.CreateEmoticonRequest
 import com.goldpet.domain.admin.service.UpdateEmoticonRequest
 import com.goldpet.domain.emoticon.dto.EmoticonPackResponse
 import com.goldpet.domain.emoticon.dto.EmoticonResponse
+import com.goldpet.domain.emoticon.service.EmoticonSeedS3MigrationService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -15,7 +16,8 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v1/admin/emoticons")
 class AdminEmoticonController(
-    private val adminEmoticonService: AdminEmoticonService
+    private val adminEmoticonService: AdminEmoticonService,
+    private val emoticonSeedS3MigrationService: EmoticonSeedS3MigrationService
 ) {
     @Operation(summary = "전체 이모티콘 목록 조회")
     @GetMapping
@@ -55,5 +57,26 @@ class AdminEmoticonController(
     @PatchMapping("/{id}/toggle")
     fun toggleActive(@PathVariable id: Long): ResponseEntity<EmoticonResponse> {
         return ResponseEntity.ok(adminEmoticonService.toggleActive(id))
+    }
+
+    @Operation(
+        summary = "이모티콘 S3 마이그레이션 수동 실행 (T1-9)",
+        description = "기존 V32 seed 이모티콘(정적 경로) 을 S3 PUBLIC 버킷으로 이관. 멱등. " +
+            "기동 시 ApplicationReadyEvent 로 1회 자동 실행되지만 실패/재실행용으로 노출."
+    )
+    @PostMapping("/migrate-to-s3")
+    fun migrateToS3(): ResponseEntity<EmoticonSeedS3MigrationService.Result> {
+        return ResponseEntity.ok(emoticonSeedS3MigrationService.migrateAll())
+    }
+
+    @Operation(
+        summary = "이모티콘 S3 자동 마이그레이션 중단",
+        description = "image.emoticon.migration.enabled flag 를 false 로 설정. " +
+            "기동 시 자동 재실행을 끈다 (수동 migrate-to-s3 는 여전히 호출 가능)."
+    )
+    @PostMapping("/migrate-to-s3/stop")
+    fun disableMigration(): ResponseEntity<Void> {
+        emoticonSeedS3MigrationService.disable()
+        return ResponseEntity.noContent().build()
     }
 }

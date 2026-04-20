@@ -100,7 +100,7 @@ export default function EmoticonManagementPage() {
     }
     setUploading(true);
     try {
-      const result = await fileService.uploadFile(file);
+      const result = await fileService.uploadFile(file, 'emoticon');
       form.setValue('imageUrl', result.url, { shouldValidate: true });
     } catch (error) {
       console.error('Failed to upload image:', error);

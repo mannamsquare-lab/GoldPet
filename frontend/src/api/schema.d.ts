@@ -1633,6 +1633,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/emoticons/migrate-to-s3": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 이모티콘 S3 마이그레이션 수동 실행 (T1-9)
+         * @description 기존 V32 seed 이모티콘(정적 경로) 을 S3 PUBLIC 버킷으로 이관. 멱등. 기동 시 ApplicationReadyEvent 로 1회 자동 실행되지만 실패/재실행용으로 노출.
+         */
+        post: operations["migrateToS3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/emoticons/migrate-to-s3/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 이모티콘 S3 자동 마이그레이션 중단
+         * @description image.emoticon.migration.enabled flag 를 false 로 설정. 기동 시 자동 재실행을 끈다 (수동 migrate-to-s3 는 여전히 호출 가능).
+         */
+        post: operations["disableMigration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/economy/refund": {
         parameters: {
             query?: never;
@@ -5789,6 +5829,16 @@ export interface components {
             imageUrl: string;
             /** Format: int32 */
             sortOrder: number;
+        };
+        Result: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            migrated: number;
+            /** Format: int32 */
+            skipped: number;
+            /** Format: int32 */
+            failed: number;
         };
         AdminRefundRequest: {
             /** Format: int64 */
@@ -10396,6 +10446,44 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["EmoticonResponse"];
                 };
+            };
+        };
+    };
+    migrateToS3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Result"];
+                };
+            };
+        };
+    };
+    disableMigration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

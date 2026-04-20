@@ -9,9 +9,12 @@ interface FileUploadResponse {
 }
 
 export const fileService = {
-  async uploadFile(file: File): Promise<FileUploadResponse> {
+  async uploadFile(file: File, category?: string): Promise<FileUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
+    if (category) {
+      formData.append('category', category);
+    }
     const response = await apiClient.post<FileUploadResponse>('/files/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });

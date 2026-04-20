@@ -155,6 +155,7 @@ design-compare/
 !frontend/src/**/assets/**/*.png
 !app/android/**/res/**/*.png
 !app/ios/**/*.png
+!api/src/main/resources/seeds/**/*.png
 
 # Temp documentation & notes
 goldpet_figma_nodes.txt
