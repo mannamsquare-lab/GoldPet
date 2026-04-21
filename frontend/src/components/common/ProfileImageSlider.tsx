@@ -101,7 +101,7 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             src={singleImage}
             thumbnailSrc={singleThumb}
             viewerSrc={singleViewer}
-            variant={priority ? 'viewer' : 'medium'}
+            variant="medium"
             className="pet_img"
             alt="프로필 이미지"
             onClick={(e) => handleMainImageClick(e, 0)}
@@ -165,7 +165,7 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                                 src={img}
                                 thumbnailSrc={thumb}
                                 viewerSrc={viewer}
-                                variant={isLcp ? 'viewer' : 'medium'}
+                                variant="medium"
                                 className="pet_img"
                                 alt={`슬라이드 이미지 ${index + 1}`}
                                 onClick={(e) => handleMainImageClick(e, activeIndexRef.current)}

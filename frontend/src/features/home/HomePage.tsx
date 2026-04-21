@@ -228,7 +228,7 @@ export default function HomePage() {
                                                                             src={img}
                                                                             thumbnailSrc={thumb}
                                                                             viewerSrc={viewer}
-                                                                            variant={isLcp ? 'viewer' : 'medium'}
+                                                                            variant="medium"
                                                                             alt=""
                                                                             data-clickable="true"
                                                                             loading={isLcp ? 'eager' : 'lazy'}
