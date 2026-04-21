@@ -50,6 +50,8 @@ data class ProcessedImage(
     val height: Int?
 )
 
+data class GifBackfillResult(val total: Int, val updated: Int, val failed: Int)
+
 @Service
 class FileService(
     private val amazonS3: AmazonS3,
@@ -721,5 +723,70 @@ class FileService(
         val internalHost = try { hostWithOptionalPort(s3Endpoint) } catch (_: Exception) { s3Endpoint }
         val publicHost = try { hostWithOptionalPort(publicEndpoint) } catch (_: Exception) { publicEndpoint }
         return presignedUrl.replace(internalHost, publicHost)
+    }
+
+    /**
+     * T-chat-latency-v2 — GIF 이미지의 first-frame 기반 static variant 1회성 백필.
+     *
+     * `generateVariants` 는 기본적으로 GIF 를 skip 하지만, 채팅 이모티콘 picker 가
+     * 원본 GIF(수백KB~3MB) 를 그대로 로드하면 첫 오픈 시 1~3초 hang. picker grid 는
+     * 정적 프레임으로 충분하므로 `ImageIO.read()` 로 첫 프레임 `BufferedImage` 를 추출하고
+     * 기존 `generateVariants(..., mimeType="image/jpeg", ...)` 경로로 thumb/medium/viewer
+     * JPEG 를 생성해 `file_attachments.thumbnail_url/medium_url/viewer_url` 에 기록한다.
+     *
+     * 원본 GIF URL 은 `file_attachments.url` (및 해당 `emoticons.image_url`) 에 그대로 남아
+     * 이모티콘 선택 시 메시지로는 계속 원본 GIF 가 전송된다 — 움직임은 보존된다.
+     *
+     * 1회성이므로 admin endpoint 로만 노출하고 `@EventListener(ApplicationReadyEvent)` 는
+     * 걸지 않는다 (매 기동마다 S3 다운로드 반복 위험).
+     */
+    @org.springframework.transaction.annotation.Transactional
+    fun backfillGifImageVariants(): GifBackfillResult {
+        val targets = fileAttachmentRepository.findGifImagesWithoutVariants()
+        var updated = 0
+        var failed = 0
+        val publicPrefix = "$publicEndpoint/$publicBucketName/"
+        for (fa in targets) {
+            try {
+                val url = fa.url
+                if (!url.startsWith(publicPrefix)) {
+                    log.warn("GIF backfill skip: url not in public bucket: faId={}, url={}", fa.id, url)
+                    failed++
+                    continue
+                }
+                val key = url.substring(publicPrefix.length)
+                val bytes = amazonS3.getObject(publicBucketName, key).use { obj ->
+                    obj.objectContent.use { it.readBytes() }
+                }
+                val firstFrame = ImageIO.read(ByteArrayInputStream(bytes))
+                if (firstFrame == null) {
+                    log.warn("GIF backfill skip: decode failed: faId={}, url={}", fa.id, url)
+                    failed++
+                    continue
+                }
+                val baseFilename = key.substringBeforeLast(".")
+                // mimeType 을 image/jpeg 으로 넘겨 generateVariants 의 GIF skip 분기를 우회.
+                val urls = generateVariants(firstFrame, baseFilename, "image/jpeg", publicBucketName, metricCategory = "gif-backfill")
+                if (urls.isEmpty()) {
+                    log.warn("GIF backfill: generateVariants returned empty: faId={}", fa.id)
+                    failed++
+                    continue
+                }
+                fileAttachmentRepository.updateAllVariantUrls(
+                    id = fa.id,
+                    thumbUrl = urls["thumb"],
+                    medUrl = urls["medium"],
+                    viewerUrl = urls["viewer"],
+                    width = firstFrame.width,
+                    height = firstFrame.height
+                )
+                updated++
+                log.info("GIF variant backfilled: faId={}, url={}, thumb={}", fa.id, url, urls["thumb"])
+            } catch (e: Exception) {
+                log.warn("GIF variant backfill failed: faId={}, url={}: {}", fa.id, fa.url, e.message, e)
+                failed++
+            }
+        }
+        return GifBackfillResult(total = targets.size, updated = updated, failed = failed)
     }
 }

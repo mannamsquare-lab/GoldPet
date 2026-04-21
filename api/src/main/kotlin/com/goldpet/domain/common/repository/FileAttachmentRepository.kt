@@ -18,6 +18,14 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
     fun findImagesWithoutVariants(pageable: Pageable): Page<FileAttachment>
 
     /**
+     * T-chat-latency-v2 — GIF 이모티콘/이미지의 first-frame variant 1회성 백필 타겟.
+     * 원본 generateVariants 는 GIF 를 skip 하지만, 이모티콘 picker 가 수백KB~수MB GIF 를
+     * 직접 로드해 느려지는 문제를 해결하기 위해 static first-frame thumbnail 로 대체한다.
+     */
+    @Query("SELECT f FROM FileAttachment f WHERE f.fileType = 'IMAGE' AND f.mimeType = 'image/gif' AND f.thumbnailUrl IS NULL")
+    fun findGifImagesWithoutVariants(): List<FileAttachment>
+
+    /**
      * T0-6 retry query. Targets rows that the original backfill skip-marked (thumbnailUrl=url
      * or mediumUrl=url) plus partial-variant rows (viewerUrl NULL but thumbnailUrl set),
      * cooled off by `updatedAt < cutoff` so we don't infinitely re-process permanent failures.

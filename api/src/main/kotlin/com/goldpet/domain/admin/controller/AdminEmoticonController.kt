@@ -6,6 +6,9 @@ import com.goldpet.domain.admin.service.UpdateEmoticonRequest
 import com.goldpet.domain.emoticon.dto.EmoticonPackResponse
 import com.goldpet.domain.emoticon.dto.EmoticonResponse
 import com.goldpet.domain.emoticon.service.EmoticonSeedS3MigrationService
+import com.goldpet.domain.file.service.FileService
+import com.goldpet.domain.file.service.GifBackfillResult
+import org.springframework.cache.annotation.CacheEvict
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -17,7 +20,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/admin/emoticons")
 class AdminEmoticonController(
     private val adminEmoticonService: AdminEmoticonService,
-    private val emoticonSeedS3MigrationService: EmoticonSeedS3MigrationService
+    private val emoticonSeedS3MigrationService: EmoticonSeedS3MigrationService,
+    private val fileService: FileService
 ) {
     @Operation(summary = "전체 이모티콘 목록 조회")
     @GetMapping
@@ -78,5 +82,18 @@ class AdminEmoticonController(
     fun disableMigration(): ResponseEntity<Void> {
         emoticonSeedS3MigrationService.disable()
         return ResponseEntity.noContent().build()
+    }
+
+    @Operation(
+        summary = "GIF 이모티콘 first-frame variant 1회성 백필",
+        description = "T-chat-latency-v2: generateVariants 가 GIF 를 skip 하던 탓에 " +
+            "이모티콘 picker 첫 오픈이 느림. file_attachments 중 image/gif + thumbnailUrl=NULL 인 row 에 " +
+            "대해 first-frame JPEG thumbnail/medium/viewer 를 생성하고 URL 기록. " +
+            "성공 후 `emoticons` 캐시 evict 로 즉시 반영."
+    )
+    @PostMapping("/backfill-gif-variants")
+    @CacheEvict(value = ["emoticons"], allEntries = true)
+    fun backfillGifVariants(): ResponseEntity<GifBackfillResult> {
+        return ResponseEntity.ok(fileService.backfillGifImageVariants())
     }
 }
