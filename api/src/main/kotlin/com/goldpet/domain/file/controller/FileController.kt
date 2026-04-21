@@ -6,9 +6,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
-import org.springframework.core.io.InputStreamResource
-import org.springframework.http.HttpHeaders
-import org.springframework.http.MediaType
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
@@ -77,38 +75,38 @@ class FileController(
     }
 
     /**
-     * **DEPRECATED (T1-4)** — 비공개 파일 streaming 프록시.
+     * **GONE (T1-4 2단계)** — 비공개 파일 streaming 프록시 영구 폐기.
      *
-     * 이 엔드포인트는 CDN 캐시 키 분리를 방해하고 API 서버 대역폭을 낭비하므로
-     * presigned URL (`GET /{fileKey}/url`) 경로로 이전 중이다. TestFlight 배포 후
-     * `file_proxy_stream_total` 이 일정 기간 0 으로 수렴하면 HTTP 410 Gone 으로
-     * 전환 예정 (plan REV 4 T2-4). 현재는 관측 Counter + deprecated 마크만 적용.
+     * 1단계(d3c9d22)에서 Counter + @Deprecated 적용 후 TestFlight 관측에서 0 hit
+     * 확인 → 2단계에서 HTTP 410 Gone 전환. 클라이언트는 `GET /{fileKey}/url`
+     * (presigned URL) 사용. Counter 는 유지하여 stale bundle hit 감지.
      */
     @Deprecated(
-        message = "presigned URL 사용. 다음 릴리스에서 410 Gone 전환 예정",
-        replaceWith = ReplaceWith("getPresignedUrl(fileKey, 60, principal)")
+        message = "410 Gone 응답. presigned URL (/{fileKey}/url) 사용.",
+        replaceWith = ReplaceWith("getPresignedUrl(fileKey, 60, principal)"),
+        level = DeprecationLevel.WARNING
     )
     @Operation(
-        summary = "[DEPRECATED] 비공개 파일 스트리밍 다운로드",
-        description = "T1-4 로 deprecated. presigned URL (/{fileKey}/url) 사용 권장. 다음 릴리스에서 410 Gone 응답 전환 예정.",
+        summary = "[GONE] 비공개 파일 스트리밍 다운로드 — 410 Gone 반환",
+        description = "T1-4 로 영구 폐기. 모든 요청에 대해 HTTP 410 Gone 응답. presigned URL (/{fileKey}/url) 사용.",
         deprecated = true
     )
     @GetMapping("/{fileKey}/content")
     fun getFileContent(
         @PathVariable fileKey: String,
         @AuthenticationPrincipal principal: UserPrincipal
-    ): ResponseEntity<InputStreamResource> {
+    ): ResponseEntity<Map<String, String>> {
         meterRegistry.counter("file_proxy_stream_total", "user_id", principal.id.toString()).increment()
         log.warn(
-            "legacy /files/{}/content proxy hit (user_id={}). Client should use presigned URL.",
+            "legacy /files/{}/content proxy hit after 410 transition (user_id={}). Stale bundle suspected.",
             fileKey, principal.id
         )
-        val s3Object = fileService.getPrivateFileObject(fileKey)
-        val contentType = s3Object.objectMetadata.contentType ?: "application/octet-stream"
-        return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType(contentType))
-            .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
-            .body(InputStreamResource(s3Object.objectContent))
+        return ResponseEntity.status(HttpStatus.GONE).body(
+            mapOf(
+                "error" to "GONE",
+                "message" to "proxy endpoint removed. Use GET /api/v1/files/{fileKey}/url for presigned URL."
+            )
+        )
     }
 
     @Operation(summary = "비공개 파일 Presigned URL 발급")

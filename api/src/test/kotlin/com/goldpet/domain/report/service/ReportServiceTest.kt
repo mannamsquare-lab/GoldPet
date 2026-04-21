@@ -121,9 +121,9 @@ class ReportServiceTest {
 
         // Then
         assertNotNull(result)
-        assertEquals("USER", result.type)
+        assertEquals(ReportType.USER, result.type)
         assertEquals("부적절한 행동", result.reason)
-        assertEquals("PENDING", result.status)
+        assertEquals(ReportStatus.PENDING, result.status)
     }
 
     @Test
@@ -195,8 +195,8 @@ class ReportServiceTest {
 
         // Then
         assertEquals(2, result.size)
-        assertEquals("USER", result[0].type)
-        assertEquals("POST", result[1].type)
+        assertEquals(ReportType.USER, result[0].type)
+        assertEquals(ReportType.POST, result[1].type)
     }
 
     @Test
