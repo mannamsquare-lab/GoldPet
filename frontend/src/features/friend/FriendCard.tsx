@@ -150,8 +150,19 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
     };
 
     const ownerImages = data.profileImages.length > 0 ? data.profileImages : (data.profileImageUrl ? [data.profileImageUrl] : [OWNER_FALLBACK]);
+    const ownerImagesThumbnail = data.profileImages.length > 0
+        ? data.profileImagesThumbnail
+        : (data.profileImageUrlThumbnail ? [data.profileImageUrlThumbnail] : undefined);
+    const ownerImagesViewer = data.profileImages.length > 0
+        ? data.profileImagesViewer
+        : (data.profileImageUrlViewer ? [data.profileImageUrlViewer] : undefined);
     const sliderImages = isPetMode ? data.images : ownerImages;
+    const sliderImagesThumbnail = isPetMode ? data.imagesThumbnail : ownerImagesThumbnail;
+    const sliderImagesViewer = isPetMode ? data.imagesViewer : ownerImagesViewer;
     const sliderSecondary = isPetMode ? (data.profileImages[0] || data.profileImageUrl || OWNER_FALLBACK) : (data.images[0] || PET_FALLBACK);
+    const sliderSecondaryThumbnail = isPetMode
+        ? (data.profileImagesThumbnail?.[0] || data.profileImageUrlThumbnail || null)
+        : (data.imagesThumbnail?.[0] || null);
 
 
 
@@ -198,7 +209,10 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
                             className="img_wrap"
                             swiperWrapperClass="pet_img_wrap"
                             images={sliderImages}
+                            imagesThumbnail={sliderImagesThumbnail}
+                            imagesViewer={sliderImagesViewer}
                             secondaryImage={sliderSecondary}
+                            secondaryImageThumbnail={sliderSecondaryThumbnail}
                             secondaryImageClass="butler_img"
                             onSecondaryImageClick={handleToggle}
                             onMainImageClick={(index) => onOpenGallery?.(sliderImages, index)}

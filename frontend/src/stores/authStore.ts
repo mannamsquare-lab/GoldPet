@@ -14,6 +14,10 @@ export interface User {
   email?: string | null;
   profileImageUrl?: string;
   profileImageUrls?: string[];
+  profileImageUrlThumbnail?: string;
+  profileImageUrlViewer?: string;
+  profileImageUrlsThumbnail?: string[];
+  profileImageUrlsViewer?: string[];
   gender?: string;
   birthYear?: number;
   mainLocationText?: string;

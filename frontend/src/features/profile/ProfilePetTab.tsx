@@ -190,10 +190,19 @@ const ProfilePetTab: React.FC = () => {
     const petImages = pet?.profileImageUrls && pet.profileImageUrls.length > 0
         ? pet.profileImageUrls
         : [pet?.profileImageUrl || "/assets/images/common/pet_none_img.svg"];
+    const petImagesThumbnail = pet?.profileImageUrls && pet.profileImageUrls.length > 0
+        ? pet.profileImageUrlsThumbnail
+        : (pet?.profileImageUrlThumbnail ? [pet.profileImageUrlThumbnail] : undefined);
+    const petImagesViewer = pet?.profileImageUrls && pet.profileImageUrls.length > 0
+        ? pet.profileImageUrlsViewer
+        : (pet?.profileImageUrlViewer ? [pet.profileImageUrlViewer] : undefined);
 
     const ownerGalleryImages = (currentUser?.profileImageUrls && currentUser.profileImageUrls.length > 0)
         ? currentUser.profileImageUrls
         : currentUser?.profileImageUrl ? [currentUser.profileImageUrl] : [];
+    const ownerSecondaryThumbnail = (currentUser?.profileImageUrlsThumbnail?.[0])
+        ?? currentUser?.profileImageUrlThumbnail
+        ?? null;
 
     // HAS PET STATE (Matches profile_pet_info.html)
     return (
@@ -209,7 +218,10 @@ const ProfilePetTab: React.FC = () => {
                     className="couple_img"
                     swiperWrapperClass="profile_img_wrap"
                     images={petImages}
+                    imagesThumbnail={petImagesThumbnail}
+                    imagesViewer={petImagesViewer}
                     secondaryImage={ownerProfileImage}
+                    secondaryImageThumbnail={ownerSecondaryThumbnail}
                     secondaryImageClass="butler_img pet_img"
                     onMainImageClick={(index) => setGalleryState({ open: true, images: petImages, index })}
                     onSecondaryImageClick={() => {

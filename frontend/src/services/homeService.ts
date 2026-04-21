@@ -12,11 +12,17 @@ export interface HomeRecommendation {
   description: string;
   distance: string;
   images: string[];
+  imagesThumbnail?: string[];
+  imagesViewer?: string[];
   isNeutered: boolean;
   gender: 'MALE' | 'FEMALE';
   nickname: string;
   profileImageUrl?: string;
+  profileImageUrlThumbnail?: string;
+  profileImageUrlViewer?: string;
   profileImages: string[];  // Owner's all profile images
+  profileImagesThumbnail?: string[];
+  profileImagesViewer?: string[];
   ownerGender?: string;
   ownerAge?: number;
   ownerIntro?: string;
@@ -35,6 +41,8 @@ export interface HomeRecentWalk {
   startAddress: string | null;
   petNames: string[];
   petProfileImageUrls: string[];
+  petProfileImageUrlsThumbnail?: string[];
+  petProfileImageUrlsViewer?: string[];
 }
 
 export interface HomeDataResponse {
@@ -60,28 +68,37 @@ export const homeService = {
       const response = await typedClient.get('/api/v1/home');
       const data = response.data as HomeResponse;
 
-      const recommendations: HomeRecommendation[] = (data.recommendations ?? []).map((r) => ({
-        id: r.id,
-        name: r.petName,
-        petAge: r.petAge,
-        petBreed: r.petBreed,
-        description: r.description || '',
-        distance: formatDistanceKm(r.distance),
-        images: r.images?.length > 0 ? r.images : ['/assets/images/common/pet_none_img02.svg'],
-        isNeutered: r.isNeutered,
-        gender: r.petGender as 'MALE' | 'FEMALE',
-        nickname: r.nickname,
-        profileImageUrl: r.profileImageUrl,
-        profileImages: r.profileImages ?? [],
-        ownerGender: r.ownerGender,
-        ownerAge: r.ownerAge,
-        ownerIntro: r.ownerIntro,
-        ownerMbti: r.ownerMbti,
-        ownerInterests: r.ownerInterests ?? [],
-        ownerHobbies: r.ownerHobbies ?? [],
-        locationText: truncateLocation(r.locationText),
-        tags: r.tags ?? [],
-      }));
+      const recommendations: HomeRecommendation[] = (data.recommendations ?? []).map((r) => {
+        const hasImages = r.images?.length > 0;
+        return {
+          id: r.id,
+          name: r.petName,
+          petAge: r.petAge,
+          petBreed: r.petBreed,
+          description: r.description || '',
+          distance: formatDistanceKm(r.distance),
+          images: hasImages ? r.images : ['/assets/images/common/pet_none_img02.svg'],
+          imagesThumbnail: hasImages ? r.imagesThumbnail : undefined,
+          imagesViewer: hasImages ? r.imagesViewer : undefined,
+          isNeutered: r.isNeutered,
+          gender: r.petGender as 'MALE' | 'FEMALE',
+          nickname: r.nickname,
+          profileImageUrl: r.profileImageUrl,
+          profileImageUrlThumbnail: r.profileImageUrlThumbnail,
+          profileImageUrlViewer: r.profileImageUrlViewer,
+          profileImages: r.profileImages ?? [],
+          profileImagesThumbnail: r.profileImagesThumbnail,
+          profileImagesViewer: r.profileImagesViewer,
+          ownerGender: r.ownerGender,
+          ownerAge: r.ownerAge,
+          ownerIntro: r.ownerIntro,
+          ownerMbti: r.ownerMbti,
+          ownerInterests: r.ownerInterests ?? [],
+          ownerHobbies: r.ownerHobbies ?? [],
+          locationText: truncateLocation(r.locationText),
+          tags: r.tags ?? [],
+        };
+      });
 
       return {
         recommendations,
@@ -93,6 +110,8 @@ export const homeService = {
           startAddress: data.recentWalk.startAddress ?? null,
           petNames: data.recentWalk.petNames ?? [],
           petProfileImageUrls: data.recentWalk.petProfileImageUrls ?? [],
+          petProfileImageUrlsThumbnail: data.recentWalk.petProfileImageUrlsThumbnail,
+          petProfileImageUrlsViewer: data.recentWalk.petProfileImageUrlsViewer,
         } : null,
         notifications: data.notifications ?? { hasUnread: false, count: 0 },
         myPetNames: data.myPetNames ?? [],

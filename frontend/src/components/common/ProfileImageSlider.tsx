@@ -6,10 +6,17 @@ import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { getImageUrl } from '../../utils/imageUrl';
+import { GpImage } from './GpImage';
 
 interface ProfileImageSliderProps {
     images: string[];
+    /** T1-2 variant: backend 가 공급한 _thumb 파생 URL. images 와 같은 길이. */
+    imagesThumbnail?: (string | null | undefined)[];
+    /** T1-2 variant: backend 가 공급한 _viewer 파생 URL. images 와 같은 길이. */
+    imagesViewer?: (string | null | undefined)[];
     secondaryImage?: string;
+    /** T1-2 variant: 보조(butler/pet) 썸네일 URL. */
+    secondaryImageThumbnail?: string | null;
     secondaryImageClass?: string; // 'butler_img' or 'pet_img'
     onImageClick?: () => void;
     onSecondaryImageClick?: () => void;  // callback when small (butler) image is tapped
@@ -27,7 +34,10 @@ const isSvg = (src: string) => src.endsWith('.svg');
 
 export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     images,
+    imagesThumbnail,
+    imagesViewer,
     secondaryImage,
+    secondaryImageThumbnail,
     secondaryImageClass = 'butler_img',
     onImageClick,
     onSecondaryImageClick,
@@ -59,6 +69,9 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     // Single image: render directly without Swiper
     const useDirect = images.length <= 1;
     const singleImage = images[0] || "/assets/images/main/main_slide_img01.png";
+    const singleThumb = imagesThumbnail?.[0] ?? null;
+    const singleViewer = imagesViewer?.[0] ?? null;
+    const hasVariants = Boolean(singleThumb || singleViewer);
 
     // Returns WebP variant path for known static /assets/images/ files
     const staticWebp = (src: string) =>
@@ -66,7 +79,7 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             ? src.replace(/\.(png|jpg)$/i, '.webp')
             : null;
 
-    // For direct rendering: SVG uses background-image (iOS WKWebView compat), others use <picture>
+    // For direct rendering: SVG uses background-image (iOS WKWebView compat), GpImage for variant-aware, <picture> for legacy
     const directContent = isSvg(singleImage) ? (
         <div
             className="pet_img"
@@ -82,6 +95,20 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                 backgroundRepeat: 'no-repeat',
                 cursor: onMainImageClick ? 'pointer' : undefined,
             }}
+        />
+    ) : hasVariants ? (
+        <GpImage
+            src={singleImage}
+            thumbnailSrc={singleThumb}
+            viewerSrc={singleViewer}
+            variant={priority ? 'viewer' : 'medium'}
+            className="pet_img"
+            alt="프로필 이미지"
+            onClick={(e) => handleMainImageClick(e, 0)}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding={priority ? 'sync' : 'async'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            style={{ cursor: onMainImageClick ? 'pointer' : undefined }}
         />
     ) : (
         <picture>
@@ -119,32 +146,55 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             }}
             {...swiperProps}
         >
-            {images.map((img, index) => (
-                <SwiperSlide key={index} className="swiper-slide">
-                    <img
-                        src={getImageUrl(img, 'medium')}
-                        className="pet_img"
-                        alt={`슬라이드 이미지 ${index + 1}`}
-                        onClick={(e) => handleMainImageClick(e, activeIndexRef.current)}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            objectPosition: 'center 20%',
-                            cursor: onMainImageClick ? 'pointer' : undefined,
-                        }}
-                        loading={priority && index === 0 ? 'eager' : 'lazy'}
-                        decoding={priority && index === 0 ? 'sync' : 'async'}
-                        fetchPriority={priority && index === 0 ? 'high' : 'auto'}
-                        onError={(e) => {
-                            if (!e.currentTarget.dataset.fallback) {
-                                e.currentTarget.dataset.fallback = 'true';
-                                e.currentTarget.src = img;
-                            }
-                        }}
-                    />
-                </SwiperSlide>
-            ))}
+            {images.map((img, index) => {
+                const thumb = imagesThumbnail?.[index] ?? null;
+                const viewer = imagesViewer?.[index] ?? null;
+                const slideHasVariants = Boolean(thumb || viewer);
+                const isLcp = priority && index === 0;
+                const slideStyle: React.CSSProperties = {
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center 20%',
+                    cursor: onMainImageClick ? 'pointer' : undefined,
+                };
+                return (
+                    <SwiperSlide key={index} className="swiper-slide">
+                        {slideHasVariants ? (
+                            <GpImage
+                                src={img}
+                                thumbnailSrc={thumb}
+                                viewerSrc={viewer}
+                                variant={isLcp ? 'viewer' : 'medium'}
+                                className="pet_img"
+                                alt={`슬라이드 이미지 ${index + 1}`}
+                                onClick={(e) => handleMainImageClick(e, activeIndexRef.current)}
+                                style={slideStyle}
+                                loading={isLcp ? 'eager' : 'lazy'}
+                                decoding={isLcp ? 'sync' : 'async'}
+                                fetchPriority={isLcp ? 'high' : 'auto'}
+                            />
+                        ) : (
+                            <img
+                                src={getImageUrl(img, 'medium')}
+                                className="pet_img"
+                                alt={`슬라이드 이미지 ${index + 1}`}
+                                onClick={(e) => handleMainImageClick(e, activeIndexRef.current)}
+                                style={slideStyle}
+                                loading={isLcp ? 'eager' : 'lazy'}
+                                decoding={isLcp ? 'sync' : 'async'}
+                                fetchPriority={isLcp ? 'high' : 'auto'}
+                                onError={(e) => {
+                                    if (!e.currentTarget.dataset.fallback) {
+                                        e.currentTarget.dataset.fallback = 'true';
+                                        e.currentTarget.src = img;
+                                    }
+                                }}
+                            />
+                        )}
+                    </SwiperSlide>
+                );
+            })}
         </Swiper>
     );
 
@@ -171,7 +221,16 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                     onClick={onSecondaryImageClick ? (e) => { e.stopPropagation(); onSecondaryImageClick(); } : undefined}
                     style={onSecondaryImageClick ? { cursor: 'pointer' } : undefined}
                 >
-                    <img src={secondaryImage} alt="보조 이미지" />
+                    {secondaryImageThumbnail ? (
+                        <GpImage
+                            src={secondaryImage}
+                            thumbnailSrc={secondaryImageThumbnail}
+                            variant="thumbnail"
+                            alt="보조 이미지"
+                        />
+                    ) : (
+                        <img src={secondaryImage} alt="보조 이미지" />
+                    )}
                 </div>
             )}
         </div>

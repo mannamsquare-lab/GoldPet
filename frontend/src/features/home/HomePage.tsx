@@ -14,6 +14,7 @@ import { CACHE_TIME } from '../../config/queryConfig';
 import { getImageUrl } from '../../utils/imageUrl';
 import { formatAgeGroup } from '../../utils/formatters';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
+import { GpImage } from '../../components/common/GpImage';
 
 import { Loading } from '../../components/common/Loading';
 import { LocationStatus } from '../../components/common/LocationStatus';
@@ -163,12 +164,27 @@ export default function HomePage() {
                                 const ownerImgs = item.profileImages.length > 0
                                     ? item.profileImages
                                     : (item.profileImageUrl ? [item.profileImageUrl] : [OWNER_FALLBACK]);
+                                const ownerImgsThumb: (string | null | undefined)[] | undefined = item.profileImages.length > 0
+                                    ? item.profileImagesThumbnail
+                                    : (item.profileImageUrl ? [item.profileImageUrlThumbnail ?? null] : undefined);
+                                const ownerImgsViewer: (string | null | undefined)[] | undefined = item.profileImages.length > 0
+                                    ? item.profileImagesViewer
+                                    : (item.profileImageUrl ? [item.profileImageUrlViewer ?? null] : undefined);
                                 const currentImages = petMode
                                     ? (item.images.length > 0 ? item.images : [PET_FALLBACK_FN(index)])
                                     : ownerImgs;
+                                const currentImagesThumb = petMode
+                                    ? (item.images.length > 0 ? item.imagesThumbnail : undefined)
+                                    : ownerImgsThumb;
+                                const currentImagesViewer = petMode
+                                    ? (item.images.length > 0 ? item.imagesViewer : undefined)
+                                    : ownerImgsViewer;
                                 const butlerSrc = petMode
                                     ? (item.profileImages[0] || item.profileImageUrl || OWNER_FALLBACK)
                                     : (item.images[0] || PET_FALLBACK_FN(index));
+                                const butlerThumb = petMode
+                                    ? (item.profileImagesThumbnail?.[0] || item.profileImageUrlThumbnail || null)
+                                    : (item.imagesThumbnail?.[0] || null);
 
 
 
@@ -199,30 +215,55 @@ export default function HomePage() {
                                                         allowTouchMove={false}
                                                         key={petMode ? `pet-${item.id}` : `owner-${item.id}`}
                                                     >
-                                                        {currentImages.map((img, imgIdx) => (
-                                                            <SwiperSlide key={imgIdx}>
-                                                                <img
-                                                                    className="pet_img"
-                                                                    src={getImageUrl(img, 'medium')}
-                                                                    alt=""
-                                                                    data-clickable="true"
-                                                                    loading={index === 0 && imgIdx === 0 ? 'eager' : 'lazy'}
-                                                                    decoding={index === 0 && imgIdx === 0 ? 'sync' : 'async'}
-                                                                    fetchPriority={index === 0 && imgIdx === 0 ? 'high' : 'auto'}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setGalleryState({ open: true, images: currentImages, index: imgIdx });
-                                                                    }}
-                                                                    onError={(e) => {
-                                                                        const target = e.currentTarget;
-                                                                        if (!target.dataset.fallback) {
-                                                                            target.dataset.fallback = 'true';
-                                                                            target.src = img;
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            </SwiperSlide>
-                                                        ))}
+                                                        {currentImages.map((img, imgIdx) => {
+                                                            const thumb = currentImagesThumb?.[imgIdx] ?? null;
+                                                            const viewer = currentImagesViewer?.[imgIdx] ?? null;
+                                                            const hasVariant = Boolean(thumb || viewer);
+                                                            const isLcp = index === 0 && imgIdx === 0;
+                                                            return (
+                                                                <SwiperSlide key={imgIdx}>
+                                                                    {hasVariant ? (
+                                                                        <GpImage
+                                                                            className="pet_img"
+                                                                            src={img}
+                                                                            thumbnailSrc={thumb}
+                                                                            viewerSrc={viewer}
+                                                                            variant={isLcp ? 'viewer' : 'medium'}
+                                                                            alt=""
+                                                                            data-clickable="true"
+                                                                            loading={isLcp ? 'eager' : 'lazy'}
+                                                                            decoding={isLcp ? 'sync' : 'async'}
+                                                                            fetchPriority={isLcp ? 'high' : 'auto'}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setGalleryState({ open: true, images: currentImages, index: imgIdx });
+                                                                            }}
+                                                                        />
+                                                                    ) : (
+                                                                        <img
+                                                                            className="pet_img"
+                                                                            src={getImageUrl(img, 'medium')}
+                                                                            alt=""
+                                                                            data-clickable="true"
+                                                                            loading={isLcp ? 'eager' : 'lazy'}
+                                                                            decoding={isLcp ? 'sync' : 'async'}
+                                                                            fetchPriority={isLcp ? 'high' : 'auto'}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setGalleryState({ open: true, images: currentImages, index: imgIdx });
+                                                                            }}
+                                                                            onError={(e) => {
+                                                                                const target = e.currentTarget;
+                                                                                if (!target.dataset.fallback) {
+                                                                                    target.dataset.fallback = 'true';
+                                                                                    target.src = img;
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                    )}
+                                                                </SwiperSlide>
+                                                            );
+                                                        })}
                                                     </Swiper>
                                                     <div className={`swiper-inside-prev-${index} swiper-inside-prev`}></div>
                                                     <div className={`swiper-inside-next-${index} swiper-inside-next`}></div>
@@ -242,12 +283,21 @@ export default function HomePage() {
                                                     toggleMode(item.id);
                                                 }}
                                             >
-                                                <img
-                                                    src={butlerSrc}
-                                                    alt=""
-                                                    decoding="async"
-                                                    onError={(e) => { e.currentTarget.src = OWNER_FALLBACK; }}
-                                                />
+                                                {butlerThumb ? (
+                                                    <GpImage
+                                                        src={butlerSrc}
+                                                        thumbnailSrc={butlerThumb}
+                                                        variant="thumbnail"
+                                                        alt=""
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={butlerSrc}
+                                                        alt=""
+                                                        decoding="async"
+                                                        onError={(e) => { e.currentTarget.src = OWNER_FALLBACK; }}
+                                                    />
+                                                )}
                                             </div>
                                         </div>
 
@@ -397,15 +447,36 @@ export default function HomePage() {
                     </div>
                     <div className="txt_wrap">
                         <div className="img_wrap">
-                            <img
-                                src={homeData.recentWalk.petProfileImageUrls && homeData.recentWalk.petProfileImageUrls.length > 0
-                                    ? getImageUrl(homeData.recentWalk.petProfileImageUrls[0], 'thumbnail')
-                                    : '/assets/images/common/pet_none_img02.svg'}
-                                alt=""
-                                loading="lazy"
-                                decoding="async"
-                                onError={(e) => { e.currentTarget.src = '/assets/images/common/pet_none_img02.svg'; }}
-                            />
+                            {(() => {
+                                const petImgs = homeData.recentWalk.petProfileImageUrls;
+                                const petThumbs = homeData.recentWalk.petProfileImageUrlsThumbnail;
+                                const petFirst = petImgs && petImgs.length > 0 ? petImgs[0] : null;
+                                const thumbFirst = petThumbs && petThumbs.length > 0 ? petThumbs[0] : null;
+                                if (!petFirst) {
+                                    return <img src="/assets/images/common/pet_none_img02.svg" alt="" loading="lazy" decoding="async" />;
+                                }
+                                if (thumbFirst) {
+                                    return (
+                                        <GpImage
+                                            src={petFirst}
+                                            thumbnailSrc={thumbFirst}
+                                            variant="thumbnail"
+                                            alt=""
+                                            loading="lazy"
+                                            decoding="async"
+                                        />
+                                    );
+                                }
+                                return (
+                                    <img
+                                        src={getImageUrl(petFirst, 'thumbnail')}
+                                        alt=""
+                                        loading="lazy"
+                                        decoding="async"
+                                        onError={(e) => { e.currentTarget.src = '/assets/images/common/pet_none_img02.svg'; }}
+                                    />
+                                );
+                            })()}
                         </div>
                         <p>
                             {homeData.recentWalk.petNames && homeData.recentWalk.petNames.length > 0 && (

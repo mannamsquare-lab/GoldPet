@@ -5,7 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { communityService } from '../../services/communityService';
 import { systemService } from '../../services/systemService';
 import { CACHE_TIME } from '../../config/queryConfig';
+import { GpImage } from '../../components/common/GpImage';
 import './CommunityPage.css';
+
+const AUTHOR_FALLBACK = '/assets/images/common/profile_none_img.svg';
 
 export default function CommunityListPage() {
   const navigate = useNavigate();
@@ -110,7 +113,18 @@ export default function CommunityListPage() {
               <li key={post.id} onClick={() => navigate(`/community/${post.id}`)}>
                 <div className="list_profile">
                   <div className="profile_img">
-                      <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" decoding="async" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
+                      {post.authorProfileUrl ? (
+                          <GpImage
+                              src={post.authorProfileUrl}
+                              thumbnailSrc={post.authorProfileUrlThumbnail}
+                              viewerSrc={post.authorProfileUrlViewer}
+                              variant="thumbnail"
+                              alt=""
+                              decoding="async"
+                          />
+                      ) : (
+                          <img src={AUTHOR_FALLBACK} alt="" decoding="async" />
+                      )}
                   </div>
                   <div className="txt_wrap">
                       <strong>{post.authorNickname}</strong>

@@ -4,7 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { communityService } from '../../services/communityService';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { EmptyState } from '../../components/common/EmptyState';
+import { GpImage } from '../../components/common/GpImage';
 import './MyPostsPage.css';
+
+const AUTHOR_FALLBACK = '/assets/images/common/profile_none_img.svg';
 
 type Tab = 'posts' | 'comments';
 
@@ -99,12 +102,18 @@ export default function MyPostsPage() {
                 {postsData.posts.map((post) => (
                   <li key={post.id} className="mp-post-item" onClick={() => navigate(`/community/${post.id}`)}>
                     <div className="mp-post-profile">
-                      <img
-                        className="mp-post-profile-img"
-                        src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'}
-                        alt=""
-                        onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }}
-                      />
+                      {post.authorProfileUrl ? (
+                        <GpImage
+                          className="mp-post-profile-img"
+                          src={post.authorProfileUrl}
+                          thumbnailSrc={post.authorProfileUrlThumbnail}
+                          viewerSrc={post.authorProfileUrlViewer}
+                          variant="thumbnail"
+                          alt=""
+                        />
+                      ) : (
+                        <img className="mp-post-profile-img" src={AUTHOR_FALLBACK} alt="" />
+                      )}
                       <div className="mp-post-profile-txt">
                         <strong>{post.authorNickname}</strong>
                         <span>{formatDate(post.createdAt)}</span>
@@ -155,12 +164,18 @@ export default function MyPostsPage() {
                     onClick={() => navigate(`/community/${comment.postId}`)}
                   >
                     <div className="mp-post-profile">
-                      <img
-                        className="mp-post-profile-img"
-                        src={comment.authorProfileUrl || '/assets/images/common/profile_none_img.svg'}
-                        alt=""
-                        onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }}
-                      />
+                      {comment.authorProfileUrl ? (
+                        <GpImage
+                          className="mp-post-profile-img"
+                          src={comment.authorProfileUrl}
+                          thumbnailSrc={comment.authorProfileUrlThumbnail}
+                          viewerSrc={comment.authorProfileUrlViewer}
+                          variant="thumbnail"
+                          alt=""
+                        />
+                      ) : (
+                        <img className="mp-post-profile-img" src={AUTHOR_FALLBACK} alt="" />
+                      )}
                       <div className="mp-post-profile-txt">
                         <strong>{comment.authorNickname}</strong>
                         <span>{formatDate(comment.createdAt)}</span>

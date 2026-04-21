@@ -74,6 +74,13 @@ const ProfileOwnerTab: React.FC = () => {
     const ownerImages = user.profileImageUrls && user.profileImageUrls.length > 0
         ? user.profileImageUrls
         : [user.profileImageUrl || "/assets/images/common/profile_none_img.svg"];
+    const ownerImagesThumbnail = user.profileImageUrls && user.profileImageUrls.length > 0
+        ? user.profileImageUrlsThumbnail
+        : (user.profileImageUrlThumbnail ? [user.profileImageUrlThumbnail] : undefined);
+    const ownerImagesViewer = user.profileImageUrls && user.profileImageUrls.length > 0
+        ? user.profileImageUrlsViewer
+        : (user.profileImageUrlViewer ? [user.profileImageUrlViewer] : undefined);
+    const petSecondaryThumbnail = representativePet?.profileImageUrlThumbnail ?? null;
 
     return (
         <div className="profile_info_wrap">
@@ -88,7 +95,10 @@ const ProfileOwnerTab: React.FC = () => {
                     className="couple_img"
                     swiperWrapperClass="profile_img_wrap"
                     images={ownerImages}
+                    imagesThumbnail={ownerImagesThumbnail}
+                    imagesViewer={ownerImagesViewer}
                     secondaryImage={representativePet?.profileImageUrl || "/assets/images/common/pet_none_img.svg"}
+                    secondaryImageThumbnail={petSecondaryThumbnail}
                     secondaryImageClass="butler_img pet_img"
                     onMainImageClick={(index) => setGalleryState({ open: true, images: ownerImages, index })}
                     onSecondaryImageClick={() => {

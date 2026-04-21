@@ -73,6 +73,12 @@ const MyPage: React.FC = () => {
   const profileImages = user?.profileImageUrls?.length
     ? user.profileImageUrls
     : [user?.profileImageUrl || '/assets/images/common/profile_none_img.svg'];
+  const profileImagesThumbnail = user?.profileImageUrls?.length
+    ? user.profileImageUrlsThumbnail
+    : (user?.profileImageUrlThumbnail ? [user.profileImageUrlThumbnail] : undefined);
+  const profileImagesViewer = user?.profileImageUrls?.length
+    ? user.profileImageUrlsViewer
+    : (user?.profileImageUrlViewer ? [user.profileImageUrlViewer] : undefined);
 
   const firstPet = myPets && myPets.length > 0 ? myPets[0] : null;
   const selectedPet = myPets?.find(p => p.id === selectedPetId) ?? firstPet;
@@ -81,6 +87,12 @@ const MyPage: React.FC = () => {
     : selectedPet?.profileImageUrl
       ? [selectedPet.profileImageUrl]
       : ['/assets/images/common/pet_none_img.svg'];
+  const petImagesThumbnail = selectedPet?.profileImageUrls?.length
+    ? selectedPet.profileImageUrlsThumbnail
+    : (selectedPet?.profileImageUrlThumbnail ? [selectedPet.profileImageUrlThumbnail] : undefined);
+  const petImagesViewer = selectedPet?.profileImageUrls?.length
+    ? selectedPet.profileImageUrlsViewer
+    : (selectedPet?.profileImageUrlViewer ? [selectedPet.profileImageUrlViewer] : undefined);
 
   const ownerHasProfile = (user?.profileImageUrls?.length ?? 0) > 0;
   const petHasProfile = myPets != null && myPets.length > 0;
@@ -168,6 +180,8 @@ const MyPage: React.FC = () => {
                   className="mypage-couple-img"
                   swiperWrapperClass="mypage-img-wrap"
                   images={profileImages}
+                  imagesThumbnail={profileImagesThumbnail}
+                  imagesViewer={profileImagesViewer}
                   onMainImageClick={(index) => setGalleryState({ open: true, images: profileImages, index })}
                   navigation={true}
                   innerChildren={
@@ -244,6 +258,8 @@ const MyPage: React.FC = () => {
                   className="mypage-couple-img"
                   swiperWrapperClass="mypage-img-wrap"
                   images={petImages}
+                  imagesThumbnail={petImagesThumbnail}
+                  imagesViewer={petImagesViewer}
                   onMainImageClick={(index) => setGalleryState({ open: true, images: petImages, index })}
                   navigation={petImages.length > 1}
                   innerChildren={petImages.length > 1 ? (

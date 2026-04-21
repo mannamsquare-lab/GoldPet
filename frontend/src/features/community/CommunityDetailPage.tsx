@@ -11,8 +11,11 @@ import { reportService } from '../../services/reportService';
 import { BackButton } from '../../components/common/BackButton';
 import { ReportModal } from '../../components/common/ReportModal';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
+import { GpImage } from '../../components/common/GpImage';
 import { ContentRenderer } from '../../utils/contentRenderer';
 import './CommunityPage.css';
+
+const AUTHOR_FALLBACK = '/assets/images/common/profile_none_img.svg';
 import { useAlert } from '../../contexts/AlertContext';
 import { useToast } from '../../contexts/ToastContext';
 import { CACHE_TIME } from '../../config/queryConfig';
@@ -340,7 +343,17 @@ export default function CommunityDetailPage() {
           {/* Profile */}
           <div className="detail_profile">
             <div className="profile_img">
-              <img src={post.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
+              {post.authorProfileUrl ? (
+                <GpImage
+                  src={post.authorProfileUrl}
+                  thumbnailSrc={post.authorProfileUrlThumbnail}
+                  viewerSrc={post.authorProfileUrlViewer}
+                  variant="thumbnail"
+                  alt=""
+                />
+              ) : (
+                <img src={AUTHOR_FALLBACK} alt="" />
+              )}
             </div>
             <div className="txt_wrap">
               <strong>{post.authorNickname}</strong>
@@ -421,7 +434,17 @@ export default function CommunityDetailPage() {
               >
                  <div className="detail_profile">
                     <div className="profile_img">
-                      <img src={comment.authorProfileUrl || '/assets/images/common/profile_none_img.svg'} alt="" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/images/common/profile_none_img.svg'; }} />
+                      {comment.authorProfileUrl ? (
+                        <GpImage
+                          src={comment.authorProfileUrl}
+                          thumbnailSrc={comment.authorProfileUrlThumbnail}
+                          viewerSrc={comment.authorProfileUrlViewer}
+                          variant="thumbnail"
+                          alt=""
+                        />
+                      ) : (
+                        <img src={AUTHOR_FALLBACK} alt="" />
+                      )}
                     </div>
                 </div>
                 <div className="comment_info">

@@ -12,6 +12,8 @@ export interface CommunityPost {
   content: string;
   authorNickname: string;
   authorProfileUrl?: string;
+  authorProfileUrlThumbnail?: string;
+  authorProfileUrlViewer?: string;
   viewCount: number;
   likeCount: number;
   commentCount: number;
@@ -41,6 +43,8 @@ export interface CommunityComment {
   content: string;
   authorNickname: string;
   authorProfileUrl?: string;
+  authorProfileUrlThumbnail?: string;
+  authorProfileUrlViewer?: string;
   isAdopted: boolean;
   createdAt: string;
   parentCommentId: number | null;
