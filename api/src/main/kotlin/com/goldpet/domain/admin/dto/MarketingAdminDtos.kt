@@ -6,6 +6,10 @@ data class BannerResponse(
     val id: Long,
     val title: String,
     val imageUrl: String?,
+    /** T1-1.5: banner image thumbnail variant (200px). */
+    val imageUrlThumbnail: String? = null,
+    /** T1-1.5: banner image viewer variant (1600px). */
+    val imageUrlViewer: String? = null,
     val link: String?,
     @get:JsonProperty("isActive")
     val isActive: Boolean,

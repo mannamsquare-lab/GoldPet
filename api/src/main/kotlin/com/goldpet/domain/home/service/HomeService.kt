@@ -1,6 +1,7 @@
 package com.goldpet.domain.home.service
 
 import com.goldpet.domain.common.exception.*
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.home.dto.HomeRecentWalkResponse
 import com.goldpet.domain.home.dto.HomeResponse
 import com.goldpet.domain.home.dto.NotificationSummary
@@ -19,7 +20,8 @@ class HomeService(
     private val walkRepository: WalkRepository,
     private val notificationService: NotificationService,
     private val userRepository: UserRepository,
-    private val petRepository: PetRepository
+    private val petRepository: PetRepository,
+    private val fileAttachmentLookupService: FileAttachmentLookupService
 ) {
     @Transactional(readOnly = true)
     fun getHomeData(userId: Long): HomeResponse {
@@ -44,6 +46,11 @@ class HomeService(
         // Get most recent walk (single query, no full list fetch)
         val recentWalk = walkRepository.findFirstByUserIdOrderByStartTimeDesc(userId)?.let { w ->
             val walkPets = w.walkPets
+            val petUrls = walkPets.mapNotNull { wp ->
+                wp.pet.profileImages.firstOrNull()?.imageUrl ?: wp.pet.profileImageUrl
+            }
+            // T1-1.5 batch prefetch
+            if (petUrls.isNotEmpty()) fileAttachmentLookupService.batchLookup(petUrls)
             HomeRecentWalkResponse(
                 id = w.id,
                 distanceKm = w.distanceKm,
@@ -51,9 +58,9 @@ class HomeService(
                 endTime = w.endTime,
                 startAddress = w.startAddress,
                 petNames = walkPets.map { it.pet.name },
-                petProfileImageUrls = walkPets.mapNotNull { wp ->
-                    wp.pet.profileImages.firstOrNull()?.imageUrl ?: wp.pet.profileImageUrl
-                },
+                petProfileImageUrls = petUrls,
+                petProfileImageUrlsThumbnail = petUrls.map { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
+                petProfileImageUrlsViewer = petUrls.map { fileAttachmentLookupService.viewerUrlFor(it) ?: it },
             )
         }
 

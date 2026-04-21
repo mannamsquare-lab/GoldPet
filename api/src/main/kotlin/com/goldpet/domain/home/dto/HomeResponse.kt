@@ -23,4 +23,8 @@ data class HomeRecentWalkResponse(
     val startAddress: String?,
     val petNames: List<String>,
     val petProfileImageUrls: List<String>,
+    /** T1-1.5: pet profile images thumbnail list. */
+    val petProfileImageUrlsThumbnail: List<String>? = null,
+    /** T1-1.5: pet profile images viewer list. */
+    val petProfileImageUrlsViewer: List<String>? = null,
 )

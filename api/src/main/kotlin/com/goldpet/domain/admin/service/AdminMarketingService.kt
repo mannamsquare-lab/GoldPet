@@ -10,6 +10,7 @@ import com.goldpet.domain.admin.repository.BannerRepository
 import com.goldpet.domain.admin.repository.CampaignRepository
 import com.goldpet.domain.admin.repository.NotificationTemplateRepository
 import com.goldpet.domain.admin.repository.PushDeliveryLogRepository
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.notification.dto.CreateNotificationRequest
 import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.service.NotificationService
@@ -28,16 +29,22 @@ class AdminMarketingService(
     private val notificationTemplateRepository: NotificationTemplateRepository,
     private val pushDeliveryLogRepository: PushDeliveryLogRepository,
     private val notificationService: NotificationService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val fileAttachmentLookupService: FileAttachmentLookupService
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     fun getBanners(): List<BannerResponse> {
-        return bannerRepository.findAllByOrderByDisplayOrderAsc().map {
+        val banners = bannerRepository.findAllByOrderByDisplayOrderAsc()
+        // T1-1.5 batch prefetch
+        fileAttachmentLookupService.batchLookup(banners.mapNotNull { it.imageUrl })
+        return banners.map {
             BannerResponse(
                 id = it.id,
                 title = it.title,
                 imageUrl = it.imageUrl,
+                imageUrlThumbnail = fileAttachmentLookupService.thumbnailUrlFor(it.imageUrl),
+                imageUrlViewer = fileAttachmentLookupService.viewerUrlFor(it.imageUrl),
                 link = it.link,
                 isActive = it.isActive,
                 displayOrder = it.displayOrder
@@ -56,6 +63,8 @@ class AdminMarketingService(
             id = banner.id,
             title = banner.title,
             imageUrl = banner.imageUrl,
+            imageUrlThumbnail = fileAttachmentLookupService.thumbnailUrlFor(banner.imageUrl),
+            imageUrlViewer = fileAttachmentLookupService.viewerUrlFor(banner.imageUrl),
             link = banner.link,
             isActive = banner.isActive,
             displayOrder = banner.displayOrder
