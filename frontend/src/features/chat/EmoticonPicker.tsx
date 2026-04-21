@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { emoticonService } from '../../services/emoticonService';
+import { GpImage } from '../../components/common/GpImage';
 
 interface EmoticonPickerProps {
   onSelect: (emoticon: { id: number; imageUrl: string }) => void;
@@ -61,7 +62,13 @@ const EmoticonPicker = ({ onSelect }: EmoticonPickerProps) => {
                         onClick={() => onSelect({ id: emoticon.id, imageUrl: emoticon.imageUrl })}
                         title={emoticon.name || undefined}
                       >
-                        <img src={emoticon.imageUrl} alt={emoticon.name || '이모티콘'} />
+                        <GpImage
+                          src={emoticon.imageUrl}
+                          thumbnailSrc={emoticon.imageUrlThumbnail}
+                          viewerSrc={emoticon.imageUrlViewer}
+                          variant="thumbnail"
+                          alt={emoticon.name || '이모티콘'}
+                        />
                       </button>
                     ))}
                   </div>

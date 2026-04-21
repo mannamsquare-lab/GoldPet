@@ -38,6 +38,8 @@ export interface ChatMessage {
   file?: FileInfo;
   emoticonId?: number;
   emoticonImageUrl?: string;
+  emoticonImageUrlThumbnail?: string;
+  emoticonImageUrlViewer?: string;
   emoticonName?: string;
   // Reply fields
   replyToId?: number;
@@ -47,6 +49,8 @@ export interface ChatMessage {
   replyToFileUrl?: string;
   replyToFileName?: string;
   replyToEmoticonImageUrl?: string;
+  replyToEmoticonImageUrlThumbnail?: string;
+  replyToEmoticonImageUrlViewer?: string;
   // Soft delete
   deletedAt?: string;
   // Read receipt

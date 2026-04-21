@@ -5043,6 +5043,8 @@ export interface components {
             name?: string;
             category: string;
             imageUrl: string;
+            imageUrlThumbnail?: string;
+            imageUrlViewer?: string;
             /** Format: int32 */
             sortOrder: number;
             /** Format: int64 */

@@ -19,6 +19,7 @@ import { ReportModal } from '../../components/common/ReportModal';
 import { CACHE_TIME } from '../../config/queryConfig';
 import EmoticonPicker from './EmoticonPicker';
 import InviteGroupChatModal from './InviteGroupChatModal';
+import { GpImage } from '../../components/common/GpImage';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -198,7 +199,14 @@ const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLo
                                     <img className="chat_detail_reply_quote_thumb" src={msg.replyToFileUrl} alt="사진" />
                                 )}
                                 {msg.replyToMessageType === 'EMOTICON' && msg.replyToEmoticonImageUrl && (
-                                    <img className="chat_detail_reply_quote_thumb" src={msg.replyToEmoticonImageUrl} alt="이모티콘" />
+                                    <GpImage
+                                        className="chat_detail_reply_quote_thumb"
+                                        src={msg.replyToEmoticonImageUrl}
+                                        thumbnailSrc={msg.replyToEmoticonImageUrlThumbnail}
+                                        viewerSrc={msg.replyToEmoticonImageUrlViewer}
+                                        variant="thumbnail"
+                                        alt="이모티콘"
+                                    />
                                 )}
                             </div>
                             <div className="chat_detail_reply_quote_divider" />
@@ -812,7 +820,13 @@ const ChatDetailPage = () => {
             return (
                 <div className="chat_detail_message_emoticon">
                     {msg.emoticonImageUrl ? (
-                        <img src={msg.emoticonImageUrl} alt={msg.emoticonName || '이모티콘'} />
+                        <GpImage
+                            src={msg.emoticonImageUrl}
+                            thumbnailSrc={msg.emoticonImageUrlThumbnail}
+                            viewerSrc={msg.emoticonImageUrlViewer}
+                            variant="viewer"
+                            alt={msg.emoticonName || '이모티콘'}
+                        />
                     ) : (
                         <div className="chat_detail_message_emoticon_deleted">삭제된 이모티콘</div>
                     )}
