@@ -14,6 +14,7 @@ import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
+import org.springframework.core.env.Environment
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionSynchronization
@@ -62,7 +63,8 @@ class FileService(
     private val meterRegistry: MeterRegistry,
     @Lazy private val walkSpotBackfillWorker: com.goldpet.domain.walk.service.WalkSpotBackfillWorker,
     @Lazy private val fileAttachmentRetryWorker: FileAttachmentRetryWorker,
-    private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService
+    private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService,
+    private val environment: Environment
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -81,8 +83,11 @@ class FileService(
     }
 
     init {
-        ensureBucket(publicBucketName, isPublic = true)
-        ensureBucket(privateBucketName, isPublic = false)
+        // codegen 프로파일은 MinIO/S3 없이 openapi 스펙만 생성하므로 bucket 초기화 스킵.
+        if (!environment.activeProfiles.contains("codegen")) {
+            ensureBucket(publicBucketName, isPublic = true)
+            ensureBucket(privateBucketName, isPublic = false)
+        }
         // Force lazy counter init so the meter is exposed even before first increment.
         presignedExpiredFallbackCounter
     }

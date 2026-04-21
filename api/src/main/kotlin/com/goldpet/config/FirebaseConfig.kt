@@ -5,11 +5,13 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import jakarta.annotation.PostConstruct
 import java.io.File
 import java.io.InputStream
 
 @Configuration
+@Profile("!codegen")
 class FirebaseConfig {
     private val log = LoggerFactory.getLogger(javaClass)
 
