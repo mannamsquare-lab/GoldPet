@@ -9,6 +9,7 @@ import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.common.repository.FileAttachmentRepository
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.emoticon.service.EmoticonService
 import com.goldpet.domain.file.service.FileService
 import io.swagger.v3.oas.annotations.Operation
@@ -30,7 +31,8 @@ class ChatRoomController(
     private val simpMessageSendingOperations: SimpMessageSendingOperations,
     private val fileService: FileService,
     private val chatRoomParticipantRepository: ChatRoomParticipantRepository,
-    private val chatMessageRepository: ChatMessageRepository
+    private val chatMessageRepository: ChatMessageRepository,
+    private val fileAttachmentLookupService: FileAttachmentLookupService
 ) {
     private fun resolveFileUrl(url: String): String =
         if (url.startsWith("http")) url else fileService.getPresignedUrl(url)
@@ -106,6 +108,11 @@ class ChatRoomController(
             emptyMap()
         }
 
+        // T1-1.4 batch prefetch: emoticon image URL → FileAttachment variant lookup warm.
+        // T1-9 에서 seed emoticon 도 S3 FileAttachment 경유로 전환됐으므로 이 lookup 이 hit.
+        val emoticonUrls = (emoticons.values.map { it.imageUrl } + replyToEmoticons.values.map { it.imageUrl }).distinct()
+        if (emoticonUrls.isNotEmpty()) fileAttachmentLookupService.batchLookup(emoticonUrls)
+
         return ResponseEntity.ok(messages.map { msg ->
             val resolvedUrl = msg.fileId?.let { fileAttachments[it] }?.url?.let { resolveFileUrl(it) }
             val resolvedReplyUrl = msg.replyTo?.fileId?.let { replyToFileAttachments[it] }?.url?.let { resolveFileUrl(it) }
@@ -117,7 +124,8 @@ class ChatRoomController(
                 msg.replyTo?.fileId?.let { replyToFileAttachments[it] },
                 msg.replyTo?.emoticonId?.let { replyToEmoticons[it] },
                 resolvedFileUrl = resolvedUrl,
-                resolvedReplyToFileUrl = resolvedReplyUrl
+                resolvedReplyToFileUrl = resolvedReplyUrl,
+                variantResolver = fileAttachmentLookupService
             )
         })
     }
@@ -156,7 +164,8 @@ class ChatRoomController(
         val chatMessageResponse = ChatMessageResponse.from(
             message, allParticipants, fileAttachment, emoticon, replyToFileAttachment, replyToEmoticon,
             resolvedFileUrl = resolvedUrl,
-            resolvedReplyToFileUrl = resolvedReplyUrl
+            resolvedReplyToFileUrl = resolvedReplyUrl,
+            variantResolver = fileAttachmentLookupService
         )
 
         // Broadcast to WebSocket subscribers for real-time updates (chat detail page)

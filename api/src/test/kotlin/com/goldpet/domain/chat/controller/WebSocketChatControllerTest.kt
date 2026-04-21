@@ -36,7 +36,8 @@ class WebSocketChatControllerTest {
         emoticonService = mock(EmoticonService::class.java)
         fileAttachmentRepository = mock(FileAttachmentRepository::class.java)
         chatRoomParticipantRepository = mock(ChatRoomParticipantRepository::class.java)
-        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, emoticonService, fileAttachmentRepository, chatRoomParticipantRepository)
+        val fileAttachmentLookupService = mock(com.goldpet.domain.common.service.FileAttachmentLookupService::class.java)
+        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, emoticonService, fileAttachmentRepository, chatRoomParticipantRepository, fileAttachmentLookupService)
 
         testUser = User(
             id = 1L,

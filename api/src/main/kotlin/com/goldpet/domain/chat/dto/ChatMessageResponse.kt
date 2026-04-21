@@ -4,6 +4,7 @@ import com.goldpet.domain.chat.entity.ChatMessage
 import com.goldpet.domain.chat.entity.ChatRoomParticipant
 import com.goldpet.domain.chat.entity.MessageType
 import com.goldpet.domain.common.entity.FileAttachment
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.emoticon.entity.Emoticon
 import java.time.LocalDateTime
 
@@ -29,6 +30,10 @@ data class ChatMessageResponse(
     val file: FileInfo?,
     val emoticonId: Long?,
     val emoticonImageUrl: String?,
+    /** T1-1.4: emoticon thumbnail variant (200px). T1-9 S3 이관된 이모티콘만 값 제공. */
+    val emoticonImageUrlThumbnail: String? = null,
+    /** T1-1.4: emoticon viewer variant (1600px). */
+    val emoticonImageUrlViewer: String? = null,
     val emoticonName: String?,
     val emojiCode: String?,
     val createdAt: LocalDateTime,
@@ -40,6 +45,10 @@ data class ChatMessageResponse(
     val replyToFileUrl: String? = null,
     val replyToFileName: String? = null,
     val replyToEmoticonImageUrl: String? = null,
+    /** T1-1.4: reply-to emoticon thumbnail variant. */
+    val replyToEmoticonImageUrlThumbnail: String? = null,
+    /** T1-1.4: reply-to emoticon viewer variant. */
+    val replyToEmoticonImageUrlViewer: String? = null,
     val deletedAt: LocalDateTime? = null
 ) {
     companion object {
@@ -50,7 +59,8 @@ data class ChatMessageResponse(
             replyToFileAttachment: FileAttachment? = null,
             replyToEmoticon: Emoticon? = null,
             resolvedFileUrl: String? = null,
-            resolvedReplyToFileUrl: String? = null
+            resolvedReplyToFileUrl: String? = null,
+            variantResolver: FileAttachmentLookupService? = null
         ): ChatMessageResponse {
             val isDeleted = chatMessage.deletedAt != null
             return ChatMessageResponse(
@@ -75,6 +85,8 @@ data class ChatMessageResponse(
                 },
                 emoticonId = chatMessage.emoticonId,
                 emoticonImageUrl = emoticon?.imageUrl,
+                emoticonImageUrlThumbnail = variantResolver?.thumbnailUrlFor(emoticon?.imageUrl),
+                emoticonImageUrlViewer = variantResolver?.viewerUrlFor(emoticon?.imageUrl),
                 emoticonName = emoticon?.name,
                 emojiCode = chatMessage.emojiCode,
                 createdAt = chatMessage.createdAt,
@@ -86,6 +98,8 @@ data class ChatMessageResponse(
                 replyToFileUrl = resolvedReplyToFileUrl ?: replyToFileAttachment?.url,
                 replyToFileName = replyToFileAttachment?.originalFileName,
                 replyToEmoticonImageUrl = replyToEmoticon?.imageUrl,
+                replyToEmoticonImageUrlThumbnail = variantResolver?.thumbnailUrlFor(replyToEmoticon?.imageUrl),
+                replyToEmoticonImageUrlViewer = variantResolver?.viewerUrlFor(replyToEmoticon?.imageUrl),
                 deletedAt = chatMessage.deletedAt
             )
         }
@@ -98,7 +112,8 @@ data class ChatMessageResponse(
             replyToFileAttachment: FileAttachment? = null,
             replyToEmoticon: Emoticon? = null,
             resolvedFileUrl: String? = null,
-            resolvedReplyToFileUrl: String? = null
+            resolvedReplyToFileUrl: String? = null,
+            variantResolver: FileAttachmentLookupService? = null
         ): ChatMessageResponse {
             val computedUnreadCount = computeUnreadCount(chatMessage, participants)
             val isDeleted = chatMessage.deletedAt != null
@@ -124,6 +139,8 @@ data class ChatMessageResponse(
                 },
                 emoticonId = chatMessage.emoticonId,
                 emoticonImageUrl = emoticon?.imageUrl,
+                emoticonImageUrlThumbnail = variantResolver?.thumbnailUrlFor(emoticon?.imageUrl),
+                emoticonImageUrlViewer = variantResolver?.viewerUrlFor(emoticon?.imageUrl),
                 emoticonName = emoticon?.name,
                 emojiCode = chatMessage.emojiCode,
                 createdAt = chatMessage.createdAt,
@@ -135,6 +152,8 @@ data class ChatMessageResponse(
                 replyToFileUrl = resolvedReplyToFileUrl ?: replyToFileAttachment?.url,
                 replyToFileName = replyToFileAttachment?.originalFileName,
                 replyToEmoticonImageUrl = replyToEmoticon?.imageUrl,
+                replyToEmoticonImageUrlThumbnail = variantResolver?.thumbnailUrlFor(replyToEmoticon?.imageUrl),
+                replyToEmoticonImageUrlViewer = variantResolver?.viewerUrlFor(replyToEmoticon?.imageUrl),
                 deletedAt = chatMessage.deletedAt
             )
         }
