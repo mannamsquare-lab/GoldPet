@@ -110,6 +110,27 @@ class FriendService(
         return PageImpl(friendResponses, pageable, usersPage.totalElements)
     }
 
+    /**
+     * T1-1.4b 연장 — LikeController 3 endpoint 공용 매퍼.
+     * User 리스트를 받아 batch prefetch(variant lookup N+1 해소) + 개별 변환을 수행한다.
+     * FriendController 의 리스트 경로와 동일한 variant 공급 정책을 보장.
+     */
+    fun buildFriendResponses(users: List<User>, myLat: Double, myLng: Double): List<FriendResponse> {
+        if (users.isEmpty()) return emptyList()
+
+        val allUrls = users.flatMap { user ->
+            val ownerUrls = user.profileImages.map { it.imageUrl } +
+                listOfNotNull(user.profileImageUrl)
+            val petUrls = petRepository.findByOwnerId(user.id).flatMap { pet ->
+                pet.profileImages.map { it.imageUrl } + listOfNotNull(pet.profileImageUrl)
+            }
+            ownerUrls + petUrls
+        }
+        if (allUrls.isNotEmpty()) fileAttachmentLookupService.batchLookup(allUrls)
+
+        return users.map { convertToFriendResponse(it, myLat, myLng) }
+    }
+
     private fun convertToFriendResponse(user: User, myLat: Double, myLng: Double): FriendResponse {
         val pets = petRepository.findByOwnerId(user.id)
         val mainPet = pets.firstOrNull()

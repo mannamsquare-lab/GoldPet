@@ -5,8 +5,6 @@ import com.goldpet.domain.friend.dto.FriendResponse
 import com.goldpet.domain.friend.dto.LikeResponse
 import com.goldpet.domain.friend.service.FriendService
 import com.goldpet.domain.friend.service.LikeService
-import com.goldpet.domain.friend.service.parseTemperamentTags
-import com.goldpet.util.GeoUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.*
 class LikeController(
     private val likeService: LikeService,
     private val friendService: FriendService,
-    private val petRepository: com.goldpet.domain.pet.repository.PetRepository,
     private val userRepository: com.goldpet.domain.user.repository.UserRepository
 ) {
     @Operation(summary = "좋아요", description = "친구에게 좋아요를 보냅니다.")
@@ -58,48 +55,8 @@ class LikeController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<List<FriendResponse>> {
         val users = likeService.getMyLikes(principal.id)
-        val me = userRepository.findById(principal.id).orElseThrow()
-        val myLat = me.mainLocationGeom?.y ?: 0.0
-        val myLng = me.mainLocationGeom?.x ?: 0.0
-        val responses = users.map { user ->
-            val pets = petRepository.findByOwnerId(user.id)
-            val mainPet = pets.firstOrNull()
-
-            val parsed1 = parseTemperamentTags(mainPet?.temperamentTags)
-            val ownerImages1 = user.profileImages.map { it.imageUrl }.toMutableList()
-            if (ownerImages1.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages1.add(user.profileImageUrl!!)
-            val petImages1 = pets.flatMap { pet ->
-                val imgs = pet.profileImages.map { it.imageUrl }
-                if (imgs.isEmpty() && !pet.profileImageUrl.isNullOrBlank()) listOf(pet.profileImageUrl!!) else imgs
-            }
-
-            FriendResponse(
-                id = user.id,
-                nickname = user.nickname ?: "Unknown",
-                profileImageUrl = user.profileImageUrl,
-                profileImages = ownerImages1,
-                ownerGender = user.gender,
-                ownerAge = user.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years },
-                ownerIntro = user.intro,
-                ownerMbti = user.mbti,
-                ownerInterests = user.interests.map { it.name },
-                ownerHobbies = user.hobbies.map { it.name },
-                petName = mainPet?.name ?: "",
-                petBreed = mainPet?.breed?.name ?: "",
-                petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
-                petGender = mainPet?.gender ?: "UNKNOWN",
-                isNeutered = mainPet?.isNeutered ?: false,
-                onWalking = false,
-                description = parsed1.note,
-                tags = parsed1.tags,
-                images = petImages1,
-                distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
-                status = "offline",
-                location = null,
-                locationText = user.mainLocationText
-            )
-        }
-        return ResponseEntity.ok(responses)
+        val (myLat, myLng) = myCoordinates(principal.id)
+        return ResponseEntity.ok(friendService.buildFriendResponses(users, myLat, myLng))
     }
 
     @Operation(summary = "서로 좋아해 목록", description = "서로 좋아요한 사용자 목록을 조회합니다.")
@@ -108,48 +65,8 @@ class LikeController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<List<FriendResponse>> {
         val users = likeService.getMutualLikes(principal.id)
-        val me = userRepository.findById(principal.id).orElseThrow()
-        val myLat = me.mainLocationGeom?.y ?: 0.0
-        val myLng = me.mainLocationGeom?.x ?: 0.0
-        val responses = users.map { user ->
-            val pets = petRepository.findByOwnerId(user.id)
-            val mainPet = pets.firstOrNull()
-
-            val parsed2 = parseTemperamentTags(mainPet?.temperamentTags)
-            val ownerImages2 = user.profileImages.map { it.imageUrl }.toMutableList()
-            if (ownerImages2.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages2.add(user.profileImageUrl!!)
-            val petImages2 = pets.flatMap { pet ->
-                val imgs = pet.profileImages.map { it.imageUrl }
-                if (imgs.isEmpty() && !pet.profileImageUrl.isNullOrBlank()) listOf(pet.profileImageUrl!!) else imgs
-            }
-
-            FriendResponse(
-                id = user.id,
-                nickname = user.nickname ?: "Unknown",
-                profileImageUrl = user.profileImageUrl,
-                profileImages = ownerImages2,
-                ownerGender = user.gender,
-                ownerAge = user.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years },
-                ownerIntro = user.intro,
-                ownerMbti = user.mbti,
-                ownerInterests = user.interests.map { it.name },
-                ownerHobbies = user.hobbies.map { it.name },
-                petName = mainPet?.name ?: "",
-                petBreed = mainPet?.breed?.name ?: "",
-                petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
-                petGender = mainPet?.gender ?: "UNKNOWN",
-                isNeutered = mainPet?.isNeutered ?: false,
-                onWalking = false,
-                description = parsed2.note,
-                tags = parsed2.tags,
-                images = petImages2,
-                distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
-                status = "offline",
-                location = null,
-                locationText = user.mainLocationText
-            )
-        }
-        return ResponseEntity.ok(responses)
+        val (myLat, myLng) = myCoordinates(principal.id)
+        return ResponseEntity.ok(friendService.buildFriendResponses(users, myLat, myLng))
     }
 
     @Operation(summary = "나를 좋아해 목록", description = "나를 좋아요한 사용자 목록을 조회합니다.")
@@ -158,48 +75,8 @@ class LikeController(
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<List<FriendResponse>> {
         val users = likeService.getReceivedLikes(principal.id)
-        val me = userRepository.findById(principal.id).orElseThrow()
-        val myLat = me.mainLocationGeom?.y ?: 0.0
-        val myLng = me.mainLocationGeom?.x ?: 0.0
-        val responses = users.map { user ->
-            val pets = petRepository.findByOwnerId(user.id)
-            val mainPet = pets.firstOrNull()
-
-            val parsed3 = parseTemperamentTags(mainPet?.temperamentTags)
-            val ownerImages3 = user.profileImages.map { it.imageUrl }.toMutableList()
-            if (ownerImages3.isEmpty() && !user.profileImageUrl.isNullOrBlank()) ownerImages3.add(user.profileImageUrl!!)
-            val petImages3 = pets.flatMap { pet ->
-                val imgs = pet.profileImages.map { it.imageUrl }
-                if (imgs.isEmpty() && !pet.profileImageUrl.isNullOrBlank()) listOf(pet.profileImageUrl!!) else imgs
-            }
-
-            FriendResponse(
-                id = user.id,
-                nickname = user.nickname ?: "Unknown",
-                profileImageUrl = user.profileImageUrl,
-                profileImages = ownerImages3,
-                ownerGender = user.gender,
-                ownerAge = user.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years },
-                ownerIntro = user.intro,
-                ownerMbti = user.mbti,
-                ownerInterests = user.interests.map { it.name },
-                ownerHobbies = user.hobbies.map { it.name },
-                petName = mainPet?.name ?: "",
-                petBreed = mainPet?.breed?.name ?: "",
-                petAge = mainPet?.birthDate?.let { java.time.Period.between(it, java.time.LocalDate.now()).years } ?: 0,
-                petGender = mainPet?.gender ?: "UNKNOWN",
-                isNeutered = mainPet?.isNeutered ?: false,
-                onWalking = false,
-                description = parsed3.note,
-                tags = parsed3.tags,
-                images = petImages3,
-                distance = GeoUtils.calculateDistanceInMeters(myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x),
-                status = "offline",
-                location = null,
-                locationText = user.mainLocationText
-            )
-        }
-        return ResponseEntity.ok(responses)
+        val (myLat, myLng) = myCoordinates(principal.id)
+        return ResponseEntity.ok(friendService.buildFriendResponses(users, myLat, myLng))
     }
 
     @Operation(summary = "좋아요 상태 확인", description = "특정 사용자에게 좋아요를 눌렀는지 확인합니다.")
@@ -210,5 +87,12 @@ class LikeController(
     ): ResponseEntity<Map<String, Boolean>> {
         val hasLiked = likeService.hasLiked(principal.id, targetUserId)
         return ResponseEntity.ok(mapOf("hasLiked" to hasLiked))
+    }
+
+    private fun myCoordinates(userId: Long): Pair<Double, Double> {
+        val me = userRepository.findById(userId).orElseThrow()
+        val lat = me.mainLocationGeom?.y ?: 0.0
+        val lng = me.mainLocationGeom?.x ?: 0.0
+        return lat to lng
     }
 }
