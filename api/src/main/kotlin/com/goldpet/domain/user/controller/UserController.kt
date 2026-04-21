@@ -1,6 +1,7 @@
 package com.goldpet.domain.user.controller
 
 import com.goldpet.domain.common.exception.*
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.user.dto.ChangePasswordRequest
 import com.goldpet.domain.user.dto.DeleteAccountRequest
 import com.goldpet.domain.user.dto.ProfileImageUpdateRequest
@@ -44,7 +45,8 @@ data class RecordConsentRequest(
 class UserController(
     private val userService: UserService,
     private val consentService: ConsentService,
-    private val userDataExportService: UserDataExportService
+    private val userDataExportService: UserDataExportService,
+    private val fileAttachmentLookupService: FileAttachmentLookupService
 ) {
     @Operation(summary = "내 프로필 조회")
     @GetMapping("/me")
@@ -57,7 +59,7 @@ class UserController(
 
         val user = userService.findUserById(userId)
         return if (user != null) {
-            ResponseEntity.ok(UserResponse.from(user))
+            ResponseEntity.ok(UserResponse.from(user, fileAttachmentLookupService))
         } else {
             ResponseEntity.notFound().build()
         }
@@ -74,7 +76,7 @@ class UserController(
             userId,
             request
         )
-        return ResponseEntity.ok(UserResponse.from(updatedUser))
+        return ResponseEntity.ok(UserResponse.from(updatedUser, fileAttachmentLookupService))
     }
 
     @Operation(summary = "내 계정 탈퇴")
@@ -99,7 +101,7 @@ class UserController(
             userId,
             request
         )
-        return ResponseEntity.ok(UserResponse.from(updatedUser))
+        return ResponseEntity.ok(UserResponse.from(updatedUser, fileAttachmentLookupService))
     }
 
     @Operation(summary = "알림 수신 여부 변경")
@@ -110,7 +112,7 @@ class UserController(
     ): ResponseEntity<UserResponse> {
         val userId = userService.getUserIdFromPrincipal(principal)
         val updatedUser = userService.updateNotification(userId, request.enabled)
-        return ResponseEntity.ok(UserResponse.from(updatedUser))
+        return ResponseEntity.ok(UserResponse.from(updatedUser, fileAttachmentLookupService))
     }
 
     @Operation(summary = "알림 설정 조회")

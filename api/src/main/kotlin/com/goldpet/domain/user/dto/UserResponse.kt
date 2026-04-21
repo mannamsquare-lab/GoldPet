@@ -1,9 +1,9 @@
 package com.goldpet.domain.user.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.common.util.toHttps
 import com.goldpet.domain.user.entity.User
-import org.locationtech.jts.geom.Point
 
 data class UserResponse(
     val id: Long,
@@ -16,6 +16,14 @@ data class UserResponse(
     val mainLocationLng: Double?,
     val profileImageUrl: String?,
     val profileImageUrls: List<String>,
+    /** T1-1.2: viewer variant (1600px, ~150KB). Null when variant lookup skipped. */
+    val profileImageUrlViewer: String? = null,
+    /** T1-1.2: thumbnail variant (200px). */
+    val profileImageUrlThumbnail: String? = null,
+    /** T1-1.2: viewer variant list matching profileImageUrls order. */
+    val profileImageUrlsViewer: List<String>? = null,
+    /** T1-1.2: thumbnail variant list matching profileImageUrls order. */
+    val profileImageUrlsThumbnail: List<String>? = null,
     val name: String?,
     val birthDate: String?,
     val phoneNumber: String?,
@@ -31,7 +39,13 @@ data class UserResponse(
     val isProfileLocked: Boolean
 ) {
     companion object {
-        fun from(user: User): UserResponse {
+        /**
+         * @param variantResolver T1-1.1 FileAttachmentLookupService. null 이면 variant 필드 미공급.
+         *        리스트 경로에서는 호출 전에 `variantResolver.batchLookup(allUrls)` 로 Caffeine warm 필수.
+         */
+        fun from(user: User, variantResolver: FileAttachmentLookupService? = null): UserResponse {
+            val primary = user.profileImageUrl.toHttps()
+            val urls = user.profileImages.map { it.imageUrl.toHttps() ?: it.imageUrl }
             return UserResponse(
                 id = user.id,
                 email = user.email,
@@ -41,8 +55,12 @@ data class UserResponse(
                 mainLocationText = user.mainLocationText,
                 mainLocationLat = user.mainLocationGeom?.y, // Latitude
                 mainLocationLng = user.mainLocationGeom?.x, // Longitude
-                profileImageUrl = user.profileImageUrl.toHttps(),
-                profileImageUrls = user.profileImages.map { it.imageUrl.toHttps() ?: it.imageUrl },
+                profileImageUrl = primary,
+                profileImageUrls = urls,
+                profileImageUrlViewer = variantResolver?.viewerUrlFor(primary),
+                profileImageUrlThumbnail = variantResolver?.thumbnailUrlFor(primary),
+                profileImageUrlsViewer = variantResolver?.let { r -> urls.map { r.viewerUrlFor(it) ?: it } },
+                profileImageUrlsThumbnail = variantResolver?.let { r -> urls.map { r.thumbnailUrlFor(it) ?: it } },
                 name = user.name,
                 birthDate = user.birthDate?.toString(),
                 phoneNumber = user.phoneNumber,
@@ -59,7 +77,9 @@ data class UserResponse(
         }
 
         /** Public view of another user's profile. Hides PII and precise location. */
-        fun publicFrom(user: User): UserResponse {
+        fun publicFrom(user: User, variantResolver: FileAttachmentLookupService? = null): UserResponse {
+            val primary = user.profileImageUrl.toHttps()
+            val urls = user.profileImages.map { it.imageUrl.toHttps() ?: it.imageUrl }
             return UserResponse(
                 id = user.id,
                 email = null,
@@ -69,8 +89,12 @@ data class UserResponse(
                 mainLocationText = user.mainLocationText,
                 mainLocationLat = null,
                 mainLocationLng = null,
-                profileImageUrl = user.profileImageUrl.toHttps(),
-                profileImageUrls = user.profileImages.map { it.imageUrl.toHttps() ?: it.imageUrl },
+                profileImageUrl = primary,
+                profileImageUrls = urls,
+                profileImageUrlViewer = variantResolver?.viewerUrlFor(primary),
+                profileImageUrlThumbnail = variantResolver?.thumbnailUrlFor(primary),
+                profileImageUrlsViewer = variantResolver?.let { r -> urls.map { r.viewerUrlFor(it) ?: it } },
+                profileImageUrlsThumbnail = variantResolver?.let { r -> urls.map { r.thumbnailUrlFor(it) ?: it } },
                 name = null,
                 birthDate = null,
                 phoneNumber = null,

@@ -4609,6 +4609,10 @@ export interface components {
             mainLocationLng?: number;
             profileImageUrl?: string;
             profileImageUrls: string[];
+            profileImageUrlViewer?: string;
+            profileImageUrlThumbnail?: string;
+            profileImageUrlsViewer?: string[];
+            profileImageUrlsThumbnail?: string[];
             name?: string;
             birthDate?: string;
             phoneNumber?: string;
@@ -4708,6 +4712,10 @@ export interface components {
             isNeutered?: boolean;
             profileImageUrl?: string;
             profileImageUrls: string[];
+            profileImageUrlViewer?: string;
+            profileImageUrlThumbnail?: string;
+            profileImageUrlsViewer?: string[];
+            profileImageUrlsThumbnail?: string[];
             temperamentTags: string[];
         };
         CourseSpotDto: {

@@ -1,6 +1,7 @@
 package com.goldpet.domain.pet.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.pet.entity.Pet
 import jakarta.validation.constraints.DecimalMax
 import jakarta.validation.constraints.DecimalMin
@@ -54,10 +55,24 @@ data class PetResponse(
     val isNeutered: Boolean?,
     val profileImageUrl: String?,
     val profileImageUrls: List<String>,
+    /** T1-1.2: viewer variant (1600px). */
+    val profileImageUrlViewer: String? = null,
+    /** T1-1.2: thumbnail variant (200px). */
+    val profileImageUrlThumbnail: String? = null,
+    /** T1-1.2: viewer variant list matching profileImageUrls order. */
+    val profileImageUrlsViewer: List<String>? = null,
+    /** T1-1.2: thumbnail variant list matching profileImageUrls order. */
+    val profileImageUrlsThumbnail: List<String>? = null,
     val temperamentTags: List<String>,
 ) {
     companion object {
-        fun from(pet: Pet): PetResponse {
+        /**
+         * @param variantResolver T1-1.1 FileAttachmentLookupService. 리스트 경로에서는 호출 전에
+         *        `variantResolver.batchLookup(allUrls)` 로 Caffeine warm 필수.
+         */
+        fun from(pet: Pet, variantResolver: FileAttachmentLookupService? = null): PetResponse {
+            val primary = pet.profileImageUrl
+            val urls = pet.profileImages.map { it.imageUrl }
             return PetResponse(
                 id = pet.id,
                 ownerId = pet.owner.id,
@@ -70,8 +85,12 @@ data class PetResponse(
                 birthDate = pet.birthDate,
                 weightKg = pet.weightKg,
                 isNeutered = pet.isNeutered,
-                profileImageUrl = pet.profileImageUrl,
-                profileImageUrls = pet.profileImages.map { it.imageUrl },
+                profileImageUrl = primary,
+                profileImageUrls = urls,
+                profileImageUrlViewer = variantResolver?.viewerUrlFor(primary),
+                profileImageUrlThumbnail = variantResolver?.thumbnailUrlFor(primary),
+                profileImageUrlsViewer = variantResolver?.let { r -> urls.map { r.viewerUrlFor(it) ?: it } },
+                profileImageUrlsThumbnail = variantResolver?.let { r -> urls.map { r.thumbnailUrlFor(it) ?: it } },
                 temperamentTags = pet.temperamentTags?.split(",") ?: emptyList()
             )
         }
@@ -82,13 +101,16 @@ data class SimplePetResponse(
     val id: Long,
     val name: String,
     val profileImageUrl: String?,
+    /** T1-1.2: thumbnail variant (200px). 리스트 카드에서 우선 사용. */
+    val profileImageUrlThumbnail: String? = null,
 ) {
     companion object {
-        fun from(pet: Pet): SimplePetResponse {
+        fun from(pet: Pet, variantResolver: FileAttachmentLookupService? = null): SimplePetResponse {
             return SimplePetResponse(
                 id = pet.id,
                 name = pet.name,
-                profileImageUrl = pet.profileImageUrl
+                profileImageUrl = pet.profileImageUrl,
+                profileImageUrlThumbnail = variantResolver?.thumbnailUrlFor(pet.profileImageUrl)
             )
         }
     }

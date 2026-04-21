@@ -10534,6 +10534,24 @@
               "type": "string"
             }
           },
+          "profileImageUrlViewer": {
+            "type": "string"
+          },
+          "profileImageUrlThumbnail": {
+            "type": "string"
+          },
+          "profileImageUrlsViewer": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "profileImageUrlsThumbnail": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "name": {
             "type": "string"
           },
@@ -10857,6 +10875,24 @@
             "type": "string"
           },
           "profileImageUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "profileImageUrlViewer": {
+            "type": "string"
+          },
+          "profileImageUrlThumbnail": {
+            "type": "string"
+          },
+          "profileImageUrlsViewer": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "profileImageUrlsThumbnail": {
             "type": "array",
             "items": {
               "type": "string"

@@ -1,5 +1,6 @@
 package com.goldpet.domain.pet.service
 
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.pet.dto.CreatePetRequest
 import com.goldpet.domain.pet.dto.PetResponse
 import com.goldpet.domain.pet.dto.SpeciesResponse
@@ -27,7 +28,8 @@ class PetService(
     private val petSpeciesRepository: PetSpeciesRepository,
     private val petBreedRepository: PetBreedRepository,
     private val petAttributeRepository: com.goldpet.domain.pet.repository.PetAttributeRepository,
-    private val badgeAwardService: BadgeAwardService
+    private val badgeAwardService: BadgeAwardService,
+    private val fileAttachmentLookupService: FileAttachmentLookupService
 ) {
     private val log = LoggerFactory.getLogger(PetService::class.java)
 
@@ -67,17 +69,22 @@ class PetService(
             log.warn("Badge check failed for userId={}", userId, e)
         }
 
-        return PetResponse.from(savedPet)
+        return PetResponse.from(savedPet, fileAttachmentLookupService)
     }
 
     fun getPet(petId: Long): PetResponse {
         val pet = petRepository.findById(petId).orElseThrow { NotFoundException("Pet not found") }
-        return PetResponse.from(pet)
+        return PetResponse.from(pet, fileAttachmentLookupService)
     }
 
     fun getPetsByOwner(userId: Long): List<PetResponse> {
         val pets = petRepository.findByOwnerId(userId)
-        return pets.map { PetResponse.from(it) }
+        // T1-1.2 N+1 방지: 리스트 경로는 variant lookup 을 배치로 warm 한 뒤 DTO 매핑.
+        val urls = pets.flatMap { pet ->
+            listOfNotNull(pet.profileImageUrl) + pet.profileImages.map { it.imageUrl }
+        }
+        fileAttachmentLookupService.batchLookup(urls)
+        return pets.map { PetResponse.from(it, fileAttachmentLookupService) }
     }
 
     @Cacheable("pet:species")
@@ -134,7 +141,7 @@ class PetService(
         request.temperamentTags?.let { pet.temperamentTags = it }
 
         val updatedPet = petRepository.save(pet)
-        return PetResponse.from(updatedPet)
+        return PetResponse.from(updatedPet, fileAttachmentLookupService)
     }
 
     @Transactional

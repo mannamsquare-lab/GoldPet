@@ -44,6 +44,9 @@ class PetServiceTest {
     @Mock
     private lateinit var badgeAwardService: com.goldpet.domain.gamification.service.BadgeAwardService
 
+    @Mock
+    private lateinit var fileAttachmentLookupService: com.goldpet.domain.common.service.FileAttachmentLookupService
+
     private lateinit var petService: PetService
 
     private lateinit var testUser: User
@@ -59,7 +62,8 @@ class PetServiceTest {
             petSpeciesRepository,
             petBreedRepository,
             petAttributeRepository,
-            badgeAwardService
+            badgeAwardService,
+            fileAttachmentLookupService
         )
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
