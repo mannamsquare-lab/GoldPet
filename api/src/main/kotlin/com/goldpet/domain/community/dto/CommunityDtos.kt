@@ -12,6 +12,10 @@ data class CommunityPostResponse(
     val authorId: Long,
     val authorNickname: String?,
     val authorProfileUrl: String?,
+    /** T1-1.3: author profile thumbnail (200px). */
+    val authorProfileUrlThumbnail: String? = null,
+    /** T1-1.3: author profile viewer (1600px). */
+    val authorProfileUrlViewer: String? = null,
     val categoryId: Long,
     val categoryName: String,
     val title: String,
@@ -50,6 +54,10 @@ data class CommunityCommentResponse(
     val authorId: Long,
     val authorNickname: String?,
     val authorProfileUrl: String?,
+    /** T1-1.3: author profile thumbnail (200px). */
+    val authorProfileUrlThumbnail: String? = null,
+    /** T1-1.3: author profile viewer (1600px). */
+    val authorProfileUrlViewer: String? = null,
     val content: String,
     val createdAt: LocalDateTime,
     val parentCommentId: Long?,

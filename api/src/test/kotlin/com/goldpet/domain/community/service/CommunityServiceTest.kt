@@ -58,6 +58,9 @@ class CommunityServiceTest {
     @Mock
     private lateinit var userBlockRepository: com.goldpet.domain.friend.repository.UserBlockRepository
 
+    @Mock
+    private lateinit var fileAttachmentLookupService: com.goldpet.domain.common.service.FileAttachmentLookupService
+
     private lateinit var communityService: CommunityService
 
     private lateinit var testUser: User
@@ -77,7 +80,8 @@ class CommunityServiceTest {
             fileRepository,
             systemSettingService,
             badgeAwardService,
-            userBlockRepository
+            userBlockRepository,
+            fileAttachmentLookupService
         )
 
         testUser = createTestUser(1L, "testuser", "테스트유저")

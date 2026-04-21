@@ -1,5 +1,6 @@
 package com.goldpet.domain.community.service
 
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.common.util.toHttps
 import com.goldpet.domain.community.dto.CommunityCategoryResponse
 import com.goldpet.domain.community.dto.CommunityCommentCreateRequest
@@ -41,9 +42,29 @@ class CommunityService(
     private val fileRepository: com.goldpet.domain.common.repository.FileAttachmentRepository,
     private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService,
     private val badgeAwardService: BadgeAwardService,
-    private val userBlockRepository: UserBlockRepository
+    private val userBlockRepository: UserBlockRepository,
+    private val fileAttachmentLookupService: FileAttachmentLookupService
 ) {
     private val log = LoggerFactory.getLogger(CommunityService::class.java)
+
+    // T1-1.3 helpers — 각 mapping 에서 author profile variant 를 간결하게 공급.
+    private fun thumbOf(url: String?): String? = fileAttachmentLookupService.thumbnailUrlFor(url)
+    private fun viewerOf(url: String?): String? = fileAttachmentLookupService.viewerUrlFor(url)
+
+    // 리스트 경로 전용: author 프로필 + post image 를 한 번의 IN 쿼리로 prefetch.
+    private fun warmAuthorAndImages(posts: List<CommunityPost>) {
+        val urls = posts.flatMap { post ->
+            val u = post.user
+            listOfNotNull(u.profileImageUrl.toHttps()) +
+                post.images.map { it.file.url }
+        }
+        if (urls.isNotEmpty()) fileAttachmentLookupService.batchLookup(urls)
+    }
+
+    private fun warmCommentAuthors(comments: List<CommunityComment>) {
+        val urls = comments.mapNotNull { it.user.profileImageUrl.toHttps() }
+        if (urls.isNotEmpty()) fileAttachmentLookupService.batchLookup(urls)
+    }
     // Assuming UserRepository needs to be injected or used to fetch currentUser
     fun getPosts(categoryId: Long?, pageable: Pageable, currentUserId: Long?): Page<CommunityPostResponse> {
         val blockedUserIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) } ?: emptyList()
@@ -66,6 +87,8 @@ class CommunityService(
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
         val previewLength = systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100)
 
+        warmAuthorAndImages(posts.content) // T1-1.3 N+1 방지: author + image variant batch prefetch
+
         return posts.map { post ->
             val isLiked = currentUser?.let { likeRepository.existsByPostAndUser(post, it) } ?: false
             val isCommented = currentUserId?.let { commentRepository.existsByPostIdAndUserId(post.id, it) } ?: false
@@ -82,6 +105,8 @@ class CommunityService(
                 authorId = post.user.id,
                 authorNickname = post.user.nickname,
                 authorProfileUrl = post.user.profileImageUrl.toHttps(),
+                authorProfileUrlThumbnail = thumbOf(post.user.profileImageUrl.toHttps()),
+                authorProfileUrlViewer = viewerOf(post.user.profileImageUrl.toHttps()),
                 categoryId = post.category.id,
                 categoryName = post.category.name,
                 title = post.title,
@@ -160,6 +185,8 @@ class CommunityService(
             authorId = user.id,
             authorNickname = user.nickname,
             authorProfileUrl = user.profileImageUrl.toHttps(),
+            authorProfileUrlThumbnail = thumbOf(user.profileImageUrl.toHttps()),
+            authorProfileUrlViewer = viewerOf(user.profileImageUrl.toHttps()),
             categoryId = category.id,
             categoryName = category.name,
             title = savedPost.title,
@@ -224,6 +251,8 @@ class CommunityService(
             authorId = user.id,
             authorNickname = user.nickname,
             authorProfileUrl = user.profileImageUrl.toHttps(),
+            authorProfileUrlThumbnail = thumbOf(user.profileImageUrl.toHttps()),
+            authorProfileUrlViewer = viewerOf(user.profileImageUrl.toHttps()),
             content = savedComment.content,
             createdAt = savedComment.createdAt,
             parentCommentId = parentComment?.id,
@@ -273,6 +302,11 @@ class CommunityService(
         val blockedIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) }?.toSet() ?: emptySet()
         val allComments = commentRepository.findByPostIdAndIsHiddenFalseOrderByCreatedAtAsc(postId)
             .filter { it.user.id !in blockedIds }
+
+        // T1-1.3 batch prefetch: post author + post images + comment authors 를 한 번의 IN 쿼리로.
+        warmAuthorAndImages(listOf(post))
+        warmCommentAuthors(allComments)
+
         val commentMap = allComments.groupBy { it.parentComment?.id }
         val sortedComments = mutableListOf<CommunityCommentResponse>()
 
@@ -300,6 +334,8 @@ class CommunityService(
                         authorId = comment.user.id,
                         authorNickname = comment.user.nickname,
                         authorProfileUrl = comment.user.profileImageUrl.toHttps(),
+                        authorProfileUrlThumbnail = thumbOf(comment.user.profileImageUrl.toHttps()),
+                        authorProfileUrlViewer = viewerOf(comment.user.profileImageUrl.toHttps()),
                         content = comment.content,
                         createdAt = comment.createdAt,
                         parentCommentId = comment.parentComment?.id,
@@ -327,6 +363,8 @@ class CommunityService(
             authorId = post.user.id,
             authorNickname = post.user.nickname,
             authorProfileUrl = post.user.profileImageUrl.toHttps(),
+                authorProfileUrlThumbnail = thumbOf(post.user.profileImageUrl.toHttps()),
+                authorProfileUrlViewer = viewerOf(post.user.profileImageUrl.toHttps()),
             categoryId = post.category.id,
             categoryName = post.category.name,
             title = post.title,
@@ -348,13 +386,17 @@ class CommunityService(
     fun getComments(postId: Long, pageable: Pageable): Page<CommunityCommentResponse> {
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
         if (post.isHidden) throw NotFoundException("Post not found")
-        return commentRepository.findAllByPostAndIsHiddenFalse(post, pageable).map { comment ->
+        val comments = commentRepository.findAllByPostAndIsHiddenFalse(post, pageable)
+        warmCommentAuthors(comments.content) // T1-1.3 batch prefetch
+        return comments.map { comment ->
             CommunityCommentResponse(
                 id = comment.id,
                 postId = post.id,
                 authorId = comment.user.id,
                 authorNickname = comment.user.nickname,
                 authorProfileUrl = comment.user.profileImageUrl.toHttps(),
+                        authorProfileUrlThumbnail = thumbOf(comment.user.profileImageUrl.toHttps()),
+                        authorProfileUrlViewer = viewerOf(comment.user.profileImageUrl.toHttps()),
                 content = comment.content,
                 createdAt = comment.createdAt,
                 parentCommentId = comment.parentComment?.id
@@ -395,6 +437,8 @@ class CommunityService(
             authorId = savedPost.user.id,
             authorNickname = savedPost.user.nickname,
             authorProfileUrl = savedPost.user.profileImageUrl.toHttps(),
+            authorProfileUrlThumbnail = thumbOf(savedPost.user.profileImageUrl.toHttps()),
+            authorProfileUrlViewer = viewerOf(savedPost.user.profileImageUrl.toHttps()),
             categoryId = savedPost.category.id,
             categoryName = savedPost.category.name,
             title = savedPost.title,
@@ -426,6 +470,8 @@ class CommunityService(
         val posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
         val previewLength = systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100)
 
+        warmAuthorAndImages(posts.content) // T1-1.3 batch prefetch
+
         return posts.map { post ->
             val commentCount = commentRepository.countByPostId(post.id)
             val contentPreview = if (post.content.length > previewLength) {
@@ -439,6 +485,8 @@ class CommunityService(
                 authorId = post.user.id,
                 authorNickname = post.user.nickname,
                 authorProfileUrl = post.user.profileImageUrl.toHttps(),
+                authorProfileUrlThumbnail = thumbOf(post.user.profileImageUrl.toHttps()),
+                authorProfileUrlViewer = viewerOf(post.user.profileImageUrl.toHttps()),
                 categoryId = post.category.id,
                 categoryName = post.category.name,
                 title = post.title,
@@ -457,6 +505,7 @@ class CommunityService(
 
     fun getMyComments(userId: Long, pageable: Pageable): Page<CommunityCommentResponse> {
         val comments = commentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+        warmCommentAuthors(comments.content) // T1-1.3 batch prefetch
 
         return comments.map { comment ->
             CommunityCommentResponse(
@@ -465,6 +514,8 @@ class CommunityService(
                 authorId = comment.user.id,
                 authorNickname = comment.user.nickname,
                 authorProfileUrl = comment.user.profileImageUrl.toHttps(),
+                        authorProfileUrlThumbnail = thumbOf(comment.user.profileImageUrl.toHttps()),
+                        authorProfileUrlViewer = viewerOf(comment.user.profileImageUrl.toHttps()),
                 content = comment.content,
                 createdAt = comment.createdAt,
                 parentCommentId = comment.parentComment?.id,
@@ -484,6 +535,8 @@ class CommunityService(
         }
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
 
+        warmAuthorAndImages(posts.content) // T1-1.3 batch prefetch
+
         return posts.map { post ->
             val isLiked = currentUser?.let { likeRepository.existsByPostAndUser(post, it) } ?: false
             CommunityPostResponse(
@@ -491,6 +544,8 @@ class CommunityService(
                 authorId = post.user.id,
                 authorNickname = post.user.nickname,
                 authorProfileUrl = post.user.profileImageUrl.toHttps(),
+                authorProfileUrlThumbnail = thumbOf(post.user.profileImageUrl.toHttps()),
+                authorProfileUrlViewer = viewerOf(post.user.profileImageUrl.toHttps()),
                 categoryId = post.category.id,
                 categoryName = post.category.name,
                 title = post.title,
@@ -525,6 +580,8 @@ class CommunityService(
             authorId = saved.user.id,
             authorNickname = saved.user.nickname,
             authorProfileUrl = saved.user.profileImageUrl.toHttps(),
+            authorProfileUrlThumbnail = thumbOf(saved.user.profileImageUrl.toHttps()),
+            authorProfileUrlViewer = viewerOf(saved.user.profileImageUrl.toHttps()),
             content = saved.content,
             createdAt = saved.createdAt,
             parentCommentId = saved.parentComment?.id,
