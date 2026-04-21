@@ -688,6 +688,19 @@ class FileService(
         return amazonS3.getObject(privateBucketName, fileKey)
     }
 
+    /**
+     * T1-6 — category-aware presigned URL. "viewer" 경로는 public gallery 에서 재시청이
+     * 잦고 수명 가시성이 필요하므로 6시간 opt-in. 그 외(chat attachment 등)는 60분 기본
+     * 유지. 보안 민감도가 다른 경로 간 일관된 TTL 정책 분리.
+     */
+    fun getPresignedUrl(fileKey: String, category: String): String {
+        val minutes = when (category.lowercase()) {
+            "viewer" -> 360L // 6h public gallery viewer variant
+            else -> 60L       // chat/file attachment default
+        }
+        return getPresignedUrl(fileKey, minutes)
+    }
+
     fun getPresignedUrl(fileKey: String, expirationMinutes: Long = 60): String {
         val expiration = Date(System.currentTimeMillis() + expirationMinutes * 60 * 1000)
         val request = GeneratePresignedUrlRequest(privateBucketName, fileKey)
