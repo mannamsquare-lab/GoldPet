@@ -18,6 +18,7 @@ import { reportService } from '../../services/reportService';
 import { ReportModal } from '../../components/common/ReportModal';
 import { CACHE_TIME } from '../../config/queryConfig';
 import EmoticonPicker from './EmoticonPicker';
+import { emoticonService } from '../../services/emoticonService';
 import InviteGroupChatModal from './InviteGroupChatModal';
 import { GpImage } from '../../components/common/GpImage';
 import '../../styles/chat-detail.css';
@@ -367,6 +368,36 @@ const ChatDetailPage = () => {
     useEffect(() => {
         import('../../utils/imageCompression').catch(() => { /* ignore */ });
     }, []);
+
+    // Prefetch emoticon metadata + warm first-page images so the picker opens
+    // without a cold fetch + decode burst (첫 오픈 시 다운로드·GIF 디코딩 1~2초 체감 해소).
+    useEffect(() => {
+        let cancelled = false;
+        queryClient
+            .fetchQuery({
+                queryKey: ['emoticons'],
+                queryFn: emoticonService.getEmoticons,
+                staleTime: Infinity,
+            })
+            .then((list) => {
+                if (cancelled || !Array.isArray(list)) return;
+                const warm = () => {
+                    list.slice(0, 12).forEach((e) => {
+                        const src = e.imageUrlThumbnail ?? e.imageUrl;
+                        if (!src) return;
+                        const img = new Image();
+                        img.decoding = 'async';
+                        img.src = src;
+                    });
+                };
+                const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void })
+                    .requestIdleCallback;
+                if (ric) ric(warm);
+                else setTimeout(warm, 200);
+            })
+            .catch(() => { /* ignore — picker will still open */ });
+        return () => { cancelled = true; };
+    }, [queryClient]);
 
     // Cleanup pending ack timeouts on unmount
     useEffect(() => {
