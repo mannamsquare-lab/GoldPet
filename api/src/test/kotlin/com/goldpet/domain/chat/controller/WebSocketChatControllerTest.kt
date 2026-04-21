@@ -10,7 +10,9 @@ import com.goldpet.domain.chat.service.ChatService
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.emoticon.service.EmoticonService
+import com.goldpet.domain.metrics.ChatLatencyMetrics
 import com.goldpet.domain.user.entity.User
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
@@ -37,7 +39,8 @@ class WebSocketChatControllerTest {
         fileAttachmentRepository = mock(FileAttachmentRepository::class.java)
         chatRoomParticipantRepository = mock(ChatRoomParticipantRepository::class.java)
         val fileAttachmentLookupService = mock(com.goldpet.domain.common.service.FileAttachmentLookupService::class.java)
-        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, emoticonService, fileAttachmentRepository, chatRoomParticipantRepository, fileAttachmentLookupService)
+        val chatLatencyMetrics = ChatLatencyMetrics(SimpleMeterRegistry())
+        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, emoticonService, fileAttachmentRepository, chatRoomParticipantRepository, fileAttachmentLookupService, chatLatencyMetrics)
 
         testUser = User(
             id = 1L,
@@ -102,6 +105,34 @@ class WebSocketChatControllerTest {
             eq("/topic/chat/1"),
             any(ChatMessageResponse::class.java)
         )
+    }
+
+    @Test
+    fun `sendMessage should echo clientMsgId into broadcast payload`() {
+        val request = ChatMessageRequest(
+            roomId = 1L,
+            senderId = 1L,
+            messageType = MessageType.TEXT,
+            textContent = "Hello",
+            clientMsgId = "abc123"
+        )
+        val savedMessage = ChatMessage(
+            id = 99L,
+            chatRoom = testChatRoom,
+            sender = testUser,
+            messageType = MessageType.TEXT,
+            textContent = "Hello"
+        ).apply {
+            createdAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now()
+        }
+        `when`(chatService.saveChatMessage(request)).thenReturn(savedMessage)
+
+        webSocketChatController.sendMessage(request)
+
+        val captor = org.mockito.ArgumentCaptor.forClass(ChatMessageResponse::class.java)
+        verify(simpMessageSendingOperations).convertAndSend(eq("/topic/chat/1"), captor.capture())
+        org.junit.jupiter.api.Assertions.assertEquals("abc123", captor.value.clientMsgId)
     }
 
     @Test

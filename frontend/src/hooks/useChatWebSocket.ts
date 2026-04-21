@@ -6,7 +6,8 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { chatWebSocket } from '../services/websocket/chatWebSocket';
 import { chatService } from '../services/chatService';
-import type { ChatMessage } from '../services/chatService';
+import type { ChatMessage, ChatRoom } from '../services/chatService';
+import { chatMetrics } from '../utils/chatMetrics';
 
 type DeletedEvent = { type: 'MESSAGE_DELETED'; messageId: string | number };
 
@@ -43,10 +44,33 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
       }
 
       const chatMessage = message as ChatMessage;
+
       queryClient.setQueryData(
         ['chatMessages', roomId],
         (oldMessages: ChatMessage[] | undefined) => {
           if (!oldMessages) return [chatMessage];
+
+          // Self-echo matching: replace optimistic row by clientMsgId
+          if (chatMessage.clientMsgId) {
+            const optIdx = oldMessages.findIndex(
+              (m) => m.clientMsgId === chatMessage.clientMsgId && m._optimistic
+            );
+            if (optIdx !== -1) {
+              const optimistic = oldMessages[optIdx];
+              // Record RTT for text messages
+              if (optimistic.type === 'text' && optimistic._sentAt) {
+                chatMetrics.recordRtt(chatMessage.clientMsgId, Date.now() - optimistic._sentAt, roomId!);
+              }
+              // Record upload duration for image messages (upload start → server echo)
+              if (optimistic.type === 'image' && optimistic._sentAt) {
+                chatMetrics.recordImageUpload(chatMessage.clientMsgId, Date.now() - optimistic._sentAt, roomId!);
+              }
+              const updated = [...oldMessages];
+              updated[optIdx] = chatMessage;
+              return updated;
+            }
+          }
+
           // Avoid duplicates by checking ID
           if (oldMessages.some((m) => String(m.id) === String(chatMessage.id))) {
             return oldMessages;
@@ -55,11 +79,23 @@ export function useChatWebSocket({ roomId, currentUserId, enabled = true }: UseC
         }
       );
 
-      // Mark as read immediately when receiving new message while in chat room
-      // This prevents unread count from showing for messages received while viewing
+      // Mark as read and patch lastMessage in cache (avoid full chatRooms refetch).
+      // Debounced to collapse rapid WebSocket bursts (~10 msgs/s) into a single
+      // POST /chat/rooms/{roomId}/read after 300ms of quiet.
       if (roomId) {
-        chatService.markAsRead(roomId).then(() => {
-          queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+        chatService.markAsReadDebounced(roomId);
+        queryClient.setQueryData(['chatRooms'], (old: ChatRoom[] | undefined) => {
+          if (!old) return old;
+          return old.map((room) =>
+            String(room.id) === String(roomId)
+              ? {
+                  ...room,
+                  lastMessage: chatMessage.textContent || (chatMessage.type === 'image' ? '[이미지]' : chatMessage.type === 'emoticon' ? '[이모티콘]' : '[파일]'),
+                  lastMessageTime: chatMessage.timestamp || chatMessage.createdAt || null,
+                  unreadCount: 0,
+                }
+              : room
+          );
         });
       }
     },

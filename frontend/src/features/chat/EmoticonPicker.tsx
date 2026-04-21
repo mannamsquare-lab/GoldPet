@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { emoticonService } from '../../services/emoticonService';
 import { GpImage } from '../../components/common/GpImage';
@@ -9,10 +9,41 @@ interface EmoticonPickerProps {
 }
 
 const ITEMS_PER_PAGE = 12;
+const EMOTICON_LAZY = import.meta.env.VITE_CHAT_EMOTICON_LAZY_ENABLED === 'true';
+
+interface LazyEmoticonPageProps {
+  children: React.ReactNode;
+  scrollRoot: React.RefObject<HTMLDivElement>;
+}
+
+/** Renders children only once the page enters the scroll viewport (IntersectionObserver). */
+const LazyEmoticonPage = ({ children, scrollRoot }: LazyEmoticonPageProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(!EMOTICON_LAZY);
+
+  useEffect(() => {
+    if (!EMOTICON_LAZY) return;
+    const el = ref.current;
+    const root = scrollRoot.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { root, threshold: 0.01 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [scrollRoot]);
+
+  return (
+    <div ref={ref} className="chat_detail_emoticon_page">
+      {visible ? children : null}
+    </div>
+  );
+};
 
 const EmoticonPicker = ({ onSelect }: EmoticonPickerProps) => {
   const [page, setPage] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null!);
 
   const { data: emoticons = [] } = useQuery({
     queryKey: ['emoticons'],
@@ -52,7 +83,7 @@ const EmoticonPicker = ({ onSelect }: EmoticonPickerProps) => {
                 (pageIndex + 1) * ITEMS_PER_PAGE
               );
               return (
-                <div key={pageIndex} className="chat_detail_emoticon_page">
+                <LazyEmoticonPage key={pageIndex} scrollRoot={scrollRef}>
                   <div className="chat_detail_emoticon_grid">
                     {pageItems.map((emoticon) => (
                       <button
@@ -72,7 +103,7 @@ const EmoticonPicker = ({ onSelect }: EmoticonPickerProps) => {
                       </button>
                     ))}
                   </div>
-                </div>
+                </LazyEmoticonPage>
               );
             })}
           </div>

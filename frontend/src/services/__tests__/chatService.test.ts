@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 vi.mock('../api/client', () => {
   const client = {
@@ -100,6 +100,62 @@ describe('chatService', () => {
 
       // Should not throw
       await expect(chatService.markAsRead('5')).resolves.toBeUndefined()
+    })
+  })
+
+  describe('markAsReadDebounced', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+      mockedClient.post.mockResolvedValue({ data: {} })
+    })
+
+    afterEach(() => {
+      // Flush any in-flight timers before restoring real timers so state is clean.
+      vi.runAllTimers()
+      vi.useRealTimers()
+    })
+
+    it('collapses 10 rapid calls into a single POST after 300ms quiet', () => {
+      for (let i = 0; i < 10; i++) {
+        chatService.markAsReadDebounced('7')
+      }
+      // Still within debounce window → no HTTP call yet.
+      expect(mockedClient.post).not.toHaveBeenCalled()
+
+      vi.advanceTimersByTime(299)
+      expect(mockedClient.post).not.toHaveBeenCalled()
+
+      vi.advanceTimersByTime(1)
+      expect(mockedClient.post).toHaveBeenCalledTimes(1)
+      expect(mockedClient.post).toHaveBeenCalledWith('/chat/rooms/7/read', undefined, undefined)
+    })
+
+    it('keeps separate timers per room so concurrent rooms do not interfere', () => {
+      chatService.markAsReadDebounced('1')
+      chatService.markAsReadDebounced('2')
+
+      vi.advanceTimersByTime(300)
+      expect(mockedClient.post).toHaveBeenCalledTimes(2)
+      expect(mockedClient.post).toHaveBeenCalledWith('/chat/rooms/1/read', undefined, undefined)
+      expect(mockedClient.post).toHaveBeenCalledWith('/chat/rooms/2/read', undefined, undefined)
+    })
+
+    it('cancelMarkAsReadDebounced prevents pending call from firing', () => {
+      chatService.markAsReadDebounced('9')
+      chatService.cancelMarkAsReadDebounced('9')
+
+      vi.advanceTimersByTime(500)
+      expect(mockedClient.post).not.toHaveBeenCalled()
+    })
+
+    it('accepts override delay for testing / future tuning', () => {
+      chatService.markAsReadDebounced('3', 50)
+
+      vi.advanceTimersByTime(49)
+      expect(mockedClient.post).not.toHaveBeenCalled()
+
+      vi.advanceTimersByTime(1)
+      expect(mockedClient.post).toHaveBeenCalledTimes(1)
     })
   })
 

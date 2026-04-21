@@ -12,6 +12,7 @@ import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.emoticon.service.EmoticonService
 import com.goldpet.domain.file.service.FileService
+import com.goldpet.domain.metrics.ChatLatencyMetrics
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -32,7 +33,8 @@ class ChatRoomController(
     private val fileService: FileService,
     private val chatRoomParticipantRepository: ChatRoomParticipantRepository,
     private val chatMessageRepository: ChatMessageRepository,
-    private val fileAttachmentLookupService: FileAttachmentLookupService
+    private val fileAttachmentLookupService: FileAttachmentLookupService,
+    private val chatLatencyMetrics: ChatLatencyMetrics
 ) {
     private fun resolveFileUrl(url: String): String =
         if (url.startsWith("http")) url else fileService.getPresignedUrl(url)
@@ -136,7 +138,7 @@ class ChatRoomController(
         @PathVariable roomId: Long,
         @Valid @RequestBody request: SendMessageRequest,
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
-    ): ResponseEntity<ChatMessageResponse> {
+    ): ResponseEntity<ChatMessageResponse> = chatLatencyMetrics.recordServerLatency(ChatLatencyMetrics.Phase.PRE_ASYNC) {
         val messageRequest = com.goldpet.domain.chat.dto.ChatMessageRequest(
             roomId = roomId,
             senderId = userDetails.id,
@@ -144,7 +146,8 @@ class ChatRoomController(
             textContent = request.content,
             fileId = request.fileId,
             emoticonId = request.emoticonId,
-            replyToId = request.replyToId
+            replyToId = request.replyToId,
+            clientMsgId = request.clientMsgId
         )
         val message = chatService.saveChatMessage(messageRequest)
 
@@ -165,7 +168,8 @@ class ChatRoomController(
             message, allParticipants, fileAttachment, emoticon, replyToFileAttachment, replyToEmoticon,
             resolvedFileUrl = resolvedUrl,
             resolvedReplyToFileUrl = resolvedReplyUrl,
-            variantResolver = fileAttachmentLookupService
+            variantResolver = fileAttachmentLookupService,
+            clientMsgId = request.clientMsgId
         )
 
         // Broadcast to WebSocket subscribers for real-time updates (chat detail page)
@@ -179,7 +183,7 @@ class ChatRoomController(
             )
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(chatMessageResponse)
+        ResponseEntity.status(HttpStatus.CREATED).body(chatMessageResponse)
     }
 
     @Operation(summary = "메시지 삭제")

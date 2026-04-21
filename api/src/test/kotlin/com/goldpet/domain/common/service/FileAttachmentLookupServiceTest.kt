@@ -6,6 +6,8 @@ import com.goldpet.domain.common.repository.FileAttachmentRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.util.UUID
@@ -117,6 +119,93 @@ class FileAttachmentLookupServiceTest : IntegrationTestBase() {
 
         val medium = lookup.viewerUrlFor(url)
         assertEquals("$url.medium", medium)
+    }
+
+    @Test
+    fun `resolveMany 빈 리스트는 쿼리 없이 empty 반환`() {
+        val result = withinStatementBudget(max = 0) {
+            lookup.resolveMany(emptyList())
+        }
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `resolveMany 100 ids 를 단일 chunk(500) 로 묶어 IN 쿼리 1회 실행`() {
+        val prefix = "https://test.example/resolvemany-${UUID.randomUUID()}"
+        val ids = (1..100).map { idx ->
+            seed(
+                FileAttachment(
+                    ownerUserId = 1L,
+                    fileType = "IMAGE",
+                    mimeType = "image/jpeg",
+                    url = "$prefix-$idx.jpg",
+                    thumbnailUrl = "$prefix-${idx}_thumb.jpg",
+                    mediumUrl = "$prefix-${idx}_medium.jpg",
+                    viewerUrl = "$prefix-${idx}_viewer.jpg"
+                )
+            ).id
+        }
+        repo.flush()
+        lookup.invalidateAll()
+
+        val result = withinStatementBudget(max = 1) {
+            lookup.resolveMany(ids)
+        }
+
+        assertEquals(ids.size, result.size)
+        val sample = result[ids.first()]!!
+        assertEquals("$prefix-1_viewer.jpg", sample.viewerUrl)
+        assertEquals("$prefix-1_thumb.jpg", sample.thumbnailUrl)
+    }
+
+    @Test
+    fun `resolveMany 1000 ids 는 500 chunked 로 2 쿼리 이하`() {
+        val prefix = "https://test.example/resolvemany1000-${UUID.randomUUID()}"
+        val ids = (1..1000).map { idx ->
+            seed(
+                FileAttachment(
+                    ownerUserId = 1L,
+                    fileType = "IMAGE",
+                    mimeType = "image/jpeg",
+                    url = "$prefix-$idx.jpg"
+                )
+            ).id
+        }
+        repo.flush()
+        lookup.invalidateAll()
+
+        val result = withinStatementBudget(max = 2) {
+            lookup.resolveMany(ids)
+        }
+        assertEquals(ids.size, result.size)
+    }
+
+    @Test
+    fun `resolveMany 1001 ids 는 IllegalArgumentException`() {
+        val ids = (1L..1001L).toList()
+        assertThrows(IllegalArgumentException::class.java) {
+            lookup.resolveMany(ids)
+        }
+    }
+
+    @Test
+    fun `resolveMany 중복 id 는 distinct 처리 후 단일 query`() {
+        val url = "https://test.example/resolvemany-dup-${UUID.randomUUID()}.jpg"
+        val saved = seed(
+            FileAttachment(
+                ownerUserId = 1L,
+                fileType = "IMAGE",
+                mimeType = "image/jpeg",
+                url = url
+            )
+        )
+        repo.flush()
+        lookup.invalidateAll()
+
+        val result = withinStatementBudget(max = 1) {
+            lookup.resolveMany(listOf(saved.id, saved.id, saved.id))
+        }
+        assertEquals(1, result.size)
     }
 
     @Test

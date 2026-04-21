@@ -96,6 +96,41 @@ class FileAttachmentLookupService(
         cache.invalidateAll()
     }
 
+    /**
+     * Batch resolve by ID (T-chat-latency-v2 Step 3).
+     *
+     * 프론트 핫패스 (채팅 상세 열람, 커뮤니티 피드) 가 fileId 여러 건의 최종 URL/variant 를
+     * 한 번에 요구할 때 사용. 기존 `batchLookup(urls)` 는 URL → FA 캐시 warm 용이고
+     * 이 메서드는 FA ID 기반 배치 조회 + 서브 variant URL 을 평면 DTO 로 반환한다.
+     *
+     * ## 쿼리 예산
+     * - `CHUNK_SIZE` = 500 단위로 `findAllById` 한 번씩 실행 → 1000 IDs = 2 쿼리
+     * - N+1 방지 규약 section 3 충족: DoD "1000개 id 호출 시 단건 1000회 대비 1/100 이하"
+     *
+     * ## 경계값
+     * - 빈 리스트 → empty Map (쿼리 0)
+     * - `MAX_RESOLVE_BATCH` = 1000 초과 시 IllegalArgumentException
+     * - 누락 ID (soft-delete / 삭제된 row) 는 반환 Map 에 누락
+     *
+     * 반환된 Caffeine 캐시에도 `fa.url → fa` 로 warm 해 두어 후속 variant lookup 은 캐시 hit.
+     */
+    fun resolveMany(ids: List<Long>): Map<Long, ResolvedAttachment> {
+        if (ids.isEmpty()) return emptyMap()
+        val distinct = ids.distinct()
+        require(distinct.size <= MAX_RESOLVE_BATCH) {
+            "resolveMany: max $MAX_RESOLVE_BATCH ids per call (got ${distinct.size})"
+        }
+
+        val result = LinkedHashMap<Long, ResolvedAttachment>(distinct.size)
+        distinct.chunked(CHUNK_SIZE).forEach { chunk ->
+            fileAttachmentRepository.findAllById(chunk).forEach { fa ->
+                cache.put(fa.url, fa) // warm URL-keyed cache for downstream variant resolvers
+                result[fa.id] = ResolvedAttachment.from(fa)
+            }
+        }
+        return result
+    }
+
     private fun resolve(url: String): FileAttachment? {
         val cached = cache.getIfPresent(url)
         if (cached != null) return cached
@@ -107,5 +142,39 @@ class FileAttachmentLookupService(
     companion object {
         private const val MAX_CACHE_ENTRIES: Long = 10_000
         private const val CACHE_TTL_SECONDS: Long = 60
+        /** PostgreSQL IN-param safety + Hibernate batch tuning. */
+        const val CHUNK_SIZE: Int = 500
+        /** Upper bound for a single resolveMany call. Frontend ring-buffers beyond this. */
+        const val MAX_RESOLVE_BATCH: Int = 1000
+    }
+}
+
+data class ResolvedAttachment(
+    val id: Long,
+    val url: String,
+    val thumbnailUrl: String?,
+    val mediumUrl: String?,
+    val viewerUrl: String?,
+    val fileType: String,
+    val mimeType: String,
+    val originalFileName: String?,
+    val sizeBytes: Long?,
+    val width: Int?,
+    val height: Int?
+) {
+    companion object {
+        fun from(fa: FileAttachment): ResolvedAttachment = ResolvedAttachment(
+            id = fa.id,
+            url = fa.url,
+            thumbnailUrl = fa.thumbnailUrl,
+            mediumUrl = fa.mediumUrl,
+            viewerUrl = fa.viewerUrl,
+            fileType = fa.fileType,
+            mimeType = fa.mimeType,
+            originalFileName = fa.originalFileName,
+            sizeBytes = fa.sizeBytes,
+            width = fa.width,
+            height = fa.height
+        )
     }
 }

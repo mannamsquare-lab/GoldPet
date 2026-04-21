@@ -4,6 +4,13 @@ import apiClient from './api/client';
 import { typedClient } from './api/typedClient';
 import type { ChatRoomType, FileInfo } from '../types/api';
 
+// T-chat-latency-v2 Step 4 — markAsRead 호출 디바운스.
+// WebSocket 새 메시지 수신마다 즉시 POST /chat/rooms/{roomId}/read 를 치면
+// 다중 메시지 버스트(연속 수신 10건) 시 10회 호출 → 300ms 디바운스로 1회로 합침.
+// roomId 별 타이머를 분리해 다른 방 읽음 처리는 서로 간섭하지 않음.
+export const MARK_AS_READ_DEBOUNCE_MS = 300;
+const markAsReadTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 export interface ChatRoom {
   id: number;
   name: string;
@@ -55,6 +62,12 @@ export interface ChatMessage {
   deletedAt?: string;
   // Read receipt
   unreadCount?: number;
+  // Echoed by server; used to match optimistic rows to confirmed rows
+  clientMsgId?: string;
+  // Client-only optimistic UI fields (never sent to server)
+  _optimistic?: boolean;
+  _rejectedReason?: 'BLOCKED' | 'AUTH' | 'NETWORK' | 'RATE_LIMIT' | 'UNKNOWN';
+  _sentAt?: number;
 }
 
 export interface ChatRequestItem {
@@ -80,39 +93,28 @@ export const chatService = {
     const data = response.data as { content?: ChatMessage[] } | ChatMessage[];
     const messages: ChatMessage[] = Array.isArray(data) ? data : (data.content ?? []);
 
-    // Resolve presigned URLs for private bucket files
-    const fileKeysToResolve = new Set<string>();
+    // Batch-resolve presigned/CDN URLs via resolveMany (single round-trip)
+    const fileIds = new Set<number>();
     for (const msg of messages) {
-      if (msg.file?.url && !msg.file.url.startsWith('http')) {
-        fileKeysToResolve.add(msg.file.url);
-      }
-      if (msg.replyToFileUrl && !msg.replyToFileUrl.startsWith('http')) {
-        fileKeysToResolve.add(msg.replyToFileUrl);
-      }
+      if (msg.file?.id) fileIds.add(msg.file.id);
+      if (msg.fileId) fileIds.add(msg.fileId);
     }
 
-    if (fileKeysToResolve.size > 0) {
-      const resolvedUrls = new Map<string, string>();
-      await Promise.all(
-        Array.from(fileKeysToResolve).map(async (fileKey) => {
-          try {
-            const res = await typedClient.getPath(
-              '/api/v1/files/{fileKey}/url',
-              { fileKey },
-            );
-            resolvedUrls.set(fileKey, (res.data as { url: string }).url);
-          } catch { /* ignore resolution failures */ }
-        })
-      );
-
-      for (const msg of messages) {
-        if (msg.file?.url && resolvedUrls.has(msg.file.url)) {
-          msg.file.url = resolvedUrls.get(msg.file.url)!;
+    if (fileIds.size > 0) {
+      try {
+        type ResolvedAttachment = { id: number; url: string; thumbnailUrl?: string; mediumUrl?: string; viewerUrl?: string; fileType: string; mimeType: string };
+        const res = await apiClient.post<{ attachments: Record<string, ResolvedAttachment> }>(
+          '/files/resolve',
+          { ids: Array.from(fileIds) },
+        );
+        const attachments = res.data.attachments;
+        for (const msg of messages) {
+          if (msg.file?.id) {
+            const resolved = attachments[String(msg.file.id)];
+            if (resolved) msg.file = { ...msg.file, url: resolved.url };
+          }
         }
-        if (msg.replyToFileUrl && resolvedUrls.has(msg.replyToFileUrl)) {
-          msg.replyToFileUrl = resolvedUrls.get(msg.replyToFileUrl)!;
-        }
-      }
+      } catch { /* ignore resolution failures — server URLs remain as-is */ }
     }
 
     return messages;
@@ -121,7 +123,13 @@ export const chatService = {
   sendMessage: async (
     roomId: string,
     content: string | null,
-    options?: { messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number; replyToId?: number }
+    options?: {
+      messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON';
+      fileId?: number;
+      emoticonId?: number;
+      replyToId?: number;
+      clientMsgId?: string;
+    }
   ): Promise<ChatMessage> => {
     try {
       const response = await typedClient.postPath(
@@ -133,7 +141,8 @@ export const chatService = {
           fileId: options?.fileId,
           emoticonId: options?.emoticonId,
           replyToId: options?.replyToId,
-        },
+          clientMsgId: options?.clientMsgId,
+        } as Parameters<typeof typedClient.postPath<'/api/v1/chat/rooms/{roomId}/messages'>>[2],
       );
       return response.data as unknown as ChatMessage;
     } catch {
@@ -141,7 +150,7 @@ export const chatService = {
     }
   },
 
-  uploadFile: async (file: File): Promise<{ id: number; url: string; fileType: string; mimeType: string }> => {
+  uploadFile: async (file: File, onUploadProgress?: (pct: number) => void): Promise<{ id: number; url: string; fileType: string; mimeType: string }> => {
     try {
       if (file.type.startsWith('image/')) {
         const { compressImage } = await import('../utils/imageCompression');
@@ -154,6 +163,11 @@ export const chatService = {
       // Multipart — stays on apiClient; typedClient is JSON-only.
       const response = await apiClient.post('/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: onUploadProgress
+          ? (evt) => {
+              if (evt.total) onUploadProgress(Math.round((evt.loaded / evt.total) * 100));
+            }
+          : undefined,
       });
       return response.data;
     } catch {
@@ -183,6 +197,34 @@ export const chatService = {
       );
     } catch {
       // Ignore read marking errors
+    }
+  },
+
+  /**
+   * Debounced wrapper for `markAsRead` — collapses rapid-fire invocations
+   * (e.g. WebSocket message bursts) into a single HTTP call after
+   * `MARK_AS_READ_DEBOUNCE_MS` of quiet. Per-room timers prevent interference
+   * between concurrent chat rooms.
+   */
+  markAsReadDebounced: (
+    roomId: string,
+    delayMs: number = MARK_AS_READ_DEBOUNCE_MS,
+  ): void => {
+    const existing = markAsReadTimers.get(roomId);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+      markAsReadTimers.delete(roomId);
+      void chatService.markAsRead(roomId);
+    }, delayMs);
+    markAsReadTimers.set(roomId, timer);
+  },
+
+  /** Cancels any pending debounced markAsRead call for the given room. */
+  cancelMarkAsReadDebounced: (roomId: string): void => {
+    const existing = markAsReadTimers.get(roomId);
+    if (existing) {
+      clearTimeout(existing);
+      markAsReadTimers.delete(roomId);
     }
   },
 

@@ -1,10 +1,15 @@
 package com.goldpet.domain.file.controller
 
 import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.common.service.FileAttachmentLookupService
+import com.goldpet.domain.common.service.ResolvedAttachment
 import com.goldpet.domain.file.service.FileService
 import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.Size
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -12,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -37,12 +43,27 @@ data class PresignedUrlResponse(
     val url: String
 )
 
+/**
+ * T-chat-latency-v2 Step 3 — batch resolve request body.
+ * 최대 1000개 (`FileAttachmentLookupService.MAX_RESOLVE_BATCH`) 까지 허용.
+ */
+data class ResolveManyRequest(
+    @field:NotEmpty(message = "ids 는 비어있을 수 없습니다")
+    @field:Size(max = 1000, message = "ids 는 1000개를 초과할 수 없습니다")
+    val ids: List<Long> = emptyList()
+)
+
+data class ResolveManyResponse(
+    val attachments: Map<Long, ResolvedAttachment>
+)
+
 @Tag(name = "파일", description = "파일 업로드 및 다운로드")
 @RestController
 @RequestMapping("/api/v1/files")
 class FileController(
     private val fileService: FileService,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
+    private val fileAttachmentLookupService: FileAttachmentLookupService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -120,5 +141,22 @@ class FileController(
     ): ResponseEntity<PresignedUrlResponse> {
         val url = fileService.getPresignedUrl(fileKey, expirationMinutes)
         return ResponseEntity.ok(PresignedUrlResponse(url = url))
+    }
+
+    /**
+     * T-chat-latency-v2 Step 3 — 복수 fileId 를 한 번에 variant URL 까지 평면 DTO 로 해석.
+     *
+     * 단건 `GET /{fileKey}/url` 은 fileKey(String) 기반이라 IN 쿼리로 묶을 수 없고, 본 엔드포인트는
+     * 엔티티 id(Long) 기반이므로 신규 경로로 분리. 내부에서 IN 쿼리 1회 (500 chunked) 로 처리해
+     * 단건 1000회 대비 쿼리수 1/500 이하.
+     */
+    @Operation(summary = "파일 attachment 배치 조회 (id 기반, variant URL 포함)")
+    @PostMapping("/resolve")
+    fun resolveMany(
+        @Valid @RequestBody request: ResolveManyRequest,
+        @AuthenticationPrincipal principal: UserPrincipal
+    ): ResponseEntity<ResolveManyResponse> {
+        val attachments = fileAttachmentLookupService.resolveMany(request.ids)
+        return ResponseEntity.ok(ResolveManyResponse(attachments = attachments))
     }
 }

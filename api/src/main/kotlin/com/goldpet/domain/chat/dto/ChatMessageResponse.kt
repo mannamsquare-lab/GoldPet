@@ -55,7 +55,13 @@ data class ChatMessageResponse(
     val replyToEmoticonImageUrlThumbnail: String? = null,
     /** T1-1.4: reply-to emoticon viewer variant. */
     val replyToEmoticonImageUrlViewer: String? = null,
-    val deletedAt: LocalDateTime? = null
+    val deletedAt: LocalDateTime? = null,
+    /**
+     * Client-generated echo key (T-chat-latency-v2 Step 1). DB 비영속.
+     * 요청 body 에 들어왔으면 서버가 그대로 응답 DTO 및 STOMP 브로드캐스트 payload 에 에코해서
+     * 낙관적 UI 가 자기 self-echo 를 매칭할 수 있게 해 준다.
+     */
+    val clientMsgId: String? = null
 ) {
     companion object {
         fun from(
@@ -66,7 +72,8 @@ data class ChatMessageResponse(
             replyToEmoticon: Emoticon? = null,
             resolvedFileUrl: String? = null,
             resolvedReplyToFileUrl: String? = null,
-            variantResolver: FileAttachmentLookupService? = null
+            variantResolver: FileAttachmentLookupService? = null,
+            clientMsgId: String? = null
         ): ChatMessageResponse {
             val isDeleted = chatMessage.deletedAt != null
             return ChatMessageResponse(
@@ -109,7 +116,8 @@ data class ChatMessageResponse(
                 replyToEmoticonImageUrl = replyToEmoticon?.imageUrl,
                 replyToEmoticonImageUrlThumbnail = variantResolver?.thumbnailUrlFor(replyToEmoticon?.imageUrl),
                 replyToEmoticonImageUrlViewer = variantResolver?.viewerUrlFor(replyToEmoticon?.imageUrl),
-                deletedAt = chatMessage.deletedAt
+                deletedAt = chatMessage.deletedAt,
+                clientMsgId = clientMsgId
             )
         }
 
@@ -122,7 +130,8 @@ data class ChatMessageResponse(
             replyToEmoticon: Emoticon? = null,
             resolvedFileUrl: String? = null,
             resolvedReplyToFileUrl: String? = null,
-            variantResolver: FileAttachmentLookupService? = null
+            variantResolver: FileAttachmentLookupService? = null,
+            clientMsgId: String? = null
         ): ChatMessageResponse {
             val computedUnreadCount = computeUnreadCount(chatMessage, participants)
             val isDeleted = chatMessage.deletedAt != null
@@ -166,7 +175,8 @@ data class ChatMessageResponse(
                 replyToEmoticonImageUrl = replyToEmoticon?.imageUrl,
                 replyToEmoticonImageUrlThumbnail = variantResolver?.thumbnailUrlFor(replyToEmoticon?.imageUrl),
                 replyToEmoticonImageUrlViewer = variantResolver?.viewerUrlFor(replyToEmoticon?.imageUrl),
-                deletedAt = chatMessage.deletedAt
+                deletedAt = chatMessage.deletedAt,
+                clientMsgId = clientMsgId
             )
         }
 

@@ -174,7 +174,7 @@ class ChatWebSocketService {
     }
   }
 
-  sendMessage(roomId: string, senderId: number, content: string, replyToId?: number): void {
+  sendMessage(roomId: string, senderId: number, content: string, replyToId?: number, clientMsgId?: string): void {
     if (!this.client || !this.isConnected) {
       console.error('[WebSocket] Not connected. Cannot send message.');
       return;
@@ -187,9 +187,8 @@ class ChatWebSocketService {
       textContent: content,
     };
 
-    if (replyToId != null) {
-      message.replyToId = replyToId;
-    }
+    if (replyToId != null) message.replyToId = replyToId;
+    if (clientMsgId) message.clientMsgId = clientMsgId;
 
     this.client.publish({
       destination: '/app/chat.sendMessage',
@@ -276,6 +275,7 @@ class ChatWebSocketService {
       replyToSenderNickname: data.replyToSenderNickname,
       replyToTextContent: data.replyToTextContent,
       unreadCount: data.unreadCount,
+      clientMsgId: data.clientMsgId,
     };
   }
 

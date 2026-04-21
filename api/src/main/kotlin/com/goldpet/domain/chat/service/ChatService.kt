@@ -3,6 +3,7 @@ package com.goldpet.domain.chat.service
 import com.goldpet.domain.chat.dto.ChatRoomCreateRequest
 import com.goldpet.domain.chat.dto.ChatMessageRequest
 import com.goldpet.domain.chat.entity.*
+import com.goldpet.domain.chat.event.ChatMessageSavedEvent
 import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.chat.repository.ChatRequestRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
@@ -12,6 +13,8 @@ import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.repository.UserRepository
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,7 +29,9 @@ class ChatService(
     private val matchRepository: MatchRepository,
     private val notificationService: NotificationService,
     private val userBlockRepository: UserBlockRepository,
-    private val chatRequestRepository: ChatRequestRepository
+    private val chatRequestRepository: ChatRequestRepository,
+    private val applicationEventPublisher: ApplicationEventPublisher,
+    @Value("\${goldpet.chat.async.enabled:false}") private val asyncNotificationEnabled: Boolean,
 ) {
 
     @Transactional
@@ -190,27 +195,48 @@ class ChatService(
         )
         val savedMessage = chatMessageRepository.save(chatMessage)
 
-        // Send notification to other participants (not the sender)
+        // T-chat-latency-v2 Step 2:
+        // - `chatRoom.participants` 는 line 163 block check 에서 이미 lazy-load 완료 → `findAllByChatRoomId` 중복 쿼리 제거.
+        // - async 플래그 on 시 `ChatMessageSavedEvent` 발행 → AFTER_COMMIT 에서 `chatNotificationExecutor` 에 위임.
+        // - off 시 기존 inline loop 동기 실행 (fallback — prod 안정 복귀 경로).
         if (request.messageType != MessageType.SYSTEM) {
-            val participants = chatRoomParticipantRepository.findAllByChatRoomId(chatRoom.id)
-            val messagePreview = request.textContent?.takeIf { it.isNotBlank() } ?: when (request.messageType) {
-                MessageType.IMAGE -> "사진을 보냈습니다"
-                MessageType.VIDEO -> "동영상을 보냈습니다"
-                MessageType.FILE -> "파일을 보냈습니다"
-                MessageType.EMOTICON -> "이모티콘을 보냈습니다"
-                else -> "메시지를 보냈습니다"
-            }
-
-            participants
+            val recipientUserIds = chatRoom.participants
+                .asSequence()
                 .filter { it.user.id != sender.id && it.leftAt == null }
-                .forEach { participant ->
-                    notificationService.notifyMessage(
-                        toUserId = participant.user.id,
-                        fromUserId = sender.id,
-                        chatRoomId = chatRoom.id,
-                        messagePreview = messagePreview
-                    )
+                .map { it.user.id }
+                .toList()
+
+            if (recipientUserIds.isNotEmpty()) {
+                val messagePreview = request.textContent?.takeIf { it.isNotBlank() } ?: when (request.messageType) {
+                    MessageType.IMAGE -> "사진을 보냈습니다"
+                    MessageType.VIDEO -> "동영상을 보냈습니다"
+                    MessageType.FILE -> "파일을 보냈습니다"
+                    MessageType.EMOTICON -> "이모티콘을 보냈습니다"
+                    else -> "메시지를 보냈습니다"
                 }
+
+                if (asyncNotificationEnabled) {
+                    applicationEventPublisher.publishEvent(
+                        ChatMessageSavedEvent(
+                            messageId = savedMessage.id,
+                            roomId = chatRoom.id,
+                            senderId = sender.id,
+                            recipientUserIds = recipientUserIds,
+                            messagePreview = messagePreview,
+                            clientMsgId = request.clientMsgId,
+                        )
+                    )
+                } else {
+                    recipientUserIds.forEach { recipientUserId ->
+                        notificationService.notifyMessage(
+                            toUserId = recipientUserId,
+                            fromUserId = sender.id,
+                            chatRoomId = chatRoom.id,
+                            messagePreview = messagePreview
+                        )
+                    }
+                }
+            }
         }
 
         return savedMessage

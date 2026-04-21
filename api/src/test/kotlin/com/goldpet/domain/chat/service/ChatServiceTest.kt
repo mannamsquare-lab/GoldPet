@@ -3,6 +3,7 @@ package com.goldpet.domain.chat.service
 import com.goldpet.domain.chat.dto.ChatMessageRequest
 import com.goldpet.domain.chat.dto.ChatRoomCreateRequest
 import com.goldpet.domain.chat.entity.*
+import com.goldpet.domain.chat.event.ChatMessageSavedEvent
 import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.chat.repository.ChatRequestRepository
 import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
@@ -17,10 +18,15 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentCaptor
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.time.LocalDateTime
@@ -52,6 +58,9 @@ class ChatServiceTest {
     @Mock
     private lateinit var chatRequestRepository: ChatRequestRepository
 
+    @Mock
+    private lateinit var applicationEventPublisher: ApplicationEventPublisher
+
     private lateinit var chatService: ChatService
 
     private lateinit var testUser: User
@@ -70,7 +79,10 @@ class ChatServiceTest {
             matchRepository,
             notificationService,
             userBlockRepository,
-            chatRequestRepository
+            chatRequestRepository,
+            applicationEventPublisher,
+            // T-chat-latency-v2 Step 2: false 유지 — unit test 는 동기 fallback 경로로 기존 notification mock 검증.
+            asyncNotificationEnabled = false,
         )
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
@@ -377,5 +389,128 @@ class ChatServiceTest {
         // Then
         assertEquals(1, result.size)
         assertEquals(ChatRoomType.DIRECT, result[0].roomType)
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // T-chat-latency-v2 Step 2: 이벤트 분리 + clientMsgId 에코
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `saveChatMessage async enabled — ChatMessageSavedEvent 발행되고 recipientUserIds 포함`() {
+        // Given: asyncNotificationEnabled=true 인 ChatService 별도 생성
+        val asyncChatService = ChatService(
+            chatRoomRepository, chatRoomParticipantRepository, chatMessageRepository,
+            userRepository, matchRepository, notificationService,
+            userBlockRepository, chatRequestRepository,
+            applicationEventPublisher,
+            asyncNotificationEnabled = true,
+        )
+
+        val senderParticipant = ChatRoomParticipant(id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER)
+        val recipientParticipant = ChatRoomParticipant(id = 2L, chatRoom = testChatRoom, user = targetUser, role = ChatRoomRole.MEMBER)
+        testChatRoom.participants.addAll(listOf(senderParticipant, recipientParticipant))
+
+        val request = ChatMessageRequest(
+            roomId = 1L,
+            senderId = 1L,
+            messageType = MessageType.TEXT,
+            textContent = "이벤트 테스트",
+        )
+        whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(senderParticipant))
+        whenever(chatMessageRepository.save(any<ChatMessage>())).thenAnswer { invocation ->
+            (invocation.getArgument<ChatMessage>(0)).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
+
+        // When
+        asyncChatService.saveChatMessage(request)
+
+        // Then: event 1회 발행, notificationService 직접 호출 없음
+        val captor = ArgumentCaptor.forClass(ChatMessageSavedEvent::class.java)
+        verify(applicationEventPublisher).publishEvent(captor.capture())
+        assertEquals(listOf(2L), captor.value.recipientUserIds,
+            "sender(1L) 제외한 active participant 만 recipientUserIds 에 포함")
+        verify(notificationService, never()).notifyMessage(any(), any(), any(), any())
+    }
+
+    @Test
+    fun `saveChatMessage async disabled — notificationService 동기 호출 이벤트 미발행`() {
+        // Given: setUp() 의 chatService 는 asyncNotificationEnabled=false
+        val senderParticipant = ChatRoomParticipant(id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER)
+        val recipientParticipant = ChatRoomParticipant(id = 2L, chatRoom = testChatRoom, user = targetUser, role = ChatRoomRole.MEMBER)
+        testChatRoom.participants.addAll(listOf(senderParticipant, recipientParticipant))
+
+        val request = ChatMessageRequest(
+            roomId = 1L,
+            senderId = 1L,
+            messageType = MessageType.TEXT,
+            textContent = "동기 경로 테스트",
+        )
+        whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(senderParticipant))
+        whenever(chatMessageRepository.save(any<ChatMessage>())).thenAnswer { invocation ->
+            (invocation.getArgument<ChatMessage>(0)).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
+
+        // When
+        chatService.saveChatMessage(request)
+
+        // Then: 수신자(2L) 에게 직접 호출, 이벤트 발행 없음
+        verify(notificationService, times(1)).notifyMessage(any(), any(), any(), any())
+        verify(applicationEventPublisher, never()).publishEvent(any<Any>())
+    }
+
+    @Test
+    fun `saveChatMessage clientMsgId 요청 포함 — 이벤트에 clientMsgId 에코`() {
+        // Given
+        val asyncChatService = ChatService(
+            chatRoomRepository, chatRoomParticipantRepository, chatMessageRepository,
+            userRepository, matchRepository, notificationService,
+            userBlockRepository, chatRequestRepository,
+            applicationEventPublisher,
+            asyncNotificationEnabled = true,
+        )
+        val clientMsgId = "test-client-uuid-1234"
+
+        val senderParticipant = ChatRoomParticipant(id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER)
+        val recipientParticipant = ChatRoomParticipant(id = 2L, chatRoom = testChatRoom, user = targetUser, role = ChatRoomRole.MEMBER)
+        testChatRoom.participants.addAll(listOf(senderParticipant, recipientParticipant))
+
+        val request = ChatMessageRequest(
+            roomId = 1L,
+            senderId = 1L,
+            messageType = MessageType.TEXT,
+            textContent = "에코 테스트",
+            clientMsgId = clientMsgId,
+        )
+        whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(senderParticipant))
+        whenever(chatMessageRepository.save(any<ChatMessage>())).thenAnswer { invocation ->
+            (invocation.getArgument<ChatMessage>(0)).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
+
+        // When
+        asyncChatService.saveChatMessage(request)
+
+        // Then: 이벤트에 clientMsgId 포함
+        val captor = ArgumentCaptor.forClass(ChatMessageSavedEvent::class.java)
+        verify(applicationEventPublisher).publishEvent(captor.capture())
+        assertEquals(clientMsgId, captor.value.clientMsgId,
+            "요청의 clientMsgId 가 이벤트 payload 에 그대로 에코되어야 함")
     }
 }

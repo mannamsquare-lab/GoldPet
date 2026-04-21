@@ -1411,3 +1411,23 @@
   background: #F9ECD2;
 }
 
+/* Optimistic UI states */
+.chat_detail_message_optimistic {
+  opacity: 0.6;
+}
+
+.chat_detail_message_rejected {
+  opacity: 0.45;
+  position: relative;
+}
+
+.chat_detail_message_rejected::after {
+  content: '⚠';
+  position: absolute;
+  bottom: -18px;
+  right: 0;
+  font-size: 11px;
+  color: var(--color-error, #E53935);
+  white-space: nowrap;
+}
+

@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
@@ -23,6 +23,7 @@ import { GpImage } from '../../components/common/GpImage';
 import '../../styles/chat-detail.css';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const OPTIMISTIC_ENABLED = import.meta.env.VITE_CHAT_OPTIMISTIC_ENABLED === 'true';
 
 // Component for expandable long messages (5 lines max when collapsed)
 const ExpandableText = ({ content }: { content: string }) => {
@@ -159,7 +160,7 @@ interface ChatMessageItemProps {
     renderMessageContent: (msg: ChatMessage) => React.ReactNode;
 }
 
-const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLongPress, renderMessageContent }: ChatMessageItemProps) => {
+const ChatMessageItem = React.memo(function ChatMessageItem({ msg, isMine, isGroupChat, currentRoom, chatUser, onLongPress, renderMessageContent }: ChatMessageItemProps) {
     const handleClick = useCallback((e: React.MouseEvent) => {
         if (msg.deletedAt) return;
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -188,7 +189,14 @@ const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLo
             )}
             <div className="chat_detail_message_content">
                 <div
-                    className={`chat_detail_message_bubble ${isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other'}${isEmoticon ? ' chat_detail_message_bubble_emoticon' : ''}${hasReply ? ' has_reply' : ''}`}
+                    className={[
+                        'chat_detail_message_bubble',
+                        isMine ? 'chat_detail_message_bubble_mine' : 'chat_detail_message_bubble_other',
+                        isEmoticon ? 'chat_detail_message_bubble_emoticon' : '',
+                        hasReply ? 'has_reply' : '',
+                        msg._optimistic && !msg._rejectedReason ? 'chat_detail_message_optimistic' : '',
+                        msg._rejectedReason ? `chat_detail_message_rejected chat_detail_message_rejected_${msg._rejectedReason.toLowerCase()}` : '',
+                    ].filter(Boolean).join(' ')}
                     {...(isDeleted ? {} : { onClick: handleClick })}
                 >
                     {hasReply && (
@@ -234,7 +242,7 @@ const ChatMessageItem = ({ msg, isMine, isGroupChat, currentRoom, chatUser, onLo
             </div>
         </div>
     );
-};
+});
 
 const ChatDetailPage = () => {
     const navigate = useNavigate();
@@ -279,6 +287,8 @@ const ChatDetailPage = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const queryClient = useQueryClient();
+    // clientMsgId → ack timeout handle (for optimistic NETWORK fallback)
+    const pendingAcksRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
     const { showToast } = useToast();
     const { showAlert, showConfirm } = useAlert();
@@ -333,13 +343,14 @@ const ChatDetailPage = () => {
         ...CACHE_TIME.REAL_TIME,
     });
 
-    // Fetch Messages
+    // Fetch Messages — staleTime 30s; WS keeps cache fresh so always-refetch is unnecessary
     const { data: messages = [], isLoading } = useQuery({
         queryKey: ['chatMessages', chatId],
         queryFn: () => chatService.getMessages(chatId!),
         enabled: !!chatId,
-        refetchOnMount: 'always',
-        ...CACHE_TIME.REAL_TIME,
+        refetchOnMount: false,
+        staleTime: 30_000,
+        gcTime: CACHE_TIME.REAL_TIME.gcTime,
     });
 
     // Notify Flutter when entering/leaving chat room (to suppress push notifications)
@@ -352,15 +363,50 @@ const ChatDetailPage = () => {
         };
     }, [chatId]);
 
+    // Prefetch compressImage on mount so it's ready when user picks a photo
+    useEffect(() => {
+        import('../../utils/imageCompression').catch(() => { /* ignore */ });
+    }, []);
+
+    // Cleanup pending ack timeouts on unmount
+    useEffect(() => {
+        const pending = pendingAcksRef.current;
+        return () => { pending.forEach(clearTimeout); pending.clear(); };
+    }, []);
+
     // Send Message Mutation
     const sendMutation = useMutation({
-        mutationFn: async ({ content, messageType, fileId, emoticonId, replyToId }: { content: string | null; messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON'; fileId?: number; emoticonId?: number; replyToId?: number }) => {
-            return chatService.sendMessage(chatId!, content, { messageType, fileId, emoticonId, replyToId });
+        mutationFn: async ({ content, messageType, fileId, emoticonId, replyToId, clientMsgId }: {
+            content: string | null;
+            messageType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'FILE' | 'EMOTICON';
+            fileId?: number;
+            emoticonId?: number;
+            replyToId?: number;
+            clientMsgId?: string;
+        }) => {
+            return chatService.sendMessage(chatId!, content, { messageType, fileId, emoticonId, replyToId, clientMsgId });
         },
         onError: () => showToast('메시지 전송에 실패했습니다.', 'error'),
         onSuccess: (newMessage) => {
+            // Clear ack timeout on REST success (WS echo may still arrive but dedup handles it)
+            if (newMessage.clientMsgId) {
+                const tid = pendingAcksRef.current.get(newMessage.clientMsgId);
+                if (tid !== undefined) { clearTimeout(tid); pendingAcksRef.current.delete(newMessage.clientMsgId); }
+            }
             queryClient.setQueryData(['chatMessages', chatId], (old: ChatMessage[] | undefined) => {
                 const oldMessages = old || [];
+                // Replace optimistic row by clientMsgId if present
+                if (newMessage.clientMsgId) {
+                    const optIdx = oldMessages.findIndex(
+                        (m: ChatMessage) => m.clientMsgId === newMessage.clientMsgId && m._optimistic
+                    );
+                    if (optIdx !== -1) {
+                        const updated = [...oldMessages];
+                        updated[optIdx] = newMessage;
+                        return updated;
+                    }
+                }
+                // Regular dedup by server ID
                 if (oldMessages.some((m: ChatMessage) => String(m.id) === String(newMessage.id))) {
                     return oldMessages;
                 }
@@ -503,8 +549,50 @@ const ChatDetailPage = () => {
         }
         if (message.trim()) {
             const replyToId = replyingTo?.messageId;
-            sendMutation.mutate({ content: message, replyToId });
+            const msgContent = message;
             setMessage('');
+
+            if (OPTIMISTIC_ENABLED) {
+                const clientMsgId = crypto.randomUUID();
+                const sentAt = Date.now();
+
+                // Add optimistic row immediately
+                const optimisticMsg: ChatMessage = {
+                    id: -sentAt,
+                    roomId: Number(chatId),
+                    senderId: currentUserId,
+                    senderNickname: user?.nickname || '',
+                    textContent: msgContent,
+                    timestamp: new Date().toISOString(),
+                    type: 'text',
+                    replyToId,
+                    clientMsgId,
+                    _optimistic: true,
+                    _sentAt: sentAt,
+                };
+                queryClient.setQueryData(['chatMessages', chatId], (old: ChatMessage[] | undefined) => [
+                    ...(old || []),
+                    optimisticMsg,
+                ]);
+
+                // Ack timeout: 5 000ms → NETWORK fallback
+                const timeoutId = setTimeout(() => {
+                    queryClient.setQueryData(['chatMessages', chatId], (old: ChatMessage[] | undefined) => {
+                        if (!old) return old;
+                        return old.map((m: ChatMessage) =>
+                            m.clientMsgId === clientMsgId && m._optimistic
+                                ? { ...m, _rejectedReason: 'NETWORK' as const }
+                                : m
+                        );
+                    });
+                    pendingAcksRef.current.delete(clientMsgId);
+                }, 5_000);
+                pendingAcksRef.current.set(clientMsgId, timeoutId);
+
+                sendMutation.mutate({ content: msgContent, replyToId, clientMsgId });
+            } else {
+                sendMutation.mutate({ content: msgContent, replyToId });
+            }
         }
     };
 
@@ -521,19 +609,62 @@ const ChatDetailPage = () => {
                 const selectedFile = selectedFiles[i];
                 setUploadProgress(Math.round((i / totalFiles) * 100));
 
-                // Upload file first
-                const uploadResult = await uploadMutation.mutateAsync(selectedFile.file);
-
-                // Determine message type
                 const messageType = selectedFile.type === 'image' ? 'IMAGE'
                     : selectedFile.type === 'video' ? 'VIDEO'
                     : 'FILE';
+
+                // Optimistic image preview: show blob URL immediately
+                let clientMsgId: string | undefined;
+                if (OPTIMISTIC_ENABLED && selectedFile.type === 'image') {
+                    clientMsgId = crypto.randomUUID();
+                    const sentAt = Date.now();
+                    const optimisticMsg: ChatMessage = {
+                        id: -(sentAt + i),
+                        roomId: Number(chatId),
+                        senderId: currentUserId,
+                        senderNickname: user?.nickname || '',
+                        textContent: i === 0 ? (message || '') : '',
+                        timestamp: new Date().toISOString(),
+                        type: 'image',
+                        clientMsgId,
+                        _optimistic: true,
+                        _sentAt: sentAt,
+                        file: {
+                            id: 0,
+                            url: selectedFile.preview, // blob URL — swapped to server URL on WS echo
+                            fileType: 'IMAGE',
+                            mimeType: selectedFile.file.type,
+                        },
+                    };
+                    queryClient.setQueryData(['chatMessages', chatId], (old: ChatMessage[] | undefined) => [
+                        ...(old || []),
+                        optimisticMsg,
+                    ]);
+
+                    // Ack timeout: 20 000ms → NETWORK fallback
+                    const timeoutId = setTimeout(() => {
+                        queryClient.setQueryData(['chatMessages', chatId], (old: ChatMessage[] | undefined) => {
+                            if (!old) return old;
+                            return old.map((m: ChatMessage) =>
+                                m.clientMsgId === clientMsgId && m._optimistic
+                                    ? { ...m, _rejectedReason: 'NETWORK' as const }
+                                    : m
+                            );
+                        });
+                        pendingAcksRef.current.delete(clientMsgId!);
+                    }, 20_000);
+                    pendingAcksRef.current.set(clientMsgId, timeoutId);
+                }
+
+                // Upload file first
+                const uploadResult = await uploadMutation.mutateAsync(selectedFile.file);
 
                 // Send message with file (only include text message with the first file)
                 await sendMutation.mutateAsync({
                     content: i === 0 ? (message || '') : '',
                     messageType,
                     fileId: uploadResult.id,
+                    clientMsgId,
                 });
             }
 
@@ -759,7 +890,7 @@ const ChatDetailPage = () => {
         setSelectedFiles([]);
     };
 
-    const renderMessageContent = (msg: ChatMessage) => {
+    const renderMessageContent = useCallback((msg: ChatMessage) => {
         const content = msg.textContent || '';
         const msgType = msg.messageType || msg.type || 'TEXT';
         const file: FileInfo | undefined = msg.file;
@@ -847,7 +978,7 @@ const ChatDetailPage = () => {
 
         // Default: text message - use ExpandableText component
         return <ExpandableText content={content} />;
-    };
+    }, [setPreviewImageUrl]);
 
     if (isLoading) return <Loading description="대화 내용을 불러오고 있어요" />;
 

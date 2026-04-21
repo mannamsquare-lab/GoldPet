@@ -62,3 +62,10 @@ ai:
 
 openai:
   api-key: ${OPENAI_API_KEY}
+
+# T-chat-latency-v2 Step 2 — chat FCM fan-out 비동기 분리 피처 플래그.
+# dev 에서만 true — prod application-prod.yml 은 미설정(기본 false) 유지 → 기존 동기 경로 fallback.
+goldpet:
+  chat:
+    async:
+      enabled: true
