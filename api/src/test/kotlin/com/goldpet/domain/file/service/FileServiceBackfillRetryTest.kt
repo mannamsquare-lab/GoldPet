@@ -18,6 +18,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
+import org.springframework.mock.env.MockEnvironment
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import java.time.LocalDateTime
 
@@ -55,7 +56,8 @@ class FileServiceBackfillRetryTest {
             meterRegistry = meterRegistry,
             walkSpotBackfillWorker = walkSpotBackfillWorker,
             fileAttachmentRetryWorker = retryWorker,
-            systemSettingService = systemSettingService
+            systemSettingService = systemSettingService,
+            environment = MockEnvironment()
         )
     }
 

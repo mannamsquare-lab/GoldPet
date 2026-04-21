@@ -16,6 +16,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.mock.env.MockEnvironment
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -57,7 +58,8 @@ class FileServiceTest {
             meterRegistry = meterRegistry,
             walkSpotBackfillWorker = walkSpotBackfillWorker,
             fileAttachmentRetryWorker = fileAttachmentRetryWorker,
-            systemSettingService = systemSettingService
+            systemSettingService = systemSettingService,
+            environment = MockEnvironment()
         )
     }
 
