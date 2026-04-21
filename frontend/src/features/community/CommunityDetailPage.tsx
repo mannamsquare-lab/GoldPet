@@ -12,6 +12,7 @@ import { BackButton } from '../../components/common/BackButton';
 import { ReportModal } from '../../components/common/ReportModal';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import { GpImage } from '../../components/common/GpImage';
+import { Loading } from '../../components/common/Loading';
 import { ContentRenderer } from '../../utils/contentRenderer';
 import './CommunityPage.css';
 
@@ -317,7 +318,7 @@ export default function CommunityDetailPage() {
   const keyboardDismiss = useKeyboardDismiss();
 
   if (isLoading) {
-    return <div className="loading">로딩 중...</div>;
+    return <Loading description="게시글을 불러오고 있어요" />;
   }
 
   if (!post) {
