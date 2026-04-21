@@ -82,28 +82,28 @@ class PhotoUrlSignerTest {
         val result = signer.signedUrlOrNull("https://cdn.example.com/goldpet-public/avatar.jpg")
 
         assertNull(result)
-        verify(fileService, never()).getPresignedUrl(any(), any())
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
     }
 
     @Test
     fun `null input returns null`() {
         val result = signer.signedUrlOrNull(null)
         assertNull(result)
-        verify(fileService, never()).getPresignedUrl(any(), any())
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
     }
 
     @Test
     fun `blank input returns null`() {
         val result = signer.signedUrlOrNull("   ")
         assertNull(result)
-        verify(fileService, never()).getPresignedUrl(any(), any())
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
     }
 
     @Test
     fun `empty string returns null`() {
         val result = signer.signedUrlOrNull("")
         assertNull(result)
-        verify(fileService, never()).getPresignedUrl(any(), any())
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
     }
 
     @Test
@@ -112,7 +112,7 @@ class PhotoUrlSignerTest {
         val result = signer.signedUrlOrNull("../../etc/passwd")
 
         assertNull(result)
-        verify(fileService, never()).getPresignedUrl(any(), any())
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
     }
 
     @Test
@@ -121,7 +121,7 @@ class PhotoUrlSignerTest {
         val result = signer.signedUrlOrNull("walk_12345.jpg")
 
         assertNull(result)
-        verify(fileService, never()).getPresignedUrl(any(), any())
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
     }
 
     @Test
@@ -132,7 +132,7 @@ class PhotoUrlSignerTest {
         val result = signer.signedUrlOrNull(key)
 
         assertNull(result)
-        verify(fileService, never()).getPresignedUrl(any(), any())
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
     }
 
     @Test
@@ -144,6 +144,6 @@ class PhotoUrlSignerTest {
         val result = signer.signedUrlOrNull(key)
 
         assertNull(result)
-        verify(fileService, never()).getPresignedUrl(any(), any())
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
     }
 }

@@ -1,13 +1,12 @@
 package com.goldpet.domain.aiprofile.service
 
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.ObjectMetadata
 import com.goldpet.domain.aiprofile.entity.AIRequestStatus
 import com.goldpet.domain.aiprofile.repository.AIProfileRequestRepository
 import com.goldpet.domain.aiprofile.repository.AIStyleRepository
+import com.goldpet.domain.common.util.InMemoryMultipartFile
+import com.goldpet.domain.file.service.FileService
 import com.goldpet.domain.gold.service.GoldService
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
@@ -26,9 +25,7 @@ class AIGenerationEventListener(
     private val googleImagenApiClient: GoogleImagenApiClient,
     private val promptBuilder: AIPromptBuilder,
     private val goldService: GoldService,
-    private val amazonS3: AmazonS3,
-    @Value("\${S3_PUBLIC_ENDPOINT:http://localhost:9100}") private val s3PublicEndpoint: String,
-    @Value("\${S3_PUBLIC_BUCKET_NAME:goldpet-public}") private val publicBucketName: String
+    private val fileService: FileService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -62,16 +59,20 @@ class AIGenerationEventListener(
             val jpegBytes = resizeAndCompress(rawImageBytes, 512, 0.85f)
             log.info("Image resized: {}KB -> {}KB for requestId={}", rawImageBytes.size / 1024, jpegBytes.size / 1024, event.requestId)
 
-            // Upload to S3
-            val s3Key = "ai-profiles/${event.requestId}.jpg"
-            val metadata = ObjectMetadata().apply {
-                contentType = "image/jpeg"
-                contentLength = jpegBytes.size.toLong()
-                cacheControl = "public, max-age=31536000, immutable"
-            }
-            amazonS3.putObject(publicBucketName, s3Key, ByteArrayInputStream(jpegBytes), metadata)
-
-            val finalUrl = "$s3PublicEndpoint/$publicBucketName/$s3Key"
+            // T1-7a: FileService 경유 업로드 → FileAttachment 로우 생성 + variant async 파이프라인 자동 실행.
+            // 과거 `ai-profiles/{requestId}.jpg` 직접 PUT 경로는 고아 URL 이었음 — 이제
+            // FileAttachment 를 남겨 T1-1.x lookup 으로 variant 공급 가능.
+            val multipart = InMemoryMultipartFile(
+                bytes = jpegBytes,
+                originalFilename = "ai-profile-${event.requestId}.jpg",
+                mimeType = "image/jpeg",
+            )
+            val fileAttachment = fileService.storeFile(
+                file = multipart,
+                userId = request.user.id,
+                category = "ai-profile",
+            )
+            val finalUrl = fileAttachment.url
 
             // Mark COMPLETED
             val completed = aiProfileRequestRepository.findById(event.requestId).orElse(null) ?: return
@@ -79,7 +80,7 @@ class AIGenerationEventListener(
             completed.resultUrl = finalUrl
             aiProfileRequestRepository.save(completed)
 
-            log.info("AI generation completed for requestId={}, resultUrl={}", event.requestId, finalUrl)
+            log.info("AI generation completed for requestId={}, resultUrl={}, attachmentId={}", event.requestId, finalUrl, fileAttachment.id)
 
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()

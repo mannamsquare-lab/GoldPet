@@ -1,6 +1,7 @@
 package com.goldpet.domain.emoticon.service
 
 import com.goldpet.domain.common.service.SystemSettingService
+import com.goldpet.domain.common.util.InMemoryMultipartFile
 import com.goldpet.domain.emoticon.repository.EmoticonRepository
 import com.goldpet.domain.file.service.FileService
 import org.slf4j.LoggerFactory
@@ -14,8 +15,6 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
-import java.io.File
-import java.io.InputStream
 
 /**
  * T1-9 Option C-Extended — 기존 V32 seed 이모티콘(frontend 정적 에셋)을 S3 PUBLIC 버킷으로 이관.
@@ -130,22 +129,3 @@ class EmoticonSeedS3MigrationService(
     }
 }
 
-/**
- * Production 에서 byte 배열을 MultipartFile 로 감싸는 경량 어댑터.
- * Spring test 의 MockMultipartFile 은 main classpath 에 없으므로 자체 구현.
- */
-private class InMemoryMultipartFile(
-    private val bytes: ByteArray,
-    private val originalFilename: String,
-    private val mimeType: String,
-) : MultipartFile {
-    override fun getName(): String = "file"
-    override fun getOriginalFilename(): String = originalFilename
-    override fun getContentType(): String = mimeType
-    override fun isEmpty(): Boolean = bytes.isEmpty()
-    override fun getSize(): Long = bytes.size.toLong()
-    override fun getBytes(): ByteArray = bytes
-    override fun getInputStream(): InputStream = bytes.inputStream()
-    override fun transferTo(dest: File) { dest.writeBytes(bytes) }
-    override fun transferTo(dest: java.nio.file.Path) { java.nio.file.Files.write(dest, bytes) }
-}
