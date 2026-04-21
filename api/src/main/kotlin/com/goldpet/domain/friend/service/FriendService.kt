@@ -1,5 +1,6 @@
 package com.goldpet.domain.friend.service
 
+import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.common.util.toHttps
 import com.goldpet.domain.friend.dto.FriendResponse
 import com.goldpet.util.GeoUtils
@@ -35,7 +36,8 @@ fun parseTemperamentTags(raw: String?): ParsedTags {
 @Transactional(readOnly = true)
 class FriendService(
     private val friendRepository: FriendRepository,
-    private val petRepository: PetRepository
+    private val petRepository: PetRepository,
+    private val fileAttachmentLookupService: FileAttachmentLookupService
 ) {
     fun getFriends(
         myUserId: Long,
@@ -76,6 +78,17 @@ class FriendService(
                 pageable = unsortedPageable
             )
         }
+
+        // T1-1.4b batch prefetch: owner 프로필 이미지 + pet 이미지 URL 을 한 번의 IN 쿼리로 warm.
+        val allUrls = usersPage.content.flatMap { user ->
+            val ownerUrls = user.profileImages.map { it.imageUrl } +
+                listOfNotNull(user.profileImageUrl)
+            val petUrls = petRepository.findByOwnerId(user.id).flatMap { pet ->
+                pet.profileImages.map { it.imageUrl } + listOfNotNull(pet.profileImageUrl)
+            }
+            ownerUrls + petUrls
+        }
+        if (allUrls.isNotEmpty()) fileAttachmentLookupService.batchLookup(allUrls)
 
         // Convert to FriendResponse and filter by petTypes/genders if needed
         val friendResponses = usersPage.content.mapNotNull { user ->
@@ -126,11 +139,16 @@ class FriendService(
 
         val ownerAge = user.birthDate?.let { Period.between(it, LocalDate.now()).years }
 
+        val ownerPrimary = user.profileImageUrl.toHttps()
         return FriendResponse(
             id = user.id,
             nickname = user.nickname ?: "Unknown",
-            profileImageUrl = user.profileImageUrl.toHttps(), // Owner's main profile image (small, secondary)
+            profileImageUrl = ownerPrimary, // Owner's main profile image (small, secondary)
+            profileImageUrlThumbnail = fileAttachmentLookupService.thumbnailUrlFor(ownerPrimary),
+            profileImageUrlViewer = fileAttachmentLookupService.viewerUrlFor(ownerPrimary),
             profileImages = ownerImages, // Owner's all profile images
+            profileImagesThumbnail = ownerImages.map { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
+            profileImagesViewer = ownerImages.map { fileAttachmentLookupService.viewerUrlFor(it) ?: it },
             ownerGender = user.gender,
             ownerAge = ownerAge,
             ownerIntro = user.intro,
@@ -146,6 +164,8 @@ class FriendService(
             description = parsed.note,
             tags = parsed.tags,
             images = petImages, // Pet images (large, main slider)
+            imagesThumbnail = petImages.map { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
+            imagesViewer = petImages.map { fileAttachmentLookupService.viewerUrlFor(it) ?: it },
             distance = distance,
             status = "offline",
             location = null, // Privacy: precise coordinates not exposed

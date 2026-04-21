@@ -15417,18 +15417,18 @@
       "PageableObject": {
         "type": "object",
         "properties": {
-          "pageSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "paged": {
-            "type": "boolean"
-          },
           "pageNumber": {
             "type": "integer",
             "format": "int32"
           },
           "unpaged": {
+            "type": "boolean"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paged": {
             "type": "boolean"
           },
           "offset": {
@@ -15897,7 +15897,25 @@
           "profileImageUrl": {
             "type": "string"
           },
+          "profileImageUrlThumbnail": {
+            "type": "string"
+          },
+          "profileImageUrlViewer": {
+            "type": "string"
+          },
           "profileImages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "profileImagesThumbnail": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "profileImagesViewer": {
             "type": "array",
             "items": {
               "type": "string"
@@ -15957,6 +15975,18 @@
             }
           },
           "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "imagesThumbnail": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "imagesViewer": {
             "type": "array",
             "items": {
               "type": "string"

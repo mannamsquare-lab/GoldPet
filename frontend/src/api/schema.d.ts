@@ -6114,11 +6114,11 @@ export interface components {
         };
         PageableObject: {
             /** Format: int32 */
-            pageSize?: number;
-            paged?: boolean;
-            /** Format: int32 */
             pageNumber?: number;
             unpaged?: boolean;
+            /** Format: int32 */
+            pageSize?: number;
+            paged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"];
@@ -6284,7 +6284,11 @@ export interface components {
             id: number;
             nickname: string;
             profileImageUrl?: string;
+            profileImageUrlThumbnail?: string;
+            profileImageUrlViewer?: string;
             profileImages: string[];
+            profileImagesThumbnail?: string[];
+            profileImagesViewer?: string[];
             ownerGender?: string;
             /** Format: int32 */
             ownerAge?: number;
@@ -6302,6 +6306,8 @@ export interface components {
             description: string;
             tags: string[];
             images: string[];
+            imagesThumbnail?: string[];
+            imagesViewer?: string[];
             /** Format: double */
             distance: number;
             status: string;
