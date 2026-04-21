@@ -50,3 +50,8 @@ S3_ACCESS_KEY: codegen-access-key
 S3_SECRET_KEY: codegen-secret-key
 S3_PUBLIC_BUCKET_NAME: goldpet-public
 S3_PRIVATE_BUCKET_NAME: goldpet-private
+
+# codegen 은 DB 없이 dialect 를 명시해야 하므로 HHH90000025 는 불가피 → 억제.
+logging:
+  level:
+    org.hibernate.orm.deprecation: ERROR
