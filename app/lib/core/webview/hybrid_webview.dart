@@ -146,6 +146,7 @@ class _HybridWebViewState extends State<HybridWebView> {
             }
 
             // 3. YouTube top-frame navigation → 외부 앱으로 열기
+            //    서브프레임(iframe 임베드)은 그대로 통과시켜야 본문의 YouTube 영상이 재생됨
             const youtubeHosts = {
               'www.youtube.com',
               'youtube.com',
@@ -153,7 +154,8 @@ class _HybridWebViewState extends State<HybridWebView> {
               'youtu.be',
               'www.youtube-nocookie.com',
             };
-            if (youtubeHosts.contains(uri.host.toLowerCase())) {
+            if (request.isMainFrame &&
+                youtubeHosts.contains(uri.host.toLowerCase())) {
               await launchUrl(uri, mode: LaunchMode.externalApplication);
               return NavigationDecision.prevent;
             }
