@@ -6,6 +6,7 @@ import com.goldpet.domain.admin.dto.AIStyleAdminRequest
 import com.goldpet.domain.admin.dto.AIStyleAdminResponse
 import com.goldpet.domain.admin.service.AdminAIProfileService
 import com.goldpet.domain.aiprofile.entity.AIRequestStatus
+import com.goldpet.domain.aiprofile.service.AIProfileLegacyBackfillService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -16,8 +17,21 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v1/admin/ai-profile")
 class AdminAIProfileController(
-    private val adminAIProfileService: AdminAIProfileService
+    private val adminAIProfileService: AdminAIProfileService,
+    private val aiProfileLegacyBackfillService: AIProfileLegacyBackfillService
 ) {
+    @Operation(
+        summary = "T1-7b 레거시 AI 프로필 URL → FileAttachment 역삽입",
+        description = "T1-7a 배포 이전 `ai-profiles/{id}.jpg` 경로로 저장된 AI 결과에 대해 " +
+            "FileAttachment 로우를 역삽입한다. 멱등. 실제 variant 생성은 이어서 " +
+            "`POST /api/v1/admin/files/backfill?scope=FILE_ATTACHMENTS` 호출 필요."
+    )
+    @PostMapping("/backfill-legacy")
+    fun backfillLegacy(
+        @RequestParam(defaultValue = "true") dryRun: Boolean
+    ): ResponseEntity<AIProfileLegacyBackfillService.Result> {
+        return ResponseEntity.ok(aiProfileLegacyBackfillService.backfillLegacyAttachments(dryRun))
+    }
     @Operation(summary = "AI 요청 목록 조회")
     @GetMapping("/requests")
     fun getRequests(
