@@ -25,6 +25,9 @@ export interface CommunityPost {
   isMine: boolean;
   thumbnailUrl?: string;
   imageUrls: string[];
+  imageUrlsThumbnail?: string[];
+  imageUrlsMedium?: string[];
+  imageUrlsViewer?: string[];
   youtubeUrl?: string | null;
   comments?: CommunityComment[];
   createdAt: string;

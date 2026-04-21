@@ -5,7 +5,6 @@ import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
-import { getImageUrl } from '../../utils/imageUrl';
 import { blockService } from '../../services/blockService';
 import { reportService } from '../../services/reportService';
 import { BackButton } from '../../components/common/BackButton';
@@ -372,24 +371,27 @@ export default function CommunityDetailPage() {
           {/* Images */}
           <div className="img_wrap">
              {post.imageUrls && post.imageUrls.length > 0 ? (() => {
-                 const resolvedUrls = post.imageUrls.map(u =>
-                     u.startsWith('http') ? u : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${u}`
-                 );
+                 const normalize = (u: string) =>
+                     u.startsWith('http') ? u : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${u}`;
+                 const resolvedUrls = post.imageUrls.map(normalize);
+                 const resolvedThumbs = post.imageUrlsThumbnail?.map(normalize);
+                 const resolvedMediums = post.imageUrlsMedium?.map(normalize);
+                 const resolvedViewers = post.imageUrlsViewer?.map(normalize);
+                 // 갤러리 모달은 viewer variant 우선 (없으면 원본)
+                 const galleryImages = resolvedViewers ?? resolvedUrls;
                  return resolvedUrls.map((fullUrl, index) => (
-                     <img
+                     <GpImage
                          key={index}
-                         src={getImageUrl(fullUrl, 'medium')}
+                         src={fullUrl}
+                         thumbnailSrc={resolvedThumbs?.[index]}
+                         mediumSrc={resolvedMediums?.[index]}
+                         viewerSrc={resolvedViewers?.[index]}
+                         variant="medium"
                          alt={`Post image ${index + 1}`}
                          style={{ marginBottom: '16px', cursor: 'pointer' }}
                          loading="lazy"
                          decoding="async"
-                         onClick={() => setGalleryState({ open: true, images: resolvedUrls, index })}
-                         onError={(e) => {
-                             if (!e.currentTarget.dataset.fallback) {
-                                 e.currentTarget.dataset.fallback = 'true';
-                                 e.currentTarget.src = fullUrl;
-                             }
-                         }}
+                         onClick={() => setGalleryState({ open: true, images: galleryImages, index })}
                      />
                  ));
              })() : post.thumbnailUrl ? (

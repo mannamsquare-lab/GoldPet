@@ -766,9 +766,20 @@ const ChatDetailPage = () => {
 
         // Handle image messages
         if ((msgType === 'IMAGE' || msgType === 'image') && file) {
+            // 버블 안 이미지는 medium variant, 탭 시 풀뷰는 viewer(없으면 원본)
+            const previewUrl = file.urlViewer || file.url;
             return (
                 <div className="chat_detail_message_image">
-                    <img src={file.url} alt="첨부 이미지" onClick={() => setPreviewImageUrl(file.url)} style={{ cursor: 'pointer' }} />
+                    <GpImage
+                        src={file.url}
+                        thumbnailSrc={file.urlThumbnail}
+                        mediumSrc={file.urlMedium}
+                        viewerSrc={file.urlViewer}
+                        variant="medium"
+                        alt="첨부 이미지"
+                        onClick={() => setPreviewImageUrl(previewUrl)}
+                        style={{ cursor: 'pointer' }}
+                    />
                     {content && <div className="chat_detail_message_caption">{content}</div>}
                 </div>
             );

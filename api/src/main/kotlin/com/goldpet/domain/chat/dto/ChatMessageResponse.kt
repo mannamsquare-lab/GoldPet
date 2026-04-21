@@ -11,6 +11,12 @@ import java.time.LocalDateTime
 data class FileInfo(
     val id: Long,
     val url: String,
+    /** T1-2 Phase 5: FileAttachment.thumbnailUrl — 200px. 채팅 이미지 메시지 썸네일. */
+    val urlThumbnail: String? = null,
+    /** T1-2 Phase 5: FileAttachment.mediumUrl — 720px. 채팅 bubble 렌더용. */
+    val urlMedium: String? = null,
+    /** T1-2 Phase 5: FileAttachment.viewerUrl — 1600px. 탭하여 전체 화면 뷰어 진입 시. */
+    val urlViewer: String? = null,
     val fileType: String,
     val mimeType: String,
     val originalFileName: String?,
@@ -75,6 +81,9 @@ data class ChatMessageResponse(
                     FileInfo(
                         id = it.id,
                         url = resolvedFileUrl ?: it.url,
+                        urlThumbnail = it.thumbnailUrl,
+                        urlMedium = it.mediumUrl,
+                        urlViewer = it.viewerUrl,
                         fileType = it.fileType,
                         mimeType = it.mimeType,
                         originalFileName = it.originalFileName,
@@ -129,6 +138,9 @@ data class ChatMessageResponse(
                     FileInfo(
                         id = it.id,
                         url = resolvedFileUrl ?: it.url,
+                        urlThumbnail = it.thumbnailUrl,
+                        urlMedium = it.mediumUrl,
+                        urlViewer = it.viewerUrl,
                         fileType = it.fileType,
                         mimeType = it.mimeType,
                         originalFileName = it.originalFileName,

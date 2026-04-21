@@ -11509,6 +11509,24 @@
               "type": "string"
             }
           },
+          "imageUrlsThumbnail": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "imageUrlsMedium": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "imageUrlsViewer": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "comments": {
             "type": "array",
             "items": {
@@ -13605,6 +13623,15 @@
             "format": "int64"
           },
           "url": {
+            "type": "string"
+          },
+          "urlThumbnail": {
+            "type": "string"
+          },
+          "urlMedium": {
+            "type": "string"
+          },
+          "urlViewer": {
             "type": "string"
           },
           "fileType": {

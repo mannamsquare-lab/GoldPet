@@ -31,6 +31,12 @@ data class CommunityPostResponse(
     @get:JsonProperty("isCommentedByMe")
     val isCommentedByMe: Boolean = false,
     val imageUrls: List<String> = emptyList(),
+    /** T1-2 Phase 5: post body 이미지 썸네일 (200px). imageUrls 와 길이 매치 — 없으면 원본 URL fallback. */
+    val imageUrlsThumbnail: List<String>? = null,
+    /** T1-2 Phase 5: post body 이미지 medium (720px). 상세 페이지 인라인 렌더용. */
+    val imageUrlsMedium: List<String>? = null,
+    /** T1-2 Phase 5: post body 이미지 viewer (1600px). 갤러리 모달 전체 화면 렌더용. */
+    val imageUrlsViewer: List<String>? = null,
     val comments: List<CommunityCommentResponse> = emptyList(),
     @get:JsonProperty("isMine")
     val isMine: Boolean = false

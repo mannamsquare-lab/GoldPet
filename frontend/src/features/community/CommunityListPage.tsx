@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getImageUrl } from '../../utils/imageUrl';
 import { useNavigate } from 'react-router-dom';
 import { communityService } from '../../services/communityService';
 import { systemService } from '../../services/systemService';
@@ -139,20 +138,20 @@ export default function CommunityListPage() {
                 
                 {post.imageUrls && post.imageUrls.length > 0 && (() => {
                     const rawUrl = post.imageUrls[0];
-                    const fullUrl = rawUrl.startsWith('http') ? rawUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${rawUrl}`;
+                    const rawThumb = post.imageUrlsThumbnail?.[0];
+                    const normalize = (u: string | undefined | null) =>
+                        !u || u.startsWith('http') ? u : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${u}`;
+                    const fullUrl = normalize(rawUrl)!;
+                    const thumbUrl = normalize(rawThumb);
                     return (
                         <div className="list_img">
-                            <img
-                                src={getImageUrl(fullUrl, 'thumbnail')}
+                            <GpImage
+                                src={fullUrl}
+                                thumbnailSrc={thumbUrl}
+                                variant="thumbnail"
                                 alt=""
                                 loading="lazy"
                                 decoding="async"
-                                onError={(e) => {
-                                    if (!e.currentTarget.dataset.fallback) {
-                                        e.currentTarget.dataset.fallback = 'true';
-                                        e.currentTarget.src = fullUrl;
-                                    }
-                                }}
                             />
                         </div>
                     );

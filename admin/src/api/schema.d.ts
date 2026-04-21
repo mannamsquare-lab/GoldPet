@@ -4915,6 +4915,9 @@ export interface components {
             isLiked: boolean;
             isCommentedByMe: boolean;
             imageUrls: string[];
+            imageUrlsThumbnail?: string[];
+            imageUrlsMedium?: string[];
+            imageUrlsViewer?: string[];
             comments: components["schemas"]["CommunityCommentResponse"][];
             isMine: boolean;
         };
@@ -5568,6 +5571,9 @@ export interface components {
             /** Format: int64 */
             id: number;
             url: string;
+            urlThumbnail?: string;
+            urlMedium?: string;
+            urlViewer?: string;
             fileType: string;
             mimeType: string;
             originalFileName?: string;

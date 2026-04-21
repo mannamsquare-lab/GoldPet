@@ -51,6 +51,25 @@ class CommunityService(
     private fun thumbOf(url: String?): String? = fileAttachmentLookupService.thumbnailUrlFor(url)
     private fun viewerOf(url: String?): String? = fileAttachmentLookupService.viewerUrlFor(url)
 
+    // T1-2 Phase 5: post body 이미지 variant 4종을 한 번에 추출. post.images 는 이미
+    // FileAttachment join 으로 로드되어 있으므로 variant 컬럼 직접 접근 (추가 쿼리 0).
+    private data class PostImageUrls(
+        val originals: List<String>,
+        val thumbnails: List<String>,
+        val mediums: List<String>,
+        val viewers: List<String>,
+    )
+
+    private fun postImageUrls(post: CommunityPost): PostImageUrls {
+        val sorted = post.images.sortedBy { it.sortOrder }
+        return PostImageUrls(
+            originals = sorted.map { it.file.url },
+            thumbnails = sorted.map { it.file.thumbnailUrl ?: it.file.url },
+            mediums = sorted.map { it.file.mediumUrl ?: it.file.url },
+            viewers = sorted.map { it.file.viewerUrl ?: it.file.url },
+        )
+    }
+
     // 리스트 경로 전용: author 프로필 + post image 를 한 번의 IN 쿼리로 prefetch.
     private fun warmAuthorAndImages(posts: List<CommunityPost>) {
         val urls = posts.flatMap { post ->
@@ -100,6 +119,7 @@ class CommunityService(
                 post.content
             }
 
+            val img = postImageUrls(post)
             CommunityPostResponse(
                 id = post.id,
                 authorId = post.user.id,
@@ -119,7 +139,10 @@ class CommunityService(
                 createdAt = post.createdAt,
                 isLiked = isLiked,
                 isCommentedByMe = isCommented,
-                imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
+                imageUrls = img.originals,
+                imageUrlsThumbnail = img.thumbnails,
+                imageUrlsMedium = img.mediums,
+                imageUrlsViewer = img.viewers,
                 isMine = currentUser?.id == post.user.id
             )
         }
@@ -180,6 +203,7 @@ class CommunityService(
             log.warn("Badge check failed for userId={}", userId, e)
         }
 
+        val img = postImageUrls(savedPost)
         return CommunityPostResponse(
             id = savedPost.id,
             authorId = user.id,
@@ -197,7 +221,10 @@ class CommunityService(
             likeCount = savedPost.likeCount,
             commentCount = 0,
             createdAt = savedPost.createdAt,
-            imageUrls = savedPost.images.sortedBy { it.sortOrder }.map { it.file.url },
+            imageUrls = img.originals,
+            imageUrlsThumbnail = img.thumbnails,
+            imageUrlsMedium = img.mediums,
+            imageUrlsViewer = img.viewers,
             isMine = true
         )
     }
@@ -358,6 +385,7 @@ class CommunityService(
         
         val comments = sortedComments
 
+        val img = postImageUrls(post)
         return CommunityPostResponse(
             id = post.id,
             authorId = post.user.id,
@@ -377,7 +405,10 @@ class CommunityService(
             createdAt = post.createdAt,
             isLiked = isLiked,
             isCommentedByMe = isCommented,
-            imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
+            imageUrls = img.originals,
+            imageUrlsThumbnail = img.thumbnails,
+            imageUrlsMedium = img.mediums,
+            imageUrlsViewer = img.viewers,
             comments = comments,
             isMine = currentUserId == post.user.id
         )
@@ -480,6 +511,7 @@ class CommunityService(
                 post.content
             }
 
+            val img = postImageUrls(post)
             CommunityPostResponse(
                 id = post.id,
                 authorId = post.user.id,
@@ -497,7 +529,10 @@ class CommunityService(
                 likeCount = post.likeCount,
                 commentCount = commentCount,
                 createdAt = post.createdAt,
-                imageUrls = post.images.sortedBy { it.sortOrder }.map { it.file.url },
+                imageUrls = img.originals,
+                imageUrlsThumbnail = img.thumbnails,
+                imageUrlsMedium = img.mediums,
+                imageUrlsViewer = img.viewers,
                 isMine = true
             )
         }
