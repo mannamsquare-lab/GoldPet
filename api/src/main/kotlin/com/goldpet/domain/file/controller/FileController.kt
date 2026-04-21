@@ -2,8 +2,10 @@ package com.goldpet.domain.file.controller
 
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.file.service.FileService
+import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.core.io.InputStreamResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -41,8 +43,10 @@ data class PresignedUrlResponse(
 @RestController
 @RequestMapping("/api/v1/files")
 class FileController(
-    private val fileService: FileService
+    private val fileService: FileService,
+    private val meterRegistry: MeterRegistry
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     /**
      * Upload a file. Pass `category` to control bucket routing:
@@ -73,18 +77,32 @@ class FileController(
     }
 
     /**
-     * Get a time-limited presigned URL for a private-bucket file.
-     * The `fileKey` is the key returned in the `url` field when uploading to the private bucket.
+     * **DEPRECATED (T1-4)** — 비공개 파일 streaming 프록시.
+     *
+     * 이 엔드포인트는 CDN 캐시 키 분리를 방해하고 API 서버 대역폭을 낭비하므로
+     * presigned URL (`GET /{fileKey}/url`) 경로로 이전 중이다. TestFlight 배포 후
+     * `file_proxy_stream_total` 이 일정 기간 0 으로 수렴하면 HTTP 410 Gone 으로
+     * 전환 예정 (plan REV 4 T2-4). 현재는 관측 Counter + deprecated 마크만 적용.
      */
-    /**
-     * Stream a private-bucket file through the API (proxy).
-     */
-    @Operation(summary = "비공개 파일 스트리밍 다운로드")
+    @Deprecated(
+        message = "presigned URL 사용. 다음 릴리스에서 410 Gone 전환 예정",
+        replaceWith = ReplaceWith("getPresignedUrl(fileKey, 60, principal)")
+    )
+    @Operation(
+        summary = "[DEPRECATED] 비공개 파일 스트리밍 다운로드",
+        description = "T1-4 로 deprecated. presigned URL (/{fileKey}/url) 사용 권장. 다음 릴리스에서 410 Gone 응답 전환 예정.",
+        deprecated = true
+    )
     @GetMapping("/{fileKey}/content")
     fun getFileContent(
         @PathVariable fileKey: String,
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<InputStreamResource> {
+        meterRegistry.counter("file_proxy_stream_total", "user_id", principal.id.toString()).increment()
+        log.warn(
+            "legacy /files/{}/content proxy hit (user_id={}). Client should use presigned URL.",
+            fileKey, principal.id
+        )
         val s3Object = fileService.getPrivateFileObject(fileKey)
         val contentType = s3Object.objectMetadata.contentType ?: "application/octet-stream"
         return ResponseEntity.ok()

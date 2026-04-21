@@ -1,10 +1,9 @@
-import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walkService } from '../../services/walkService';
 import type { WalkRecord, WalkPhotoItem } from '../../services/walkService';
 import { WalkRouteThumbnail } from '../walk/components/WalkRouteThumbnail';
-import { resolvePhotoUrl, getCachedPhotoUrl } from '../walk/utils/photoUrlCache';
 import { WalkPhotoGalleryModal } from '../walk/viewer/WalkPhotoGalleryModal';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { useMonthNavigation } from '../../hooks/useMonthNavigation';
@@ -12,9 +11,7 @@ import './MyWalkPage.css';
 
 function PhotoCollection() {
     const navigate = useNavigate();
-    const [resolved, setResolved] = useState<Record<string, string>>({});
     const [modalPhoto, setModalPhoto] = useState<WalkPhotoItem | null>(null);
-    const dispatchedRef = useRef<Set<string>>(new Set());
 
     const { data } = useQuery({
         queryKey: ['walk', 'my', 'photos', 'mywalk-collection'],
@@ -25,29 +22,6 @@ function PhotoCollection() {
         () => (data?.content ?? []).filter((p) => !!p.imageUrl).slice(0, 8),
         [data],
     );
-
-    useEffect(() => {
-        const seedFromCache: Record<string, string> = {};
-        photos.forEach((photo) => {
-            const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
-            if (!thumbUrl) return;
-            const key = thumbUrl;
-            if (dispatchedRef.current.has(key)) return;
-            dispatchedRef.current.add(key);
-            const cached = getCachedPhotoUrl(key);
-            if (cached) {
-                seedFromCache[key] = cached;
-                return;
-            }
-            resolvePhotoUrl(key)
-                .then((url) => setResolved((prev) => ({ ...prev, [key]: url })))
-                .catch(() => setResolved((prev) => ({ ...prev, [key]: '' })));
-        });
-        if (Object.keys(seedFromCache).length > 0) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setResolved((prev) => ({ ...seedFromCache, ...prev }));
-        }
-    }, [photos]);
 
     if (photos.length === 0) return null;
 
@@ -71,8 +45,7 @@ function PhotoCollection() {
                 {rows.map((row, rowIdx) => (
                     <div key={rowIdx} className="mywalk_photo_row">
                         {row.map((photo) => {
-                            const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
-                            const src = thumbUrl ? resolved[thumbUrl] : '';
+                            const src = photo.imageUrlThumb ?? photo.imageUrl;
                             return (
                                 <div
                                     key={photo.id}

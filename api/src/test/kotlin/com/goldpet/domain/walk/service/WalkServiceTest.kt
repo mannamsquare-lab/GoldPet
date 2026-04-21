@@ -204,7 +204,7 @@ class WalkServiceTest {
         assertEquals("오늘 산책 좋았음", result.notes)
         assertEquals(3, result.path.size)
         assertEquals(1, result.spots.size)
-        assertEquals("PEE", result.spots[0].type)
+        assertEquals(com.goldpet.domain.walk.entity.WalkSpotType.PEE, result.spots[0].type)
     }
 
     @Test
@@ -456,7 +456,8 @@ class WalkServiceTest {
         val result = walkService.getMyPhotos(1L, null, PageRequest.of(0, 20))
 
         val photo = result.content.first()
-        assertEquals(key, photo.imageUrl, "flag-off path returns raw key for backward compatibility")
+        // T1-4: rawKey fallback 제거. signing 실패 시 imageUrl=null (클라이언트 skip)
+        assertEquals(null, photo.imageUrl, "flag-off path returns null after T1-4 (no rawKey fallback)")
         assertEquals(key, photo.imageKey)
     }
 
@@ -557,7 +558,8 @@ class WalkServiceTest {
 
         val response = walkService.mintPhotoUrl(77L, testUser.id)
 
-        assertEquals(key, response.imageUrl, "flag-off path returns raw key for backward compat")
+        // T1-4: rawKey fallback 제거. signing 실패 시 imageUrl=null.
+        assertEquals(null, response.imageUrl, "flag-off path returns null after T1-4 (no rawKey fallback)")
         assertEquals(key, response.imageKey)
     }
 

@@ -1,18 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { walkService } from '../../../services/walkService';
 import type { WalkPhotoItem } from '../../../services/walkService';
-import { resolvePhotoUrl, getCachedPhotoUrl } from '../utils/photoUrlCache';
 import { WalkPhotoGalleryModal } from '../viewer/WalkPhotoGalleryModal';
 
 const MAX_PHOTOS = 8;
 
 export function WalkPhotoCollection() {
   const navigate = useNavigate();
-  const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
   const [modalPhoto, setModalPhoto] = useState<WalkPhotoItem | null>(null);
-  const dispatchedRef = useRef<Set<string>>(new Set());
 
   const { data } = useQuery({
     queryKey: ['walk', 'public', 'photos', 'collection'],
@@ -23,29 +20,6 @@ export function WalkPhotoCollection() {
     () => (data?.content ?? []).filter((p) => !!p.imageUrl).slice(0, MAX_PHOTOS),
     [data],
   );
-
-  useEffect(() => {
-    const seedFromCache: Record<string, string> = {};
-    photos.forEach((photo) => {
-      const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
-      if (!thumbUrl) return;
-      const key = thumbUrl;
-      if (dispatchedRef.current.has(key)) return;
-      dispatchedRef.current.add(key);
-      const cached = getCachedPhotoUrl(key);
-      if (cached) {
-        seedFromCache[key] = cached;
-        return;
-      }
-      resolvePhotoUrl(key)
-        .then((url) => setResolvedUrls((prev) => ({ ...prev, [key]: url })))
-        .catch(() => setResolvedUrls((prev) => ({ ...prev, [key]: '' })));
-    });
-    if (Object.keys(seedFromCache).length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResolvedUrls((prev) => ({ ...seedFromCache, ...prev }));
-    }
-  }, [photos]);
 
   if (photos.length === 0) return null;
 
@@ -63,8 +37,7 @@ export function WalkPhotoCollection() {
       </button>
       <div className="walk_photo_collection_grid">
         {photos.map((photo) => {
-          const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
-          const src = thumbUrl ? resolvedUrls[thumbUrl] : '';
+          const src = photo.imageUrlThumb ?? photo.imageUrl;
           return (
             <button
               key={photo.id}

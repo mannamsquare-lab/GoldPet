@@ -19,6 +19,7 @@ import com.goldpet.domain.walk.repository.WalkRepository
 import com.goldpet.domain.walk.repository.WalkSpotRepository
 import com.goldpet.domain.walk.service.PhotoUrlSigner
 import org.hamcrest.Matchers.hasItem
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
@@ -192,14 +193,14 @@ class WalkPhotoIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `getMyPhotos flag off imageUrl is raw S3 key without signing`() {
-        // flag stays at default "false"
+    fun `getMyPhotos flag off imageUrl is null after T1-4 (no rawKey fallback)`() {
+        // flag stays at default "false" → signing returns null → T1-4 에서 rawKey fallback 제거되어 null
         mockMvc.perform(
             get("/api/v1/walks/my/photos")
                 .header("Authorization", "Bearer ${userToken(testUser)}")
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.content[?(@.id == $photoSpotId)].imageUrl", hasItem(PHOTO_KEY)))
+            .andExpect(jsonPath("$.content[?(@.id == $photoSpotId)].imageUrl", hasItem(nullValue())))
     }
 
     // ── GET /api/v1/walks/public/photos ───────────────────────────────────────
@@ -244,14 +245,15 @@ class WalkPhotoIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `mintPhotoUrl flag off owner still gets 200 with raw key as imageUrl`() {
-        // flag off: signedUrlOrNull returns null → service falls back to raw key
+    fun `mintPhotoUrl flag off owner still gets 200 but imageUrl is null after T1-4`() {
+        // flag off: signedUrlOrNull returns null.
+        // T1-4: rawKey fallback 제거로 imageUrl=null. imageKey 는 여전히 유지.
         mockMvc.perform(
             get("/api/v1/walks/photos/$photoSpotId/url")
                 .header("Authorization", "Bearer ${userToken(testUser)}")
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.imageUrl").value(PHOTO_KEY))
+            .andExpect(jsonPath("$.imageUrl").value(nullValue()))
             .andExpect(jsonPath("$.imageKey").value(PHOTO_KEY))
     }
 

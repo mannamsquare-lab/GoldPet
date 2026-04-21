@@ -387,9 +387,11 @@ class WalkService(
         val rawKey = spot.imageUrl
         val signed = photoUrlSigner.signedUrlOrNull(rawKey)
         mintOkCounter.increment()
+        // T1-4: proxy endpoint deprecated. signing 실패 시 rawKey fallback 금지 (null 반환)
+        //   → 클라이언트는 DOM 에서 조용히 skip, 더 이상 /files/{key}/content 호출 유도하지 않음.
         return PhotoMintResponse(
             spotId = spot.id,
-            imageUrl = signed ?: rawKey,
+            imageUrl = signed,
             imageKey = rawKey,
             imageUrlViewer = photoUrlSigner.signedViewerUrlOrNull(spot.imageKeyViewer),
             imageUrlThumb = photoUrlSigner.signedThumbUrlOrNull(spot.imageKeyThumb),
@@ -406,7 +408,8 @@ class WalkService(
         val firstPet = spot.walk.walkPets.firstOrNull()?.pet
         val rawKey = spot.imageUrl
         val signed = if (suppressUrl) null else photoUrlSigner.signedUrlOrNull(rawKey)
-        val resolvedUrl = if (suppressUrl) null else (signed ?: rawKey)
+        // T1-4: signing 실패 시 rawKey fallback 금지. DOM 에서 조용히 skip.
+        val resolvedUrl = signed
         if (signed != null) {
             presignedServedCounter.increment()
             if (spot.hiddenFromPublic) hiddenPresignedServedCounter.increment()

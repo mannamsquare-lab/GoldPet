@@ -4,7 +4,6 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
-import { resolvePhotoUrl, getCachedPhotoUrl } from './utils/photoUrlCache';
 import { WalkPhotoGalleryModal } from './viewer/WalkPhotoGalleryModal';
 import './WalkPhotoGallery.css';
 
@@ -30,10 +29,8 @@ export default function WalkPhotoGalleryPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<ViewMode>('month');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
   const [modalPhoto, setModalPhoto] = useState<WalkPhotoItem | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const dispatchedRef = useRef<Set<string>>(new Set());
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['walk', 'my', 'photos'],
@@ -46,29 +43,6 @@ export default function WalkPhotoGalleryPage() {
     () => data?.pages.flatMap(p => p.content) ?? [],
     [data],
   );
-
-  useEffect(() => {
-    const seedFromCache: Record<string, string> = {};
-    photos.forEach((photo: WalkPhotoItem) => {
-      const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
-      if (!thumbUrl) return;
-      const key = thumbUrl;
-      if (dispatchedRef.current.has(key)) return;
-      dispatchedRef.current.add(key);
-      const cached = getCachedPhotoUrl(key);
-      if (cached) {
-        seedFromCache[key] = cached;
-        return;
-      }
-      resolvePhotoUrl(key)
-        .then(url => setResolvedUrls(prev => ({ ...prev, [key]: url })))
-        .catch(() => setResolvedUrls(prev => ({ ...prev, [key]: '' })));
-    });
-    if (Object.keys(seedFromCache).length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResolvedUrls(prev => ({ ...seedFromCache, ...prev }));
-    }
-  }, [photos]);
 
   // Group photos by selected mode
   const groups = useMemo(() => {
@@ -158,16 +132,15 @@ export default function WalkPhotoGalleryPage() {
             </div>
             <div className="wgp_photo_grid">
               {group.items.map((photo: WalkPhotoItem) => {
-                const thumbUrl = photo.imageUrlThumb ?? photo.imageUrl;
-                const url = thumbUrl ? resolvedUrls[thumbUrl] : undefined;
+                const src = photo.imageUrlThumb ?? photo.imageUrl;
                 return (
                   <div
                     key={`${photo.walkId}-${photo.id}`}
                     className="wgp_photo_cell"
                     onClick={() => setModalPhoto(photo)}
                   >
-                    {url ? (
-                      <img src={url} alt="" className="wgp_photo_img" />
+                    {src ? (
+                      <img src={src} alt="" className="wgp_photo_img" loading="lazy" decoding="async" />
                     ) : (
                       <div className="wgp_photo_placeholder" />
                     )}
