@@ -100,7 +100,7 @@ class AIProfileController(
             principal.id,
             applyRequest.petId,
             applyRequest.applyAs,
-            applyRequest.forceReplace
+            applyRequest.forceReplace ?: false
         )
         return ResponseEntity.ok(response)
     }
