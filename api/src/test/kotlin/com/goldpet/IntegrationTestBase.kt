@@ -4,8 +4,7 @@ import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.config.crypto.EncryptionConfig
 import com.goldpet.config.crypto.EncryptionConverter
 import com.zaxxer.hikari.HikariDataSource
-import jakarta.persistence.EntityManager
-import jakarta.persistence.PersistenceContext
+import jakarta.persistence.EntityManagerFactory
 import org.hibernate.SessionFactory
 import org.hibernate.stat.Statistics
 import org.junit.jupiter.api.BeforeEach
@@ -182,11 +181,11 @@ abstract class IntegrationTestBase {
     // ```
     // ------------------------------------------------------------------
 
-    @PersistenceContext
-    protected lateinit var entityManager: EntityManager
+    @Autowired
+    protected lateinit var entityManagerFactory: EntityManagerFactory
 
     protected val hibernateStatistics: Statistics
-        get() = entityManager.entityManagerFactory
+        get() = entityManagerFactory
             .unwrap(SessionFactory::class.java)
             .statistics
 
