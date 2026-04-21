@@ -55,5 +55,7 @@ data class AIStyleOption(
 
 data class ApplyProfileRequest(
     val applyAs: String,  // "MAIN" or "ADDITIONAL"
-    val petId: Long
+    val petId: Long,
+    /** MAIN 분기에서 최대 장수 도달 시 기존 대표 이미지를 교체할지 여부. */
+    val forceReplace: Boolean = false
 )

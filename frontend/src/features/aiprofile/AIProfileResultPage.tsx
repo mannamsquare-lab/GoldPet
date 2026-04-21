@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiProfileService } from '../../services/aiProfileService';
 import { useToast } from '../../contexts/ToastContext';
+import { useAlert } from '../../contexts/AlertContext';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import pawIcon from './assets/paw-loading.svg';
@@ -22,6 +23,7 @@ export default function AIProfileResultPage() {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { showConfirm } = useAlert();
   const queryClient = useQueryClient();
 
   const [showApplySheet, setShowApplySheet] = useState(false);
@@ -59,10 +61,11 @@ export default function AIProfileResultPage() {
   });
 
   const applyMutation = useMutation({
-    mutationFn: (applyAs: 'MAIN' | 'ADDITIONAL') =>
+    mutationFn: ({ applyAs, forceReplace }: { applyAs: 'MAIN' | 'ADDITIONAL'; forceReplace?: boolean }) =>
       aiProfileService.applyToProfile(Number(requestId), {
         applyAs,
         petId: request!.petId!,
+        forceReplace,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
@@ -70,9 +73,23 @@ export default function AIProfileResultPage() {
       setShowApplySheet(false);
       navigate('/profile?tab=pet', { replace: true });
     },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
+    onError: (error: unknown, variables) => {
+      const err = error as { response?: { data?: { message?: string; errorCode?: string } } };
+      const errorCode = err?.response?.data?.errorCode;
       const message = err?.response?.data?.message || '적용에 실패했습니다.';
+      if (
+        errorCode === 'PROFILE_IMAGE_LIMIT_EXCEEDED' &&
+        variables.applyAs === 'MAIN' &&
+        !variables.forceReplace
+      ) {
+        showConfirm(
+          '이미 10장의 이미지가 등록되어 있어요.\n기존 대표 이미지를 새 이미지로 교체할까요?',
+          () => applyMutation.mutate({ applyAs: 'MAIN', forceReplace: true }),
+          undefined,
+          { confirmText: '교체하기', cancelText: '취소' },
+        );
+        return;
+      }
       showToast(message, 'error');
     },
   });
@@ -88,7 +105,7 @@ export default function AIProfileResultPage() {
   const handleApply = (applyAs: 'MAIN' | 'ADDITIONAL') => {
     if (applyMutation.isPending) return;
     setShowApplySheet(false);
-    applyMutation.mutate(applyAs);
+    applyMutation.mutate({ applyAs });
   };
 
   const isProcessing = request?.status === 'PENDING' || request?.status === 'PROCESSING';

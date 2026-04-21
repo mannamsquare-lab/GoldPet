@@ -132,7 +132,13 @@ class AIProfileService(
     }
 
     @Transactional
-    fun applyResultAsProfile(requestId: Long, userId: Long, petId: Long, applyAs: String): AIProfileRequestResponse {
+    fun applyResultAsProfile(
+        requestId: Long,
+        userId: Long,
+        petId: Long,
+        applyAs: String,
+        forceReplace: Boolean = false
+    ): AIProfileRequestResponse {
         val request = aiRequestRepository.findById(requestId)
             .orElseThrow { NotFoundException("Request not found") }
 
@@ -165,7 +171,15 @@ class AIProfileService(
                         pet.profileImages.remove(existing)
                     }
                 } else if (pet.profileImages.size >= maxProfileImages) {
-                    throw BadRequestException("이미지는 최대 ${maxProfileImages}장까지 등록할 수 있습니다.")
+                    if (!forceReplace) {
+                        throw BadRequestException(
+                            message = "이미지는 최대 ${maxProfileImages}장까지 등록할 수 있습니다.",
+                            errorCode = "PROFILE_IMAGE_LIMIT_EXCEEDED"
+                        )
+                    }
+                    // 교체 확정: 현재 대표 이미지(orderIndex 최소값) 1장을 제거하여 한도 확보
+                    pet.profileImages.minByOrNull { it.orderIndex }
+                        ?.let { pet.profileImages.remove(it) }
                 }
                 pet.profileImages.forEach { it.orderIndex += 1 }
                 pet.profileImages.add(PetProfileImage(pet = pet, imageUrl = resultUrl, orderIndex = 0))
@@ -178,7 +192,10 @@ class AIProfileService(
                 } else if (isDuplicate) {
                     throw BadRequestException("이미 등록된 이미지입니다.")
                 } else if (pet.profileImages.size >= maxProfileImages) {
-                    throw BadRequestException("이미지는 최대 ${maxProfileImages}장까지 등록할 수 있습니다.")
+                    throw BadRequestException(
+                        message = "이미지는 최대 ${maxProfileImages}장까지 등록할 수 있습니다.",
+                        errorCode = "PROFILE_IMAGE_LIMIT_EXCEEDED"
+                    )
                 } else {
                     val nextIndex = pet.profileImages.maxOf { it.orderIndex } + 1
                     pet.profileImages.add(PetProfileImage(pet = pet, imageUrl = resultUrl, orderIndex = nextIndex))

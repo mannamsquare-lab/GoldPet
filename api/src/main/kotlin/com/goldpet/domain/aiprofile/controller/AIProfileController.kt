@@ -95,7 +95,13 @@ class AIProfileController(
         @AuthenticationPrincipal principal: UserPrincipal,
         @RequestBody applyRequest: ApplyProfileRequest
     ): ResponseEntity<AIProfileRequestResponse> {
-        val response = aiProfileService.applyResultAsProfile(requestId, principal.id, applyRequest.petId, applyRequest.applyAs)
+        val response = aiProfileService.applyResultAsProfile(
+            requestId,
+            principal.id,
+            applyRequest.petId,
+            applyRequest.applyAs,
+            applyRequest.forceReplace
+        )
         return ResponseEntity.ok(response)
     }
 

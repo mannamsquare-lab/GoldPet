@@ -14090,6 +14090,11 @@
           "petId": {
             "type": "integer",
             "format": "int64"
+          },
+          "forceReplace": {
+            "type": "boolean",
+            "description": "MAIN 분기에서 최대 장수 도달 시 기존 대표 이미지를 교체할지 여부.",
+            "default": false
           }
         },
         "required": [

@@ -5703,6 +5703,9 @@ export interface components {
             applyAs: string;
             /** Format: int64 */
             petId: number;
+            /** @description MAIN 분기에서 최대 장수 도달 시 기존 대표 이미지를 교체할지 여부.
+             *     @default false */
+            forceReplace?: boolean;
         };
         BestWalkCoupleRequest: {
             yearMonth: string;
