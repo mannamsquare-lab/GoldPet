@@ -94,12 +94,14 @@ class FileController(
     @GetMapping("/{fileKey}/content")
     fun getFileContent(
         @PathVariable fileKey: String,
-        @AuthenticationPrincipal principal: UserPrincipal
+        @AuthenticationPrincipal principal: UserPrincipal?
     ): ResponseEntity<Map<String, String>> {
-        meterRegistry.counter("file_proxy_stream_total", "user_id", principal.id.toString()).increment()
+        // principal 이 null 일 수 있음 (role 불일치 / 어드민 토큰 등) — NPE 방지해 410 응답 보장
+        val userTag = principal?.id?.toString() ?: "unknown"
+        meterRegistry.counter("file_proxy_stream_total", "user_id", userTag).increment()
         log.warn(
             "legacy /files/{}/content proxy hit after 410 transition (user_id={}). Stale bundle suspected.",
-            fileKey, principal.id
+            fileKey, userTag
         )
         return ResponseEntity.status(HttpStatus.GONE).body(
             mapOf(
