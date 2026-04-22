@@ -1,6 +1,7 @@
 package com.goldpet.common.ratelimit
 
 import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy
+import io.github.bucket4j.distributed.proxy.ClientSideConfig
 import io.github.bucket4j.distributed.proxy.ProxyManager
 import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager
 import io.lettuce.core.RedisClient
@@ -50,12 +51,14 @@ class RateLimitConfig {
 
     @Bean
     fun rateLimitProxyManager(rateLimitRedisClient: RedisClient): ProxyManager<ByteArray> {
-        return LettuceBasedProxyManager.builderFor(rateLimitRedisClient)
-            .withExpirationStrategy(
+        val clientConfig = ClientSideConfig.getDefault()
+            .withExpirationAfterWriteStrategy(
                 ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(
                     Duration.ofMinutes(2),
                 ),
             )
+        return LettuceBasedProxyManager.builderFor(rateLimitRedisClient)
+            .withClientSideConfig(clientConfig)
             .build()
     }
 }
