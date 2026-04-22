@@ -6481,6 +6481,88 @@
         }
       }
     },
+    "/api/v1/users/{userId}/public-profile": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "공개 프로필 조회 (타 유저)",
+        "operationId": "getPublicProfile",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicUserProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}/community/posts": {
+      "get": {
+        "tags": [
+          "Community"
+        ],
+        "summary": "작성자 공개 게시글 cursor 페이징",
+        "operationId": "getAuthorPosts",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorPostsPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/search": {
       "get": {
         "tags": [
@@ -15809,6 +15891,100 @@
           "totalDurationMinutes",
           "totalGoldEarned",
           "totalWalks"
+        ]
+      },
+      "PublicUserProfileResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "profileUrl": {
+            "type": "string"
+          },
+          "profileUrlThumbnail": {
+            "type": "string"
+          },
+          "profileUrlViewer": {
+            "type": "string"
+          },
+          "publicPostCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NORMAL",
+              "BLOCKED_BY_ME",
+              "DEACTIVATED"
+            ]
+          },
+          "isMe": {
+            "type": "boolean"
+          },
+          "blockedByMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "blockedByMe",
+          "isMe",
+          "publicPostCount",
+          "status",
+          "userId"
+        ]
+      },
+      "AuthorPostsPage": {
+        "type": "object",
+        "properties": {
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityPostSummaryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "posts"
+        ]
+      },
+      "CommunityPostSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "thumbnailUrl": {
+            "type": "string"
+          },
+          "mediumUrl": {
+            "type": "string"
+          },
+          "viewerUrl": {
+            "type": "string"
+          },
+          "imageCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "imageCount"
         ]
       },
       "FriendLocationResponse": {
