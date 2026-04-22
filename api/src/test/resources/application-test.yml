@@ -33,6 +33,11 @@ app:
     key: "test-encryption-key-32-chars!!!"
     key-primary: "test-encryption-key-32-chars!!!"
     key-secondary: "test-secondary-key-32-chars!!!!"
+  # Disable Bucket4j rate-limit during integration tests — prevents flaky 429s when
+  # running tight test loops against the same endpoint.
+  rate-limit:
+    user-profile:
+      enabled: false
 
 jwt:
   secret: test-secret-key-for-testing-purposes-must-be-at-least-256-bits-long
