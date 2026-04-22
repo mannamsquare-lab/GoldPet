@@ -50,6 +50,8 @@ dependencies {
     implementation("net.coobird:thumbnailator:0.4.20")
     implementation("com.twelvemonkeys.imageio:imageio-webp:3.12.0")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+    implementation("com.bucket4j:bucket4j-core:8.10.1")
+    implementation("com.bucket4j:bucket4j-redis:8.10.1")
 
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
@@ -58,6 +60,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
 
     // 통합 테스트는 deploy-local의 PostGIS 컨테이너(localhost:5433)를 직접 사용한다.
     // TestContainers는 macOS docker-java unix socket 호환 이슈로 도입 보류.
