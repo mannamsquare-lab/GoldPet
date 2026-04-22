@@ -43,6 +43,7 @@ export interface CommunityCategory {
 export interface CommunityComment {
   id: number;
   postId: number;
+  authorId?: number;
   content: string;
   authorNickname: string;
   authorProfileUrl?: string;

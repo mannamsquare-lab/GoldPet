@@ -5,12 +5,14 @@ import { communityService } from '../../services/communityService';
 import { systemService } from '../../services/systemService';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { GpImage } from '../../components/common/GpImage';
+import { useHandleProfileTap } from '../../hooks/useHandleProfileTap';
 import './CommunityPage.css';
 
 const AUTHOR_FALLBACK = '/assets/images/common/profile_none_img.svg';
 
 export default function CommunityListPage() {
   const navigate = useNavigate();
+  const handleProfileTap = useHandleProfileTap();
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined);
 
   const { data: categories } = useQuery({
@@ -110,7 +112,11 @@ export default function CommunityListPage() {
           <ul className="community_list">
             {postsData?.posts.map((post) => (
               <li key={post.id} onClick={() => navigate(`/community/${post.id}`)}>
-                <div className="list_profile">
+                <div
+                  className="list_profile"
+                  onClick={(e) => handleProfileTap(post.authorId, e)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="profile_img">
                       {post.authorProfileUrl ? (
                           <GpImage

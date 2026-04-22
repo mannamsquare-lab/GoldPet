@@ -8,6 +8,7 @@ import { communityService } from '../../services/communityService';
 import { blockService } from '../../services/blockService';
 import { reportService } from '../../services/reportService';
 import { BackButton } from '../../components/common/BackButton';
+import { useHandleProfileTap } from '../../hooks/useHandleProfileTap';
 import { ReportModal } from '../../components/common/ReportModal';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
 import { GpImage } from '../../components/common/GpImage';
@@ -24,6 +25,7 @@ export default function CommunityDetailPage() {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const handleProfileTap = useHandleProfileTap();
   const { showAlert, showConfirm } = useAlert();
   const { showToast } = useToast();
   const [commentInput, setCommentInput] = useState('');
@@ -341,7 +343,11 @@ export default function CommunityDetailPage() {
       <div className="detail_wrap" ref={detailWrapRef}>
         <div className="view_contents">
           {/* Profile */}
-          <div className="detail_profile">
+          <div
+            className="detail_profile"
+            onClick={(e) => handleProfileTap(post.authorId, e)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="profile_img">
               {post.authorProfileUrl ? (
                 <GpImage
@@ -435,7 +441,11 @@ export default function CommunityDetailPage() {
                 className={`comment_item depth_${comment.depth}`}
                 style={{ paddingLeft: comment.depth > 1 ? `${(comment.depth - 1) * 40}px` : '0' }}
               >
-                 <div className="detail_profile">
+                 <div
+                    className="detail_profile"
+                    onClick={(e) => handleProfileTap(comment.authorId, e)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="profile_img">
                       {comment.authorProfileUrl ? (
                         <GpImage

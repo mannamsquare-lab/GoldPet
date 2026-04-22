@@ -90,6 +90,7 @@ const WalkPhotoDetailPage = lazy(() => import('./features/walk/WalkPhotoDetailPa
 const WalkSharedPhotoListPage = lazy(() => import('./features/walk/WalkSharedPhotoListPage'));
 const WalkSharedPhotoDetailPage = lazy(() => import('./features/walk/WalkSharedPhotoDetailPage'));
 const WalkPublicListPage = lazy(() => import('./features/walk/WalkPublicListPage'));
+const UserProfilePage = lazy(() => import('./features/profile/UserProfilePage'));
 
 // queryClient is imported from './lib/queryClient'
 
@@ -194,6 +195,9 @@ function App() {
               <Route path="/courses/create/from-walk/:walkId" element={<Suspense fallback={null}><CourseCreatePage /></Suspense>} />
               <Route path="/courses/:courseId/edit" element={<Suspense fallback={null}><CourseCreatePage /></Suspense>} />
               <Route path="/courses/:courseId" element={<Suspense fallback={null}><CourseDetailPage /></Suspense>} />
+
+              {/* User Public Profile */}
+              <Route path="/users/:userId" element={<Suspense fallback={null}><UserProfilePage /></Suspense>} />
 
               {/* MyPage / Profile / Settings */}
               <Route path="/mypage" element={<Suspense fallback={null}><MyPage /></Suspense>} />

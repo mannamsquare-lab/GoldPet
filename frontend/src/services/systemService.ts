@@ -4,6 +4,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081
 
 export interface PublicSettings {
     communityPostPreviewLength: number;
+    /** Feature flag: community author profile link (default false until backend seeds true) */
+    authorProfileLinkEnabled?: boolean;
 }
 
 export const systemService = {
