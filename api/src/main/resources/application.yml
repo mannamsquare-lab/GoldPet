@@ -105,6 +105,13 @@ management:
         include: "health,info,prometheus"
 
 app:
+  # community-author-profile-gallery §4-1: Bucket4j-redis rate limit for public profile endpoints.
+  # Disable in tests via `application-test.yml` to keep integration tests deterministic.
+  rate-limit:
+    user-profile:
+      enabled: ${USER_PROFILE_RATE_LIMIT_ENABLED:true}
+      viewer-per-minute: ${USER_PROFILE_RATE_LIMIT_VIEWER_PER_MINUTE:60}
+      ip-per-minute: ${USER_PROFILE_RATE_LIMIT_IP_PER_MINUTE:120}
   frontend:
     url: ${FRONTEND_URL:http://localhost:5173}
   jwt:

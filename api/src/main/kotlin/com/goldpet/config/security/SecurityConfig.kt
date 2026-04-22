@@ -1,5 +1,6 @@
 package com.goldpet.config.security
 
+import com.goldpet.common.ratelimit.UserProfileRateLimitFilter
 import com.goldpet.config.jwt.JwtAuthenticationFilter
 import com.goldpet.service.oauth2.CustomOAuth2UserService
 import com.goldpet.service.oauth2.OAuth2AuthenticationFailureHandler
@@ -23,7 +24,8 @@ class SecurityConfig(
         private val customOAuth2UserService: CustomOAuth2UserService,
         private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
         private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
-        private val jwtAuthenticationFilter: JwtAuthenticationFilter
+        private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+        private val userProfileRateLimitFilter: UserProfileRateLimitFilter,
 ) {
 
     @Value("\${app.cors.allowed-origins:*}") private lateinit var corsAllowedOrigins: String
@@ -62,6 +64,13 @@ class SecurityConfig(
                             .permitAll() // Allow access to OAuth2 endpoints
                             .requestMatchers("/cdn-cgi/**")
                             .permitAll() // Allow Cloudflare RUM
+                            // community-author-profile-gallery §4-1: 공개 프로필/작성자 게시글은
+                            // enumeration 방어를 위해 JWT 필수. `/api/v1/users/**` 은 `anyRequest()`
+                            // 기본 authenticated 에 포함되나, 명시성/문서화 목적으로 개별 matcher 를 둔다.
+                            .requestMatchers(HttpMethod.GET, "/api/v1/users/*/public-profile")
+                            .authenticated()
+                            .requestMatchers(HttpMethod.GET, "/api/v1/users/*/community/posts")
+                            .authenticated()
                             .requestMatchers(HttpMethod.GET, "/api/v1/community/**")
                             .permitAll() // Allow community read access
                             .requestMatchers(HttpMethod.GET, "/api/v1/courses/**")
@@ -110,6 +119,13 @@ class SecurityConfig(
                                         .UsernamePasswordAuthenticationFilter::class
                                 .java
                 ) // Add JWT filter
+                // Rate-limit filter runs AFTER JWT authentication so that `SecurityContextHolder`
+                // is populated and we can derive per-viewer buckets. Protected paths are matched
+                // inside the filter via AntPathMatcher.
+                .addFilterAfter(
+                        userProfileRateLimitFilter,
+                        JwtAuthenticationFilter::class.java,
+                )
 
         return http.build()
     }
