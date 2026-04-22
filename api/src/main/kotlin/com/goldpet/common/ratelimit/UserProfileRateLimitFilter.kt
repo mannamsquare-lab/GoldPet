@@ -10,6 +10,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.core.context.SecurityContextHolder
@@ -37,6 +38,12 @@ import java.util.concurrent.TimeUnit
  * JWT 인증 필터 뒤에 배치되어야 `SecurityContextHolder` 가 채워진 상태로 viewerId 를 식별할 수 있다.
  */
 @Component
+@ConditionalOnProperty(
+    prefix = "app.rate-limit.user-profile",
+    name = ["enabled"],
+    havingValue = "true",
+    matchIfMissing = true,
+)
 class UserProfileRateLimitFilter(
     private val proxyManager: ProxyManager<ByteArray>,
     private val properties: UserProfileRateLimitProperties,

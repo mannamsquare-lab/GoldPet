@@ -5,6 +5,7 @@ import io.github.bucket4j.distributed.proxy.ProxyManager
 import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -24,6 +25,12 @@ import java.time.Duration
  */
 @Configuration
 @EnableConfigurationProperties(UserProfileRateLimitProperties::class)
+@ConditionalOnProperty(
+    prefix = "app.rate-limit.user-profile",
+    name = ["enabled"],
+    havingValue = "true",
+    matchIfMissing = true,
+)
 class RateLimitConfig {
 
     @Bean(destroyMethod = "shutdown")

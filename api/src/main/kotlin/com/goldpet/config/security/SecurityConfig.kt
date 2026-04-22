@@ -25,7 +25,9 @@ class SecurityConfig(
         private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
         private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
         private val jwtAuthenticationFilter: JwtAuthenticationFilter,
-        private val userProfileRateLimitFilter: UserProfileRateLimitFilter,
+        // Optional — bean 은 `app.rate-limit.user-profile.enabled=true` 일 때만 생성됨
+        // (codegen/test profile 은 `false` 로 skip 하여 Redis 의존성 제거).
+        private val userProfileRateLimitFilter: UserProfileRateLimitFilter? = null,
 ) {
 
     @Value("\${app.cors.allowed-origins:*}") private lateinit var corsAllowedOrigins: String
@@ -119,13 +121,12 @@ class SecurityConfig(
                                         .UsernamePasswordAuthenticationFilter::class
                                 .java
                 ) // Add JWT filter
-                // Rate-limit filter runs AFTER JWT authentication so that `SecurityContextHolder`
-                // is populated and we can derive per-viewer buckets. Protected paths are matched
-                // inside the filter via AntPathMatcher.
-                .addFilterAfter(
-                        userProfileRateLimitFilter,
-                        JwtAuthenticationFilter::class.java,
-                )
+        // Rate-limit filter runs AFTER JWT authentication so that `SecurityContextHolder`
+        // is populated and we can derive per-viewer buckets. Protected paths are matched
+        // inside the filter via AntPathMatcher. codegen/test profile 에서는 bean 부재로 skip.
+        userProfileRateLimitFilter?.let { filter ->
+            http.addFilterAfter(filter, JwtAuthenticationFilter::class.java)
+        }
 
         return http.build()
     }

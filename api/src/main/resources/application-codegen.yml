@@ -43,6 +43,11 @@ app:
     url: http://localhost:5174
   cors:
     allowed-origins: "*"
+  # codegen 은 OpenAPI spec 만 생성 — Bucket4j+Redis 필요 없음. bean 생성 자체 skip
+  # (Jenkins agent 로컬 Redis 의 비번이 빌드마다 달라 WRONGPASS 로 기동 실패하는 문제 회피).
+  rate-limit:
+    user-profile:
+      enabled: false
 
 S3_ENDPOINT: http://localhost:9100
 S3_PUBLIC_ENDPOINT: http://localhost:9100
