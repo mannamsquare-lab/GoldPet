@@ -5,6 +5,7 @@ import com.goldpet.config.jwt.JwtAuthenticationFilter
 import com.goldpet.service.oauth2.CustomOAuth2UserService
 import com.goldpet.service.oauth2.OAuth2AuthenticationFailureHandler
 import com.goldpet.service.oauth2.OAuth2AuthenticationSuccessHandler
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -27,7 +28,9 @@ class SecurityConfig(
         private val jwtAuthenticationFilter: JwtAuthenticationFilter,
         // Optional — bean 은 `app.rate-limit.user-profile.enabled=true` 일 때만 생성됨
         // (codegen/test profile 은 `false` 로 skip 하여 Redis 의존성 제거).
-        private val userProfileRateLimitFilter: UserProfileRateLimitFilter? = null,
+        // Kotlin default-null 은 `@Configuration` CGLIB proxy 의 no-arg ctor 합성 실패를
+        //유발하므로 `ObjectProvider` 로 우회. `ifAvailable` 은 bean 부재 시 null 반환.
+        private val userProfileRateLimitFilterProvider: ObjectProvider<UserProfileRateLimitFilter>,
 ) {
 
     @Value("\${app.cors.allowed-origins:*}") private lateinit var corsAllowedOrigins: String
@@ -124,7 +127,7 @@ class SecurityConfig(
         // Rate-limit filter runs AFTER JWT authentication so that `SecurityContextHolder`
         // is populated and we can derive per-viewer buckets. Protected paths are matched
         // inside the filter via AntPathMatcher. codegen/test profile 에서는 bean 부재로 skip.
-        userProfileRateLimitFilter?.let { filter ->
+        userProfileRateLimitFilterProvider.ifAvailable?.let { filter ->
             http.addFilterAfter(filter, JwtAuthenticationFilter::class.java)
         }
 
