@@ -234,7 +234,15 @@ export default function UserProfilePage() {
 
       {/* ── Profile header ── */}
       <div className="up-profile-header">
-        <div className="up-avatar-wrap">
+        <div
+          className="up-avatar-wrap"
+          onClick={() => {
+            if (profile.profileUrlViewer || profile.profileUrlThumbnail || profile.profileUrl) {
+              openGallery(profile.profileUrlViewer ?? null, null, profile.profileUrlThumbnail ?? profile.profileUrl ?? null);
+            }
+          }}
+          style={profile.profileUrlViewer || profile.profileUrlThumbnail || profile.profileUrl ? { cursor: 'pointer' } : undefined}
+        >
           {profile.profileUrlViewer || profile.profileUrlThumbnail || profile.profileUrl ? (
             <GpImage
               src={profile.profileUrl}
