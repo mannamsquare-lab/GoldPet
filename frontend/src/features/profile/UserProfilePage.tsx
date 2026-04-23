@@ -264,6 +264,26 @@ export default function UserProfilePage() {
         </div>
       </div>
 
+      {/* ── Intro & Pets ── */}
+      {!isBlockedByMe && (profile.intro || (profile.pets && profile.pets.length > 0)) && (
+        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {profile.intro && (
+            <p style={{ fontSize: '14px', color: 'var(--color-text-primary, #333)', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
+              {profile.intro}
+            </p>
+          )}
+          {profile.pets && profile.pets.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {profile.pets.map(pet => (
+                <span key={pet.id} style={{ fontSize: '12px', background: 'var(--color-bg-secondary, #f5f5f5)', padding: '4px 8px', borderRadius: '12px', color: 'var(--color-text-secondary, #666)' }}>
+                  🐾 {pet.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── BLOCKED_BY_ME state ── */}
       {isBlockedByMe ? (
         <div className="up-blocked-wrap">

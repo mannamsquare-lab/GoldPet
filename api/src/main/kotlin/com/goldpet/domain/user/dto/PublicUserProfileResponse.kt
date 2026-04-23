@@ -18,6 +18,7 @@ import com.goldpet.common.annotation.PublicFacingDto
 data class PublicUserProfileResponse(
     val userId: Long,
     val nickname: String?,
+    val intro: String?,
     val profileUrl: String?,
     val profileUrlThumbnail: String?,
     val profileUrlViewer: String?,
@@ -25,6 +26,7 @@ data class PublicUserProfileResponse(
     val status: ProfileStatus,
     val isMe: Boolean,
     val blockedByMe: Boolean,
+    val pets: List<com.goldpet.domain.pet.dto.SimplePetResponse> = emptyList(),
 ) {
     enum class ProfileStatus {
         /** 일반 열람 가능. */

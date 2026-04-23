@@ -2,9 +2,17 @@ import apiClient from './api/client';
 
 export type PublicUserStatus = 'NORMAL' | 'BLOCKED_BY_ME' | 'WITHDRAWN';
 
+export interface SimplePetResponse {
+  id: number;
+  name: string;
+  profileImageUrl: string | null;
+  profileImageUrlThumbnail: string | null;
+}
+
 export interface PublicUserProfileResponse {
   userId: number;
   nickname: string | null;
+  intro: string | null;
   profileUrl: string | null;
   profileUrlThumbnail: string | null;
   profileUrlViewer: string | null;
@@ -12,6 +20,7 @@ export interface PublicUserProfileResponse {
   status: PublicUserStatus;
   isMe: boolean;
   blockedByMe: boolean;
+  pets: SimplePetResponse[];
 }
 
 export interface CommunityPhotoPost {
