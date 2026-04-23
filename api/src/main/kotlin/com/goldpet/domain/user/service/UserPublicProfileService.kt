@@ -78,6 +78,9 @@ class UserPublicProfileService(
                 profileUrl = null,
                 profileUrlThumbnail = null,
                 profileUrlViewer = null,
+                profileUrls = emptyList(),
+                profileUrlsThumbnail = emptyList(),
+                profileUrlsViewer = emptyList(),
                 publicPostCount = 0L,
                 status = ProfileStatus.BLOCKED_BY_ME,
                 isMe = false,
@@ -91,13 +94,14 @@ class UserPublicProfileService(
 
         val pets = if (target.hasPet) {
             petRepository.findByOwnerId(target.id).map {
-                com.goldpet.domain.pet.dto.SimplePetResponse.from(it, fileAttachmentLookupService)
+                com.goldpet.domain.pet.dto.PetResponse.from(it, fileAttachmentLookupService)
             }
         } else {
             emptyList()
         }
 
         val primary = target.profileImageUrl.toHttps()
+        val urls = target.profileImages.map { it.imageUrl.toHttps() ?: it.imageUrl }
         return PublicUserProfileResponse(
             userId = target.id,
             nickname = target.nickname,
@@ -105,6 +109,9 @@ class UserPublicProfileService(
             profileUrl = primary,
             profileUrlThumbnail = fileAttachmentLookupService.thumbnailUrlFor(primary),
             profileUrlViewer = fileAttachmentLookupService.viewerUrlFor(primary),
+            profileUrls = urls,
+            profileUrlsThumbnail = urls.map { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
+            profileUrlsViewer = urls.map { fileAttachmentLookupService.viewerUrlFor(it) ?: it },
             publicPostCount = publicPostCount,
             status = ProfileStatus.NORMAL,
             isMe = isMe,

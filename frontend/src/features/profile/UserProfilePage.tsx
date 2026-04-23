@@ -164,14 +164,22 @@ export default function UserProfilePage() {
     }
   };
 
-  /* ── Flatten photo pages ── */
-  const allPosts = photosData?.pages.flatMap((p) => p.posts) ?? [];
+  /* ── Flatten photo pages & filter out posts without images ── */
+  const allPosts = (photosData?.pages.flatMap((p) => p.posts) ?? []).filter(
+    (post) => post.thumbnailUrl || post.mediumUrl || post.viewerUrl,
+  );
 
-  /* ── Tile click → gallery ── */
+  /* ── Tile click → gallery (single image) ── */
   const openGallery = (viewerUrl: string | null, mediumUrl: string | null, thumbnailUrl: string | null) => {
     const img = viewerUrl ?? mediumUrl ?? thumbnailUrl;
     if (!img) return;
     setGallery({ open: true, images: [img], index: 0 });
+  };
+
+  /* ── Gallery with multiple images ── */
+  const openGalleryMulti = (images: string[], startIndex = 0) => {
+    if (images.length === 0) return;
+    setGallery({ open: true, images, index: startIndex });
   };
 
   /* ────────── RENDER ────────── */
@@ -237,8 +245,13 @@ export default function UserProfilePage() {
         <div
           className="up-avatar-wrap"
           onClick={() => {
-            if (profile.profileUrlViewer || profile.profileUrlThumbnail || profile.profileUrl) {
-              openGallery(profile.profileUrlViewer ?? null, null, profile.profileUrlThumbnail ?? profile.profileUrl ?? null);
+            const viewerList = profile.profileUrlsViewer?.filter(Boolean) ?? [];
+            const urlList = profile.profileUrls?.filter(Boolean) ?? [];
+            const galleryImages = viewerList.length > 0 ? viewerList : urlList;
+            if (galleryImages.length > 0) {
+              openGalleryMulti(galleryImages);
+            } else if (profile.profileUrlViewer || profile.profileUrl) {
+              openGallery(profile.profileUrlViewer ?? null, null, profile.profileUrl ?? null);
             }
           }}
           style={profile.profileUrlViewer || profile.profileUrlThumbnail || profile.profileUrl ? { cursor: 'pointer' } : undefined}
@@ -273,12 +286,50 @@ export default function UserProfilePage() {
             </p>
           )}
           {profile.pets && profile.pets.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {profile.pets.map(pet => (
-                <span key={pet.id} style={{ fontSize: '12px', background: 'var(--color-bg-secondary, #f5f5f5)', padding: '4px 8px', borderRadius: '12px', color: 'var(--color-text-secondary, #666)' }}>
-                  🐾 {pet.name}
-                </span>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {profile.pets.map(pet => {
+                const petViewerUrls = pet.profileImageUrlsViewer?.filter(Boolean) ?? [];
+                const petOrigUrls = pet.profileImageUrls?.filter(Boolean) ?? [];
+                const petGalleryImages = petViewerUrls.length > 0 ? petViewerUrls : petOrigUrls;
+                const petThumb = pet.profileImageUrlThumbnail ?? pet.profileImageUrl;
+                return (
+                  <div key={pet.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      onClick={() => {
+                        if (petGalleryImages.length > 0) openGalleryMulti(petGalleryImages);
+                        else if (pet.profileImageUrlViewer || pet.profileImageUrl) {
+                          openGallery(pet.profileImageUrlViewer ?? null, null, pet.profileImageUrl ?? null);
+                        }
+                      }}
+                      style={{ flexShrink: 0, cursor: petThumb ? 'pointer' : 'default' }}
+                    >
+                      {petThumb ? (
+                        <GpImage
+                          src={pet.profileImageUrl}
+                          thumbnailSrc={pet.profileImageUrlThumbnail}
+                          viewerSrc={pet.profileImageUrlViewer}
+                          variant="thumbnail"
+                          alt={pet.name}
+                          style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', background: 'var(--color-border, #f0f0f0)' }}
+                        />
+                      ) : (
+                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--color-border, #f0f0f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🐾</div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary, #333)' }}>{pet.name}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-secondary, #666)' }}>
+                        {pet.species}{pet.breed ? ` · ${pet.breed}` : ''}
+                      </span>
+                    </div>
+                    {petOrigUrls.length > 1 && (
+                      <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--color-text-tertiary, #999)', background: 'var(--color-bg-secondary, #f5f5f5)', padding: '2px 6px', borderRadius: '8px' }}>
+                        📷 {petOrigUrls.length}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -312,19 +363,15 @@ export default function UserProfilePage() {
                   className="up-grid-item"
                   onClick={() => openGallery(post.viewerUrl, post.mediumUrl, post.thumbnailUrl)}
                 >
-                  {post.thumbnailUrl || post.mediumUrl || post.viewerUrl ? (
-                    <GpImage
-                      src={post.thumbnailUrl}
-                      thumbnailSrc={post.thumbnailUrl}
-                      mediumSrc={post.mediumUrl}
-                      viewerSrc={post.viewerUrl}
-                      variant="thumbnail"
-                      alt=""
-                      className="up-grid-img"
-                    />
-                  ) : (
-                    <div className="up-grid-img up-grid-img--placeholder" />
-                  )}
+                  <GpImage
+                    src={post.thumbnailUrl}
+                    thumbnailSrc={post.thumbnailUrl}
+                    mediumSrc={post.mediumUrl}
+                    viewerSrc={post.viewerUrl}
+                    variant="thumbnail"
+                    alt=""
+                    className="up-grid-img"
+                  />
                   {post.imageCount > 1 && (
                     <span className="up-img-count-badge">{post.imageCount}</span>
                   )}

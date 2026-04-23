@@ -2,11 +2,18 @@ import apiClient from './api/client';
 
 export type PublicUserStatus = 'NORMAL' | 'BLOCKED_BY_ME' | 'WITHDRAWN';
 
-export interface SimplePetResponse {
+export interface PetProfileResponse {
   id: number;
+  ownerId: number;
   name: string;
+  species: string;
+  breed: string | null;
   profileImageUrl: string | null;
+  profileImageUrls: string[];
+  profileImageUrlViewer: string | null;
   profileImageUrlThumbnail: string | null;
+  profileImageUrlsViewer: string[] | null;
+  profileImageUrlsThumbnail: string[] | null;
 }
 
 export interface PublicUserProfileResponse {
@@ -16,11 +23,14 @@ export interface PublicUserProfileResponse {
   profileUrl: string | null;
   profileUrlThumbnail: string | null;
   profileUrlViewer: string | null;
+  profileUrls: string[];
+  profileUrlsThumbnail: string[];
+  profileUrlsViewer: string[];
   publicPostCount: number;
   status: PublicUserStatus;
   isMe: boolean;
   blockedByMe: boolean;
-  pets: SimplePetResponse[];
+  pets: PetProfileResponse[];
 }
 
 export interface CommunityPhotoPost {

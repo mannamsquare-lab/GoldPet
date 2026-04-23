@@ -22,11 +22,17 @@ data class PublicUserProfileResponse(
     val profileUrl: String?,
     val profileUrlThumbnail: String?,
     val profileUrlViewer: String?,
+    /** 복수 프로필 이미지 — 원본 URL 리스트. */
+    val profileUrls: List<String> = emptyList(),
+    /** 복수 프로필 이미지 — 썸네일 variant 리스트. */
+    val profileUrlsThumbnail: List<String> = emptyList(),
+    /** 복수 프로필 이미지 — viewer variant 리스트. */
+    val profileUrlsViewer: List<String> = emptyList(),
     val publicPostCount: Long,
     val status: ProfileStatus,
     val isMe: Boolean,
     val blockedByMe: Boolean,
-    val pets: List<com.goldpet.domain.pet.dto.SimplePetResponse> = emptyList(),
+    val pets: List<com.goldpet.domain.pet.dto.PetResponse> = emptyList(),
 ) {
     enum class ProfileStatus {
         /** 일반 열람 가능. */
