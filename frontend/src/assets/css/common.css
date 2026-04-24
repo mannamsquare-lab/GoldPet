@@ -5118,6 +5118,40 @@ legend {
 	color: var(--color-text-secondary, #888);
 }
 
+/* community-author-profile-gallery Phase 2 F1 — 프로필 탭바 (게시글 | 산책 | 반려동물) */
+.up-tabs {
+	display: flex;
+	border-top: 1px solid var(--color-border, #eee);
+	border-bottom: 1px solid var(--color-border, #eee);
+	background: var(--color-bg-primary, #fff);
+	position: sticky;
+	top: 56px;
+	z-index: 9;
+}
+
+.up-tab {
+	flex: 1;
+	padding: 12px 0;
+	background: transparent;
+	border: none;
+	border-bottom: 2px solid transparent;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--color-text-secondary, #888);
+	cursor: pointer;
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.up-tab:hover {
+	color: var(--color-text-primary, #333);
+}
+
+.up-tab--active {
+	color: var(--color-text-primary, #333);
+	border-bottom-color: var(--color-text-primary, #333);
+	font-weight: 600;
+}
+
 /* 3-col grid */
 .gp-grid-3,
 .up-grid-3 {

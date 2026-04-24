@@ -47,6 +47,29 @@ export interface UserCommunityPhotosResponse {
   nextCursor: string | null;
 }
 
+/**
+ * community-author-profile-gallery Phase 2 F1 — `WalkPhotoResponse` (backend) 와 동일 shape.
+ * Grid 썸네일 + ImageGalleryModal viewer URL 을 위한 최소 필드 + 보조 메타데이터.
+ */
+export interface UserWalkPhotoItem {
+  id: number;
+  imageUrl: string | null;
+  imageUrlViewer: string | null;
+  imageUrlThumb: string | null;
+  note: string | null;
+  walkDate: string;
+  walkId: number;
+  userId: number;
+  petName: string | null;
+  petImageUrl: string | null;
+  hiddenFromPublic: boolean;
+}
+
+export interface UserWalkPhotosResponse {
+  photos: UserWalkPhotoItem[];
+  nextCursor: string | null;
+}
+
 export const userPublicProfileService = {
   getPublicProfile: async (userId: number): Promise<PublicUserProfileResponse> => {
     const response = await apiClient.get<PublicUserProfileResponse>(
@@ -62,6 +85,18 @@ export const userPublicProfileService = {
   ): Promise<UserCommunityPhotosResponse> => {
     const response = await apiClient.get<UserCommunityPhotosResponse>(
       `/users/${userId}/community/posts`,
+      { params: { cursor, size } },
+    );
+    return response.data;
+  },
+
+  getWalkPhotos: async (
+    userId: number,
+    cursor?: string,
+    size = 30,
+  ): Promise<UserWalkPhotosResponse> => {
+    const response = await apiClient.get<UserWalkPhotosResponse>(
+      `/users/${userId}/walks/photos`,
       { params: { cursor, size } },
     );
     return response.data;

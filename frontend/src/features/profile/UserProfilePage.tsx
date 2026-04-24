@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { GpImage } from '../../components/common/GpImage';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
@@ -9,7 +9,11 @@ import { blockService } from '../../services/blockService';
 import { reportService } from '../../services/reportService';
 import { useUserPublicProfile } from './useUserPublicProfile';
 import { useUserCommunityPhotos } from './useUserCommunityPhotos';
+import { useUserWalkPhotos } from './useUserWalkPhotos';
 import { useRouterRecoveryGuard } from '../../hooks/useRouterRecoveryGuard';
+
+type ProfileTab = 'posts' | 'walks' | 'pets';
+const VALID_TABS: ProfileTab[] = ['posts', 'walks', 'pets'];
 
 const PROFILE_FALLBACK = '/assets/images/common/profile_none_img.svg';
 
@@ -81,13 +85,34 @@ export default function UserProfilePage() {
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading: profileLoading, isError, error } = useUserPublicProfile(userId);
+
+  /* ── Tab state (URL ?tab= 동기화 — 공유링크/뒤로가기 친화) ── */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab') as ProfileTab | null;
+  const tab: ProfileTab = rawTab && VALID_TABS.includes(rawTab) ? rawTab : 'posts';
+
+  const setTab = useCallback(
+    (next: ProfileTab) => {
+      const params = new URLSearchParams(searchParams);
+      if (next === 'posts') {
+        params.delete('tab');
+      } else {
+        params.set('tab', next);
+      }
+      setSearchParams(params, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
+  /* ── Tab-scoped pagination hooks ── */
+  const communityQuery = useUserCommunityPhotos(userId);
+  const walkQuery = useUserWalkPhotos(userId, tab === 'walks');
+
   const {
     data: photosData,
-    fetchNextPage,
-    hasNextPage,
     isFetchingNextPage,
     isLoading: photosLoading,
-  } = useUserCommunityPhotos(userId);
+  } = communityQuery;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -116,14 +141,20 @@ export default function UserProfilePage() {
     return () => clearTimeout(timer);
   }, [is404, navigate]);
 
-  /* ── IntersectionObserver sentinel ── */
+  /* ── IntersectionObserver sentinel — 활성 탭의 pagination 훅으로 fetchNext 분기 ── */
+  const activePagination = tab === 'walks' ? walkQuery : communityQuery;
+
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
-      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
+      if (
+        entries[0].isIntersecting &&
+        activePagination.hasNextPage &&
+        !activePagination.isFetchingNextPage
+      ) {
+        activePagination.fetchNextPage();
       }
     },
-    [hasNextPage, isFetchingNextPage, fetchNextPage],
+    [activePagination],
   );
 
   useEffect(() => {
@@ -167,6 +198,15 @@ export default function UserProfilePage() {
   /* ── Flatten photo pages & filter out posts without images ── */
   const allPosts = (photosData?.pages.flatMap((p) => p.posts) ?? []).filter(
     (post) => post.thumbnailUrl || post.mediumUrl || post.viewerUrl,
+  );
+
+  /* ── Walk photos flatten (탭 활성 시 채워짐) ── */
+  const allWalkPhotos = useMemo(
+    () =>
+      (walkQuery.data?.pages.flatMap((p) => p.photos) ?? []).filter(
+        (ph) => ph.imageUrlThumb || ph.imageUrlViewer || ph.imageUrl,
+      ),
+    [walkQuery.data],
   );
 
   /* ── Tile click → gallery (single image) ── */
@@ -277,65 +317,16 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* ── Intro & Pets ── */}
-      {!isBlockedByMe && (profile.intro || (profile.pets && profile.pets.length > 0)) && (
-        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {profile.intro && (
-            <p style={{ fontSize: '14px', color: 'var(--color-text-primary, #333)', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
-              {profile.intro}
-            </p>
-          )}
-          {profile.pets && profile.pets.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {profile.pets.map(pet => {
-                const petViewerUrls = pet.profileImageUrlsViewer?.filter(Boolean) ?? [];
-                const petOrigUrls = pet.profileImageUrls?.filter(Boolean) ?? [];
-                const petGalleryImages = petViewerUrls.length > 0 ? petViewerUrls : petOrigUrls;
-                const petThumb = pet.profileImageUrlThumbnail ?? pet.profileImageUrl;
-                return (
-                  <div key={pet.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div
-                      onClick={() => {
-                        if (petGalleryImages.length > 0) openGalleryMulti(petGalleryImages);
-                        else if (pet.profileImageUrlViewer || pet.profileImageUrl) {
-                          openGallery(pet.profileImageUrlViewer ?? null, null, pet.profileImageUrl ?? null);
-                        }
-                      }}
-                      style={{ flexShrink: 0, cursor: petThumb ? 'pointer' : 'default' }}
-                    >
-                      {petThumb ? (
-                        <GpImage
-                          src={pet.profileImageUrl}
-                          thumbnailSrc={pet.profileImageUrlThumbnail}
-                          viewerSrc={pet.profileImageUrlViewer}
-                          variant="thumbnail"
-                          alt={pet.name}
-                          style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', background: 'var(--color-border, #f0f0f0)' }}
-                        />
-                      ) : (
-                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--color-border, #f0f0f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🐾</div>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary, #333)' }}>{pet.name}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--color-text-secondary, #666)' }}>
-                        {pet.species}{pet.breed ? ` · ${pet.breed}` : ''}
-                      </span>
-                    </div>
-                    {petOrigUrls.length > 1 && (
-                      <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--color-text-tertiary, #999)', background: 'var(--color-bg-secondary, #f5f5f5)', padding: '2px 6px', borderRadius: '8px' }}>
-                        📷 {petOrigUrls.length}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+      {/* ── Intro (탭과 무관하게 상단에 유지) ── */}
+      {!isBlockedByMe && profile.intro && (
+        <div style={{ padding: '0 16px 16px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-primary, #333)', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
+            {profile.intro}
+          </p>
         </div>
       )}
 
-      {/* ── BLOCKED_BY_ME state ── */}
+      {/* ── BLOCKED_BY_ME: 탭 없이 차단 해제 UI만 노출 ── */}
       {isBlockedByMe ? (
         <div className="up-blocked-wrap">
           <p className="up-blocked-text">차단한 사용자입니다</p>
@@ -349,40 +340,174 @@ export default function UserProfilePage() {
           </button>
         </div>
       ) : (
-        /* ── Photo grid ── */
         <>
-          {allPosts.length === 0 && !isFetchingNextPage ? (
-            <div className="up-empty">
-              <p>아직 공유한 사진이 없어요</p>
-            </div>
-          ) : (
-            <ul className="up-grid-3">
-              {allPosts.map((post) => (
-                <li
-                  key={post.id}
-                  className="up-grid-item"
-                  onClick={() => openGallery(post.viewerUrl, post.mediumUrl, post.thumbnailUrl)}
-                >
-                  <GpImage
-                    src={post.thumbnailUrl}
-                    thumbnailSrc={post.thumbnailUrl}
-                    mediumSrc={post.mediumUrl}
-                    viewerSrc={post.viewerUrl}
-                    variant="thumbnail"
-                    alt=""
-                    className="up-grid-img"
-                  />
-                  {post.imageCount > 1 && (
-                    <span className="up-img-count-badge">{post.imageCount}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
+          {/* ── Tabs (community-author-profile-gallery Phase 2 F1) ── */}
+          <nav className="up-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'posts'}
+              className={`up-tab ${tab === 'posts' ? 'up-tab--active' : ''}`}
+              onClick={() => setTab('posts')}
+            >
+              게시글
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'walks'}
+              className={`up-tab ${tab === 'walks' ? 'up-tab--active' : ''}`}
+              onClick={() => setTab('walks')}
+            >
+              산책
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'pets'}
+              className={`up-tab ${tab === 'pets' ? 'up-tab--active' : ''}`}
+              onClick={() => setTab('pets')}
+            >
+              반려동물
+            </button>
+          </nav>
+
+          {/* ── Posts tab ── */}
+          {tab === 'posts' && (
+            <>
+              {allPosts.length === 0 && !isFetchingNextPage ? (
+                <div className="up-empty">
+                  <p>아직 공유한 사진이 없어요</p>
+                </div>
+              ) : (
+                <ul className="up-grid-3">
+                  {allPosts.map((post) => (
+                    <li
+                      key={post.id}
+                      className="up-grid-item"
+                      onClick={() => openGallery(post.viewerUrl, post.mediumUrl, post.thumbnailUrl)}
+                    >
+                      <GpImage
+                        src={post.thumbnailUrl}
+                        thumbnailSrc={post.thumbnailUrl}
+                        mediumSrc={post.mediumUrl}
+                        viewerSrc={post.viewerUrl}
+                        variant="thumbnail"
+                        alt=""
+                        className="up-grid-img"
+                      />
+                      {post.imageCount > 1 && (
+                        <span className="up-img-count-badge">{post.imageCount}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {isFetchingNextPage && <div className="up-loading-more">로딩 중...</div>}
+            </>
           )}
 
-          {isFetchingNextPage && (
-            <div className="up-loading-more">로딩 중...</div>
+          {/* ── Walks tab (lazy — useUserWalkPhotos enabled on tab entry) ── */}
+          {tab === 'walks' && (
+            <>
+              {walkQuery.isLoading ? (
+                <ul className="up-grid-3">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <li key={i} className="up-grid-item up-skeleton-tile" />
+                  ))}
+                </ul>
+              ) : allWalkPhotos.length === 0 && !walkQuery.isFetchingNextPage ? (
+                <div className="up-empty">
+                  <p>공개된 산책 사진이 없어요</p>
+                </div>
+              ) : (
+                <ul className="up-grid-3">
+                  {allWalkPhotos.map((photo) => (
+                    <li
+                      key={photo.id}
+                      className="up-grid-item"
+                      onClick={() =>
+                        openGallery(
+                          photo.imageUrlViewer,
+                          null,
+                          photo.imageUrlThumb ?? photo.imageUrl,
+                        )
+                      }
+                    >
+                      <GpImage
+                        src={photo.imageUrlThumb ?? photo.imageUrl}
+                        thumbnailSrc={photo.imageUrlThumb}
+                        viewerSrc={photo.imageUrlViewer}
+                        variant="thumbnail"
+                        alt=""
+                        className="up-grid-img"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {walkQuery.isFetchingNextPage && <div className="up-loading-more">로딩 중...</div>}
+            </>
           )}
+
+          {/* ── Pets tab (기존 렌더링 로직 유지 — API/DTO 변경 없음) ── */}
+          {tab === 'pets' && (
+            <>
+              {profile.pets && profile.pets.length > 0 ? (
+                <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {profile.pets.map((pet) => {
+                    const petViewerUrls = pet.profileImageUrlsViewer?.filter(Boolean) ?? [];
+                    const petOrigUrls = pet.profileImageUrls?.filter(Boolean) ?? [];
+                    const petGalleryImages = petViewerUrls.length > 0 ? petViewerUrls : petOrigUrls;
+                    const petThumb = pet.profileImageUrlThumbnail ?? pet.profileImageUrl;
+                    return (
+                      <div key={pet.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div
+                          onClick={() => {
+                            if (petGalleryImages.length > 0) openGalleryMulti(petGalleryImages);
+                            else if (pet.profileImageUrlViewer || pet.profileImageUrl) {
+                              openGallery(pet.profileImageUrlViewer ?? null, null, pet.profileImageUrl ?? null);
+                            }
+                          }}
+                          style={{ flexShrink: 0, cursor: petThumb ? 'pointer' : 'default' }}
+                        >
+                          {petThumb ? (
+                            <GpImage
+                              src={pet.profileImageUrl}
+                              thumbnailSrc={pet.profileImageUrlThumbnail}
+                              viewerSrc={pet.profileImageUrlViewer}
+                              variant="thumbnail"
+                              alt={pet.name}
+                              style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', background: 'var(--color-border, #f0f0f0)' }}
+                            />
+                          ) : (
+                            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--color-border, #f0f0f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🐾</div>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary, #333)' }}>{pet.name}</span>
+                          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary, #666)' }}>
+                            {pet.species}{pet.breed ? ` · ${pet.breed}` : ''}
+                          </span>
+                        </div>
+                        {petOrigUrls.length > 1 && (
+                          <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--color-text-tertiary, #999)', background: 'var(--color-bg-secondary, #f5f5f5)', padding: '2px 6px', borderRadius: '8px' }}>
+                            📷 {petOrigUrls.length}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="up-empty">
+                  <p>등록된 반려동물이 없어요</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Infinite scroll sentinel — posts/walks 탭에서 활용, pets 탭에서는 no-op ── */}
           <div ref={sentinelRef} style={{ height: 1 }} />
         </>
       )}
