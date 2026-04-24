@@ -47,6 +47,25 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   /// Set to false when user manually drags the map.
   bool trackingIsFollowing = true;
 
+  /// Compass mode state: map rotates to device heading when ON.
+  /// Loaded from SharedPreferences in [startWalk]; default OFF.
+  bool trackingCompassModeEnabled = false;
+
+  /// Last smoothed bearing applied to the camera. `null` = unknown.
+  double? _trackingLastBearing;
+
+  /// Mirrors the GoogleMap widget's initial zoom in both walk screens.
+  /// Kept in sync via [onCameraMoveHandler] so pinch-zoom is preserved
+  /// across bearing-driven CameraPosition rebuilds.
+  double _trackingLastZoom = 16.0;
+
+  /// Guards against our own [animateCamera] calls masquerading as user pans.
+  /// Cleared in [onCameraIdleHandler] and by a defensive 500 ms timeout.
+  bool _trackingProgrammaticMove = false;
+  Timer? _trackingProgrammaticMoveTimer;
+
+  static const String _kPrefCompassMode = 'walk_compass_mode_enabled';
+
   DateTime? _trackingStartTime;
   Timer? _trackingTimer;
   DateTime? _trackingPauseStartTime;
@@ -123,6 +142,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   void disposeTracking() {
     _trackingTimer?.cancel();
     _trackingPositionSub?.cancel();
+    _trackingProgrammaticMoveTimer?.cancel();
+    _trackingProgrammaticMoveTimer = null;
+    _trackingLastBearing = null;
     _stopWalkWidget();
     trackingDurationNotifier.dispose();
     trackingDistanceNotifier.dispose();
@@ -222,6 +244,15 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       }
     } catch (_) {
       // non-fatal: 캐시된 값 또는 하드코딩 기본값 사용
+    }
+
+    // Load persisted compass mode preference (default OFF).
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      trackingCompassModeEnabled =
+          prefs.getBool(_kPrefCompassMode) ?? false;
+    } catch (_) {
+      // non-fatal: 기본값(OFF) 유지
     }
     if (!mounted) return;
 
@@ -376,9 +407,39 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       updatePolyline();
     }
 
-    // Follow mode: animate camera to current position
-    if (trackingIsFollowing) {
-      trackingMapController?.animateCamera(CameraUpdate.newLatLng(latLng));
+    // Follow mode: animate camera (with optional bearing in compass mode)
+    if (trackingCompassModeEnabled && trackingIsFollowing) {
+      // Compute target bearing; below speed threshold hold last known bearing.
+      double targetBearing;
+      if (position.heading >= 0 && position.speed >= 0.5) {
+        targetBearing =
+            _smoothBearing(_trackingLastBearing, position.heading);
+      } else {
+        targetBearing = _trackingLastBearing ?? 0.0;
+      }
+      _trackingLastBearing = targetBearing;
+      animateCameraGuarded(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: latLng,
+            zoom: _trackingLastZoom,
+            bearing: targetBearing,
+            tilt: 0,
+          ),
+        ),
+      );
+    } else if (trackingIsFollowing) {
+      // Compass OFF: preserve zoom; bearing stays north-up.
+      animateCameraGuarded(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: latLng,
+            zoom: _trackingLastZoom,
+            bearing: 0.0,
+            tilt: 0,
+          ),
+        ),
+      );
     }
     _updateAddress(position.latitude, position.longitude);
 
@@ -404,17 +465,97 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
   /// Called when user manually drags the map. Disables follow mode.
   void onCameraMoveStartedByUser() {
+    // Short-circuit: ignore camera moves that originated from our own
+    // [animateCameraGuarded] calls so the bearing pipeline does not
+    // spuriously disable follow mode on every GPS tick.
+    if (_trackingProgrammaticMove) return;
     trackingIsFollowing = false;
+    if (mounted) setState(() {});
   }
 
   /// Recenters camera to current position and re-enables follow mode.
   void recenterCamera() {
     trackingIsFollowing = true;
+    if (mounted) setState(() {});
     if (trackingPath.isNotEmpty) {
-      trackingMapController?.animateCamera(
-        CameraUpdate.newLatLng(trackingPath.last),
-      );
+      animateCameraGuarded(CameraUpdate.newLatLng(trackingPath.last));
     }
+  }
+
+  /// Wraps [GoogleMapController.animateCamera] with a flag that prevents
+  /// [onCameraMoveStartedByUser] from treating the resulting camera move
+  /// as a real user drag. Public so screens (e.g. course walk initial
+  /// bounds-fit) can route their own animateCamera calls through the guard.
+  void animateCameraGuarded(CameraUpdate update) {
+    _trackingProgrammaticMove = true;
+    _trackingProgrammaticMoveTimer?.cancel();
+    // Defensive: if onCameraIdle fails to fire, clear the guard after 500 ms.
+    // 500 ms (not 1 s) leaves room for a fast pan-and-release within ~0.5 s
+    // of the previous GPS tick to still register as a user pan.
+    _trackingProgrammaticMoveTimer = Timer(
+      const Duration(milliseconds: 500),
+      () {
+        _trackingProgrammaticMove = false;
+      },
+    );
+    trackingMapController?.animateCamera(update);
+  }
+
+  /// Wire to `GoogleMap.onCameraIdle`. Clears the programmatic-move guard.
+  void onCameraIdleHandler() {
+    _trackingProgrammaticMove = false;
+    _trackingProgrammaticMoveTimer?.cancel();
+    _trackingProgrammaticMoveTimer = null;
+  }
+
+  /// Wire to `GoogleMap.onCameraMove`. Tracks the current zoom so the
+  /// bearing pipeline can rebuild a full [CameraPosition] without resetting
+  /// the user's pinch-zoom level. Fires for both programmatic and user
+  /// moves — always storing the latest zoom is intentional.
+  void onCameraMoveHandler(CameraPosition position) {
+    _trackingLastZoom = position.zoom;
+  }
+
+  /// Low-pass smoothed, shortest-arc bearing lerp. `alpha = 0.3` retains
+  /// 70% of the previous bearing per GPS tick (~1 Hz), which suppresses
+  /// heading-noise jitter while still tracking real direction changes
+  /// within ~3 ticks.
+  double _smoothBearing(double? prev, double next) {
+    if (prev == null) return next;
+    const alpha = 0.3;
+    final delta = ((next - prev + 540) % 360) - 180;
+    return (prev + alpha * delta + 360) % 360;
+  }
+
+  /// Flips compass mode, persists the new value, and (when turning OFF)
+  /// animates the camera back to bearing 0 so the map snaps north-up.
+  Future<void> toggleCompassMode() async {
+    trackingCompassModeEnabled = !trackingCompassModeEnabled;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kPrefCompassMode, trackingCompassModeEnabled);
+    } catch (e) {
+      debugPrint('[WalkTracking] Failed to persist compass mode: $e');
+    }
+    if (!trackingCompassModeEnabled) {
+      final target = trackingPath.isNotEmpty
+          ? trackingPath.last
+          : trackingInitialPosition;
+      if (target != null) {
+        animateCameraGuarded(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: target,
+              zoom: _trackingLastZoom,
+              bearing: 0,
+              tilt: 0,
+            ),
+          ),
+        );
+      }
+      _trackingLastBearing = null;
+    }
+    if (mounted) setState(() {});
   }
 
   // --- Pause / Resume ---
@@ -509,6 +650,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       // "기록 삭제" — 산책 데이터 폐기
       _trackingTimer?.cancel();
       _trackingPositionSub?.cancel();
+      _trackingProgrammaticMoveTimer?.cancel();
+      _trackingProgrammaticMoveTimer = null;
+      _trackingLastBearing = null;
       _stopWalkWidget();
       await WalkLocalStorage.clearWalkData();
       if (mounted) {
@@ -525,6 +669,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
 
     _trackingTimer?.cancel();
     _trackingPositionSub?.cancel();
+    _trackingProgrammaticMoveTimer?.cancel();
+    _trackingProgrammaticMoveTimer = null;
+    _trackingLastBearing = null;
     _stopWalkWidget();
 
     // Ensure path has at least 2 points

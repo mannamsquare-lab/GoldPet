@@ -269,7 +269,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
         southwest: LatLng(minLat, minLng),
         northeast: LatLng(maxLat, maxLng),
       );
-      trackingMapController!.animateCamera(
+      animateCameraGuarded(
         CameraUpdate.newLatLngBounds(bounds, 60),
       );
     }
@@ -503,6 +503,8 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
                             onCameraMoveStarted: () {
                               onCameraMoveStartedByUser();
                             },
+                            onCameraMove: onCameraMoveHandler,
+                            onCameraIdle: onCameraIdleHandler,
                             markers: trackingMarkers,
                             polylines: trackingPolylines,
                           ),
@@ -765,6 +767,44 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
                 child: Container(
                   width: 14, height: 14,
                   decoration: BoxDecoration(color: _handleColor, borderRadius: BorderRadius.circular(1)),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Compass button (3-state)
+          GestureDetector(
+            onTap: () async {
+              final isOnPaused = trackingCompassModeEnabled && !trackingIsFollowing;
+              if (isOnPaused) {
+                recenterCamera();
+              } else {
+                await toggleCompassMode();
+                if (trackingCompassModeEnabled && !trackingIsFollowing) {
+                  recenterCamera();
+                }
+              }
+            },
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: trackingCompassModeEnabled
+                    ? (trackingIsFollowing ? AppColors.primary : Colors.grey.shade300)
+                    : Colors.white,
+                shape: BoxShape.circle,
+                border: trackingCompassModeEnabled
+                    ? null
+                    : Border.all(color: AppColors.primary, width: 1.5),
+                boxShadow: [BoxShadow(color: const Color(0xFF353D4C).withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 12))],
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.explore,
+                  size: 22,
+                  color: trackingCompassModeEnabled
+                      ? (trackingIsFollowing ? Colors.white : Colors.grey.shade600)
+                      : AppColors.primary,
                 ),
               ),
             ),

@@ -241,6 +241,8 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
                           onCameraMoveStarted: () {
                             onCameraMoveStartedByUser();
                           },
+                          onCameraMove: onCameraMoveHandler,
+                          onCameraIdle: onCameraIdleHandler,
                           markers: trackingMarkers,
                           polylines: trackingPolylines,
                         ),
@@ -479,6 +481,55 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
                     color: _handleColor,
                     borderRadius: BorderRadius.circular(1),
                   ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Compass mode button (3-state)
+          GestureDetector(
+            onTap: () async {
+              if (trackingCompassModeEnabled && !trackingIsFollowing) {
+                // ON-paused: re-engage follow without toggling compass off
+                recenterCamera();
+              } else {
+                await toggleCompassMode();
+                // If compass just turned ON while panned, re-engage follow
+                if (trackingCompassModeEnabled && !trackingIsFollowing) {
+                  recenterCamera();
+                }
+              }
+            },
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: trackingCompassModeEnabled
+                    ? (trackingIsFollowing
+                        ? AppColors.primary
+                        : Colors.grey.shade300)
+                    : Colors.white,
+                shape: BoxShape.circle,
+                border: trackingCompassModeEnabled
+                    ? null
+                    : Border.all(color: AppColors.primary, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF353D4C).withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.explore,
+                  size: 24,
+                  color: trackingCompassModeEnabled
+                      ? (trackingIsFollowing
+                          ? Colors.white
+                          : Colors.grey.shade600)
+                      : AppColors.primary,
                 ),
               ),
             ),
