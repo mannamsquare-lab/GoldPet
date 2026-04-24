@@ -50,6 +50,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   /// Compass mode state: map rotates to device heading when ON.
   /// Loaded from SharedPreferences in [startWalk]; default OFF.
   bool trackingCompassModeEnabled = false;
+  /// Public bearing notifier for the custom compass indicator widget.
+  /// 0.0 = north-up (first frame before any GPS tick).
+  final ValueNotifier<double> trackingBearingNotifier = ValueNotifier<double>(0.0);
 
   /// Last smoothed bearing applied to the camera. `null` = unknown.
   double? _trackingLastBearing;
@@ -148,6 +151,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     _stopWalkWidget();
     trackingDurationNotifier.dispose();
     trackingDistanceNotifier.dispose();
+    trackingBearingNotifier.dispose();
 
     // Best-effort local save if walk was active
     if ((trackingIsWalking || trackingIsSaving) &&
@@ -418,6 +422,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         targetBearing = _trackingLastBearing ?? 0.0;
       }
       _trackingLastBearing = targetBearing;
+      trackingBearingNotifier.value = targetBearing;
       animateCameraGuarded(
         CameraUpdate.newCameraPosition(
           CameraPosition(
@@ -554,6 +559,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
         );
       }
       _trackingLastBearing = null;
+      trackingBearingNotifier.value = 0.0;
     }
     if (mounted) setState(() {});
   }
@@ -653,6 +659,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       _trackingProgrammaticMoveTimer?.cancel();
       _trackingProgrammaticMoveTimer = null;
       _trackingLastBearing = null;
+      trackingBearingNotifier.value = 0.0;
       _stopWalkWidget();
       await WalkLocalStorage.clearWalkData();
       if (mounted) {
@@ -672,6 +679,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     _trackingProgrammaticMoveTimer?.cancel();
     _trackingProgrammaticMoveTimer = null;
     _trackingLastBearing = null;
+    trackingBearingNotifier.value = 0.0;
     _stopWalkWidget();
 
     // Ensure path has at least 2 points

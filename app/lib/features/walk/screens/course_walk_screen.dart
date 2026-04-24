@@ -10,6 +10,7 @@ import '../../../core/webview/hybrid_webview.dart';
 import '../../../core/widgets/goldpet_alert_dialog.dart';
 import '../mixins/walk_tracking_mixin.dart';
 import '../widgets/photo_memo_sheet.dart';
+import '../widgets/walk_compass_indicator.dart';
 // TODO: extract walkSpotActionController to walk_events.dart when a third walk screen type is added
 // TODO: extract isAnyWalkActive() helper when third walk type added. Guard sites: api_client.dart (2), hybrid_webview.dart (1)
 import 'walk_screen.dart' show walkSpotActionController;
@@ -492,6 +493,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
                             myLocationButtonEnabled: false,
                             zoomControlsEnabled: false,
                             mapToolbarEnabled: false,
+                            compassEnabled: false,
                             onMapCreated: (controller) {
                               trackingMapController = controller;
                               // Course overlay may have been skipped if startWalk()
@@ -517,6 +519,21 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
                       left: 16,
                       right: 16,
                       child: _DeviationBanner(distance: _deviationDistance),
+                    ),
+
+                  // Compass indicator — hidden when off-course to avoid
+                  // collision with the deviation banner (plan §9 Risk #4).
+                  if (trackingIsWalking &&
+                      trackingCompassModeEnabled &&
+                      !_isOffCourse)
+                    Positioned(
+                      top: 12,
+                      left: 16,
+                      child: ValueListenableBuilder<double>(
+                        valueListenable: trackingBearingNotifier,
+                        builder: (context, bearing, _) =>
+                            WalkCompassIndicator(bearing: bearing),
+                      ),
                     ),
 
                   // Location chip
@@ -789,22 +806,21 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: trackingCompassModeEnabled
-                    ? (trackingIsFollowing ? AppColors.primary : Colors.grey.shade300)
-                    : Colors.white,
+                color: trackingCompassModeEnabled && !trackingIsFollowing
+                    ? AppColors.primary.withValues(alpha: 0.5)
+                    : AppColors.primary,
                 shape: BoxShape.circle,
-                border: trackingCompassModeEnabled
-                    ? null
-                    : Border.all(color: AppColors.primary, width: 1.5),
                 boxShadow: [BoxShadow(color: const Color(0xFF353D4C).withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 12))],
               ),
               child: Center(
                 child: Icon(
-                  Icons.explore,
+                  trackingCompassModeEnabled && trackingIsFollowing
+                      ? Icons.explore
+                      : Icons.explore_outlined,
                   size: 22,
-                  color: trackingCompassModeEnabled
-                      ? (trackingIsFollowing ? Colors.white : Colors.grey.shade600)
-                      : AppColors.primary,
+                  color: trackingCompassModeEnabled && trackingIsFollowing
+                      ? Colors.white
+                      : _handleColor,
                 ),
               ),
             ),

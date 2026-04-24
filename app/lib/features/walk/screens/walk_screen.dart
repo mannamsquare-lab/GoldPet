@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/webview/hybrid_webview.dart';
 import '../mixins/walk_tracking_mixin.dart';
 import '../widgets/photo_memo_sheet.dart';
+import '../widgets/walk_compass_indicator.dart';
 
 /// Global stream for delivering spot actions to an existing WalkScreen
 /// without pushing a duplicate. Used by deep link handler in hybrid_app.dart.
@@ -235,6 +236,7 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
                           myLocationButtonEnabled: false,
                           zoomControlsEnabled: false,
                           mapToolbarEnabled: false,
+                          compassEnabled: false,
                           onMapCreated: (controller) {
                             trackingMapController = controller;
                           },
@@ -253,6 +255,17 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
                     top: 12,
                     right: 16,
                     child: _LocationChip(address: trackingCurrentAddress),
+                  ),
+
+                if (trackingIsWalking && trackingCompassModeEnabled)
+                  Positioned(
+                    top: 12,
+                    left: 16,
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: trackingBearingNotifier,
+                      builder: (context, bearing, _) =>
+                          WalkCompassIndicator(bearing: bearing),
+                    ),
                   ),
 
                 if (trackingIsWalking)
@@ -504,15 +517,10 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: trackingCompassModeEnabled
-                    ? (trackingIsFollowing
-                        ? AppColors.primary
-                        : Colors.grey.shade300)
-                    : Colors.white,
+                color: trackingCompassModeEnabled && !trackingIsFollowing
+                    ? AppColors.primary.withValues(alpha: 0.5)
+                    : AppColors.primary,
                 shape: BoxShape.circle,
-                border: trackingCompassModeEnabled
-                    ? null
-                    : Border.all(color: AppColors.primary, width: 1),
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF353D4C).withValues(alpha: 0.1),
@@ -523,13 +531,13 @@ class _WalkScreenState extends ConsumerState<WalkScreen>
               ),
               child: Center(
                 child: Icon(
-                  Icons.explore,
+                  trackingCompassModeEnabled && trackingIsFollowing
+                      ? Icons.explore
+                      : Icons.explore_outlined,
                   size: 24,
-                  color: trackingCompassModeEnabled
-                      ? (trackingIsFollowing
-                          ? Colors.white
-                          : Colors.grey.shade600)
-                      : AppColors.primary,
+                  color: trackingCompassModeEnabled && trackingIsFollowing
+                      ? Colors.white
+                      : _handleColor,
                 ),
               ),
             ),
