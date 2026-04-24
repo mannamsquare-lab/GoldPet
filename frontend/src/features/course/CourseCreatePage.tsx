@@ -828,8 +828,9 @@ export function CourseCreatePage() {
               map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
             }
           }}>
-            <svg viewBox="16 8 40 40" xmlns="http://www.w3.org/2000/svg" fill="none">
-              <path d="M46 18H39M46 18V25M46 18L39 25M26 38H33M26 38V31M26 38L33 31" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="40" height="40" viewBox="16 8 40 40" fill="none">
+              <rect x="16" y="8" width="40" height="40" rx="8" fill="white"/>
+              <path d="M46 18H39M46 18V25M46 18L39 25M26 38H33M26 38V31M26 38L33 31" stroke="#614108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         )}
