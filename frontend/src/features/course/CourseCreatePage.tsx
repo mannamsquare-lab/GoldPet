@@ -814,7 +814,13 @@ export function CourseCreatePage() {
 
         {/* Expand icon overlay */}
         {!mapLoadFailed && (
-          <button className="course_create_map_expand" type="button" onClick={() => {
+          <button className="course_create_map_expand" type="button" aria-label="지도 확대" onClick={() => {
+            // from-walk 모드: 전체화면 지도 페이지로 이동 (WalkDetailPage와 동일 UX)
+            if (isFromWalk && walkId != null) {
+              navigate(`/walk/map-expand/${walkId}`);
+              return;
+            }
+            // 편집/신규 코스: 전체화면 페이지가 없으므로 fitBounds 폴백
             const map = mapInstanceRef.current;
             if (map && waypoints.length >= 2) {
               const bounds = new google.maps.LatLngBounds();
