@@ -5048,7 +5048,7 @@ legend {
 	border-bottom: 1px solid var(--color-border, #f0f0f0);
 	position: sticky;
 	top: 0;
-	background: var(--color-background, #fff);
+	background: #fff7e6;
 	z-index: 10;
 	min-height: 52px;
 }
@@ -5118,38 +5118,52 @@ legend {
 	color: var(--color-text-secondary, #888);
 }
 
-/* community-author-profile-gallery Phase 2 F1 — 프로필 탭바 (게시글 | 산책 | 반려동물) */
+/* community-author-profile-gallery Phase 2 F1 — 프로필 탭바 (게시글 | 산책 | 반려동물)
+   기존 ProfilePage `.profile_tab` 디자인 차용 — #614108 언더라인 + scaleX 전환. */
 .up-tabs {
 	display: flex;
-	border-top: 1px solid var(--color-border, #eee);
-	border-bottom: 1px solid var(--color-border, #eee);
-	background: var(--color-bg-primary, #fff);
 	position: sticky;
-	top: 56px;
+	top: 52px;
 	z-index: 9;
+	background: #fff7e6;
+	padding-top: 8px;
 }
 
 .up-tab {
 	flex: 1;
-	padding: 12px 0;
+	height: 46px;
+	line-height: 46px;
+	position: relative;
+	padding: 0;
 	background: transparent;
 	border: none;
-	border-bottom: 2px solid transparent;
-	font-size: 14px;
+	font-size: 16px;
 	font-weight: 500;
-	color: var(--color-text-secondary, #888);
+	color: #727272;
 	cursor: pointer;
-	transition: color 0.15s ease, border-color 0.15s ease;
+	transition: color 0.3s;
 }
 
-.up-tab:hover {
-	color: var(--color-text-primary, #333);
+.up-tab::after {
+	content: "";
+	width: 100%;
+	height: 2px;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	background-color: #614108;
+	transform: scaleX(0);
+	transform-origin: center;
+	transition: transform 0.3s;
 }
 
 .up-tab--active {
-	color: var(--color-text-primary, #333);
-	border-bottom-color: var(--color-text-primary, #333);
-	font-weight: 600;
+	font-weight: 700;
+	color: #614108;
+}
+
+.up-tab--active::after {
+	transform: scaleX(1);
 }
 
 /* 3-col grid */
