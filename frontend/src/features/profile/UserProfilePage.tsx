@@ -454,7 +454,7 @@ export default function UserProfilePage() {
           {tab === 'pets' && (
             <>
               {profile.pets && profile.pets.length > 0 ? (
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {profile.pets.map((pet) => {
                     const petViewerUrls = pet.profileImageUrlsViewer?.filter(Boolean) ?? [];
                     const petOrigUrls = pet.profileImageUrls?.filter(Boolean) ?? [];
