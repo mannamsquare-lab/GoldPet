@@ -92,7 +92,7 @@
 .course_create_map_expand svg {
   width: 20px;
   height: 20px;
-  fill: var(--color-text-secondary);
+  color: var(--color-text-secondary);
 }
 
 /* Stats bar — "총 N개 지점  스팟 N" + "스팟 추가" */
