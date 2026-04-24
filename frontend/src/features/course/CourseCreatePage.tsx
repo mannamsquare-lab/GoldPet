@@ -426,13 +426,16 @@ export function CourseCreatePage() {
     redrawWaypointMarkers(waypoints);
 
     // Fit bounds once when pre-filled waypoints are first drawn
-    if (!initialFitDoneRef.current && (isEditMode || isFromWalk) && waypoints.length >= 2) {
-      initialFitDoneRef.current = true;
+    if (!initialFitDoneRef.current && (isEditMode || isFromWalk)) {
       const map = mapInstanceRef.current;
-      if (map) {
+      if (map && waypoints.length >= 2) {
+        initialFitDoneRef.current = true;
         const bounds = new google.maps.LatLngBounds();
         for (const [lat, lng] of waypoints) bounds.extend({ lat, lng });
         map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
+      } else if (map && waypoints.length === 1) {
+        initialFitDoneRef.current = true;
+        map.setCenter({ lat: waypoints[0][0], lng: waypoints[0][1] });
       }
     }
   }, [mapReady, waypoints, redrawPolyline, redrawWaypointMarkers, isEditMode, isFromWalk]);
@@ -506,14 +509,15 @@ export function CourseCreatePage() {
           }
         }
       };
-      getLocation();
+      if (!isFromWalk && !isEditMode) getLocation();
     } catch (e) {
       console.error('[CourseCreatePage] map init failed:', e);
       setMapLoadFailed(true);
     }
-  }, []);
+  }, [isFromWalk, isEditMode]);
 
   useEffect(() => {
+    if (walkLoading || courseLoading) return;
     let cancelled = false;
 
     loadMapsApi()
@@ -543,11 +547,12 @@ export function CourseCreatePage() {
         polylineRef.current = null;
       }
       // Google Maps has no destroy() — null the reference for GC
+      initialFitDoneRef.current = false;
       mapInstanceRef.current = null;
       setMapReady(false);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [walkLoading, courseLoading]);
 
   // Add spot markers when spots change
   const prevSpotsRef = useRef<LocalSpot[]>([]);
