@@ -15,7 +15,11 @@ export function loadMapsApi(): Promise<typeof google.maps> {
         optionsSet = true;
     }
     if (!mapsApiPromise) {
-        mapsApiPromise = importLibrary('maps').then(() => google.maps);
+        // reject 시 캐시된 rejected promise가 모든 지도 페이지를 영구 차단하므로 실패 시 리셋
+        mapsApiPromise = importLibrary('maps').then(() => google.maps).catch((err) => {
+            mapsApiPromise = null;
+            throw err;
+        });
     }
     return mapsApiPromise;
 }
