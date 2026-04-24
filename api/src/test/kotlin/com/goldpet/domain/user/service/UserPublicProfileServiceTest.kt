@@ -5,6 +5,7 @@ import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.community.entity.CommunityPost
 import com.goldpet.domain.community.repository.CommunityPostRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
+import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.user.dto.PublicUserProfileResponse
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
@@ -25,6 +26,7 @@ class UserPublicProfileServiceTest {
     @Mock private lateinit var userBlockRepository: UserBlockRepository
     @Mock private lateinit var communityPostRepository: CommunityPostRepository
     @Mock private lateinit var fileAttachmentLookupService: FileAttachmentLookupService
+    @Mock private lateinit var petRepository: PetRepository
 
     private lateinit var service: UserPublicProfileService
 
@@ -39,8 +41,9 @@ class UserPublicProfileServiceTest {
             userBlockRepository,
             communityPostRepository,
             fileAttachmentLookupService,
+            petRepository,
         )
-        // Safe defaults: no block relationships, no file variants
+        // Safe defaults: no block relationships, no file variants, no pets
         whenever(fileAttachmentLookupService.thumbnailUrlFor(any())).thenReturn(null)
         whenever(fileAttachmentLookupService.viewerUrlFor(any())).thenReturn(null)
     }

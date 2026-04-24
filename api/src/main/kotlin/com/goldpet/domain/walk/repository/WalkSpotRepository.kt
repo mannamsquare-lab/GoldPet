@@ -54,6 +54,34 @@ interface WalkSpotRepository : JpaRepository<WalkSpot, Long> {
         pageable: Pageable
     ): Page<WalkSpot>
 
+    /**
+     * community-author-profile-gallery Phase 2 F1 — 특정 유저의 공개 walk 사진을 cursor pagination 으로 조회.
+     *
+     * Phase 1 `CommunityAuthorPostsService` 와 동일한 `(timestamp DESC, id DESC)` tuple cursor + OR-expanded 비교.
+     * JOIN FETCH ws.walk → w.user 로 N+1 방지. hiddenFromPublic/공개여부/차단 필터는 기존 `findPublicPhotoSpots` 와 동일.
+     */
+    @Query("""
+        SELECT ws FROM WalkSpot ws
+        JOIN FETCH ws.walk w
+        JOIN FETCH w.user u
+        WHERE u.id = :authorId
+        AND w.isPublic = true
+        AND ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO
+        AND ws.imageUrl IS NOT NULL
+        AND ws.hiddenFromPublic = false
+        AND u.id NOT IN :blockedUserIds
+        AND (ws.timestamp < :cursorTimestamp
+             OR (ws.timestamp = :cursorTimestamp AND ws.id < :cursorId))
+        ORDER BY ws.timestamp DESC, ws.id DESC
+    """)
+    fun findPublicPhotoSpotsByAuthorWithCursor(
+        @Param("authorId") authorId: Long,
+        @Param("blockedUserIds") blockedUserIds: List<Long>,
+        @Param("cursorTimestamp") cursorTimestamp: LocalDateTime,
+        @Param("cursorId") cursorId: Long,
+        pageable: Pageable,
+    ): List<WalkSpot>
+
     @Query("""
         SELECT ws FROM WalkSpot ws
         WHERE ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO

@@ -158,6 +158,7 @@ class UserProfileRateLimitFilter(
         private val PROTECTED_PATTERNS = listOf(
             "/api/v1/users/*/public-profile",
             "/api/v1/users/*/community/posts",
+            "/api/v1/users/*/walks/photos",
         )
     }
 }

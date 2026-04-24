@@ -1,5 +1,6 @@
 package com.goldpet.domain.walk.dto
 
+import com.goldpet.common.annotation.PublicFacingDto
 import com.goldpet.domain.walk.entity.Walk
 import com.goldpet.domain.walk.entity.WalkSpotType
 import com.goldpet.domain.walk.service.PhotoUrlSigner
@@ -217,4 +218,15 @@ data class WalkStatsResponse(
     val totalCalories: Double,
     val totalGoldEarned: Int,
     val totalWalks: Long
+)
+
+/**
+ * community-author-profile-gallery Phase 2 F1 — 특정 유저의 공개 walk 사진 cursor pagination 응답.
+ *
+ * Phase 1 `AuthorPostsPage(posts, nextCursor)` 와 대칭 구조. 실제 사진 DTO 는 기존 `WalkPhotoResponse` 재사용.
+ */
+@PublicFacingDto
+data class UserWalkPhotosPage(
+    val photos: List<WalkPhotoResponse>,
+    val nextCursor: String?,
 )

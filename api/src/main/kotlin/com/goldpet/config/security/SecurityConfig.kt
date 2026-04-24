@@ -76,6 +76,8 @@ class SecurityConfig(
                             .authenticated()
                             .requestMatchers(HttpMethod.GET, "/api/v1/users/*/community/posts")
                             .authenticated()
+                            .requestMatchers(HttpMethod.GET, "/api/v1/users/*/walks/photos")
+                            .authenticated()
                             .requestMatchers(HttpMethod.GET, "/api/v1/community/**")
                             .permitAll() // Allow community read access
                             .requestMatchers(HttpMethod.GET, "/api/v1/courses/**")

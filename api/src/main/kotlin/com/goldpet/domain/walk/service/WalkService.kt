@@ -9,6 +9,7 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.walk.dto.CreateWalkRequest
 import com.goldpet.domain.walk.dto.PhotoMintResponse
+import com.goldpet.domain.walk.dto.UserWalkPhotosPage
 import com.goldpet.domain.walk.dto.WalkPhotoResponse
 import com.goldpet.domain.walk.dto.WalkResponse
 import com.goldpet.domain.walk.dto.BoundingBoxRequest
@@ -442,6 +443,74 @@ class WalkService(
         if (spot.walk.id != walkId) throw ForbiddenException("Spot does not belong to this walk")
         spot.hiddenFromPublic = hiddenFromPublic
         return toWalkPhotoResponse(spot)
+    }
+
+    /**
+     * community-author-profile-gallery Phase 2 F1 — 특정 유저의 공개 walk 사진을 cursor pagination 으로 반환.
+     *
+     * - 차단 필터(`findBlockedUserIds` native UNION 양방향) 로 viewer↔target 어느 쪽이든 차단 시 빈 결과.
+     * - WalkSpot 기준 `(timestamp DESC, id DESC)` tuple cursor. Phase 1 community 패턴과 동일.
+     * - `size+1` fetch 로 nextCursor 판정. 1..100 clamp, default 30.
+     * - 갤러리 탭 전용 → `suppressUrl=false`. 서명 실패 시 기존 toWalkPhotoResponse 정책 (skip-in-DOM).
+     */
+    fun getUserWalkPhotos(
+        viewerId: Long,
+        targetUserId: Long,
+        cursor: String?,
+        size: Int = 30,
+    ): UserWalkPhotosPage {
+        val effectiveSize = size.coerceIn(1, 100)
+        val blockedUserIds = userBlockRepository.findBlockedUserIds(viewerId)
+        val effectiveBlockedIds = if (blockedUserIds.isEmpty()) listOf(-1L) else blockedUserIds
+
+        val (cursorTimestamp, cursorId) = decodeWalkPhotoCursor(cursor)
+            ?: (java.time.LocalDateTime.of(9999, 12, 31, 23, 59, 59) to Long.MAX_VALUE)
+
+        val spots = walkSpotRepository.findPublicPhotoSpotsByAuthorWithCursor(
+            authorId = targetUserId,
+            blockedUserIds = effectiveBlockedIds,
+            cursorTimestamp = cursorTimestamp,
+            cursorId = cursorId,
+            pageable = org.springframework.data.domain.PageRequest.of(0, effectiveSize + 1),
+        )
+
+        val hasNext = spots.size > effectiveSize
+        val page = spots.take(effectiveSize)
+        val nextCursor = if (hasNext) {
+            val last = page.last()
+            encodeWalkPhotoCursor(last.timestamp, last.id)
+        } else null
+
+        return UserWalkPhotosPage(
+            photos = page.map { toWalkPhotoResponse(it, suppressUrl = false) },
+            nextCursor = nextCursor,
+        )
+    }
+
+    private fun encodeWalkPhotoCursor(ts: java.time.LocalDateTime, id: Long): String {
+        val epochMs = ts.atZone(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+        val payload = "$epochMs:$id"
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
+    }
+
+    private fun decodeWalkPhotoCursor(cursor: String?): Pair<java.time.LocalDateTime, Long>? {
+        if (cursor.isNullOrBlank()) return null
+        try {
+            val decoded = String(java.util.Base64.getUrlDecoder().decode(cursor))
+            val parts = decoded.split(":")
+            if (parts.size != 2) throw BadRequestException("INVALID_CURSOR")
+            val epochMs = parts[0].toLong()
+            val id = parts[1].toLong()
+            val ts = java.time.LocalDateTime.ofInstant(
+                java.time.Instant.ofEpochMilli(epochMs),
+                java.time.ZoneOffset.UTC,
+            )
+            return ts to id
+        } catch (ex: BadRequestException) {
+            throw ex
+        } catch (ex: Exception) {
+            throw BadRequestException("INVALID_CURSOR")
+        }
     }
 
     private fun parseYearMonth(yearMonth: String): Pair<java.time.LocalDateTime, java.time.LocalDateTime> {
