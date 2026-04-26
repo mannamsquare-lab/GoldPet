@@ -139,6 +139,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     _externalPetIds = petIds;
     _trackingIsPublic = isPublic;
     WalkLocalStorage.initialize();
+    if (petIds != null && petIds.isNotEmpty) {
+      _trackingPetIds = List<int>.from(petIds);
+    }
     _initializeLocation();
   }
 
@@ -312,7 +315,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     _startWalkWidget();
 
     // Fetch pet data
-    await _fetchPetData().timeout(const Duration(seconds: 3), onTimeout: () {});
+    await _fetchPetData().timeout(const Duration(seconds: 3), onTimeout: () {
+      debugPrint('[WalkTracking] _fetchPetData timed out after 3s — proceeding with bridge IDs only');
+    });
     if (!mounted) return;
 
     await _buildPetMarkerImage();
@@ -777,6 +782,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     DateTime endTime, {
     int? durationOverride,
   }) {
+    assert(
+      _trackingPetIds.isNotEmpty || _externalPetIds == null,
+      'walk save with empty petIds when bridge supplied IDs',
+    );
     final startTime =
         _trackingStartTime ??
         endTime.subtract(Duration(seconds: trackingDurationNotifier.value));
@@ -942,6 +951,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
           if (mounted) showTrackingSnackBar('사진 편집 오류가 발생했습니다.');
           return;
         }
+        // User cancelled crop — silent by design.
         if (croppedPath == null) return;
 
         if (!mounted) return;
@@ -1015,7 +1025,10 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     } catch (e) {
       debugPrint('Error adding photo spot: $e');
       if (mounted) {
-        if (e is DioException && e.response?.statusCode == 401) return;
+        if (e is DioException && e.response?.statusCode == 401) {
+          if (mounted) showTrackingSnackBar('인증이 만료되었습니다. 다시 로그인해 주세요.');
+          return;
+        }
         showTrackingSnackBar('사진 저장 실패: 네트워크 오류가 발생했습니다.');
       }
     }
@@ -1028,12 +1041,15 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   // --- Pet marker ---
 
   Future<void> _fetchPetData() async {
+    assert(
+      _externalPetIds == null || _externalPetIds!.isEmpty || _trackingPetIds.isNotEmpty,
+      'invariant: bridge IDs must already be seeded by initTracking',
+    );
     try {
       final response = await ApiClient().dio.get('/api/v1/pets/my');
       final pets = response.data as List;
       if (_externalPetIds != null && _externalPetIds!.isNotEmpty) {
-        // Use pet IDs selected by user in React WebView
-        _trackingPetIds = _externalPetIds!;
+        // Use pet IDs selected by user in React WebView (IDs already seeded by initTracking)
         final selectedPets = pets
             .where((p) => _externalPetIds!.contains(p['id'] as int))
             .toList();
@@ -1435,15 +1451,23 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
       });
       if (mounted) showTrackingSnackBar('응가 스팟이 기록되었습니다!');
 
-      // Pick pet for analysis
+      // Pick pet for analysis — four-branch decision table
       if (!mounted) return;
+      if (_trackingPetIds.isEmpty) {
+        if (mounted) showTrackingSnackBar('등록된 반려동물 정보를 불러오지 못했습니다. 사진 촬영 없이 위치만 기록됩니다.');
+        return;
+      }
+      if (_trackingPetIds.length > 1 && _trackingPets.isEmpty) {
+        if (mounted) showTrackingSnackBar('반려동물 정보를 불러오지 못해 건강 분석을 건너뜁니다. 일반 사진은 사진 버튼으로 기록할 수 있어요.');
+        return;
+      }
       int? selectedPetId;
       if (_trackingPetIds.length == 1) {
         selectedPetId = _trackingPetIds.first;
-      } else if (_trackingPetIds.length > 1) {
+      } else {
         selectedPetId = await _showPetSelectorSheet();
       }
-      if (selectedPetId == null) return;
+      if (selectedPetId == null) return; // user-cancel: silent by design
 
       // Photo option
       if (!mounted) return;
