@@ -7,6 +7,7 @@ import com.goldpet.domain.friend.dto.MatchResponse
 import com.goldpet.domain.friend.entity.Like
 import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.entity.UserBlock
+import com.goldpet.domain.chat.repository.ChatRoomRepository
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
@@ -26,7 +27,8 @@ class MatchService(
     private val userBlockRepository: UserBlockRepository,
     private val userRepository: UserRepository,
     private val badgeAwardService: BadgeAwardService,
-    private val petRepository: PetRepository
+    private val petRepository: PetRepository,
+    private val chatRoomRepository: ChatRoomRepository
 ) {
     private val log = LoggerFactory.getLogger(MatchService::class.java)
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -112,6 +114,8 @@ class MatchService(
             throw ForbiddenException("Not authorized to cancel this match")
         }
 
+        // chat_rooms.match_id FK 위반 방지: 매치 삭제 전 연결된 채팅방 정리
+        chatRoomRepository.findByMatchId(match.id).ifPresent { chatRoomRepository.delete(it) }
         matchRepository.delete(match)
     }
 
@@ -133,6 +137,8 @@ class MatchService(
 
         // Cancel any existing match
         matchRepository.findByUserIds(blockerId, blockedId).ifPresent { match ->
+            // chat_rooms.match_id FK 위반 방지: 매치 삭제 전 연결된 채팅방 정리
+            chatRoomRepository.findByMatchId(match.id).ifPresent { chatRoomRepository.delete(it) }
             matchRepository.delete(match)
         }
 

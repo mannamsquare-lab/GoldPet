@@ -31,7 +31,14 @@ class OpenAIStoolVisionClient(
         return try {
             callOpenAI(imageUrl, petInfo)
         } catch (e: RestClientException) {
-            log.warn("OpenAI call failed, retrying once: {}", e.message)
+            // DNS 실패(UnknownHostException) 등 일시적 네트워크 이슈 회복 시간 확보용 짧은 backoff.
+            log.warn("OpenAI call failed, retrying once after 500ms: {}", e.message)
+            try {
+                Thread.sleep(500)
+            } catch (ie: InterruptedException) {
+                Thread.currentThread().interrupt()
+                throw ie
+            }
             callOpenAI(imageUrl, petInfo)
         }
     }
