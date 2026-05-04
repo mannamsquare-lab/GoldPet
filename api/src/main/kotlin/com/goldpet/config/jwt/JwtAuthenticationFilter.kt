@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
@@ -34,11 +35,32 @@ class JwtAuthenticationFilter(
                 
                 val userDetails = if (userType == "ADMIN") {
                     val adminUser = adminUserRepository.findById(userId.toLong()).orElseThrow { Exception("Admin not found") }
+                    // Spring Security UsernamePasswordAuthenticationToken는 UserDetails.isEnabled()을 자동 검증하지 않으므로
+                    // 비활성화된 admin 계정의 토큰이 재사용되는 것을 막기 위해 여기서 직접 401을 반환한다.
+                    if (!adminUser.isActive) {
+                        response.status = HttpStatus.UNAUTHORIZED.value()
+                        response.contentType = "application/json;charset=UTF-8"
+                        response.writer.write("{\"error\":\"ACCOUNT_DEACTIVATED\"}")
+                        return
+                    }
+                    if (adminUser.mustChangePassword) {
+                        val allowedPaths = setOf(
+                            "/api/v1/admin/auth/change-password",
+                            "/api/v1/admin/auth/logout",
+                            "/api/v1/admin/auth/me"
+                        )
+                        if (request.requestURI !in allowedPaths) {
+                            response.status = HttpStatus.FORBIDDEN.value()
+                            response.contentType = "application/json;charset=UTF-8"
+                            response.writer.write("{\"error\":\"PASSWORD_CHANGE_REQUIRED\"}")
+                            return
+                        }
+                    }
                     com.goldpet.config.security.AdminUserPrincipal(adminUser)
                 } else {
                     customUserDetailsService.loadUserById(userId.toLong())
                 }
-                
+
                 val authentication = UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
                 authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
 

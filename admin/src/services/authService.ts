@@ -1,15 +1,19 @@
 import axios from 'axios';
+import { apiClient } from './apiClient';
 import type {
   AdminUserDto,
-  AdminLoginResponse,
   Setup2faResponse,
 } from '../types/api';
 
-// Generated aliases (Phase 3.11.2). Backend names are AdminUserDto / AdminLoginResponse;
-// keep historical local names (`User`, `LoginResponse`) for caller compatibility.
 export type User = AdminUserDto;
-export type LoginResponse = AdminLoginResponse;
 export type { Setup2faResponse };
+
+export interface LoginResponse {
+  requiresTwoFactor: boolean;
+  token?: string;
+  user?: User;
+  mustChangePassword?: boolean;
+}
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 const API_URL = `${API_BASE}/api/v1/admin/auth`;
@@ -81,5 +85,9 @@ export const authService = {
       `${API_URL}/2fa`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-  }
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await apiClient.post('/auth/change-password', { currentPassword, newPassword });
+  },
 };

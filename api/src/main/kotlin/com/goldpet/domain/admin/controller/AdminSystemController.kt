@@ -1,14 +1,19 @@
 package com.goldpet.domain.admin.controller
 
+import com.goldpet.config.security.AdminUserPrincipal
+import com.goldpet.domain.admin.audit.CriticalAction
 import com.goldpet.domain.admin.entity.AdminAuditLog
+import com.goldpet.domain.admin.entity.AdminUserRole
 import com.goldpet.domain.admin.service.AdminAuditService
 import com.goldpet.domain.admin.service.AdminSystemService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin System Management", description = "관리자 시스템 관리 API")
@@ -30,6 +35,53 @@ class AdminSystemController(
     @GetMapping("/admins")
     fun getAdmins(): ResponseEntity<List<AdminUserResponse>> {
         return ResponseEntity.ok(adminSystemService.getAdmins())
+    }
+
+    @Operation(summary = "관리자 추가")
+    @PostMapping("/admins")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "ADMIN_CREATE")
+    fun createAdmin(
+        @AuthenticationPrincipal principal: AdminUserPrincipal,
+        @RequestBody request: CreateAdminRequest
+    ): ResponseEntity<CreateAdminResponse> {
+        val response = adminSystemService.createAdmin(request, principal.id)
+        return ResponseEntity.status(HttpStatus.CREATED).body(response)
+    }
+
+    @Operation(summary = "관리자 수정")
+    @PutMapping("/admins/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "ADMIN_UPDATE")
+    fun updateAdmin(
+        @AuthenticationPrincipal principal: AdminUserPrincipal,
+        @PathVariable id: Long,
+        @RequestBody request: UpdateAdminRequest
+    ): ResponseEntity<AdminUserResponse> {
+        return ResponseEntity.ok(adminSystemService.updateAdmin(id, request, principal.id))
+    }
+
+    @Operation(summary = "관리자 삭제")
+    @DeleteMapping("/admins/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "ADMIN_DELETE")
+    fun deleteAdmin(
+        @AuthenticationPrincipal principal: AdminUserPrincipal,
+        @PathVariable id: Long
+    ): ResponseEntity<Void> {
+        adminSystemService.deleteAdmin(id, principal.id)
+        return ResponseEntity.noContent().build()
+    }
+
+    @Operation(summary = "관리자 임시비밀번호 재발급")
+    @PostMapping("/admins/{id}/reset-password")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "ADMIN_PASSWORD_RESET")
+    fun resetPassword(
+        @AuthenticationPrincipal principal: AdminUserPrincipal,
+        @PathVariable id: Long
+    ): ResponseEntity<ResetPasswordResponse> {
+        return ResponseEntity.ok(adminSystemService.resetPassword(id, principal.id))
     }
 
     @Operation(summary = "점검 모드 상태 조회")
@@ -54,6 +106,7 @@ class AdminSystemController(
     @Operation(summary = "시스템 설정 수정")
     @PostMapping("/configs")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "SYSTEM_CONFIG_UPDATE")
     fun updateConfig(@RequestBody request: UpdateConfigRequest): ResponseEntity<Void> {
         adminSystemService.updateConfig(request.key, request.value)
         return ResponseEntity.ok().build()
@@ -69,6 +122,7 @@ class AdminSystemController(
 
     @Operation(summary = "관리자 감사 로그 조회")
     @GetMapping("/audit-logs")
+    @CriticalAction(action = "AUDIT_LOG_VIEW")
     fun getAuditLogs(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "50") size: Int
@@ -104,7 +158,9 @@ data class AdminUserResponse(
     val email: String,
     val name: String,
     val role: String,
-    val lastLogin: String?
+    val lastLogin: String?,
+    val isActive: Boolean = true,
+    val mustChangePassword: Boolean = false
 )
 
 data class MaintenanceModeRequest(
@@ -113,4 +169,30 @@ data class MaintenanceModeRequest(
 
 data class MaintenanceStatusResponse(
     val enabled: Boolean
+)
+
+data class CreateAdminRequest(
+    val email: String,
+    val name: String,
+    val role: AdminUserRole,
+    val temporaryPassword: String? = null
+)
+
+data class CreateAdminResponse(
+    val id: Long,
+    val email: String,
+    val name: String,
+    val role: AdminUserRole,
+    // 1회만 노출되는 평문 임시비밀번호 — 응답 외 어디에도 저장 금지.
+    val temporaryPassword: String
+)
+
+data class UpdateAdminRequest(
+    val name: String? = null,
+    val role: AdminUserRole? = null,
+    val isActive: Boolean? = null
+)
+
+data class ResetPasswordResponse(
+    val temporaryPassword: String
 )

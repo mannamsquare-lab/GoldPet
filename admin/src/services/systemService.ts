@@ -1,17 +1,41 @@
 import { typedClient } from './typedClient';
+import { apiClient } from './apiClient';
 import type { SystemInfoResponse, AppConfigResponse } from '../types/api';
 
-// Generated aliases (Phase 3.11.4).
 export type SystemInfo = SystemInfoResponse;
 export type AppConfig = AppConfigResponse;
 
-// Manual: not in spec.
 export interface AdminUser {
   id: number;
   email: string;
   name: string;
   role: string;
+  isActive: boolean;
+  mustChangePassword: boolean;
   lastLogin: string | null;
+}
+
+export interface AdminCreateRequest {
+  email: string;
+  name: string;
+  role: string;
+  temporaryPassword?: string;
+}
+
+export interface AdminCreateResponse {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  temporaryPassword?: string;
+}
+
+export interface AdminUpdateRequest {
+  name?: string;
+  role?: string;
+  isActive?: boolean;
 }
 
 export const systemService = {
@@ -41,5 +65,24 @@ export const systemService = {
 
   async updateConfig(key: string, value: string): Promise<void> {
     await typedClient.post('/api/v1/admin/system/configs', { key, value });
+  },
+
+  async createAdmin(data: AdminCreateRequest): Promise<AdminCreateResponse> {
+    const response = await apiClient.post<AdminCreateResponse>('/system/admins', data);
+    return response.data;
+  },
+
+  async updateAdmin(id: number, data: AdminUpdateRequest): Promise<AdminUser> {
+    const response = await apiClient.put<AdminUser>(`/system/admins/${id}`, data);
+    return response.data;
+  },
+
+  async deleteAdmin(id: number): Promise<void> {
+    await apiClient.delete(`/system/admins/${id}`);
+  },
+
+  async resetAdminPassword(id: number): Promise<{ temporaryPassword: string }> {
+    const response = await apiClient.post<{ temporaryPassword: string }>(`/system/admins/${id}/reset-password`, {});
+    return response.data;
   },
 };

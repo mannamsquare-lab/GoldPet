@@ -5,6 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import RequireAuth from './components/auth/RequireAuth';
 import DashboardLayout from './layouts/DashboardLayout';
 import LoginPage from './pages/auth/LoginPage';
+import ChangePasswordPage from './pages/auth/ChangePasswordPage';
 import ProfilePage from './pages/settings/ProfilePage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersPage from './pages/users/UsersPage';
@@ -40,7 +41,12 @@ function App() {
         <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          
+          <Route path="/change-password" element={
+            <RequireAuth>
+              <ChangePasswordPage />
+            </RequireAuth>
+          } />
+
           <Route path="/" element={
             <RequireAuth>
               <DashboardLayout />
@@ -74,7 +80,6 @@ function App() {
             <Route path="stool-analysis" element={<StoolAnalysisStatsPage />} />
           </Route>
 
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </BrowserRouter>

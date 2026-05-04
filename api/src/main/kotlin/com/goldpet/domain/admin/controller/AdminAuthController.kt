@@ -17,7 +17,13 @@ data class AdminLoginRequest(
 data class AdminLoginResponse(
     val requiresTwoFactor: Boolean = false,
     val token: String? = null,
-    val user: AdminUserDto? = null
+    val user: AdminUserDto? = null,
+    val mustChangePassword: Boolean = false
+)
+
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String
 )
 
 data class Verify2faRequest(
@@ -66,7 +72,8 @@ class AdminAuthController(
                 name = adminUser.name,
                 role = adminUser.role,
                 isTwoFactorEnabled = !adminUser.otpSecret.isNullOrBlank()
-            )
+            ),
+            mustChangePassword = adminUser.mustChangePassword
         ))
     }
 
@@ -74,7 +81,7 @@ class AdminAuthController(
     @PostMapping("/verify-2fa")
     fun verify2fa(@RequestBody request: Verify2faRequest): ResponseEntity<AdminLoginResponse> {
         val (token, adminUser) = adminAuthService.verify2fa(request.userId, request.code)
-        
+
         return ResponseEntity.ok(AdminLoginResponse(
             requiresTwoFactor = false,
             token = token,
@@ -84,8 +91,23 @@ class AdminAuthController(
                 name = adminUser.name,
                 role = adminUser.role,
                 isTwoFactorEnabled = true
-            )
+            ),
+            mustChangePassword = adminUser.mustChangePassword
         ))
+    }
+
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 검증하고 새 비밀번호로 변경합니다. (로그인 필요)")
+    @PostMapping("/change-password")
+    fun changePassword(
+        @AuthenticationPrincipal adminUserPrincipal: AdminUserPrincipal,
+        @RequestBody request: ChangePasswordRequest
+    ): ResponseEntity<Void> {
+        adminAuthService.changePassword(
+            adminUserPrincipal.adminUser.id,
+            request.currentPassword,
+            request.newPassword
+        )
+        return ResponseEntity.noContent().build()
     }
 
     @Operation(summary = "2FA 설정 시작", description = "2FA 설정을 위한 시크릿 키와 QR 코드를 생성합니다. (로그인 필요)")

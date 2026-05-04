@@ -4,6 +4,7 @@ import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.config.crypto.EncryptionConverter
 import com.goldpet.domain.common.entity.BaseTimeEntity
 import jakarta.persistence.*
+import java.time.LocalDateTime
 
 enum class AdminUserRole {
     SUPER_ADMIN,
@@ -39,7 +40,13 @@ class AdminUser(
     var otpSecret: String? = null,
 
     @Column(nullable = false)
-    var isActive: Boolean = true
+    var isActive: Boolean = true,
+
+    @Column(name = "last_login_at")
+    var lastLoginAt: LocalDateTime? = null,
+
+    @Column(name = "must_change_password", nullable = false)
+    var mustChangePassword: Boolean = false
 
 ) : BaseTimeEntity() {
 

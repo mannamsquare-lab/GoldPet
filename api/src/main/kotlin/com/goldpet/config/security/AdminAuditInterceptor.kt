@@ -1,11 +1,14 @@
 package com.goldpet.config.security
 
+import com.goldpet.domain.admin.audit.AuditTargetExtractor
+import com.goldpet.domain.admin.audit.CriticalAction
 import com.goldpet.domain.admin.service.AdminAuditService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
+import org.springframework.web.method.HandlerMethod
 import org.springframework.web.servlet.HandlerInterceptor
 
 @Component
@@ -24,6 +27,7 @@ class AdminAuditInterceptor(
         val path = request.requestURI
         if (!path.startsWith("/api/v1/admin/")) return
         if (path.contains("/audit-logs")) return
+        if (handler is HandlerMethod && handler.hasMethodAnnotation(CriticalAction::class.java)) return
 
         val adminUserId = extractAdminUserId(request) ?: return
 
@@ -70,10 +74,5 @@ class AdminAuditInterceptor(
         }
     }
 
-    private fun extractTarget(path: String): Pair<String?, Long?> {
-        val segments = path.removePrefix("/api/v1/admin/").split("/")
-        val targetType = segments.firstOrNull()?.uppercase()?.removeSuffix("S")
-        val targetId = segments.getOrNull(1)?.toLongOrNull()
-        return Pair(targetType, targetId)
-    }
+    private fun extractTarget(path: String): Pair<String?, Long?> = AuditTargetExtractor.extractPair(path)
 }

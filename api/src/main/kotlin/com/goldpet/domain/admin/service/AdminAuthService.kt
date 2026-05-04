@@ -5,10 +5,12 @@ import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.AdminUserPrincipal
 import com.goldpet.domain.admin.entity.AdminUser
 import com.goldpet.domain.admin.repository.AdminUserRepository
+import com.goldpet.domain.common.exception.BadRequestException
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Service
 class AdminAuthService(
@@ -18,7 +20,11 @@ class AdminAuthService(
     private val adminTotpService: AdminTotpService
 ) {
 
-    @Transactional(readOnly = true)
+    companion object {
+        val ADMIN_PASSWORD_REGEX = Regex("^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#\$%^&*()_+\\-=\\[\\]{}|;:',.<>?/~`]).{8,}$")
+    }
+
+    @Transactional
     fun login(email: String, passwordRaw: String): Pair<String?, AdminUser> {
         val emailHash = BlindIndexUtil.hash(email)
             ?: throw BadCredentialsException("Invalid Email or Password")
@@ -33,6 +39,8 @@ class AdminAuthService(
             throw BadCredentialsException("Account is disabled")
         }
 
+        adminUser.lastLoginAt = LocalDateTime.now()
+
         // If user has 2FA enabled (otpSecret is set), return null token to signal 2FA requirement
         if (!adminUser.otpSecret.isNullOrBlank()) {
             return Pair(null, adminUser)
@@ -41,6 +49,23 @@ class AdminAuthService(
         // Otherwise return full token
         val token = generateToken(adminUser)
         return Pair(token, adminUser)
+    }
+
+    @Transactional
+    fun changePassword(adminUserId: Long, currentPassword: String, newPassword: String) {
+        val adminUser = adminUserRepository.findById(adminUserId)
+            .orElseThrow { BadCredentialsException("User not found") }
+
+        if (!passwordEncoder.matches(currentPassword, adminUser.passwordHash)) {
+            throw BadCredentialsException("Invalid current password")
+        }
+
+        if (!ADMIN_PASSWORD_REGEX.matches(newPassword)) {
+            throw BadRequestException("비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 포함해야 합니다.")
+        }
+
+        adminUser.passwordHash = passwordEncoder.encode(newPassword)
+        adminUser.mustChangePassword = false
     }
 
     @Transactional

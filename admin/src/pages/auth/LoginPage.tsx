@@ -9,12 +9,13 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  
+
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [tempUserId, setTempUserId] = useState<string | number | null>(null);
+  const [tempMustChange, setTempMustChange] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,11 +30,11 @@ export default function LoginPage() {
       const response = await authService.login(email, password);
       if (response.requiresTwoFactor && response.user) {
         setTempUserId(response.user.id);
+        setTempMustChange(response.mustChangePassword ?? false);
         setStep('otp');
       } else if (response.user && response.token) {
-        // Direct login if 2FA is meant to be optional in future (though PRD says mandatory)
-        login(response.token, response.user);
-        navigate(from, { replace: true });
+        login(response.token, response.user, response.mustChangePassword);
+        navigate(response.mustChangePassword ? '/change-password' : from, { replace: true });
       }
     } catch {
       setError('로그인 정보가 올바르지 않습니다.');
@@ -52,8 +53,8 @@ export default function LoginPage() {
          throw new Error('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
       }
       const { token, user } = await authService.verifyOtp(tempUserId, otp);
-      login(token, user);
-      navigate(from, { replace: true });
+      login(token, user, tempMustChange);
+      navigate(tempMustChange ? '/change-password' : from, { replace: true });
     } catch {
       setError('인증 코드가 올바르지 않습니다.');
     } finally {
@@ -65,7 +66,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg overflow-hidden md:max-w-xl">
         <div className="md:flex">
-          {/* Visual Side */}
           <div className="hidden md:block md:w-1/2 bg-amber-500 p-8 flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mb-4">
@@ -79,7 +79,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Form Side */}
           <div className="w-full md:w-1/2 p-8">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
               {step === 'credentials' ? '관리자 로그인' : '2단계 인증'}
@@ -172,7 +171,7 @@ export default function LoginPage() {
                 </Button>
               </form>
             )}
-            
+
             <div className="mt-8 text-center md:hidden">
               <span className="text-xs text-gray-400">© GoldPet Corp.</span>
             </div>
@@ -182,6 +181,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-// Missing import fix aid
-

@@ -1,5 +1,8 @@
 package com.goldpet.domain.admin.service
 
+import com.goldpet.domain.admin.audit.AdminAuditDetails
+import com.goldpet.domain.admin.audit.AdminAuditDetailsCodec
+import com.goldpet.domain.admin.audit.AuditTarget
 import com.goldpet.domain.admin.entity.AdminAuditLog
 import com.goldpet.domain.admin.repository.AdminAuditLogRepository
 import org.springframework.data.domain.Page
@@ -35,6 +38,34 @@ class AdminAuditService(
                 responseStatus = responseStatus,
                 details = details
             )
+        )
+    }
+
+    /**
+     * 강타입 [AdminAuditDetails] / [AuditTarget] 변형. 기존 String 시그니처를 그대로 호출한다.
+     * details 는 [AdminAuditDetailsCodec] 로 JSON 직렬화되어 동일한 details 컬럼에 적재된다.
+     */
+    @Transactional
+    fun log(
+        adminUserId: Long,
+        action: String,
+        target: AuditTarget? = null,
+        details: AdminAuditDetails? = null,
+        ipAddress: String? = null,
+        requestPath: String? = null,
+        requestMethod: String? = null,
+        responseStatus: Int? = null
+    ) {
+        log(
+            adminUserId = adminUserId,
+            action = action,
+            targetType = target?.type,
+            targetId = target?.id,
+            ipAddress = ipAddress,
+            requestPath = requestPath,
+            requestMethod = requestMethod,
+            responseStatus = responseStatus,
+            details = AdminAuditDetailsCodec.encode(details)
         )
     }
 

@@ -1,17 +1,25 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { systemService } from '../../services/systemService';
-import type { AdminUser } from '../../services/systemService';
+import type { AdminUser, AdminCreateRequest, AdminUpdateRequest } from '../../services/systemService';
 import { cacheService } from '../../services/cacheService';
 import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
 import { toast } from 'sonner'
 import { useConfirm } from '@/hooks/useConfirm'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button as UIButton } from '@/components/ui/button';
+import AdminFormDialog from './AdminFormDialog';
 
 export default function SystemPage() {
   const queryClient = useQueryClient();
   const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
+
+  const [adminFormOpen, setAdminFormOpen] = useState(false);
+  const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [tempPasswordTarget, setTempPasswordTarget] = useState<string>('');
 
   const { data: systemInfo, isLoading: loadingSystem } = useQuery({
     queryKey: ['systemInfo'],
@@ -66,7 +74,6 @@ export default function SystemPage() {
     },
   });
 
-  // configs에서 가입 상태 파생
   const signupEnabled = useMemo(() => {
     if (configs.length > 0) {
       const signupConfig = configs.find(c => c.key === 'allow_signups' || c.key === 'signup.enabled');
@@ -114,6 +121,29 @@ export default function SystemPage() {
     },
   });
 
+  const deleteAdminMutation = useMutation({
+    mutationFn: (id: number) => systemService.deleteAdmin(id),
+    onSuccess: () => {
+      toast.success('관리자가 삭제되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['admins'] });
+    },
+    onError: () => {
+      toast.error('삭제에 실패했습니다.');
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (id: number) => systemService.resetAdminPassword(id),
+    onSuccess: (data, id) => {
+      const admin = admins.find(a => a.id === id);
+      setTempPasswordTarget(admin?.email ?? '');
+      setTempPassword(data.temporaryPassword);
+    },
+    onError: () => {
+      toast.error('비밀번호 재발급에 실패했습니다.');
+    },
+  });
+
   const handleUpdateConfig = (key: string, value: string) => {
     updateConfigMutation.mutate({ key, value });
   };
@@ -144,6 +174,51 @@ export default function SystemPage() {
     if (await confirmDialog({ description: msg })) signupMutation.mutate(next);
   };
 
+  const handleDeleteAdmin = async (admin: AdminUser) => {
+    if (!(await confirmDialog({ description: `${admin.email} 관리자를 삭제하시겠습니까?`, variant: 'destructive' }))) return;
+    deleteAdminMutation.mutate(admin.id);
+  };
+
+  const handleResetPassword = async (admin: AdminUser) => {
+    if (!(await confirmDialog({ description: `${admin.email}의 비밀번호를 재발급하시겠습니까?` }))) return;
+    resetPasswordMutation.mutate(admin.id);
+  };
+
+  const openCreateDialog = () => {
+    setEditingAdmin(null);
+    setAdminFormOpen(true);
+  };
+
+  const openEditDialog = (admin: AdminUser) => {
+    setEditingAdmin(admin);
+    setAdminFormOpen(true);
+  };
+
+  const handleAdminFormSubmit = async (data: AdminCreateRequest | AdminUpdateRequest) => {
+    try {
+      if (editingAdmin) {
+        await systemService.updateAdmin(editingAdmin.id, data as AdminUpdateRequest);
+        toast.success('관리자 정보가 수정되었습니다.');
+        setAdminFormOpen(false);
+        queryClient.invalidateQueries({ queryKey: ['admins'] });
+      } else {
+        const result = await systemService.createAdmin(data as AdminCreateRequest);
+        setAdminFormOpen(false);
+        queryClient.invalidateQueries({ queryKey: ['admins'] });
+        if (result.temporaryPassword) {
+          setTempPasswordTarget(result.email);
+          setTempPassword(result.temporaryPassword);
+        } else {
+          toast.success('관리자가 추가되었습니다.');
+        }
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg ?? '저장에 실패했습니다.');
+      throw err;
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       OK: 'bg-green-100 text-green-800',
@@ -171,15 +246,26 @@ export default function SystemPage() {
         </span>
       ),
     },
+    {
+      key: 'isActive',
+      header: '상태',
+      align: 'center',
+      render: (value) => (
+        <span className={`px-2 py-0.5 rounded text-xs font-medium ${value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+          {value ? '활성' : '비활성'}
+        </span>
+      ),
+    },
     { key: 'lastLogin', header: '최근 로그인' },
     {
       key: 'id',
       header: '관리',
       align: 'right',
-      render: () => (
+      render: (_value, row) => (
         <span className="inline-flex gap-3">
-          <Button variant="link" size="sm" disabled={true} className="cursor-not-allowed" title="Phase 2 (~2026-06-15) 에서 구현 예정">수정</Button>
-          <Button variant="link" size="sm" disabled={true} className="text-red-600 hover:text-red-900 cursor-not-allowed" title="Phase 2 (~2026-06-15) 에서 구현 예정">삭제</Button>
+          <Button variant="link" size="sm" onClick={() => openEditDialog(row)}>수정</Button>
+          <Button variant="link" size="sm" onClick={() => handleResetPassword(row)} disabled={resetPasswordMutation.isPending}>재발급</Button>
+          <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDeleteAdmin(row)}>삭제</Button>
         </span>
       ),
     },
@@ -189,7 +275,6 @@ export default function SystemPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">시스템 관리</h1>
 
-      {/* 시스템 상태 */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <h2 className="font-semibold mb-4">시스템 상태</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -234,7 +319,6 @@ export default function SystemPage() {
         </div>
       </div>
 
-      {/* 캐시 관리 */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-semibold">캐시 관리</h2>
@@ -269,7 +353,6 @@ export default function SystemPage() {
         </div>
       </div>
 
-      {/* 앱 설정 */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <h2 className="font-semibold mb-4">앱 설정</h2>
         <div className="space-y-4">
@@ -317,11 +400,10 @@ export default function SystemPage() {
         </div>
       </div>
 
-      {/* 관리자 계정 */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="font-semibold">관리자 계정</h2>
-          <Button variant="primary" disabled={true} className="cursor-not-allowed" title="Phase 2 (~2026-06-15) 에서 구현 예정">+ 관리자 추가</Button>
+          <Button variant="primary" onClick={openCreateDialog}>+ 관리자 추가</Button>
         </div>
         <DataTable<AdminUser>
           columns={adminColumns}
@@ -330,7 +412,6 @@ export default function SystemPage() {
         />
       </div>
 
-      {/* 유지보수 */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <h2 className="font-semibold mb-4">유지보수</h2>
         <div className="space-y-4">
@@ -369,6 +450,32 @@ export default function SystemPage() {
           </div>
         </div>
       </div>
+
+      <AdminFormDialog
+        open={adminFormOpen}
+        onOpenChange={setAdminFormOpen}
+        editingAdmin={editingAdmin}
+        onSubmit={handleAdminFormSubmit}
+      />
+
+      <Dialog open={tempPassword !== null} onOpenChange={(open) => { if (!open) setTempPassword(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>임시 비밀번호</DialogTitle>
+            <DialogDescription>
+              {tempPasswordTarget}의 임시 비밀번호입니다. 이 창을 닫으면 다시 확인할 수 없습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="my-4 p-4 bg-gray-50 rounded-lg text-center">
+            <p className="text-sm text-gray-500 mb-1">임시 비밀번호</p>
+            <p className="text-xl font-mono font-bold tracking-widest text-gray-900 select-all">{tempPassword}</p>
+          </div>
+          <DialogFooter>
+            <UIButton onClick={() => setTempPassword(null)}>확인</UIButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     {ConfirmDialog}
     </div>
   );

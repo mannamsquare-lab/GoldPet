@@ -10,11 +10,15 @@ interface RequireAuthProps {
 }
 
 export default function RequireAuth({ children, requiredRoles }: RequireAuthProps) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, mustChangePassword } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (mustChangePassword && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
   }
 
   if (requiredRoles && requiredRoles.length > 0 && user) {
