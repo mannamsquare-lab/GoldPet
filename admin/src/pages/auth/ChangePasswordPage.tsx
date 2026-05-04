@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import axios from 'axios';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/common/Button';
+
+const ADMIN_PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{}|;:',.<>?/~`]).{8,}$/;
+const PASSWORD_RULE_MESSAGE = '비밀번호는 영문, 숫자, 특수문자를 포함해 8자 이상이어야 합니다.';
 
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
@@ -23,8 +27,8 @@ export default function ChangePasswordPage() {
       setError('새 비밀번호와 확인 비밀번호가 일치하지 않습니다.');
       return;
     }
-    if (newPassword.length < 8) {
-      setError('비밀번호는 8자 이상이어야 합니다.');
+    if (!ADMIN_PASSWORD_REGEX.test(newPassword)) {
+      setError(PASSWORD_RULE_MESSAGE);
       return;
     }
 
@@ -33,8 +37,11 @@ export default function ChangePasswordPage() {
       await authService.changePassword(currentPassword, newPassword);
       clearMustChangePassword();
       navigate('/', { replace: true });
-    } catch {
-      setError('비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인해주세요.');
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { message?: string } | undefined)?.message
+        : undefined;
+      setError(message ?? '비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +100,7 @@ export default function ChangePasswordPage() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all outline-none"
-                placeholder="새 비밀번호 (8자 이상)"
+                placeholder="영문/숫자/특수문자 포함 8자 이상"
                 required
               />
             </div>
