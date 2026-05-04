@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communityService } from '../../services/communityService';
 import type { CreatePostRequest } from '../../services/communityService';
 import { useAlert } from '../../contexts/AlertContext';
@@ -10,6 +10,7 @@ import CustomSelect from '../../components/common/CustomSelect';
 export default function CommunityWritePage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const editMode = location.state?.mode === 'EDIT';
   const initialPost = location.state?.post;
@@ -63,6 +64,8 @@ export default function CommunityWritePage() {
   const createMutation = useMutation({
     mutationFn: communityService.createPost,
     onSuccess: (data) => {
+      // 목록/마이포스트/totalCount 등 community 캐시 전체 무효화 (생성 직후 stale 데이터 노출 방지).
+      queryClient.invalidateQueries({ queryKey: ['community'] });
       showAlert('게시글이 등록되었습니다.', () => {
           if (data.postId) {
               navigate(`/community/${data.postId}`, { replace: true });
@@ -72,7 +75,7 @@ export default function CommunityWritePage() {
       });
     },
     onError: () => {
-       showAlert('게시글 등록에 실패했습니다.'); 
+       showAlert('게시글 등록에 실패했습니다.');
     },
   });
 
@@ -88,9 +91,9 @@ export default function CommunityWritePage() {
             }
             return item.url!; // Existing URL
         });
-        
+
         const finalUrls = await Promise.all(uploadPromises);
-        
+
         return communityService.updatePost(initialPost.id, {
             title: data.title,
             content: data.content,
@@ -98,6 +101,9 @@ export default function CommunityWritePage() {
         });
     },
     onSuccess: () => {
+        // 상세/목록/마이포스트 등 community 캐시 전체 무효화. 누락 시 수정 직후 옛 캐시가 노출돼
+        // "수정이 안 된 것처럼" 보이는 사용자 신고 발생.
+        queryClient.invalidateQueries({ queryKey: ['community'] });
         showAlert('게시글이 수정되었습니다.', () => {
              navigate(`/community/${initialPost.id}`, { replace: true });
         });
