@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import axios from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { systemService } from '../../services/systemService';
 import type { AdminUser, AdminCreateRequest, AdminUpdateRequest } from '../../services/systemService';
@@ -141,6 +142,31 @@ export default function SystemPage() {
     },
     onError: () => {
       toast.error('비밀번호 재발급에 실패했습니다.');
+    },
+  });
+
+  const { data: backupJobs = [] } = useQuery({
+    queryKey: ['backupJobs'],
+    queryFn: () => systemService.getBackupJobs(5),
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+  });
+
+  const lastJob = backupJobs[0];
+  const isRunning = lastJob?.status === 'PENDING' || lastJob?.status === 'RUNNING';
+
+  const triggerMutation = useMutation({
+    mutationFn: () => systemService.triggerBackup(),
+    onSuccess: () => {
+      toast.success('백업이 시작되었습니다');
+      queryClient.invalidateQueries({ queryKey: ['backupJobs'] });
+    },
+    onError: (err) => {
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        toast.error('이미 진행 중인 백업이 있습니다');
+      } else {
+        toast.error('백업 트리거 실패');
+      }
     },
   });
 
@@ -441,12 +467,111 @@ export default function SystemPage() {
               {signupMutation.isPending ? '변경 중...' : signupEnabled ? '활성' : '비활성'}
             </Button>
           </div>
-          <div className="flex items-center justify-between py-3">
-            <div>
-              <p className="font-medium">데이터 백업</p>
-              <p className="text-sm text-gray-500">마지막 백업: 자동 관리</p>
+          <div className="py-3">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="font-medium">데이터 백업</p>
+                <p className="text-sm text-gray-500">수동 또는 자동(systemd timer)으로 실행됩니다</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['backupJobs'] })}
+                >
+                  지금 새로고침
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={isRunning || triggerMutation.isPending}
+                  onClick={() => triggerMutation.mutate()}
+                >
+                  {triggerMutation.isPending ? '요청 중...' : isRunning ? '진행 중...' : '백업 실행'}
+                </Button>
+              </div>
             </div>
-            <Button variant="primary" disabled={true} className="cursor-not-allowed" title="Phase 3 (인프라 PR) 에서 활성화">백업 실행</Button>
+            {lastJob && (
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">상태</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    lastJob.status === 'SUCCEEDED' ? 'bg-green-100 text-green-800' :
+                    lastJob.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                    lastJob.status === 'RUNNING' ? 'bg-blue-100 text-blue-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>{lastJob.status}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">트리거</span>
+                  <span>{lastJob.triggerType === 'MANUAL' ? `수동 (${lastJob.triggeredByAdminEmail ?? '-'})` : '자동 (cron)'}</span>
+                </div>
+                {lastJob.startedAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">시작</span>
+                    <span>{lastJob.startedAt}</span>
+                  </div>
+                )}
+                {lastJob.finishedAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">완료</span>
+                    <span>{lastJob.finishedAt}</span>
+                  </div>
+                )}
+                {lastJob.fileSizeBytes != null && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">파일 크기</span>
+                    <span>{(lastJob.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                )}
+                {lastJob.filePath && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">경로</span>
+                    <span className="text-xs text-gray-600 truncate max-w-xs">{lastJob.filePath}</span>
+                  </div>
+                )}
+                {lastJob.errorMessage && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">오류</span>
+                    <span className="text-red-600 text-xs">{lastJob.errorMessage}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {backupJobs.length > 1 && (
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead>
+                    <tr className="text-gray-500 border-b">
+                      <th className="pb-1 pr-3">ID</th>
+                      <th className="pb-1 pr-3">상태</th>
+                      <th className="pb-1 pr-3">트리거</th>
+                      <th className="pb-1 pr-3">시작</th>
+                      <th className="pb-1">크기</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {backupJobs.map(job => (
+                      <tr key={job.id} className="border-b last:border-0">
+                        <td className="py-1 pr-3 text-gray-400">{job.id}</td>
+                        <td className="py-1 pr-3">
+                          <span className={`px-1.5 py-0.5 rounded text-xs ${
+                            job.status === 'SUCCEEDED' ? 'bg-green-100 text-green-800' :
+                            job.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                            job.status === 'RUNNING' ? 'bg-blue-100 text-blue-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>{job.status}</span>
+                        </td>
+                        <td className="py-1 pr-3">{job.triggerType === 'MANUAL' ? '수동' : '자동'}</td>
+                        <td className="py-1 pr-3 text-gray-500">{job.startedAt ?? '-'}</td>
+                        <td className="py-1 text-gray-500">
+                          {job.fileSizeBytes != null ? `${(job.fileSizeBytes / 1024 / 1024).toFixed(1)} MB` : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>

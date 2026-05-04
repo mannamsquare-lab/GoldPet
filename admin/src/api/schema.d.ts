@@ -1415,6 +1415,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** DB 백업 수동 트리거 */
+        post: operations["triggerBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/admins": {
         parameters: {
             query?: never;
@@ -4037,6 +4054,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/backup/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 백업 작업 목록 조회 */
+        get: operations["getBackupJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/audit-logs": {
         parameters: {
             query?: never;
@@ -6003,6 +6037,27 @@ export interface components {
         UpdateConfigRequest: {
             key: string;
             value: string;
+        };
+        BackupJobResponse: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED";
+            /** Format: int64 */
+            triggeredByAdminId?: number;
+            triggeredByAdminEmail?: string;
+            /** @enum {string} */
+            triggerType: "AUTO_CRON" | "MANUAL";
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+            filePath?: string;
+            /** Format: int64 */
+            fileSizeBytes?: number;
+            errorMessage?: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         CreateAdminRequest: {
             email: string;
@@ -10421,6 +10476,26 @@ export interface operations {
             };
         };
     };
+    triggerBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BackupJobResponse"];
+                };
+            };
+        };
+    };
     getAdmins: {
         parameters: {
             query?: never;
@@ -14271,6 +14346,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SystemInfoResponse"];
+                };
+            };
+        };
+    };
+    getBackupJobs: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BackupJobResponse"][];
                 };
             };
         };

@@ -1,11 +1,15 @@
 package com.goldpet.domain.admin.controller
 
 import com.goldpet.config.security.AdminUserPrincipal
+import com.goldpet.domain.admin.audit.AdminAuditDetails
+import com.goldpet.domain.admin.audit.AuditTarget
 import com.goldpet.domain.admin.audit.CriticalAction
+import com.goldpet.domain.admin.dto.BackupJobResponse
 import com.goldpet.domain.admin.entity.AdminAuditLog
 import com.goldpet.domain.admin.entity.AdminUserRole
 import com.goldpet.domain.admin.service.AdminAuditService
 import com.goldpet.domain.admin.service.AdminSystemService
+import com.goldpet.domain.admin.service.BackupJobService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -23,12 +27,38 @@ import org.springframework.web.bind.annotation.*
 class AdminSystemController(
     private val adminSystemService: AdminSystemService,
     private val adminAuditService: AdminAuditService,
+    private val backupJobService: BackupJobService,
     private val piiEncryptionMigrationService: com.goldpet.domain.admin.service.PiiEncryptionMigrationService
 ) {
     @Operation(summary = "시스템 정보 조회")
     @GetMapping("/info")
     fun getSystemInfo(): ResponseEntity<SystemInfoResponse> {
         return ResponseEntity.ok(adminSystemService.getSystemInfo())
+    }
+
+    @Operation(summary = "DB 백업 수동 트리거")
+    @PostMapping("/backup")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "BACKUP_TRIGGER")
+    fun triggerBackup(
+        @AuthenticationPrincipal principal: AdminUserPrincipal
+    ): ResponseEntity<BackupJobResponse> {
+        val job = backupJobService.trigger(principal.id)
+        adminAuditService.log(
+            adminUserId = principal.id,
+            action = "BACKUP_TRIGGER",
+            target = AuditTarget("BACKUP_JOB", job.id),
+            details = AdminAuditDetails.Backup(filePath = null, sizeBytes = null)
+        )
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(job)
+    }
+
+    @Operation(summary = "백업 작업 목록 조회")
+    @GetMapping("/backup/jobs")
+    fun getBackupJobs(
+        @RequestParam(defaultValue = "20") limit: Int
+    ): ResponseEntity<List<BackupJobResponse>> {
+        return ResponseEntity.ok(backupJobService.listJobs(limit))
     }
 
     @Operation(summary = "관리자 목록 조회")

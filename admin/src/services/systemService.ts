@@ -2,6 +2,20 @@ import { typedClient } from './typedClient';
 import { apiClient } from './apiClient';
 import type { SystemInfoResponse, AppConfigResponse } from '../types/api';
 
+export interface BackupJob {
+  id: number;
+  status: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+  triggeredByAdminId?: number;
+  triggeredByAdminEmail?: string;
+  triggerType: 'AUTO_CRON' | 'MANUAL';
+  startedAt?: string;
+  finishedAt?: string;
+  filePath?: string;
+  fileSizeBytes?: number;
+  errorMessage?: string;
+  createdAt: string;
+}
+
 export type SystemInfo = SystemInfoResponse;
 export type AppConfig = AppConfigResponse;
 
@@ -84,5 +98,15 @@ export const systemService = {
   async resetAdminPassword(id: number): Promise<{ temporaryPassword: string }> {
     const response = await apiClient.post<{ temporaryPassword: string }>(`/system/admins/${id}/reset-password`, {});
     return response.data;
+  },
+
+  async triggerBackup(): Promise<BackupJob> {
+    const { data } = await apiClient.post<BackupJob>('/system/backup');
+    return data;
+  },
+
+  async getBackupJobs(limit = 20): Promise<BackupJob[]> {
+    const { data } = await apiClient.get<BackupJob[]>('/system/backup/jobs', { params: { limit } });
+    return data;
   },
 };
