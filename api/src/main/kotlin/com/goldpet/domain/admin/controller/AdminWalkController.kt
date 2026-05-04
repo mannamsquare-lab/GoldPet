@@ -13,12 +13,14 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
 
 @Tag(name = "Admin Walk Management", description = "관리자 산책 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/walks")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminWalkController(
     private val adminWalkService: AdminWalkService
 ) {

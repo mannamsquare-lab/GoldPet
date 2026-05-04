@@ -6,11 +6,13 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Data", description = "관리자 코드/마스터 데이터 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/data")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminDataController(
     private val adminDataService: AdminDataService
 ) {

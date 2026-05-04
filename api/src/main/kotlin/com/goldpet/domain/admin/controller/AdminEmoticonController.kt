@@ -13,11 +13,13 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "어드민: 이모티콘 관리", description = "이모티콘 및 이모티콘 팩 CRUD")
 @RestController
 @RequestMapping("/api/v1/admin/emoticons")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminEmoticonController(
     private val adminEmoticonService: AdminEmoticonService,
     private val emoticonSeedS3MigrationService: EmoticonSeedS3MigrationService,

@@ -5,6 +5,7 @@ import com.goldpet.domain.checkin.entity.Place
 import com.goldpet.domain.checkin.entity.PlaceCategory
 import com.goldpet.domain.checkin.repository.CheckInRepository
 import com.goldpet.domain.checkin.repository.PlaceRepository
+import com.goldpet.domain.common.exception.NotFoundException
 import com.goldpet.domain.walk.repository.WalkRepository
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
@@ -12,6 +13,7 @@ import org.locationtech.jts.geom.PrecisionModel
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
 @Service
@@ -39,16 +41,8 @@ class AdminLBSService(
     }
 
     fun getPlaces(): List<PlaceAdminResponse> {
-        return placeRepository.findAll().map { place ->
-            PlaceAdminResponse(
-                id = place.id,
-                name = place.name,
-                category = place.category.name,
-                latitude = place.locationGeom.y,
-                longitude = place.locationGeom.x,
-                visits = place.checkinCount,
-                rating = 0.0 // 리뷰 시스템 미구현
-            )
+        return placeRepository.findAllByDeletedAtIsNull().map { place ->
+            toPlaceAdminResponse(place)
         }
     }
 
@@ -56,11 +50,46 @@ class AdminLBSService(
     fun createPlace(request: CreatePlaceRequest): PlaceAdminResponse {
         val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
         val point = geometryFactory.createPoint(Coordinate(request.longitude, request.latitude))
+        val category = PlaceCategory.entries.find { it.name == request.category.uppercase() }
+            ?: throw IllegalArgumentException("유효하지 않은 카테고리: ${request.category}. 가능한 값: ${PlaceCategory.entries.joinToString { it.name }}")
         val place = placeRepository.save(Place(
             name = request.name,
-            category = PlaceCategory.valueOf(request.category.uppercase()),
+            category = category,
             locationGeom = point
         ))
+        return toPlaceAdminResponse(place)
+    }
+
+    @Transactional
+    fun updatePlace(id: Long, request: UpdatePlaceRequest): PlaceAdminResponse {
+        val place = placeRepository.findByIdAndDeletedAtIsNull(id)
+            ?: throw NotFoundException("Place not found: $id")
+
+        request.name?.let { place.name = it }
+        request.category?.let { cat ->
+            place.category = PlaceCategory.entries.find { it.name == cat.uppercase() }
+                ?: throw IllegalArgumentException("유효하지 않은 카테고리: $cat. 가능한 값: ${PlaceCategory.entries.joinToString { it.name }}")
+        }
+
+        if (request.latitude != null || request.longitude != null) {
+            val newLat = request.latitude ?: place.locationGeom.y
+            val newLng = request.longitude ?: place.locationGeom.x
+            val factory = GeometryFactory(PrecisionModel(), 4326)
+            place.locationGeom = factory.createPoint(Coordinate(newLng, newLat))
+        }
+
+        return toPlaceAdminResponse(placeRepository.save(place))
+    }
+
+    @Transactional
+    fun deletePlace(id: Long) {
+        val place = placeRepository.findByIdAndDeletedAtIsNull(id)
+            ?: throw NotFoundException("Place not found: $id")
+        place.deletedAt = LocalDateTime.now()
+        placeRepository.save(place)
+    }
+
+    private fun toPlaceAdminResponse(place: Place): PlaceAdminResponse {
         return PlaceAdminResponse(
             id = place.id,
             name = place.name,

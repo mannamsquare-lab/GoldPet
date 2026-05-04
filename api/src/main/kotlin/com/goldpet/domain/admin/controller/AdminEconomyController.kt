@@ -6,11 +6,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Economy Management", description = "관리자 Gold/결제 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/economy")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminEconomyController(
     private val adminEconomyService: AdminEconomyService
 ) {
@@ -31,6 +33,7 @@ class AdminEconomyController(
 
     @Operation(summary = "Gold 조정")
     @PostMapping("/adjust")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun adjustGold(@RequestBody request: GoldAdjustRequest): ResponseEntity<Void> {
         adminEconomyService.adjustGold(request)
         return ResponseEntity.ok().build()
@@ -63,6 +66,7 @@ class AdminEconomyController(
 
     @Operation(summary = "환불 처리")
     @PostMapping("/refund")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun refundTransaction(@RequestBody request: AdminRefundRequest): ResponseEntity<Void> {
         adminEconomyService.refundTransaction(request)
         return ResponseEntity.ok().build()

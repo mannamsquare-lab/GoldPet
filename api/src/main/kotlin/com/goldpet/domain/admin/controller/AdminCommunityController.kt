@@ -68,7 +68,7 @@ data class AdminCommentUpdateRequest(
 @Tag(name = "Admin Community", description = "관리자 커뮤니티 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/community")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminCommunityController(
     private val communityService: AdminCommunityService
 ) {

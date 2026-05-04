@@ -44,7 +44,7 @@ data class RecentActivityItem(
 @Tag(name = "Admin Dashboard", description = "관리자 대시보드 API")
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminDashboardController(
     private val dashboardService: AdminDashboardService
 ) {

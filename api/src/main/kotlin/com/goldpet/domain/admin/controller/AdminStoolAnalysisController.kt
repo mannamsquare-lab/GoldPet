@@ -6,12 +6,14 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
 
 @Tag(name = "Admin Stool Analysis", description = "관리자 배변 분석 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/stool-analyses")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminStoolAnalysisController(
     private val adminStoolAnalysisService: AdminStoolAnalysisService
 ) {

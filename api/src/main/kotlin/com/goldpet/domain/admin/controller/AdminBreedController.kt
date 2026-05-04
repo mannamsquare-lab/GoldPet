@@ -7,12 +7,14 @@ import com.goldpet.domain.pet.dto.BreedResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.net.URI
 
 @Tag(name = "어드민: 품종 관리", description = "반려동물 품종 CRUD")
 @RestController
 @RequestMapping("/api/v1/admin/breeds")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminBreedController(
     private val breedAdminService: BreedAdminService
 ) {

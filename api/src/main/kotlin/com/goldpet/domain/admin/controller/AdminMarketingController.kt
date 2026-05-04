@@ -5,11 +5,13 @@ import com.goldpet.domain.admin.service.AdminMarketingService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Marketing", description = "관리자 마케팅 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/marketing")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminMarketingController(
     private val adminMarketingService: AdminMarketingService
 ) {
@@ -74,6 +76,7 @@ class AdminMarketingController(
 
     @Operation(summary = "알림 발송")
     @PostMapping("/notifications/send")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun sendNotification(@RequestBody request: SendNotificationRequest): ResponseEntity<SendNotificationResult> {
         return ResponseEntity.ok(adminMarketingService.sendNotification(request))
     }

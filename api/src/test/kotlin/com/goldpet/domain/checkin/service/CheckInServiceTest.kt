@@ -113,7 +113,7 @@ class CheckInServiceTest {
         val pageable = PageRequest.of(0, 10)
         val page = PageImpl(listOf(testPlace), pageable, 1)
 
-        whenever(placeRepository.findAll(pageable)).thenReturn(page)
+        whenever(placeRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(page)
 
         // When
         val result = checkInService.getPlaces(null, pageable)
@@ -129,7 +129,7 @@ class CheckInServiceTest {
         val pageable = PageRequest.of(0, 10)
         val page = PageImpl(listOf(testPlace), pageable, 1)
 
-        whenever(placeRepository.findByCategory(PlaceCategory.PARK, pageable)).thenReturn(page)
+        whenever(placeRepository.findByCategoryAndDeletedAtIsNull(PlaceCategory.PARK, pageable)).thenReturn(page)
 
         // When
         val result = checkInService.getPlaces(PlaceCategory.PARK, pageable)
@@ -142,7 +142,7 @@ class CheckInServiceTest {
     @Test
     fun `getPlace should return place when exists`() {
         // Given
-        whenever(placeRepository.findById(1L)).thenReturn(Optional.of(testPlace))
+        whenever(placeRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(testPlace)
 
         // When
         val result = checkInService.getPlace(1L)
@@ -155,7 +155,7 @@ class CheckInServiceTest {
     @Test
     fun `getPlace should throw exception when not found`() {
         // Given
-        whenever(placeRepository.findById(999L)).thenReturn(Optional.empty())
+        whenever(placeRepository.findByIdAndDeletedAtIsNull(999L)).thenReturn(null)
 
         // When & Then
         assertThrows<NotFoundException> {
@@ -169,7 +169,7 @@ class CheckInServiceTest {
         val pageable = PageRequest.of(0, 10)
         val page = PageImpl(listOf(testPlace), pageable, 1)
 
-        whenever(placeRepository.findByNameContainingIgnoreCase("서울", pageable)).thenReturn(page)
+        whenever(placeRepository.findByNameContainingIgnoreCaseAndDeletedAtIsNull("서울", pageable)).thenReturn(page)
 
         // When
         val result = checkInService.searchPlaces("서울", pageable)
@@ -223,7 +223,7 @@ class CheckInServiceTest {
         )
 
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(placeRepository.findById(1L)).thenReturn(Optional.of(testPlace))
+        whenever(placeRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(testPlace)
         whenever(checkInRepository.existsByUserIdAndPlaceIdAndCreatedAtAfter(any(), any(), any())).thenReturn(false)
         whenever(placeRepository.save(any<Place>())).thenReturn(testPlace)
         whenever(checkInRepository.save(any<CheckIn>())).thenAnswer { invocation ->
@@ -255,7 +255,7 @@ class CheckInServiceTest {
         val request = CreateCheckInRequest(placeId = 1L)
 
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(placeRepository.findById(1L)).thenReturn(Optional.of(testPlace))
+        whenever(placeRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(testPlace)
         whenever(checkInRepository.existsByUserIdAndPlaceIdAndCreatedAtAfter(any(), any(), any())).thenReturn(true)
 
         // When & Then

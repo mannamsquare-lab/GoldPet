@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Activity, Calendar, MapPin, Clock } from 'lucide-react';
 import { lbsService } from '../../services/lbsService';
-import type { Place } from '../../services/lbsService';
+import type { Place, PlaceCategoryOption } from '../../services/lbsService';
 import { walkAdminService } from '../../services/walkAdminService';
 import type { WalkAdminResponse } from '../../services/walkAdminService';
 import { usePagedQuery } from '../../hooks/usePagedQuery';
@@ -42,8 +42,9 @@ export default function LBSPage() {
   // Walk detail modal
   const [selectedWalk, setSelectedWalk] = useState<WalkAdminResponse | null>(null);
 
-  // Place add modal
+  // Place add/edit modal
   const [showPlaceForm, setShowPlaceForm] = useState(false);
+  const [editingPlace, setEditingPlace] = useState<Place | null>(null);
   const [placeForm, setPlaceForm] = useState({
     name: '',
     category: '',
@@ -56,6 +57,11 @@ export default function LBSPage() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['lbs-stats'],
     queryFn: () => lbsService.getStats(),
+  });
+
+  const { data: placeCategories = [] } = useQuery<PlaceCategoryOption[]>({
+    queryKey: ['place-categories'],
+    queryFn: () => lbsService.getPlaceCategories(),
   });
 
   const { data: walks, isLoading: walksLoading } = usePagedQuery<WalkAdminResponse>({
@@ -124,12 +130,12 @@ export default function LBSPage() {
   };
 
   const createPlaceMutation = useMutation({
-    mutationFn: () => lbsService.createPlace({
-      name: placeForm.name,
-      category: placeForm.category,
-      latitude: parseFloat(placeForm.latitude),
-      longitude: parseFloat(placeForm.longitude),
-    }),
+    mutationFn: () => {
+      const latitude = parseFloat(placeForm.latitude);
+      const longitude = parseFloat(placeForm.longitude);
+      if (isNaN(latitude) || isNaN(longitude)) throw new Error('위도/경도를 올바르게 입력해주세요.');
+      return lbsService.createPlace({ name: placeForm.name, category: placeForm.category, latitude, longitude });
+    },
     onSuccess: () => {
       loadPlaces();
       setShowPlaceForm(false);
@@ -137,6 +143,45 @@ export default function LBSPage() {
     },
     onError: () => toast.error('장소 추가에 실패했습니다.'),
   });
+
+  const updatePlaceMutation = useMutation({
+    mutationFn: (id: number) => {
+      const latitude = placeForm.latitude !== '' ? parseFloat(placeForm.latitude) : undefined;
+      const longitude = placeForm.longitude !== '' ? parseFloat(placeForm.longitude) : undefined;
+      if (latitude !== undefined && isNaN(latitude)) throw new Error('위도를 올바르게 입력해주세요.');
+      if (longitude !== undefined && isNaN(longitude)) throw new Error('경도를 올바르게 입력해주세요.');
+      return lbsService.updatePlace(id, { name: placeForm.name || undefined, category: placeForm.category || undefined, latitude, longitude });
+    },
+    onSuccess: () => {
+      loadPlaces();
+      setShowPlaceForm(false);
+      setEditingPlace(null);
+      setPlaceForm({ name: '', category: '', latitude: '', longitude: '' });
+    },
+    onError: () => toast.error('장소 수정에 실패했습니다.'),
+  });
+
+  const deletePlaceMutation = useMutation({
+    mutationFn: (id: number) => lbsService.deletePlace(id),
+    onSuccess: () => loadPlaces(),
+    onError: () => toast.error('장소 삭제에 실패했습니다.'),
+  });
+
+  const handleEditPlace = (place: Place) => {
+    setEditingPlace(place);
+    setPlaceForm({
+      name: place.name,
+      category: place.category,
+      latitude: String(place.latitude),
+      longitude: String(place.longitude),
+    });
+    setShowPlaceForm(true);
+  };
+
+  const handleDeletePlace = async (id: number) => {
+    if (!(await confirmDialog({ description: '이 장소를 삭제하시겠습니까?', variant: 'destructive' }))) return;
+    deletePlaceMutation.mutate(id);
+  };
 
   const walkColumns: ColumnDef<WalkAdminResponse>[] = [
     { key: 'id', header: 'ID', width: '60px' },
@@ -267,7 +312,7 @@ export default function LBSPage() {
           </div>
           {showPlaceForm && (
             <div className="p-4 border-b bg-gray-50">
-              <h3 className="font-medium mb-3">장소 추가</h3>
+              <h3 className="font-medium mb-3">{editingPlace ? '장소 수정' : '장소 추가'}</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
@@ -280,13 +325,16 @@ export default function LBSPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-                  <input
-                    type="text"
+                  <select
                     value={placeForm.category}
                     onChange={(e) => setPlaceForm({ ...placeForm, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    placeholder="예: 공원, 카페"
-                  />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                  >
+                    <option value="">카테고리 선택</option>
+                    {placeCategories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>{cat.displayName}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">위도</label>
@@ -315,13 +363,14 @@ export default function LBSPage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  loading={createPlaceMutation.isPending}
-                  onClick={() => createPlaceMutation.mutate()}
+                  loading={editingPlace ? updatePlaceMutation.isPending : createPlaceMutation.isPending}
+                  onClick={() => editingPlace ? updatePlaceMutation.mutate(editingPlace.id) : createPlaceMutation.mutate()}
                 >
-                  추가
+                  {editingPlace ? '수정' : '추가'}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => {
                   setShowPlaceForm(false);
+                  setEditingPlace(null);
                   setPlaceForm({ name: '', category: '', latitude: '', longitude: '' });
                 }}>
                   취소
@@ -348,7 +397,10 @@ export default function LBSPage() {
                           ⭐ {place.rating} · {place.visits.toLocaleString()} 방문
                         </p>
                       </div>
-                      <Button variant="link" size="sm">수정</Button>
+                      <div className="flex gap-2">
+                        <Button variant="link" size="sm" onClick={() => handleEditPlace(place)}>수정</Button>
+                        <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDeletePlace(place.id)}>삭제</Button>
+                      </div>
                     </div>
                   </div>
                 ))

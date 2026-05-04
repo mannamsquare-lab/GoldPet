@@ -65,7 +65,7 @@ function App() {
             <Route path="notices" element={<NoticeManagementPage />} />
             <Route path="emoticons" element={<EmoticonManagementPage />} />
             <Route path="walk-ranking" element={<WalkRankingManagementPage />} />
-            <Route path="system" element={<SystemPage />} />
+            <Route path="system" element={<RequireAuth requiredRoles={['SUPER_ADMIN']}><SystemPage /></RequireAuth>} />
             <Route path="users/:userId" element={<UserDetailPage />} />
             <Route path="community/:postId" element={<CommunityDetailPage />} />
             <Route path="reports/:reportId" element={<ReportDetailPage />} />

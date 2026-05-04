@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.PostMapping
@@ -19,7 +20,8 @@ import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "어드민: 사용자 마이그레이션", description = "PII 암호화 키 교체 및 이메일 해시 마이그레이션")
 @RestController
-@RequestMapping("/api/admin/migration")
+@RequestMapping("/api/v1/admin/migration")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class UserMigrationController(
     private val userRepository: UserRepository,
     private val piiKeyRotationService: PiiKeyRotationService
@@ -32,6 +34,7 @@ class UserMigrationController(
      */
     @Operation(summary = "이메일 해시 전체 재계산")
     @PostMapping("/email-hash/rehash")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Transactional
     fun rehashAllEmailHashes(): ResponseEntity<Map<String, Any>> {
         val users = userRepository.findAll()
@@ -89,6 +92,7 @@ class UserMigrationController(
 
     @Operation(summary = "이메일 해시 마이그레이션")
     @PostMapping("/email-hash")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Transactional
     fun migrateEmailHash(): ResponseEntity<Map<String, Any>> {
         val users = userRepository.findAll()
@@ -184,6 +188,7 @@ class UserMigrationController(
     @Operation(summary = "PII 암호화 키 교체")
     // NOTE: No @Transactional here — PiiKeyRotationService.rotate() uses Propagation.NEVER.
     @PostMapping("/rotate-encryption-key")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun rotateEncryptionKey(
         @AuthenticationPrincipal principal: AdminUserPrincipal
     ): ResponseEntity<Any> = runRotation(dryRun = false, principalId = principal.id)
@@ -191,6 +196,7 @@ class UserMigrationController(
     @Operation(summary = "PII 암호화 키 교체 드라이런")
     // NOTE: No @Transactional here — PiiKeyRotationService.rotate() uses Propagation.NEVER.
     @PostMapping("/rotate-encryption-key/dry-run")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun rotateEncryptionKeyDryRun(
         @AuthenticationPrincipal principal: AdminUserPrincipal
     ): ResponseEntity<Any> = runRotation(dryRun = true, principalId = principal.id)

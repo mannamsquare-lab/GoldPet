@@ -8,11 +8,13 @@ import com.goldpet.domain.admin.service.AdminCacheService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Cache Management", description = "관리자 캐시 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/cache")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminCacheController(
     private val adminCacheService: AdminCacheService
 ) {

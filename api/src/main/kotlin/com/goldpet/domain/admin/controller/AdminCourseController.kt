@@ -77,7 +77,7 @@ data class CourseCommentAdminResponse(
 @Tag(name = "Admin Course", description = "관리자 코스 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/courses")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminCourseController(
     private val courseService: AdminCourseService
 ) {

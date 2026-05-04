@@ -39,21 +39,21 @@ class CheckInService(
 
     fun getPlaces(category: PlaceCategory?, pageable: Pageable): Page<PlaceResponse> {
         val places = if (category != null) {
-            placeRepository.findByCategory(category, pageable)
+            placeRepository.findByCategoryAndDeletedAtIsNull(category, pageable)
         } else {
-            placeRepository.findAll(pageable)
+            placeRepository.findAllByDeletedAtIsNull(pageable)
         }
         return places.map { PlaceResponse.from(it) }
     }
 
     fun getPlace(placeId: Long): PlaceResponse {
-        val place = placeRepository.findById(placeId)
-            .orElseThrow { NotFoundException("Place not found") }
+        val place = placeRepository.findByIdAndDeletedAtIsNull(placeId)
+            ?: throw NotFoundException("Place not found")
         return PlaceResponse.from(place)
     }
 
     fun searchPlaces(name: String, pageable: Pageable): Page<PlaceResponse> {
-        return placeRepository.findByNameContainingIgnoreCase(name, pageable)
+        return placeRepository.findByNameContainingIgnoreCaseAndDeletedAtIsNull(name, pageable)
             .map { PlaceResponse.from(it) }
     }
 
@@ -88,8 +88,8 @@ class CheckInService(
     fun checkIn(userId: Long, request: CreateCheckInRequest): CheckInResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { NotFoundException("User not found") }
-        val place = placeRepository.findById(request.placeId)
-            .orElseThrow { NotFoundException("Place not found") }
+        val place = placeRepository.findByIdAndDeletedAtIsNull(request.placeId)
+            ?: throw NotFoundException("Place not found")
 
         // 같은 장소에 1시간 내 중복 체크인 방지
         val oneHourAgo = LocalDateTime.now().minusHours(1)

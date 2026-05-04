@@ -7,12 +7,14 @@ import com.goldpet.domain.aiprofile.dto.UpdateLoadingTipRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.net.URI
 
 @Tag(name = "Admin - Loading Tips", description = "AI 로딩 팁 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/ai-profile/loading-tips")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminLoadingTipController(
     private val loadingTipAdminService: LoadingTipAdminService
 ) {

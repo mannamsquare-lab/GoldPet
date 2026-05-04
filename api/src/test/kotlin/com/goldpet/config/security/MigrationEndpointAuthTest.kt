@@ -115,14 +115,14 @@ class MigrationEndpointAuthTest : IntegrationTestBase() {
 
     @Test
     fun `rotate returns 401 for anonymous request`() {
-        mockMvc.perform(post("/api/admin/migration/rotate-encryption-key"))
+        mockMvc.perform(post("/api/v1/admin/migration/rotate-encryption-key"))
             .andExpect(status().isUnauthorized)
     }
 
     @Test
     fun `rotate returns 403 for regular user JWT`() {
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key")
+            post("/api/v1/admin/migration/rotate-encryption-key")
                 .header("Authorization", "Bearer ${userJwt()}")
         ).andExpect(status().isForbidden)
     }
@@ -131,7 +131,7 @@ class MigrationEndpointAuthTest : IntegrationTestBase() {
     fun `rotate returns 403 for OPERATOR JWT`() {
         // Rotation is SUPER_ADMIN-only — OPERATOR must be rejected
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key")
+            post("/api/v1/admin/migration/rotate-encryption-key")
                 .header("Authorization", "Bearer ${operatorJwt()}")
         ).andExpect(status().isForbidden)
     }
@@ -141,7 +141,7 @@ class MigrationEndpointAuthTest : IntegrationTestBase() {
         // C1 fix: AdminUserPrincipal emits ROLE_SUPER_ADMIN (not the literal 40-char template).
         // If C1 were still broken, this would return 403 even for SUPER_ADMIN.
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key")
+            post("/api/v1/admin/migration/rotate-encryption-key")
                 .header("Authorization", "Bearer ${superAdminJwt()}")
         )
             .andExpect(status().isOk)
@@ -153,14 +153,14 @@ class MigrationEndpointAuthTest : IntegrationTestBase() {
 
     @Test
     fun `dry-run returns 401 for anonymous request`() {
-        mockMvc.perform(post("/api/admin/migration/rotate-encryption-key/dry-run"))
+        mockMvc.perform(post("/api/v1/admin/migration/rotate-encryption-key/dry-run"))
             .andExpect(status().isUnauthorized)
     }
 
     @Test
     fun `dry-run returns 403 for regular user JWT`() {
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key/dry-run")
+            post("/api/v1/admin/migration/rotate-encryption-key/dry-run")
                 .header("Authorization", "Bearer ${userJwt()}")
         ).andExpect(status().isForbidden)
     }
@@ -168,7 +168,7 @@ class MigrationEndpointAuthTest : IntegrationTestBase() {
     @Test
     fun `dry-run returns 403 for OPERATOR JWT`() {
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key/dry-run")
+            post("/api/v1/admin/migration/rotate-encryption-key/dry-run")
                 .header("Authorization", "Bearer ${operatorJwt()}")
         ).andExpect(status().isForbidden)
     }
@@ -178,7 +178,7 @@ class MigrationEndpointAuthTest : IntegrationTestBase() {
         whenever(piiKeyRotationService.rotate(any(), any()))
             .thenReturn(successResult.copy(dryRun = true))
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key/dry-run")
+            post("/api/v1/admin/migration/rotate-encryption-key/dry-run")
                 .header("Authorization", "Bearer ${superAdminJwt()}")
         ).andExpect(status().isOk)
     }

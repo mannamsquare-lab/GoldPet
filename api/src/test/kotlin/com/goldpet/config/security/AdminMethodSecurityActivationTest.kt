@@ -110,12 +110,12 @@ class AdminMethodSecurityActivationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `dashboard stats returns 403 for OPERATOR`() {
-        // @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')") — OPERATOR is neither
+    fun `dashboard stats returns 200 for OPERATOR`() {
+        // @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')") — OPERATOR is allowed (Phase 0.A fix)
         mockMvc.perform(
             get("/api/v1/admin/dashboard/stats")
                 .header("Authorization", "Bearer ${operatorJwt()}")
-        ).andExpect(status().isForbidden)
+        ).andExpect(status().isOk)
     }
 
     @Test

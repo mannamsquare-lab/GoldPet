@@ -6,11 +6,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Chat Management", description = "관리자 채팅 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/chat")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminChatController(
     private val adminChatService: AdminChatService
 ) {

@@ -8,11 +8,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin System Management", description = "관리자 시스템 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/system")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminSystemController(
     private val adminSystemService: AdminSystemService,
     private val adminAuditService: AdminAuditService,
@@ -38,6 +40,7 @@ class AdminSystemController(
 
     @Operation(summary = "점검 모드 설정")
     @PostMapping("/maintenance")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun setMaintenanceMode(@RequestBody request: MaintenanceModeRequest): ResponseEntity<Void> {
         adminSystemService.setMaintenanceMode(request.enabled)
         return ResponseEntity.ok().build()
@@ -50,6 +53,7 @@ class AdminSystemController(
 
     @Operation(summary = "시스템 설정 수정")
     @PostMapping("/configs")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun updateConfig(@RequestBody request: UpdateConfigRequest): ResponseEntity<Void> {
         adminSystemService.updateConfig(request.key, request.value)
         return ResponseEntity.ok().build()
@@ -57,6 +61,7 @@ class AdminSystemController(
 
     @Operation(summary = "기존 PII 데이터 암호화 마이그레이션 (일회성)")
     @PostMapping("/migrate-pii-encryption")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun migratePiiEncryption(): ResponseEntity<com.goldpet.domain.admin.service.PiiEncryptionMigrationService.MigrationResult> {
         val result = piiEncryptionMigrationService.migrateExistingPiiData()
         return ResponseEntity.ok(result)

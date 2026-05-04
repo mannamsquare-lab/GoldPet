@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useConfirm } from '@/hooks/useConfirm';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -89,6 +90,7 @@ const getMissionTypeColor = (badge: Badge) => {
 
 export default function GamificationPage() {
   const queryClient = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBadge, setEditingBadge] = useState<Badge | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -135,6 +137,17 @@ export default function GamificationPage() {
     setDialogOpen(false);
     setEditingBadge(null);
     form.reset();
+  };
+
+  const deleteBadgeMutation = useMutation({
+    mutationFn: (id: number) => gamificationService.deleteBadge(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['badges'] }),
+    onError: () => toast.error('삭제에 실패했습니다.'),
+  });
+
+  const handleDeleteBadge = async (id: number) => {
+    if (!(await confirmDialog({ description: '이 뱃지를 삭제하시겠습니까? 획득자가 있으면 비활성화 처리됩니다', variant: 'destructive' }))) return;
+    deleteBadgeMutation.mutate(id);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,7 +261,10 @@ export default function GamificationPage() {
       header: '관리',
       align: 'center',
       render: (_value, row) => (
-        <Button variant="link" size="sm" onClick={() => openEditDialog(row)}>수정</Button>
+        <div className="flex gap-2 justify-center">
+          <Button variant="link" size="sm" onClick={() => openEditDialog(row)}>수정</Button>
+          <Button variant="link" size="sm" className="text-red-600" onClick={() => handleDeleteBadge(row.id)}>삭제</Button>
+        </div>
       ),
     },
   ];
@@ -437,6 +453,7 @@ export default function GamificationPage() {
           </Form>
         </DialogContent>
       </Dialog>
+    {ConfirmDialog}
     </div>
   );
 }

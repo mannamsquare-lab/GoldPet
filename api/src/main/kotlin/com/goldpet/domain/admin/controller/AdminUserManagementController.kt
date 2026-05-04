@@ -63,7 +63,7 @@ data class UpdateUserStatusRequest(
 @Tag(name = "Admin User Management", description = "관리자 회원 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/users")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminUserManagementController(
     private val userManagementService: AdminUserManagementService
 ) {
@@ -91,6 +91,7 @@ class AdminUserManagementController(
 
     @Operation(summary = "회원 상태 변경 (정지/해제)")
     @PatchMapping("/{userId}/status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun updateUserStatus(
         @PathVariable userId: Long,
         @RequestBody request: UpdateUserStatusRequest
@@ -101,6 +102,7 @@ class AdminUserManagementController(
 
     @Operation(summary = "회원 삭제 (탈퇴 처리)")
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun deleteUser(@PathVariable userId: Long): ResponseEntity<Void> {
         userManagementService.deleteUser(userId)
         return ResponseEntity.noContent().build()
@@ -117,6 +119,7 @@ class AdminUserManagementController(
 
     @Operation(summary = "프로필 잠금 해제 (인증 필드 재변경 허용)")
     @PutMapping("/{userId}/unlock-profile")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun unlockUserProfile(@PathVariable userId: Long): ResponseEntity<Map<String, String>> {
         userManagementService.unlockUserProfile(userId)
         return ResponseEntity.ok(mapOf("message" to "Profile unlocked for user $userId"))

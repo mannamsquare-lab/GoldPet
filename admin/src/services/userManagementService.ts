@@ -45,6 +45,10 @@ export const userManagementService = {
     await typedClient.deletePath('/api/v1/admin/users/{userId}', { userId });
   },
 
+  async unlockUserProfile(userId: number): Promise<void> {
+    await typedClient.putPath('/api/v1/admin/users/{userId}/unlock-profile', { userId }, undefined);
+  },
+
   async searchUsers(query: string, limit = 10): Promise<UserListItem[]> {
     const response = await typedClient.get('/api/v1/admin/users/search', {
       params: { query, limit },

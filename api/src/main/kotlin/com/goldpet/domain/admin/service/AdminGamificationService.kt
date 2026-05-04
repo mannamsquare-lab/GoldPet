@@ -44,6 +44,21 @@ class AdminGamificationService(
     }
 
     @Transactional
+    fun deleteBadge(badgeId: Long): Boolean {
+        val badge = badgeRepository.findById(badgeId)
+            .orElseThrow { NotFoundException("Badge not found") }
+        val earnedCount = userBadgeRepository.countByBadgeId(badgeId)
+        return if (earnedCount > 0) {
+            badge.isActive = false
+            badgeRepository.save(badge)
+            false
+        } else {
+            badgeRepository.delete(badge)
+            true
+        }
+    }
+
+    @Transactional
     fun updateBadge(badgeId: Long, request: UpdateBadgeRequest): BadgeAdminResponse {
         val badge = badgeRepository.findById(badgeId)
             .orElseThrow { NotFoundException("Badge not found") }

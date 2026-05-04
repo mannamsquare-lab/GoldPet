@@ -1,10 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { userManagementService } from '../../services/userManagementService';
+import type { UserDetail } from '../../services/userManagementService';
 import { DetailPageLayout } from '../../components/common/DetailPageLayout';
 import { Button } from '../../components/common/Button';
 import { toast } from 'sonner'
 import { useConfirm } from '@/hooks/useConfirm'
+
+type UserDetailWithLock = UserDetail & { profileLockedAt?: string | null };
 
 export default function UserDetailPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -12,9 +15,9 @@ export default function UserDetailPage() {
   const queryClient = useQueryClient();
   const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
 
-  const { data: user, isLoading, isError } = useQuery({
+  const { data: user, isLoading, isError } = useQuery<UserDetailWithLock>({
     queryKey: ['users', 'detail', userId],
-    queryFn: () => userManagementService.getUserDetail(Number(userId)),
+    queryFn: () => userManagementService.getUserDetail(Number(userId)) as Promise<UserDetailWithLock>,
     enabled: !!userId,
   });
 
@@ -44,8 +47,26 @@ export default function UserDetailPage() {
     }
   };
 
+  const handleUnlockProfile = async () => {
+    if (!user) return;
+    if (!(await confirmDialog({ description: '프로필 잠금을 해제하시겠습니까?', variant: 'destructive' }))) return;
+    try {
+      await userManagementService.unlockUserProfile(user.id);
+      queryClient.invalidateQueries({ queryKey: ['users', 'detail', userId] });
+      toast.success('프로필 잠금이 해제되었습니다.');
+    } catch (error) {
+      console.error('Failed to unlock profile:', error);
+      toast.error('프로필 잠금 해제에 실패했습니다.');
+    }
+  };
+
   const actions = user ? (
     <>
+      {user.profileLockedAt != null && (
+        <Button variant="warning" onClick={handleUnlockProfile}>
+          프로필 잠금 해제
+        </Button>
+      )}
       {user.status === 'ACTIVE' ? (
         <Button variant="warning" onClick={handleStatusChange}>
           정지

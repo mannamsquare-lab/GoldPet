@@ -4,11 +4,13 @@ import com.goldpet.domain.admin.service.AdminGamificationService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Gamification Management", description = "관리자 게이미피케이션 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/gamification")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminGamificationController(
     private val adminGamificationService: AdminGamificationService
 ) {
@@ -31,6 +33,18 @@ class AdminGamificationController(
         @RequestBody request: UpdateBadgeRequest
     ): ResponseEntity<BadgeAdminResponse> {
         return ResponseEntity.ok(adminGamificationService.updateBadge(badgeId, request))
+    }
+
+    @Operation(summary = "뱃지 삭제")
+    @DeleteMapping("/badges/{badgeId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    fun deleteBadge(@PathVariable badgeId: Long): ResponseEntity<Void> {
+        val hardDeleted = adminGamificationService.deleteBadge(badgeId)
+        return if (hardDeleted) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.ok().build()
+        }
     }
 }
 

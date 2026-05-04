@@ -81,7 +81,7 @@ class HttpLayerRotationIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST rotate-encryption-key returns 200 with correct JSON body for SUPER_ADMIN`() {
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key")
+            post("/api/v1/admin/migration/rotate-encryption-key")
                 .header("Authorization", "Bearer ${superAdminJwt()}")
         )
             .andExpect(status().isOk)
@@ -96,13 +96,13 @@ class HttpLayerRotationIntegrationTest : IntegrationTestBase() {
     fun `POST rotate-encryption-key is idempotent — second call returns same 200`() {
         // First call — may rotate or skip depending on state
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key")
+            post("/api/v1/admin/migration/rotate-encryption-key")
                 .header("Authorization", "Bearer ${superAdminJwt()}")
         ).andExpect(status().isOk)
 
         // Second call — all rows already on primary key, no failures
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key")
+            post("/api/v1/admin/migration/rotate-encryption-key")
                 .header("Authorization", "Bearer ${superAdminJwt()}")
         )
             .andExpect(status().isOk)
@@ -116,7 +116,7 @@ class HttpLayerRotationIntegrationTest : IntegrationTestBase() {
             .whenever(piiKeyRotationService).rotate(any(), any())
 
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key")
+            post("/api/v1/admin/migration/rotate-encryption-key")
                 .header("Authorization", "Bearer ${superAdminJwt()}")
         ).andExpect(status().isConflict)
     }
@@ -124,7 +124,7 @@ class HttpLayerRotationIntegrationTest : IntegrationTestBase() {
     @Test
     fun `POST dry-run returns 200 with dryRun=true in body`() {
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key/dry-run")
+            post("/api/v1/admin/migration/rotate-encryption-key/dry-run")
                 .header("Authorization", "Bearer ${superAdminJwt()}")
         )
             .andExpect(status().isOk)
@@ -138,7 +138,7 @@ class HttpLayerRotationIntegrationTest : IntegrationTestBase() {
         // @Transactional(propagation=NEVER) threw IllegalTransactionStateException,
         // the result would be 500. Passing 200 confirms propagation is correctly isolated.
         mockMvc.perform(
-            post("/api/admin/migration/rotate-encryption-key")
+            post("/api/v1/admin/migration/rotate-encryption-key")
                 .header("Authorization", "Bearer ${superAdminJwt()}")
         ).andExpect(status().isOk)
     }

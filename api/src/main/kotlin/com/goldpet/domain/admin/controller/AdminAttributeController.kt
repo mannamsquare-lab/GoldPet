@@ -6,12 +6,14 @@ import com.goldpet.domain.admin.service.AttributeAdminService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.net.URI
 
 @Tag(name = "어드민: 반려동물 속성 관리", description = "반려동물 속성(성격, 특성 등) CRUD")
 @RestController
 @RequestMapping("/api/v1/admin/pet-attributes")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminAttributeController(
     private val attributeService: AttributeAdminService
 ) {

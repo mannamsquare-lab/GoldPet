@@ -1,14 +1,17 @@
 package com.goldpet.domain.admin.controller
 
 import com.goldpet.domain.admin.service.AdminLBSService
+import com.goldpet.domain.checkin.entity.PlaceCategory
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin LBS Management", description = "관리자 산책/지도 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/lbs")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
 class AdminLBSController(
     private val adminLBSService: AdminLBSService
 ) {
@@ -16,6 +19,12 @@ class AdminLBSController(
     @GetMapping("/stats")
     fun getStats(): ResponseEntity<LBSStatsResponse> {
         return ResponseEntity.ok(adminLBSService.getStats())
+    }
+
+    @Operation(summary = "장소 카테고리 목록 조회")
+    @GetMapping("/place-categories")
+    fun getPlaceCategories(): ResponseEntity<List<PlaceCategoryResponse>> {
+        return ResponseEntity.ok(PlaceCategory.entries.map { PlaceCategoryResponse(value = it.name, displayName = it.displayName) })
     }
 
     @Operation(summary = "장소 목록 조회")
@@ -28,6 +37,23 @@ class AdminLBSController(
     @PostMapping("/places")
     fun createPlace(@RequestBody request: CreatePlaceRequest): ResponseEntity<PlaceAdminResponse> {
         return ResponseEntity.ok(adminLBSService.createPlace(request))
+    }
+
+    @Operation(summary = "장소 수정")
+    @PutMapping("/places/{id}")
+    fun updatePlace(
+        @PathVariable id: Long,
+        @RequestBody request: UpdatePlaceRequest
+    ): ResponseEntity<PlaceAdminResponse> {
+        return ResponseEntity.ok(adminLBSService.updatePlace(id, request))
+    }
+
+    @Operation(summary = "장소 삭제")
+    @DeleteMapping("/places/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    fun deletePlace(@PathVariable id: Long): ResponseEntity<Void> {
+        adminLBSService.deletePlace(id)
+        return ResponseEntity.noContent().build()
     }
 }
 
@@ -60,4 +86,16 @@ data class CreatePlaceRequest(
     val category: String,
     val latitude: Double,
     val longitude: Double
+)
+
+data class UpdatePlaceRequest(
+    val name: String? = null,
+    val category: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
+)
+
+data class PlaceCategoryResponse(
+    val value: String,
+    val displayName: String
 )

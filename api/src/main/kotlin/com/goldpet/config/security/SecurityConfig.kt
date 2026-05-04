@@ -26,6 +26,7 @@ class SecurityConfig(
         private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
         private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
         private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+        private val adminAuditingAccessDeniedHandler: AdminAuditingAccessDeniedHandler,
         // Optional — bean 은 `app.rate-limit.user-profile.enabled=true` 일 때만 생성됨
         // (codegen/test profile 은 `false` 로 skip 하여 Redis 의존성 제거).
         // Kotlin default-null 은 `@Configuration` CGLIB proxy 의 no-arg ctor 합성 실패를
@@ -96,7 +97,7 @@ class SecurityConfig(
                             .permitAll() // Allow Swagger
                             .requestMatchers("/error")
                             .permitAll() // Allow Error dispatch
-                            .requestMatchers("/api/admin/migration/**")
+                            .requestMatchers("/api/v1/admin/migration/**")
                             .hasAnyRole("SUPER_ADMIN") // Restrict PII key rotation endpoints
                             .anyRequest()
                             .authenticated()
@@ -119,6 +120,7 @@ class SecurityConfig(
                                     org.springframework.http.HttpStatus.UNAUTHORIZED
                             )
                     )
+                    it.accessDeniedHandler(adminAuditingAccessDeniedHandler)
                 }
                 .addFilterBefore(
                         jwtAuthenticationFilter,

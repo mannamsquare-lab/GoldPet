@@ -1,22 +1,31 @@
 package com.goldpet.domain.common.error
 
+import com.goldpet.config.security.AdminUserPrincipal
+import com.goldpet.domain.admin.service.AdminAuditService
 import com.goldpet.domain.auth.exception.AccountStatusException
 import com.goldpet.domain.common.exception.*
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.MethodArgumentNotValidException
 import com.goldpet.config.openapi.OpenApiInternal
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDateTime
 
 @OpenApiInternal
 @RestControllerAdvice
 class GlobalExceptionHandler {
+
+    @Autowired(required = false)
+    private var adminAuditService: AdminAuditService? = null
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -115,6 +124,22 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
     fun handleAccessDeniedException(ex: org.springframework.security.access.AccessDeniedException): ResponseEntity<ErrorResponse> {
+        val request = (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request
+        if (request != null && request.requestURI.startsWith("/api/v1/admin/")) {
+            val principal = SecurityContextHolder.getContext().authentication?.principal
+            if (principal is AdminUserPrincipal) {
+                runCatching {
+                    adminAuditService?.log(
+                        adminUserId = principal.id,
+                        action = "ACCESS_DENIED",
+                        ipAddress = request.remoteAddr,
+                        requestPath = request.requestURI,
+                        requestMethod = request.method,
+                        responseStatus = HttpStatus.FORBIDDEN.value()
+                    )
+                }.onFailure { log.warn("Failed to record ACCESS_DENIED audit fallback for path={}", request.requestURI, it) }
+            }
+        }
         log.warn("Access denied: {}", ex.message)
         return buildResponse(HttpStatus.FORBIDDEN, "ACCESS_DENIED", ex.message ?: "Access denied")
     }

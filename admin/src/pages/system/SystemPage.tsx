@@ -178,8 +178,8 @@ export default function SystemPage() {
       align: 'right',
       render: () => (
         <span className="inline-flex gap-3">
-          <Button variant="link" size="sm">수정</Button>
-          <Button variant="link" size="sm" className="text-red-600 hover:text-red-900">삭제</Button>
+          <Button variant="link" size="sm" disabled={true} className="cursor-not-allowed" title="Phase 2 (~2026-06-15) 에서 구현 예정">수정</Button>
+          <Button variant="link" size="sm" disabled={true} className="text-red-600 hover:text-red-900 cursor-not-allowed" title="Phase 2 (~2026-06-15) 에서 구현 예정">삭제</Button>
         </span>
       ),
     },
@@ -321,7 +321,7 @@ export default function SystemPage() {
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="font-semibold">관리자 계정</h2>
-          <Button variant="primary">+ 관리자 추가</Button>
+          <Button variant="primary" disabled={true} className="cursor-not-allowed" title="Phase 2 (~2026-06-15) 에서 구현 예정">+ 관리자 추가</Button>
         </div>
         <DataTable<AdminUser>
           columns={adminColumns}
@@ -365,7 +365,7 @@ export default function SystemPage() {
               <p className="font-medium">데이터 백업</p>
               <p className="text-sm text-gray-500">마지막 백업: 자동 관리</p>
             </div>
-            <Button variant="primary">백업 실행</Button>
+            <Button variant="primary" disabled={true} className="cursor-not-allowed" title="Phase 3 (인프라 PR) 에서 활성화">백업 실행</Button>
           </div>
         </div>
       </div>
