@@ -239,6 +239,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/admins/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 관리자 수정 */
+        put: operations["updateAdmin"];
+        post?: never;
+        /** 관리자 삭제 */
+        delete: operations["deleteAdmin"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pet-attributes/{id}": {
         parameters: {
             query?: never;
@@ -296,6 +314,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/lbs/places/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 장소 수정 */
+        put: operations["updatePlace"];
+        post?: never;
+        /** 장소 삭제 */
+        delete: operations["deletePlace"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/gamification/badges/{badgeId}": {
         parameters: {
             query?: never;
@@ -307,7 +343,8 @@ export interface paths {
         /** 뱃지 수정 */
         put: operations["updateBadge"];
         post?: never;
-        delete?: never;
+        /** 뱃지 삭제 */
+        delete: operations["deleteBadge"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1378,6 +1415,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/admins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 관리자 목록 조회 */
+        get: operations["getAdmins"];
+        put?: never;
+        /** 관리자 추가 */
+        post: operations["createAdmin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/admins/{id}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 관리자 임시비밀번호 재발급 */
+        post: operations["resetPassword_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/reports/{reportId}/resolve": {
         parameters: {
             query?: never;
@@ -1445,6 +1517,74 @@ export interface paths {
         put?: never;
         /** 공지/팝업 생성 */
         post: operations["createNotice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/migration/rotate-encryption-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** PII 암호화 키 교체 */
+        post: operations["rotateEncryptionKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/migration/rotate-encryption-key/dry-run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** PII 암호화 키 교체 드라이런 */
+        post: operations["rotateEncryptionKeyDryRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/migration/email-hash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 이메일 해시 마이그레이션 */
+        post: operations["migrateEmailHash"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/migration/email-hash/rehash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 이메일 해시 전체 재계산 */
+        post: operations["rehashAllEmailHashes"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2080,6 +2220,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 비밀번호 변경
+         * @description 현재 비밀번호를 검증하고 새 비밀번호로 변경합니다. (로그인 필요)
+         */
+        post: operations["changePassword_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/auth/2fa/setup": {
         parameters: {
             query?: never;
@@ -2221,74 +2381,6 @@ export interface paths {
          * @description T1-7a 배포 이전 `ai-profiles/{id}.jpg` 경로로 저장된 AI 결과에 대해 FileAttachment 로우를 역삽입한다. 멱등. 실제 variant 생성은 이어서 `POST /api/v1/admin/files/backfill?scope=FILE_ATTACHMENTS` 호출 필요.
          */
         post: operations["backfillLegacy"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/migration/rotate-encryption-key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** PII 암호화 키 교체 */
-        post: operations["rotateEncryptionKey"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/migration/rotate-encryption-key/dry-run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** PII 암호화 키 교체 드라이런 */
-        post: operations["rotateEncryptionKeyDryRun"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/migration/email-hash": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 이메일 해시 마이그레이션 */
-        post: operations["migrateEmailHash"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/migration/email-hash/rehash": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 이메일 해시 전체 재계산 */
-        post: operations["rehashAllEmailHashes"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3962,23 +4054,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/admins": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 관리자 목록 조회 */
-        get: operations["getAdmins"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/stool-analyses": {
         parameters: {
             query?: never;
@@ -4073,6 +4148,23 @@ export interface paths {
         };
         /** 산책 통계 조회 */
         get: operations["getStats_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lbs/place-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 장소 카테고리 목록 조회 */
+        get: operations["getPlaceCategories"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5012,6 +5104,22 @@ export interface components {
         CommunityCommentUpdateRequest: {
             content: string;
         };
+        UpdateAdminRequest: {
+            name?: string;
+            /** @enum {string} */
+            role?: "SUPER_ADMIN" | "OPERATOR" | "VIEWER";
+            isActive?: boolean;
+        };
+        AdminUserResponse: {
+            /** Format: int64 */
+            id: number;
+            email: string;
+            name: string;
+            role: string;
+            lastLogin?: string;
+            isActive: boolean;
+            mustChangePassword: boolean;
+        };
         AttributeOption: {
             label: string;
             value: string;
@@ -5089,6 +5197,28 @@ export interface components {
             category: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        UpdatePlaceRequest: {
+            name?: string;
+            category?: string;
+            /** Format: double */
+            latitude?: number;
+            /** Format: double */
+            longitude?: number;
+        };
+        PlaceAdminResponse: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            category: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            /** Format: int32 */
+            visits: number;
+            /** Format: double */
+            rating: number;
         };
         UpdateBadgeRequest: {
             name?: string;
@@ -5874,6 +6004,25 @@ export interface components {
             key: string;
             value: string;
         };
+        CreateAdminRequest: {
+            email: string;
+            name: string;
+            /** @enum {string} */
+            role: "SUPER_ADMIN" | "OPERATOR" | "VIEWER";
+            temporaryPassword?: string;
+        };
+        CreateAdminResponse: {
+            /** Format: int64 */
+            id: number;
+            email: string;
+            name: string;
+            /** @enum {string} */
+            role: "SUPER_ADMIN" | "OPERATOR" | "VIEWER";
+            temporaryPassword: string;
+        };
+        ResetPasswordResponse: {
+            temporaryPassword: string;
+        };
         ResolveReportRequest: {
             /** @enum {string} */
             actionType: "DELETE_POST" | "DELETE_COMMENT" | "DELETE_MESSAGE" | "SUSPEND_USER" | "WARN_USER" | "HIDE_POST" | "HIDE_COMMENT" | "HIDE_COURSE";
@@ -5940,20 +6089,6 @@ export interface components {
             isActive: boolean;
             /** Format: int32 */
             displayOrder: number;
-        };
-        PlaceAdminResponse: {
-            /** Format: int64 */
-            id: number;
-            name: string;
-            category: string;
-            /** Format: double */
-            latitude: number;
-            /** Format: double */
-            longitude: number;
-            /** Format: int32 */
-            visits: number;
-            /** Format: double */
-            rating: number;
         };
         CreateBadgeRequest: {
             name: string;
@@ -6086,6 +6221,7 @@ export interface components {
             requiresTwoFactor: boolean;
             token?: string;
             user?: components["schemas"]["AdminUserDto"];
+            mustChangePassword: boolean;
         };
         AdminUserDto: {
             /** Format: int64 */
@@ -6254,15 +6390,15 @@ export interface components {
             rankings: components["schemas"]["WalkRankingResponse"][];
         };
         PageWalkResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WalkResponse"][];
@@ -6273,11 +6409,11 @@ export interface components {
         };
         PageableObject: {
             /** Format: int32 */
-            pageNumber?: number;
-            unpaged?: boolean;
-            /** Format: int32 */
             pageSize?: number;
             paged?: boolean;
+            /** Format: int32 */
+            pageNumber?: number;
+            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"];
@@ -6288,15 +6424,15 @@ export interface components {
             empty?: boolean;
         };
         PageWalkPhotoResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WalkPhotoResponse"][];
@@ -6429,15 +6565,15 @@ export interface components {
             createdAt?: string;
         };
         PageNotificationResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["NotificationResponse"][];
@@ -6548,15 +6684,15 @@ export interface components {
             count: number;
         };
         PageStoolAnalysisResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StoolAnalysisResponse"][];
@@ -6581,15 +6717,15 @@ export interface components {
             count: number;
         };
         PageTransactionResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TransactionResponse"][];
@@ -6644,15 +6780,15 @@ export interface components {
             acquiredAt?: string;
         };
         PageFriendResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FriendResponse"][];
@@ -6665,15 +6801,15 @@ export interface components {
             url: string;
         };
         PageCourseCommentResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseCommentResponse"][];
@@ -6683,15 +6819,15 @@ export interface components {
             empty?: boolean;
         };
         PageCourseResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseResponse"][];
@@ -6701,15 +6837,15 @@ export interface components {
             empty?: boolean;
         };
         PageCommunityPostResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CommunityPostResponse"][];
@@ -6719,15 +6855,15 @@ export interface components {
             empty?: boolean;
         };
         PageCommunityCommentResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CommunityCommentResponse"][];
@@ -6745,15 +6881,15 @@ export interface components {
             postCount: number;
         };
         PagePlaceResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PlaceResponse"][];
@@ -6763,15 +6899,15 @@ export interface components {
             empty?: boolean;
         };
         PageCheckInResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CheckInResponse"][];
@@ -6808,15 +6944,15 @@ export interface components {
             presetId?: string;
         };
         PageAIProfileRequestResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AIProfileRequestResponse"][];
@@ -6826,15 +6962,15 @@ export interface components {
             empty?: boolean;
         };
         PageWalkAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WalkAdminResponse"][];
@@ -6954,15 +7090,15 @@ export interface components {
             walkCount: number;
         };
         PageUserListItemResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserListItemResponse"][];
@@ -7063,15 +7199,15 @@ export interface components {
             createdAt: string;
         };
         PageAdminAuditLog: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AdminAuditLog"][];
@@ -7079,14 +7215,6 @@ export interface components {
             number?: number;
             sort?: components["schemas"]["SortObject"];
             empty?: boolean;
-        };
-        AdminUserResponse: {
-            /** Format: int64 */
-            id: number;
-            email: string;
-            name: string;
-            role: string;
-            lastLogin?: string;
         };
         AdminStoolAnalysisItem: {
             /** Format: int64 */
@@ -7103,15 +7231,15 @@ export interface components {
             createdAt?: string;
         };
         PageAdminStoolAnalysisItem: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AdminStoolAnalysisItem"][];
@@ -7139,15 +7267,15 @@ export interface components {
             estimatedCostKrw: number;
         };
         PageReportAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ReportAdminResponse"][];
@@ -7207,6 +7335,10 @@ export interface components {
             /** Format: int32 */
             visits: number;
         };
+        PlaceCategoryResponse: {
+            value: string;
+            displayName: string;
+        };
         EmoticonPackResponse: {
             /** Format: int64 */
             id: number;
@@ -7217,15 +7349,15 @@ export interface components {
             isActive: boolean;
         };
         PageTransactionAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TransactionAdminResponse"][];
@@ -7328,15 +7460,15 @@ export interface components {
             createdAt?: string;
         };
         PageCourseListItemResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseListItemResponse"][];
@@ -7404,15 +7536,15 @@ export interface components {
             orderIndex: number;
         };
         PagePostListItemResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PostListItemResponse"][];
@@ -7451,15 +7583,15 @@ export interface components {
             createdAt: string;
         };
         PageChatRoomAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ChatRoomAdminResponse"][];
@@ -7481,15 +7613,15 @@ export interface components {
             createdAt: string;
         };
         PageChatMessageAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ChatMessageAdminResponse"][];
@@ -7540,15 +7672,15 @@ export interface components {
             count: number;
         };
         PageAIRequestAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
-            numberOfElements?: number;
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AIRequestAdminResponse"][];
@@ -8184,6 +8316,52 @@ export interface operations {
             };
         };
     };
+    updateAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAdminRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminUserResponse"];
+                };
+            };
+        };
+    };
+    deleteAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     updateAttribute: {
         parameters: {
             query?: never;
@@ -8322,6 +8500,52 @@ export interface operations {
             };
         };
     };
+    updatePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePlaceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlaceAdminResponse"];
+                };
+            };
+        };
+    };
+    deletePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     updateBadge: {
         parameters: {
             query?: never;
@@ -8345,6 +8569,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["BadgeAdminResponse"];
                 };
+            };
+        };
+    };
+    deleteBadge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                badgeId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -10177,6 +10421,72 @@ export interface operations {
             };
         };
     };
+    getAdmins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminUserResponse"][];
+                };
+            };
+        };
+    };
+    createAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdminRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CreateAdminResponse"];
+                };
+            };
+        };
+    };
+    resetPassword_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResetPasswordResponse"];
+                };
+            };
+        };
+    };
     resolveReport: {
         parameters: {
             query?: never;
@@ -10305,6 +10615,90 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AppNoticeResponse"];
+                };
+            };
+        };
+    };
+    rotateEncryptionKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    rotateEncryptionKeyDryRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    migrateEmailHash: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    rehashAllEmailHashes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: Record<string, never>;
+                    };
                 };
             };
         };
@@ -11390,6 +11784,28 @@ export interface operations {
             };
         };
     };
+    changePassword_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     setup2fa: {
         parameters: {
             query?: never;
@@ -11600,90 +12016,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Result"];
-                };
-            };
-        };
-    };
-    rotateEncryptionKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": Record<string, never>;
-                };
-            };
-        };
-    };
-    rotateEncryptionKeyDryRun: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": Record<string, never>;
-                };
-            };
-        };
-    };
-    migrateEmailHash: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: Record<string, never>;
-                    };
-                };
-            };
-        };
-    };
-    rehashAllEmailHashes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": {
-                        [key: string]: Record<string, never>;
-                    };
                 };
             };
         };
@@ -13966,26 +14298,6 @@ export interface operations {
             };
         };
     };
-    getAdmins: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AdminUserResponse"][];
-                };
-            };
-        };
-    };
     getAnalyses: {
         parameters: {
             query: {
@@ -14113,6 +14425,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LBSStatsResponse"];
+                };
+            };
+        };
+    };
+    getPlaceCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlaceCategoryResponse"][];
                 };
             };
         };
