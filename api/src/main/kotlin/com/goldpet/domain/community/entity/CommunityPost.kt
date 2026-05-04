@@ -17,7 +17,7 @@ class CommunityPost(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
-    val category: CommunityCategory,
+    var category: CommunityCategory,
 
     @Column(nullable = false)
     var title: String,

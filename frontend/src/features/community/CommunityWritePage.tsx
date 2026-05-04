@@ -97,6 +97,7 @@ export default function CommunityWritePage() {
         return communityService.updatePost(initialPost.id, {
             title: data.title,
             content: data.content,
+            categoryId: data.categoryId,
             imageUrls: finalUrls,
         });
     },
@@ -222,7 +223,6 @@ export default function CommunityWritePage() {
              <CustomSelect
                  value={String(formData.categoryId)}
                  options={(categories || []).map(cat => ({ label: cat.name, value: String(cat.id) }))}
-                 disabled={editMode}
                  onChange={(value) => setFormData({ ...formData, categoryId: Number(value) })}
              />
          </div>

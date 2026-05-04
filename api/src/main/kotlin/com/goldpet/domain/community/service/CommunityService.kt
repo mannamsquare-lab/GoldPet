@@ -436,6 +436,11 @@ class CommunityService(
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(
+        value = ["community:categories"],
+        allEntries = true,
+        condition = "#request.categoryId != null"
+    )
     fun updatePost(postId: Long, userId: Long, request: CommunityPostUpdateRequest): CommunityPostResponse {
         val post = postRepository.findById(postId).orElseThrow { NotFoundException("Post not found") }
         if (post.isHidden) throw NotFoundException("Post not found")
@@ -444,6 +449,13 @@ class CommunityService(
             throw ForbiddenException("Not authorized to update this post")
         }
 
+        request.categoryId?.let { newCategoryId ->
+            if (newCategoryId != post.category.id) {
+                val newCategory = categoryRepository.findById(newCategoryId)
+                    .orElseThrow { NotFoundException("Category not found: $newCategoryId") }
+                post.category = newCategory
+            }
+        }
         request.title?.let { post.title = it }
         request.content?.let { post.content = it }
         request.visibility?.let { post.visibility = CommunityPost.Visibility.valueOf(it) }

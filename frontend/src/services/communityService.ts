@@ -227,7 +227,10 @@ export const communityService = {
     }
   },
 
-  updatePost: async (postId: number, data: { title: string; content: string; imageUrls?: string[] }): Promise<void> => {
+  updatePost: async (
+    postId: number,
+    data: { title: string; content: string; imageUrls?: string[]; categoryId?: number },
+  ): Promise<void> => {
     try {
       await typedClient.putPath(
         '/api/v1/community/posts/{postId}',
