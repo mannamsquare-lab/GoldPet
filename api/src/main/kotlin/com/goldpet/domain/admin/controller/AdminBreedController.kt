@@ -14,7 +14,7 @@ import java.net.URI
 @Tag(name = "어드민: 품종 관리", description = "반려동물 품종 CRUD")
 @RestController
 @RequestMapping("/api/v1/admin/breeds")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminBreedController(
     private val breedAdminService: BreedAdminService
 ) {
@@ -41,6 +41,7 @@ class AdminBreedController(
 
     @Operation(summary = "품종 생성")
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createBreed(@RequestBody request: CreateBreedRequest): ResponseEntity<BreedResponse> {
         val created = breedAdminService.createBreed(request)
         return ResponseEntity.created(URI.create("/api/v1/admin/breeds/${created.id}")).body(created)
@@ -48,6 +49,7 @@ class AdminBreedController(
 
     @Operation(summary = "품종 수정")
     @PutMapping("/{breedId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateBreed(
         @PathVariable breedId: Int,
         @RequestBody request: UpdateBreedRequest
@@ -58,6 +60,7 @@ class AdminBreedController(
 
     @Operation(summary = "품종 삭제")
     @DeleteMapping("/{breedId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteBreed(@PathVariable breedId: Int): ResponseEntity<Void> {
         breedAdminService.deleteBreed(breedId)
         return ResponseEntity.noContent().build()

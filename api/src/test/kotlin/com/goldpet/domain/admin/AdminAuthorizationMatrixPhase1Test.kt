@@ -118,7 +118,8 @@ class AdminAuthorizationMatrixPhase1Test : IntegrationTestBase() {
     }
 
     @Test
-    fun `P1_6 - VIEWER is forbidden from setting maintenance mode (class-level guard)`() {
+    fun `P1_6 - VIEWER is forbidden from setting maintenance mode (method-level SUPER_ADMIN guard)`() {
+        // F5: VIEWER 가 클래스 레벨 가드는 통과하지만 메서드 레벨 SUPER_ADMIN-only override 에서 차단됨.
         mockMvc.perform(
             post("/api/v1/admin/system/maintenance")
                 .header("Authorization", "Bearer ${jwtFor(viewerUser)}")
@@ -149,7 +150,8 @@ class AdminAuthorizationMatrixPhase1Test : IntegrationTestBase() {
     }
 
     @Test
-    fun `P1_6 - VIEWER is forbidden from adjusting gold (class-level guard)`() {
+    fun `P1_6 - VIEWER is forbidden from adjusting gold (method-level SUPER_ADMIN guard)`() {
+        // F5: VIEWER 가 클래스 레벨 가드는 통과하지만 메서드 레벨 SUPER_ADMIN-only override 에서 차단됨.
         mockMvc.perform(
             post("/api/v1/admin/economy/adjust")
                 .header("Authorization", "Bearer ${jwtFor(viewerUser)}")
@@ -186,7 +188,8 @@ class AdminAuthorizationMatrixPhase1Test : IntegrationTestBase() {
     }
 
     @Test
-    fun `P1_7 - VIEWER is forbidden from deleting LBS place (class-level guard)`() {
+    fun `P1_7 - VIEWER is forbidden from deleting LBS place (method-level SUPER_ADMIN guard)`() {
+        // F5: VIEWER 가 클래스 레벨 가드는 통과하지만 메서드 레벨 SUPER_ADMIN-only override 에서 차단됨.
         mockMvc.perform(
             delete("/api/v1/admin/lbs/places/99999")
                 .header("Authorization", "Bearer ${jwtFor(viewerUser)}")
@@ -221,7 +224,8 @@ class AdminAuthorizationMatrixPhase1Test : IntegrationTestBase() {
     }
 
     @Test
-    fun `P1_7 - VIEWER is forbidden from deleting badge (class-level guard)`() {
+    fun `P1_7 - VIEWER is forbidden from deleting badge (method-level SUPER_ADMIN guard)`() {
+        // F5: VIEWER 가 클래스 레벨 가드는 통과하지만 메서드 레벨 SUPER_ADMIN-only override 에서 차단됨.
         mockMvc.perform(
             delete("/api/v1/admin/gamification/badges/99999")
                 .header("Authorization", "Bearer ${jwtFor(viewerUser)}")

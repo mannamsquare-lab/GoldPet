@@ -14,7 +14,7 @@ import java.net.URI
 @Tag(name = "Admin - Loading Tips", description = "AI 로딩 팁 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/ai-profile/loading-tips")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminLoadingTipController(
     private val loadingTipAdminService: LoadingTipAdminService
 ) {
@@ -27,6 +27,7 @@ class AdminLoadingTipController(
 
     @Operation(summary = "로딩 팁 생성")
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createTip(@RequestBody request: CreateLoadingTipRequest): ResponseEntity<AILoadingTipResponse> {
         val response = loadingTipAdminService.createTip(request)
         return ResponseEntity.created(URI.create("/api/v1/admin/ai-profile/loading-tips/${response.id}")).body(response)
@@ -34,6 +35,7 @@ class AdminLoadingTipController(
 
     @Operation(summary = "로딩 팁 수정")
     @PutMapping("/{tipId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateTip(
         @PathVariable tipId: Int,
         @RequestBody request: UpdateLoadingTipRequest
@@ -43,6 +45,7 @@ class AdminLoadingTipController(
 
     @Operation(summary = "로딩 팁 삭제")
     @DeleteMapping("/{tipId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteTip(@PathVariable tipId: Int): ResponseEntity<Void> {
         loadingTipAdminService.deleteTip(tipId)
         return ResponseEntity.noContent().build()

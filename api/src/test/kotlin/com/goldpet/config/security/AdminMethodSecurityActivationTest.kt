@@ -24,11 +24,13 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  * controllers. Without @EnableMethodSecurity those annotations are silently inert and any
  * authenticated user would reach the endpoints. This test proves enforcement is active.
  *
- * Endpoints under test (class-level @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")):
+ * Endpoints under test (class-level @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")):
  *   GET /api/v1/admin/dashboard/stats     (AdminDashboardController)
  *   GET /api/v1/admin/users               (AdminUserManagementController)
  *   GET /api/v1/admin/community/posts     (AdminCommunityController)
  *   GET /api/v1/admin/courses             (AdminCourseController)
+ *
+ * F5 (2026-05-04): VIEWER role added to class-level guard (read-only matrix).
  */
 @AutoConfigureMockMvc
 @Tag("integration")
@@ -111,7 +113,7 @@ class AdminMethodSecurityActivationTest : IntegrationTestBase() {
 
     @Test
     fun `dashboard stats returns 200 for OPERATOR`() {
-        // @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')") — OPERATOR is allowed (Phase 0.A fix)
+        // @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')") — OPERATOR is allowed (Phase 0.A fix + F5 VIEWER add)
         mockMvc.perform(
             get("/api/v1/admin/dashboard/stats")
                 .header("Authorization", "Bearer ${operatorJwt()}")

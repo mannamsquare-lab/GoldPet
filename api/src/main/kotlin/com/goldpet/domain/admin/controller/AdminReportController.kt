@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin Report Management", description = "관리자 신고 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/reports")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminReportController(
     private val adminReportService: AdminReportService
 ) {
@@ -38,6 +38,7 @@ class AdminReportController(
 
     @Operation(summary = "신고 처리 (조치)")
     @PostMapping("/{reportId}/resolve")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun resolveReport(
         @PathVariable reportId: Long,
         @RequestBody request: ResolveReportRequest,
@@ -49,6 +50,7 @@ class AdminReportController(
 
     @Operation(summary = "신고 기각")
     @PostMapping("/{reportId}/dismiss")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun dismissReport(
         @PathVariable reportId: Long,
         @AuthenticationPrincipal principal: AdminUserPrincipal

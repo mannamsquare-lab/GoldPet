@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin Economy Management", description = "관리자 Gold/결제 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/economy")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminEconomyController(
     private val adminEconomyService: AdminEconomyService
 ) {
@@ -47,18 +47,21 @@ class AdminEconomyController(
 
     @Operation(summary = "상품 등록")
     @PostMapping("/products")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createProduct(@RequestBody request: GoldProductCreateRequest): ResponseEntity<GoldProductAdminResponse> {
         return ResponseEntity.ok(adminEconomyService.createProduct(request))
     }
 
     @Operation(summary = "상품 수정")
     @PutMapping("/products/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateProduct(@PathVariable id: Long, @RequestBody request: GoldProductUpdateRequest): ResponseEntity<GoldProductAdminResponse> {
         return ResponseEntity.ok(adminEconomyService.updateProduct(id, request))
     }
 
     @Operation(summary = "상품 삭제")
     @DeleteMapping("/products/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteProduct(@PathVariable id: Long): ResponseEntity<Void> {
         adminEconomyService.deleteProduct(id)
         return ResponseEntity.ok().build()

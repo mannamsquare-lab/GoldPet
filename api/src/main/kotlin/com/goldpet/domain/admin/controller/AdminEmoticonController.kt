@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "어드민: 이모티콘 관리", description = "이모티콘 및 이모티콘 팩 CRUD")
 @RestController
 @RequestMapping("/api/v1/admin/emoticons")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminEmoticonController(
     private val adminEmoticonService: AdminEmoticonService,
     private val emoticonSeedS3MigrationService: EmoticonSeedS3MigrationService,
@@ -39,12 +39,14 @@ class AdminEmoticonController(
 
     @Operation(summary = "이모티콘 생성")
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createEmoticon(@RequestBody request: CreateEmoticonRequest): ResponseEntity<EmoticonResponse> {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminEmoticonService.createEmoticon(request))
     }
 
     @Operation(summary = "이모티콘 수정")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateEmoticon(
         @PathVariable id: Long,
         @RequestBody request: UpdateEmoticonRequest
@@ -54,6 +56,7 @@ class AdminEmoticonController(
 
     @Operation(summary = "이모티콘 삭제")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteEmoticon(@PathVariable id: Long): ResponseEntity<Void> {
         adminEmoticonService.deleteEmoticon(id)
         return ResponseEntity.noContent().build()
@@ -61,6 +64,7 @@ class AdminEmoticonController(
 
     @Operation(summary = "이모티콘 활성/비활성 토글")
     @PatchMapping("/{id}/toggle")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun toggleActive(@PathVariable id: Long): ResponseEntity<EmoticonResponse> {
         return ResponseEntity.ok(adminEmoticonService.toggleActive(id))
     }
@@ -71,6 +75,7 @@ class AdminEmoticonController(
             "기동 시 ApplicationReadyEvent 로 1회 자동 실행되지만 실패/재실행용으로 노출."
     )
     @PostMapping("/migrate-to-s3")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun migrateToS3(): ResponseEntity<EmoticonSeedS3MigrationService.Result> {
         return ResponseEntity.ok(emoticonSeedS3MigrationService.migrateAll())
     }
@@ -81,6 +86,7 @@ class AdminEmoticonController(
             "기동 시 자동 재실행을 끈다 (수동 migrate-to-s3 는 여전히 호출 가능)."
     )
     @PostMapping("/migrate-to-s3/stop")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun disableMigration(): ResponseEntity<Void> {
         emoticonSeedS3MigrationService.disable()
         return ResponseEntity.noContent().build()
@@ -94,6 +100,7 @@ class AdminEmoticonController(
             "성공 후 `emoticons` 캐시 evict 로 즉시 반영."
     )
     @PostMapping("/backfill-gif-variants")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     @CacheEvict(value = ["emoticons"], allEntries = true)
     fun backfillGifVariants(): ResponseEntity<GifBackfillResult> {
         return ResponseEntity.ok(fileService.backfillGifImageVariants())

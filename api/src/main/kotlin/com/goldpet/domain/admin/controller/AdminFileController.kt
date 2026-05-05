@@ -23,12 +23,13 @@ data class AdminFileUploadResponse(
 @Tag(name = "어드민: 파일 관리", description = "어드민 파일 업로드 및 이미지 변형 백필")
 @RestController
 @RequestMapping("/api/v1/admin/files")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminFileController(
     private val fileService: FileService
 ) {
     @Operation(summary = "어드민 파일 업로드")
     @PostMapping("/upload")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun uploadFile(
         @RequestParam("file") file: MultipartFile,
         @RequestParam("category", required = false, defaultValue = "notice") category: String,
@@ -47,6 +48,7 @@ class AdminFileController(
 
     @Operation(summary = "파일 이미지 변형 일괄 생성")
     @PostMapping("/backfill-variants")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun backfillVariants(
         @RequestParam(defaultValue = "100") batchSize: Int,
         @AuthenticationPrincipal principal: AdminUserPrincipal?
@@ -59,6 +61,7 @@ class AdminFileController(
 
     @Operation(summary = "스코프 지정 백필", description = "scope=ALL|FILE_ATTACHMENTS|FILE_ATTACHMENTS_RETRY|WALK_SPOTS")
     @PostMapping("/backfill")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun backfillScoped(
         @RequestParam scope: FileService.BackfillScope,
         @RequestParam(defaultValue = "200") batchSize: Int,
@@ -73,6 +76,7 @@ class AdminFileController(
 
     @Operation(summary = "재처리 백필 중지", description = "image.backfill.retry_enabled = false")
     @PostMapping("/backfill/stop")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun stopBackfillRetry(
         @AuthenticationPrincipal principal: AdminUserPrincipal?
     ): ResponseEntity<Map<String, String>> {

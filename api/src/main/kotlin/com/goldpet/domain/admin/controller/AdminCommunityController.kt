@@ -68,7 +68,7 @@ data class AdminCommentUpdateRequest(
 @Tag(name = "Admin Community", description = "관리자 커뮤니티 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/community")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminCommunityController(
     private val communityService: AdminCommunityService
 ) {
@@ -97,6 +97,7 @@ class AdminCommunityController(
 
     @Operation(summary = "게시글 내용 수정 (관리자 어뷰징 처리용)")
     @PatchMapping("/posts/{postId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updatePost(
         @PathVariable postId: Long,
         @RequestBody request: AdminPostUpdateRequest
@@ -106,6 +107,7 @@ class AdminCommunityController(
 
     @Operation(summary = "댓글 내용 수정 (관리자 어뷰징 처리용)")
     @PatchMapping("/comments/{commentId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateComment(
         @PathVariable commentId: Long,
         @RequestBody request: AdminCommentUpdateRequest
@@ -115,6 +117,7 @@ class AdminCommunityController(
 
     @Operation(summary = "게시글 숨김 처리")
     @PostMapping("/posts/{postId}/hide")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun hidePost(
         @PathVariable postId: Long,
         @RequestBody request: HideContentRequest
@@ -125,6 +128,7 @@ class AdminCommunityController(
 
     @Operation(summary = "게시글 숨김 해제")
     @PostMapping("/posts/{postId}/unhide")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun unhidePost(@PathVariable postId: Long): ResponseEntity<Void> {
         communityService.unhidePost(postId)
         return ResponseEntity.ok().build()
@@ -132,6 +136,7 @@ class AdminCommunityController(
 
     @Operation(summary = "게시글 삭제")
     @DeleteMapping("/posts/{postId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deletePost(@PathVariable postId: Long): ResponseEntity<Void> {
         communityService.deletePost(postId)
         return ResponseEntity.noContent().build()
@@ -139,6 +144,7 @@ class AdminCommunityController(
 
     @Operation(summary = "댓글 숨김 처리")
     @PostMapping("/comments/{commentId}/hide")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun hideComment(
         @PathVariable commentId: Long,
         @RequestBody request: HideContentRequest
@@ -149,6 +155,7 @@ class AdminCommunityController(
 
     @Operation(summary = "댓글 삭제")
     @DeleteMapping("/comments/{commentId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteComment(@PathVariable commentId: Long): ResponseEntity<Void> {
         communityService.deleteComment(commentId)
         return ResponseEntity.noContent().build()

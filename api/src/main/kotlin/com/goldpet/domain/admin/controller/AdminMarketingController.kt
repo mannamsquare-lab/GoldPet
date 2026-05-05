@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin Marketing", description = "관리자 마케팅 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/marketing")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminMarketingController(
     private val adminMarketingService: AdminMarketingService
 ) {
@@ -23,12 +23,14 @@ class AdminMarketingController(
 
     @Operation(summary = "배너 생성")
     @PostMapping("/banners")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createBanner(@RequestBody request: BannerCreateRequest): ResponseEntity<BannerResponse> {
         return ResponseEntity.ok(adminMarketingService.createBanner(request))
     }
 
     @Operation(summary = "배너 삭제")
     @DeleteMapping("/banners/{bannerId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteBanner(@PathVariable bannerId: Long): ResponseEntity<Void> {
         adminMarketingService.deleteBanner(bannerId)
         return ResponseEntity.noContent().build()
@@ -42,6 +44,7 @@ class AdminMarketingController(
 
     @Operation(summary = "캠페인 생성")
     @PostMapping("/campaigns")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createCampaign(@RequestBody request: CampaignCreateRequest): ResponseEntity<CampaignResponse> {
         return ResponseEntity.ok(adminMarketingService.createCampaign(request))
     }
@@ -54,12 +57,14 @@ class AdminMarketingController(
 
     @Operation(summary = "알림 템플릿 생성")
     @PostMapping("/notifications/templates")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createTemplate(@RequestBody request: NotificationTemplateRequest): ResponseEntity<NotificationTemplateResponse> {
         return ResponseEntity.ok(adminMarketingService.createTemplate(request))
     }
 
     @Operation(summary = "알림 템플릿 수정")
     @PutMapping("/notifications/templates/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateTemplate(
         @PathVariable id: Long,
         @RequestBody request: NotificationTemplateRequest
@@ -69,6 +74,7 @@ class AdminMarketingController(
 
     @Operation(summary = "알림 템플릿 삭제")
     @DeleteMapping("/notifications/templates/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteTemplate(@PathVariable id: Long): ResponseEntity<Void> {
         adminMarketingService.deleteTemplate(id)
         return ResponseEntity.noContent().build()

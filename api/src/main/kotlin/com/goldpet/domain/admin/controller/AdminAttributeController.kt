@@ -13,7 +13,7 @@ import java.net.URI
 @Tag(name = "어드민: 반려동물 속성 관리", description = "반려동물 속성(성격, 특성 등) CRUD")
 @RestController
 @RequestMapping("/api/v1/admin/pet-attributes")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminAttributeController(
     private val attributeService: AttributeAdminService
 ) {
@@ -26,6 +26,7 @@ class AdminAttributeController(
 
     @Operation(summary = "반려동물 속성 생성")
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createAttribute(@RequestBody request: PetAttributeRequest): ResponseEntity<PetAttributeResponse> {
         val created = attributeService.createAttribute(request)
         return ResponseEntity.created(URI.create("/api/v1/admin/pet-attributes/${created.id}")).body(created)
@@ -33,6 +34,7 @@ class AdminAttributeController(
 
     @Operation(summary = "반려동물 속성 수정")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateAttribute(
         @PathVariable id: Long,
         @RequestBody request: PetAttributeRequest
@@ -42,6 +44,7 @@ class AdminAttributeController(
 
     @Operation(summary = "반려동물 속성 삭제")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteAttribute(@PathVariable id: Long): ResponseEntity<Void> {
         attributeService.deleteAttribute(id)
         return ResponseEntity.noContent().build()

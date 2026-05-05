@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin Notices", description = "관리자 공지/팝업 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/notices")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminNoticeController(
     private val appNoticeService: AppNoticeService
 ) {
@@ -26,6 +26,7 @@ class AdminNoticeController(
 
     @Operation(summary = "공지/팝업 생성")
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createNotice(
         @RequestBody request: CreateAppNoticeRequest
     ): ResponseEntity<AppNoticeResponse> {
@@ -34,6 +35,7 @@ class AdminNoticeController(
 
     @Operation(summary = "공지/팝업 수정")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateNotice(
         @PathVariable id: Long,
         @RequestBody request: UpdateAppNoticeRequest
@@ -43,6 +45,7 @@ class AdminNoticeController(
 
     @Operation(summary = "공지/팝업 삭제 (소프트 삭제 - isActive=false)", description = "실제 삭제 대신 비활성화합니다.")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteNotice(@PathVariable id: Long): ResponseEntity<Void> {
         appNoticeService.deleteNotice(id)
         return ResponseEntity.noContent().build()

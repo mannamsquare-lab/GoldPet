@@ -13,7 +13,7 @@ import java.time.LocalDate
 @Tag(name = "Admin Stool Analysis", description = "관리자 배변 분석 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/stool-analyses")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminStoolAnalysisController(
     private val adminStoolAnalysisService: AdminStoolAnalysisService
 ) {

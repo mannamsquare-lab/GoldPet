@@ -6464,10 +6464,10 @@ export interface components {
         };
         PageableObject: {
             /** Format: int32 */
+            pageNumber?: number;
+            /** Format: int32 */
             pageSize?: number;
             paged?: boolean;
-            /** Format: int32 */
-            pageNumber?: number;
             unpaged?: boolean;
             /** Format: int64 */
             offset?: number;

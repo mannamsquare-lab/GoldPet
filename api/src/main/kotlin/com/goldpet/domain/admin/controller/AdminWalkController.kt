@@ -20,7 +20,7 @@ import java.time.LocalDate
 @Tag(name = "Admin Walk Management", description = "관리자 산책 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/walks")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminWalkController(
     private val adminWalkService: AdminWalkService
 ) {
@@ -46,6 +46,7 @@ class AdminWalkController(
 
     @Operation(summary = "산책 삭제 (관리)")
     @DeleteMapping("/{walkId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteWalk(
         @PathVariable walkId: Long,
         @RequestBody request: WalkDeleteRequest
@@ -83,6 +84,7 @@ class AdminWalkController(
 
     @Operation(summary = "베스트 산책 커플 선정 (upsert)")
     @PostMapping("/best-couple")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun setBestCouple(
         @RequestBody request: BestWalkCoupleRequest
     ): ResponseEntity<BestWalkCoupleResponse> {
@@ -91,6 +93,7 @@ class AdminWalkController(
 
     @Operation(summary = "베스트 산책 커플 해제")
     @DeleteMapping("/best-couple/{yearMonth}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteBestCouple(
         @PathVariable yearMonth: String
     ): ResponseEntity<Void> {

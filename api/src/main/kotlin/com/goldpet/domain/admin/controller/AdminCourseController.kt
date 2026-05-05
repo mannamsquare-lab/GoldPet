@@ -77,7 +77,7 @@ data class CourseCommentAdminResponse(
 @Tag(name = "Admin Course", description = "관리자 코스 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/courses")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminCourseController(
     private val courseService: AdminCourseService
 ) {
@@ -106,6 +106,7 @@ class AdminCourseController(
 
     @Operation(summary = "코스 숨김 처리")
     @PostMapping("/{courseId}/hide")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun hideCourse(@PathVariable courseId: Long): ResponseEntity<Void> {
         courseService.hideCourse(courseId)
         return ResponseEntity.ok().build()
@@ -113,6 +114,7 @@ class AdminCourseController(
 
     @Operation(summary = "코스 숨김 해제")
     @PostMapping("/{courseId}/unhide")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun unhideCourse(@PathVariable courseId: Long): ResponseEntity<Void> {
         courseService.unhideCourse(courseId)
         return ResponseEntity.ok().build()
@@ -120,6 +122,7 @@ class AdminCourseController(
 
     @Operation(summary = "코스 삭제")
     @DeleteMapping("/{courseId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteCourse(@PathVariable courseId: Long): ResponseEntity<Void> {
         courseService.deleteCourse(courseId)
         return ResponseEntity.noContent().build()
@@ -127,6 +130,7 @@ class AdminCourseController(
 
     @Operation(summary = "댓글 숨김 처리")
     @PostMapping("/comments/{commentId}/hide")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun hideComment(@PathVariable commentId: Long): ResponseEntity<Void> {
         courseService.hideComment(commentId)
         return ResponseEntity.ok().build()
@@ -134,6 +138,7 @@ class AdminCourseController(
 
     @Operation(summary = "댓글 숨김 해제")
     @PostMapping("/comments/{commentId}/unhide")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun unhideComment(@PathVariable commentId: Long): ResponseEntity<Void> {
         courseService.unhideComment(commentId)
         return ResponseEntity.ok().build()
@@ -141,6 +146,7 @@ class AdminCourseController(
 
     @Operation(summary = "댓글 삭제")
     @DeleteMapping("/comments/{commentId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteComment(@PathVariable commentId: Long): ResponseEntity<Void> {
         courseService.deleteComment(commentId)
         return ResponseEntity.noContent().build()
@@ -148,6 +154,7 @@ class AdminCourseController(
 
     @Operation(summary = "코스 썸네일 일괄 재생성 (Google Maps 마이그레이션용)")
     @PostMapping("/regenerate-thumbnails")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun regenerateThumbnails(): ResponseEntity<Map<String, Any>> {
         val result = courseService.regenerateAllThumbnails()
         return ResponseEntity.ok(result)

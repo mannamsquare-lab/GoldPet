@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin AI Profile", description = "관리자 AI 프로필 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/ai-profile")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminAIProfileController(
     private val adminAIProfileService: AdminAIProfileService,
     private val aiProfileLegacyBackfillService: AIProfileLegacyBackfillService
@@ -29,6 +29,7 @@ class AdminAIProfileController(
             "`POST /api/v1/admin/files/backfill?scope=FILE_ATTACHMENTS` 호출 필요."
     )
     @PostMapping("/backfill-legacy")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun backfillLegacy(
         @RequestParam(defaultValue = "true") dryRun: Boolean
     ): ResponseEntity<AIProfileLegacyBackfillService.Result> {
@@ -54,12 +55,14 @@ class AdminAIProfileController(
 
     @Operation(summary = "실패 요청 재시도")
     @PostMapping("/requests/{requestId}/retry")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun retryRequest(@PathVariable requestId: Long): ResponseEntity<AIRequestAdminResponse> {
         return ResponseEntity.ok(adminAIProfileService.retryRequest(requestId))
     }
 
     @Operation(summary = "실패 요청 환불")
     @PostMapping("/requests/{requestId}/refund")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun refundRequest(@PathVariable requestId: Long): ResponseEntity<Void> {
         adminAIProfileService.refundRequest(requestId)
         return ResponseEntity.noContent().build()
@@ -67,6 +70,7 @@ class AdminAIProfileController(
 
     @Operation(summary = "대기/처리중 요청 강제 실패 처리")
     @PostMapping("/requests/{requestId}/force-fail")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun forceFailRequest(@PathVariable requestId: Long): ResponseEntity<Void> {
         adminAIProfileService.forceFailRequest(requestId)
         return ResponseEntity.noContent().build()
@@ -80,12 +84,14 @@ class AdminAIProfileController(
 
     @Operation(summary = "스타일 생성")
     @PostMapping("/styles")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createStyle(@RequestBody request: AIStyleAdminRequest): ResponseEntity<AIStyleAdminResponse> {
         return ResponseEntity.ok(adminAIProfileService.createStyle(request))
     }
 
     @Operation(summary = "스타일 수정")
     @PutMapping("/styles/{styleId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateStyle(
         @PathVariable styleId: String,
         @RequestBody request: AIStyleAdminRequest
@@ -95,6 +101,7 @@ class AdminAIProfileController(
 
     @Operation(summary = "스타일 삭제")
     @DeleteMapping("/styles/{styleId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteStyle(@PathVariable styleId: String): ResponseEntity<Void> {
         adminAIProfileService.deleteStyle(styleId)
         return ResponseEntity.noContent().build()
@@ -102,6 +109,7 @@ class AdminAIProfileController(
 
     @Operation(summary = "스타일 활성/비활성 토글")
     @PatchMapping("/styles/{styleId}/toggle")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun toggleStyle(@PathVariable styleId: String): ResponseEntity<AIStyleAdminResponse> {
         return ResponseEntity.ok(adminAIProfileService.toggleStyle(styleId))
     }

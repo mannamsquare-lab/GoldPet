@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "어드민: 사용자 마이그레이션", description = "PII 암호화 키 교체 및 이메일 해시 마이그레이션")
 @RestController
 @RequestMapping("/api/v1/admin/migration")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class UserMigrationController(
     private val userRepository: UserRepository,
     private val piiKeyRotationService: PiiKeyRotationService

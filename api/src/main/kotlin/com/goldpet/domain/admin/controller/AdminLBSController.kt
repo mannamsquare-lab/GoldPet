@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin LBS Management", description = "관리자 산책/지도 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/lbs")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminLBSController(
     private val adminLBSService: AdminLBSService
 ) {
@@ -35,12 +35,14 @@ class AdminLBSController(
 
     @Operation(summary = "장소 추가")
     @PostMapping("/places")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createPlace(@RequestBody request: CreatePlaceRequest): ResponseEntity<PlaceAdminResponse> {
         return ResponseEntity.ok(adminLBSService.createPlace(request))
     }
 
     @Operation(summary = "장소 수정")
     @PutMapping("/places/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updatePlace(
         @PathVariable id: Long,
         @RequestBody request: UpdatePlaceRequest

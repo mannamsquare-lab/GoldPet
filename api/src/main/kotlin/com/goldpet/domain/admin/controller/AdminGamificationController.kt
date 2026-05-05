@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin Gamification Management", description = "관리자 게이미피케이션 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/gamification")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminGamificationController(
     private val adminGamificationService: AdminGamificationService
 ) {
@@ -22,12 +22,14 @@ class AdminGamificationController(
 
     @Operation(summary = "뱃지 생성")
     @PostMapping("/badges")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun createBadge(@RequestBody request: CreateBadgeRequest): ResponseEntity<BadgeAdminResponse> {
         return ResponseEntity.ok(adminGamificationService.createBadge(request))
     }
 
     @Operation(summary = "뱃지 수정")
     @PutMapping("/badges/{badgeId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun updateBadge(
         @PathVariable badgeId: Long,
         @RequestBody request: UpdateBadgeRequest

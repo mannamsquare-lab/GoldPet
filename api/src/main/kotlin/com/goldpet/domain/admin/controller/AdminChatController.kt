@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin Chat Management", description = "관리자 채팅 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/chat")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminChatController(
     private val adminChatService: AdminChatService
 ) {
@@ -33,6 +33,7 @@ class AdminChatController(
 
     @Operation(summary = "메시지 삭제")
     @DeleteMapping("/messages/{messageId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteMessage(@PathVariable messageId: Long): ResponseEntity<Void> {
         adminChatService.deleteMessage(messageId)
         return ResponseEntity.noContent().build()
@@ -40,6 +41,7 @@ class AdminChatController(
 
     @Operation(summary = "채팅방 삭제")
     @DeleteMapping("/rooms/{roomId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun deleteRoom(@PathVariable roomId: Long): ResponseEntity<Void> {
         adminChatService.deleteRoom(roomId)
         return ResponseEntity.noContent().build()

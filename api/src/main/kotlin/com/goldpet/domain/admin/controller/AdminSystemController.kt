@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Admin System Management", description = "관리자 시스템 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/system")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminSystemController(
     private val adminSystemService: AdminSystemService,
     private val adminAuditService: AdminAuditService,
