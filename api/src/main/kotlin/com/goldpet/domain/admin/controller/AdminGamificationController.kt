@@ -1,6 +1,7 @@
 package com.goldpet.domain.admin.controller
 
 import com.goldpet.domain.admin.service.AdminGamificationService
+import com.goldpet.domain.admin.service.BadgeDeletionResult
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -41,11 +42,9 @@ class AdminGamificationController(
     @DeleteMapping("/badges/{badgeId}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     fun deleteBadge(@PathVariable badgeId: Long): ResponseEntity<Void> {
-        val hardDeleted = adminGamificationService.deleteBadge(badgeId)
-        return if (hardDeleted) {
-            ResponseEntity.noContent().build()
-        } else {
-            ResponseEntity.ok().build()
+        return when (adminGamificationService.deleteBadge(badgeId)) {
+            BadgeDeletionResult.HardDeleted -> ResponseEntity.noContent().build()
+            BadgeDeletionResult.SoftDeleted -> ResponseEntity.ok().build()
         }
     }
 }

@@ -57,6 +57,7 @@ class AdminUserManagementService(
             goldBalance = user.goldBalance.toLong(),
             createdAt = user.createdAt.format(formatter),
             lastLoginAt = null,
+            profileLockedAt = user.profileLockedAt?.format(formatter),
             pets = pets.map { pet ->
                 PetSummary(
                     id = pet.id,

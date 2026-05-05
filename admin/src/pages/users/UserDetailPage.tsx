@@ -7,17 +7,15 @@ import { Button } from '../../components/common/Button';
 import { toast } from 'sonner'
 import { useConfirm } from '@/hooks/useConfirm'
 
-type UserDetailWithLock = UserDetail & { profileLockedAt?: string | null };
-
 export default function UserDetailPage() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { confirm: confirmDialog, ConfirmDialog } = useConfirm()
 
-  const { data: user, isLoading, isError } = useQuery<UserDetailWithLock>({
+  const { data: user, isLoading, isError } = useQuery<UserDetail>({
     queryKey: ['users', 'detail', userId],
-    queryFn: () => userManagementService.getUserDetail(Number(userId)) as Promise<UserDetailWithLock>,
+    queryFn: () => userManagementService.getUserDetail(Number(userId)),
     enabled: !!userId,
   });
 

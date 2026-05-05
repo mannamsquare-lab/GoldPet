@@ -36,6 +36,7 @@ data class UserDetailResponse(
     val goldBalance: Long,
     val createdAt: String?,
     val lastLoginAt: String?,
+    val profileLockedAt: String?,
     val pets: List<PetSummary>,
     val stats: UserStats
 )

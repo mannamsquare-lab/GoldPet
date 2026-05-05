@@ -16325,16 +16325,16 @@
       "PageableObject": {
         "type": "object",
         "properties": {
-          "pageNumber": {
-            "type": "integer",
-            "format": "int32"
-          },
           "pageSize": {
             "type": "integer",
             "format": "int32"
           },
           "paged": {
             "type": "boolean"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
           },
           "unpaged": {
             "type": "boolean"
@@ -18476,6 +18476,9 @@
             "type": "string"
           },
           "lastLoginAt": {
+            "type": "string"
+          },
+          "profileLockedAt": {
             "type": "string"
           },
           "pets": {

@@ -17,6 +17,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner'
 import { useConfirm } from '@/hooks/useConfirm'
+import { buildCreatePlacePayload, buildUpdatePlacePayload } from './lbsForm';
 
 const LBS_TABS = [
   { key: 'stats', label: '통계' },
@@ -130,12 +131,7 @@ export default function LBSPage() {
   };
 
   const createPlaceMutation = useMutation({
-    mutationFn: () => {
-      const latitude = parseFloat(placeForm.latitude);
-      const longitude = parseFloat(placeForm.longitude);
-      if (isNaN(latitude) || isNaN(longitude)) throw new Error('위도/경도를 올바르게 입력해주세요.');
-      return lbsService.createPlace({ name: placeForm.name, category: placeForm.category, latitude, longitude });
-    },
+    mutationFn: () => lbsService.createPlace(buildCreatePlacePayload(placeForm)),
     onSuccess: () => {
       loadPlaces();
       setShowPlaceForm(false);
@@ -145,13 +141,7 @@ export default function LBSPage() {
   });
 
   const updatePlaceMutation = useMutation({
-    mutationFn: (id: number) => {
-      const latitude = placeForm.latitude !== '' ? parseFloat(placeForm.latitude) : undefined;
-      const longitude = placeForm.longitude !== '' ? parseFloat(placeForm.longitude) : undefined;
-      if (latitude !== undefined && isNaN(latitude)) throw new Error('위도를 올바르게 입력해주세요.');
-      if (longitude !== undefined && isNaN(longitude)) throw new Error('경도를 올바르게 입력해주세요.');
-      return lbsService.updatePlace(id, { name: placeForm.name || undefined, category: placeForm.category || undefined, latitude, longitude });
-    },
+    mutationFn: (id: number) => lbsService.updatePlace(id, buildUpdatePlacePayload(placeForm)),
     onSuccess: () => {
       loadPlaces();
       setShowPlaceForm(false);

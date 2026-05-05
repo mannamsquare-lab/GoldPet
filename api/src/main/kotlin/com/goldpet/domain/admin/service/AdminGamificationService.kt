@@ -11,6 +11,11 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+sealed interface BadgeDeletionResult {
+    object HardDeleted : BadgeDeletionResult
+    object SoftDeleted : BadgeDeletionResult
+}
+
 @Service
 class AdminGamificationService(
     private val badgeRepository: BadgeRepository,
@@ -19,9 +24,10 @@ class AdminGamificationService(
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     fun getBadges(): List<BadgeAdminResponse> {
+        val earnedCountByBadgeId = userBadgeRepository.findBadgeIdEarnedCounts()
+            .associate { it.getBadgeId() to it.getEarnedCount().toInt() }
         return badgeRepository.findAll().map { badge ->
-            val earnedCount = userBadgeRepository.countByBadgeId(badge.id)
-            toBadgeAdminResponse(badge, earnedCount.toInt())
+            toBadgeAdminResponse(badge, earnedCountByBadgeId[badge.id] ?: 0)
         }
     }
 
@@ -44,17 +50,17 @@ class AdminGamificationService(
     }
 
     @Transactional
-    fun deleteBadge(badgeId: Long): Boolean {
+    fun deleteBadge(badgeId: Long): BadgeDeletionResult {
         val badge = badgeRepository.findById(badgeId)
             .orElseThrow { NotFoundException("Badge not found") }
         val earnedCount = userBadgeRepository.countByBadgeId(badgeId)
         return if (earnedCount > 0) {
             badge.isActive = false
             badgeRepository.save(badge)
-            false
+            BadgeDeletionResult.SoftDeleted
         } else {
             badgeRepository.delete(badge)
-            true
+            BadgeDeletionResult.HardDeleted
         }
     }
 

@@ -6,6 +6,7 @@ import RequireAuth from './components/auth/RequireAuth';
 import DashboardLayout from './layouts/DashboardLayout';
 import LoginPage from './pages/auth/LoginPage';
 import ChangePasswordPage from './pages/auth/ChangePasswordPage';
+import ForbiddenPage from './pages/auth/ForbiddenPage';
 import ProfilePage from './pages/settings/ProfilePage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersPage from './pages/users/UsersPage';
@@ -44,6 +45,11 @@ function App() {
           <Route path="/change-password" element={
             <RequireAuth>
               <ChangePasswordPage />
+            </RequireAuth>
+          } />
+          <Route path="/forbidden" element={
+            <RequireAuth>
+              <ForbiddenPage />
             </RequireAuth>
           } />
 

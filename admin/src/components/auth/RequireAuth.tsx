@@ -23,7 +23,7 @@ export default function RequireAuth({ children, requiredRoles }: RequireAuthProp
 
   if (requiredRoles && requiredRoles.length > 0 && user) {
     if (!requiredRoles.includes(user.role)) {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/forbidden" replace />;
     }
   }
 
