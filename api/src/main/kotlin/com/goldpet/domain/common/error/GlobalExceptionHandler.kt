@@ -132,20 +132,8 @@ class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
     fun handleAccessDeniedException(ex: org.springframework.security.access.AccessDeniedException): ResponseEntity<ErrorResponse> {
         val request = (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request
-        if (request != null && request.requestURI.startsWith("/api/v1/admin/")) {
-            val principal = SecurityContextHolder.getContext().authentication?.principal
-            if (principal is AdminUserPrincipal) {
-                runCatching {
-                    adminAuditService?.log(
-                        adminUserId = principal.id,
-                        action = "ACCESS_DENIED",
-                        ipAddress = request.remoteAddr,
-                        requestPath = request.requestURI,
-                        requestMethod = request.method,
-                        responseStatus = HttpStatus.FORBIDDEN.value()
-                    )
-                }.onFailure { log.warn("Failed to record ACCESS_DENIED audit fallback for path={}", request.requestURI, it) }
-            }
+        if (request != null) {
+            com.goldpet.config.security.AdminAccessDeniedAudit.record(request, adminAuditService)
         }
         log.warn("Access denied: {}", ex.message)
         return buildResponse(HttpStatus.FORBIDDEN, "ACCESS_DENIED", ex.message ?: "Access denied")

@@ -29,8 +29,19 @@ class AdminLBSController(
 
     @Operation(summary = "장소 목록 조회")
     @GetMapping("/places")
-    fun getPlaces(): ResponseEntity<List<PlaceAdminResponse>> {
-        return ResponseEntity.ok(adminLBSService.getPlaces())
+    fun getPlaces(
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
+    ): ResponseEntity<Any> {
+        if (page == null && size == null) {
+            return ResponseEntity.ok(adminLBSService.getPlaces())
+        }
+        val pageable = org.springframework.data.domain.PageRequest.of(
+            page ?: 0,
+            (size ?: 20).coerceIn(1, 100),
+            org.springframework.data.domain.Sort.by("id").descending(),
+        )
+        return ResponseEntity.ok(adminLBSService.getPlaces(pageable))
     }
 
     @Operation(summary = "장소 추가")

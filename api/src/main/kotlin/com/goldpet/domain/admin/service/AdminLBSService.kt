@@ -46,6 +46,10 @@ class AdminLBSService(
         }
     }
 
+    fun getPlaces(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<PlaceAdminResponse> {
+        return placeRepository.findAllByDeletedAtIsNull(pageable).map { toPlaceAdminResponse(it) }
+    }
+
     @Transactional
     fun createPlace(request: CreatePlaceRequest): PlaceAdminResponse {
         val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
