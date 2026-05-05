@@ -1,5 +1,4 @@
 import { typedClient } from './typedClient';
-import { apiClient } from './apiClient';
 import type { SystemInfoResponse, AppConfigResponse } from '../types/api';
 
 export interface BackupJob {
@@ -82,31 +81,35 @@ export const systemService = {
   },
 
   async createAdmin(data: AdminCreateRequest): Promise<AdminCreateResponse> {
-    const response = await apiClient.post<AdminCreateResponse>('/system/admins', data);
-    return response.data;
+    const body = data as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/system/admins'>>[1];
+    const response = await typedClient.post('/api/v1/admin/system/admins', body);
+    return response.data as unknown as AdminCreateResponse;
   },
 
   async updateAdmin(id: number, data: AdminUpdateRequest): Promise<AdminUser> {
-    const response = await apiClient.put<AdminUser>(`/system/admins/${id}`, data);
-    return response.data;
+    const body = data as unknown as Parameters<typeof typedClient.putPath<'/api/v1/admin/system/admins/{id}'>>[2];
+    const response = await typedClient.putPath('/api/v1/admin/system/admins/{id}', { id }, body);
+    return response.data as unknown as AdminUser;
   },
 
   async deleteAdmin(id: number): Promise<void> {
-    await apiClient.delete(`/system/admins/${id}`);
+    await typedClient.deletePath('/api/v1/admin/system/admins/{id}', { id });
   },
 
   async resetAdminPassword(id: number): Promise<{ temporaryPassword: string }> {
-    const response = await apiClient.post<{ temporaryPassword: string }>(`/system/admins/${id}/reset-password`, {});
-    return response.data;
+    const body = {} as unknown as Parameters<typeof typedClient.postPath<'/api/v1/admin/system/admins/{id}/reset-password'>>[2];
+    const response = await typedClient.postPath('/api/v1/admin/system/admins/{id}/reset-password', { id }, body);
+    return response.data as unknown as { temporaryPassword: string };
   },
 
   async triggerBackup(): Promise<BackupJob> {
-    const { data } = await apiClient.post<BackupJob>('/system/backup');
-    return data;
+    const body = undefined as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/system/backup'>>[1];
+    const response = await typedClient.post('/api/v1/admin/system/backup', body);
+    return response.data as unknown as BackupJob;
   },
 
   async getBackupJobs(limit = 20): Promise<BackupJob[]> {
-    const { data } = await apiClient.get<BackupJob[]>('/system/backup/jobs', { params: { limit } });
-    return data;
+    const response = await typedClient.get('/api/v1/admin/system/backup/jobs', { params: { limit } });
+    return response.data as unknown as BackupJob[];
   },
 };

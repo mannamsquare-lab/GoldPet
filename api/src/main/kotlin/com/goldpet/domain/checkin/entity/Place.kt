@@ -49,6 +49,10 @@ class Place(
     var checkinCount: Int = 0,
 
     @Column(name = "deleted_at")
-    var deletedAt: LocalDateTime? = null
+    var deletedAt: LocalDateTime? = null,
+
+    @Version
+    @Column(nullable = false)
+    var version: Long = 0
 
 ) : BaseTimeEntity()

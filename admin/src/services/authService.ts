@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { apiClient } from './apiClient';
+import { typedClient } from './typedClient';
 import type {
   AdminUserDto,
   Setup2faResponse,
@@ -88,6 +88,7 @@ export const authService = {
   },
 
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await apiClient.post('/auth/change-password', { currentPassword, newPassword });
+    const body = { currentPassword, newPassword } as unknown as Parameters<typeof typedClient.post<'/api/v1/admin/auth/change-password'>>[1];
+    await typedClient.post('/api/v1/admin/auth/change-password', body);
   },
 };

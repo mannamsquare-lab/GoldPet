@@ -7,6 +7,7 @@ import com.goldpet.domain.common.exception.*
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -53,6 +54,12 @@ class GlobalExceptionHandler {
     fun handleConflictException(ex: ConflictException): ResponseEntity<ErrorResponse> {
         log.warn("Conflict: {}", ex.message)
         return buildResponse(HttpStatus.CONFLICT, ex.errorCode, ex.message)
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException::class)
+    fun handleOptimisticLockingFailure(ex: OptimisticLockingFailureException): ResponseEntity<ErrorResponse> {
+        log.warn("Optimistic lock conflict: {}", ex.message)
+        return buildResponse(HttpStatus.CONFLICT, "CONCURRENT_MODIFICATION", "다른 사용자가 동시에 수정했습니다. 새로고침 후 다시 시도해주세요.")
     }
 
     @ExceptionHandler(UnauthorizedException::class)

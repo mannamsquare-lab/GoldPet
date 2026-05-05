@@ -1,5 +1,4 @@
 import { typedClient } from './typedClient';
-import { apiClient } from './apiClient';
 import type { BadgeResponse } from '../types/api';
 
 // Generated alias (Phase 3.11.1). Admin BadgeResponse is missing `isActive` /
@@ -54,6 +53,6 @@ export const gamificationService = {
   },
 
   async deleteBadge(id: number): Promise<void> {
-    await apiClient.delete(`/gamification/badges/${id}`);
+    await typedClient.deletePath('/api/v1/admin/gamification/badges/{badgeId}', { badgeId: id });
   },
 };
