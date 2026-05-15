@@ -116,7 +116,7 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
       // this widget's context (above MaterialApp) so showDialog can find
       // MaterialLocalizations.
       final dialogContext = rootNavigatorKey.currentContext;
-      if (dialogContext == null) return;
+      if (dialogContext == null || !dialogContext.mounted) return;
 
       if (info.forceUpdate) {
         await showForceUpdateDialog(
@@ -126,7 +126,7 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
         );
       } else if (info.softUpdate) {
         final shouldShow = await AppVersionService.shouldShowSoftUpdate();
-        if (shouldShow && mounted) {
+        if (shouldShow && dialogContext.mounted) {
           await showSoftUpdateDialog(
             dialogContext,
             updateUrl: info.updateUrl,

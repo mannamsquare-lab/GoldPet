@@ -34,27 +34,22 @@ class PushNotificationService {
   factory PushNotificationService() => _instance;
   PushNotificationService._internal();
 
-  NativeBridge? _bridge;
+  NativeBridge? bridge;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   RemoteMessage? _pendingInitialMessage;
   String? _currentChatRoomId; // 현재 보고 있는 채팅방 ID (알림 필터링용)
 
-  NativeBridge? get bridge => _bridge;
-  set bridge(NativeBridge? value) {
-    _bridge = value;
-  }
-
   /// WebView 페이지 로드 완료 후 호출하여 pending 알림 이벤트 전달
   /// Cold boot 시 bridge setter에서 즉시 보내면 React 앱이 아직 로드되지 않아 이벤트 소실됨
   void deliverPendingMessage() {
-    if (_bridge != null && _pendingInitialMessage != null) {
+    if (bridge != null && _pendingInitialMessage != null) {
       final msg = _pendingInitialMessage!;
       _pendingInitialMessage = null;
       // React 앱 초기화 시간 확보 후 전달
       Future.delayed(const Duration(milliseconds: 500), () {
-        _bridge?.sendEventToReact('pushNotificationClicked', {
+        bridge?.sendEventToReact('pushNotificationClicked', {
           'title': msg.notification?.title,
           'body': msg.notification?.body,
           'data': msg.data,
@@ -89,7 +84,7 @@ class PushNotificationService {
         if (details.payload != null) {
           try {
             final data = jsonDecode(details.payload!);
-            _bridge?.sendEventToReact('pushNotificationClicked', {
+            bridge?.sendEventToReact('pushNotificationClicked', {
               'data': data,
             });
           } catch (e) {
@@ -136,7 +131,7 @@ class PushNotificationService {
           debugPrint('[FCM] Skipping notification - user is viewing chat room $messageChatRoomId');
 
           // React에는 이벤트 전달 (UI 업데이트용)
-          _bridge?.sendEventToReact('pushNotificationReceived', {
+          bridge?.sendEventToReact('pushNotificationReceived', {
             'title': notification.title,
             'body': notification.body,
             'data': message.data,
@@ -168,7 +163,7 @@ class PushNotificationService {
         );
 
         // React에도 이벤트 전달
-        _bridge?.sendEventToReact('pushNotificationReceived', {
+        bridge?.sendEventToReact('pushNotificationReceived', {
           'title': notification.title,
           'body': notification.body,
           'data': message.data,
@@ -181,7 +176,7 @@ class PushNotificationService {
       debugPrint('[FCM] Notification opened app: ${message.messageId}');
       // WebView resume 대기 (background → foreground 전환 시)
       await Future.delayed(const Duration(milliseconds: 500));
-      _bridge?.sendEventToReact('pushNotificationClicked', {
+      bridge?.sendEventToReact('pushNotificationClicked', {
         'title': message.notification?.title,
         'body': message.notification?.body,
         'data': message.data,
@@ -338,7 +333,7 @@ class PushNotificationService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('[FCM] Device registered with backend (deviceId: $deviceId)');
         // Pass deviceId to React side via bridge
-        _bridge?.sendEventToReact('deviceRegistered', {
+        bridge?.sendEventToReact('deviceRegistered', {
           'deviceId': deviceId,
           'fcmToken': fcmToken,
         });

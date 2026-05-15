@@ -16,7 +16,7 @@ class StoolAnalysisService {
       data: {
         'petId': petId,
         'imageUrl': imageUrl,
-        if (walkSpotId != null) 'walkSpotId': walkSpotId,
+        'walkSpotId': ?walkSpotId,
       },
     );
     return response.data as Map<String, dynamic>;

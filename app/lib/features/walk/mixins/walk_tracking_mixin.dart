@@ -943,6 +943,7 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
           return;
         }
 
+        if (!mounted) return;
         String? croppedPath;
         try {
           croppedPath = await PhotoCropScreen.show(context, photo.path);
@@ -1192,8 +1193,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   }
 
   Future<void> addPetStartMarker() async {
-    if (_trackingPetMarkerBytes == null || trackingInitialPosition == null)
+    if (_trackingPetMarkerBytes == null || trackingInitialPosition == null) {
       return;
+    }
     try {
       final overlayImage = BitmapDescriptor.bytes(
         _trackingPetMarkerBytes!,
@@ -1220,8 +1222,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   // --- Helpers ---
 
   Future<BitmapDescriptor> _getSpotMarkerImage(String type) async {
-    if (_trackingSpotMarkerImages.containsKey(type))
+    if (_trackingSpotMarkerImages.containsKey(type)) {
       return _trackingSpotMarkerImages[type]!;
+    }
     final pngAsset = switch (type) {
       'POOP' => 'assets/images/walk/marker_poop.png',
       'PEE' => 'assets/images/walk/marker_pee.png',
@@ -1240,8 +1243,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
   Future<void> _updateAddress(double lat, double lng) async {
     final now = DateTime.now();
     if (_trackingLastGeocodingTime != null &&
-        now.difference(_trackingLastGeocodingTime!).inSeconds < 10)
+        now.difference(_trackingLastGeocodingTime!).inSeconds < 10) {
       return;
+    }
     _trackingLastGeocodingTime = now;
 
     try {
@@ -1296,8 +1300,9 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
     final s = seconds % 60;
-    if (h > 0)
+    if (h > 0) {
       return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 

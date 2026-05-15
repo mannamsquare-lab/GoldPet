@@ -24,7 +24,7 @@ class BridgeMessageHandler {
           final data = jsonDecode(message.message) as Map<String, dynamic>;
           await _handleMessage(data);
         } catch (e) {
-          print('Bridge message parse error: $e');
+          debugPrint('Bridge message parse error: $e');
         }
       },
     );
@@ -36,7 +36,7 @@ class BridgeMessageHandler {
     final id = data['id'] as String?;
 
     if (method == null || id == null) {
-      print('Invalid bridge message: missing method or id');
+      debugPrint('Invalid bridge message: missing method or id');
       return;
     }
 
@@ -72,7 +72,7 @@ class BridgeMessageHandler {
     try {
       await webViewController.runJavaScript(script);
     } catch (e) {
-      print('Failed to send bridge response: $e');
+      debugPrint('Failed to send bridge response: $e');
     }
   }
 

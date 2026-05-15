@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
-import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:image_picker/image_picker.dart';
 import '../api/api_client.dart';
 import '../bridge/bridge_message_handler.dart';
@@ -341,7 +340,8 @@ class _HybridWebViewState extends State<HybridWebView> {
     HybridWebView.ensureContentAlive = () async {
       try {
         final result = await _controller.runJavaScriptReturningResult('document.title');
-        if (result == null || result.toString().isEmpty || result.toString() == 'null' || result.toString() == '""') {
+        final resultStr = result.toString();
+        if (resultStr.isEmpty || resultStr == 'null' || resultStr == '""') {
           final url = await _controller.currentUrl();
           await _controller.loadRequest(Uri.parse(url ?? widget.initialUrl));
         }
@@ -495,7 +495,6 @@ class _HybridWebViewState extends State<HybridWebView> {
   static const _hasBottomNavPrefixes = ['/walk/detail', '/walk/map-expand', '/walk-photos', '/walk-shared-photos'];
   static const Color _colorEFE1C4 = Color(0xFFEFE1C4);
   static const Color _colorFFF7E6 = Color(0xFFFFF7E6);
-  static const Color _colorF9ECD2 = Color(0xFFF9ECD2);
 
   /// URL 경로에 따라 시스템 바 컬러 + Scaffold 배경색 업데이트
   void _updateSystemBarColors(String? url) {

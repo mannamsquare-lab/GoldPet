@@ -71,16 +71,13 @@ class NativeAuthService {
       await GoogleSignIn.instance.initialize();
 
       // v7 Migration: Use authenticate() instead of signIn()
-      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
 
-      if (googleUser != null) {
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-        debugPrint('Logged in with Google');
-        // v7 Migration: Use idToken as accessToken is removed
-        return googleAuth.idToken;
-      }
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      debugPrint('Logged in with Google');
+      // v7 Migration: Use idToken as accessToken is removed
+      return googleAuth.idToken;
     } catch (e) {
       debugPrint('Google login failed: $e');
     }
