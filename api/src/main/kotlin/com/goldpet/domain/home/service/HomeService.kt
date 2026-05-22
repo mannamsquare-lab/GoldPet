@@ -4,8 +4,11 @@ import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.home.dto.HomeRecentWalkResponse
 import com.goldpet.domain.home.dto.HomeResponse
+import com.goldpet.domain.home.dto.HomeTodayWalkResponse
 import com.goldpet.domain.home.dto.NotificationSummary
 import com.goldpet.domain.friend.service.FriendService
+import com.goldpet.domain.gold.entity.TransactionType
+import com.goldpet.domain.gold.repository.GoldTransactionRepository
 import com.goldpet.domain.walk.repository.WalkRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.repository.UserRepository
@@ -13,11 +16,13 @@ import com.goldpet.domain.pet.repository.PetRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 @Service
 class HomeService(
     private val friendService: FriendService,
     private val walkRepository: WalkRepository,
+    private val goldTransactionRepository: GoldTransactionRepository,
     private val notificationService: NotificationService,
     private val userRepository: UserRepository,
     private val petRepository: PetRepository,
@@ -67,12 +72,36 @@ class HomeService(
         // Get notification unread count
         val unreadCount = notificationService.getUnreadCount(userId)
 
-        // Get user's pet names
-        val myPetNames = petRepository.findByOwnerId(userId).map { it.name }
+        // Get user's pets
+        val myPets = petRepository.findByOwnerId(userId)
+        val myPetNames = myPets.map { it.name }
+
+        // Today's accumulated walk stats (from midnight)
+        val todayStart = LocalDate.now().atStartOfDay()
+        val stats = walkRepository.aggregateWalkStats(userId, todayStart, todayStart.plusDays(1)).first()
+        val earnedGold = goldTransactionRepository
+            .sumAmountByUserAndTypeSince(userId, TransactionType.REWARD, todayStart) ?: 0
+        val primaryPet = myPets.firstOrNull()
+        val primaryPetImageUrl = primaryPet
+            ?.let { it.profileImages.firstOrNull()?.imageUrl ?: it.profileImageUrl }
+        val todayWalk = HomeTodayWalkResponse(
+            distanceKm = (stats[0] as Number).toDouble(),
+            durationMinutes = (stats[1] as Number).toLong() / 60,
+            caloriesBurned = (stats[2] as Number).toDouble(),
+            earnedGold = earnedGold,
+            walkCount = (stats[3] as Number).toLong(),
+            petName = primaryPet?.name,
+            petBreed = primaryPet?.breed?.name ?: primaryPet?.species?.name,
+            locationText = user.mainLocationText,
+            petProfileImageUrl = primaryPetImageUrl,
+            petProfileImageUrlThumbnail = primaryPetImageUrl
+                ?.let { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
+        )
 
         return HomeResponse(
             recommendations = recommendations,
             recentWalk = recentWalk,
+            todayWalk = todayWalk,
             notifications = NotificationSummary(
                 hasUnread = unreadCount > 0,
                 count = unreadCount

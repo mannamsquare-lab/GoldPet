@@ -128,6 +128,21 @@ interface WalkRepository : JpaRepository<Walk, Long> {
 
     fun findFirstByUserIdOrderByStartTimeDesc(userId: Long): Walk?
 
+    /** [거리 합(km), 시간 합(초), 칼로리 합, 산책 수] — 지정 기간 내 사용자 산책 집계. */
+    @Query("""
+        SELECT COALESCE(SUM(w.distanceKm), 0.0),
+               COALESCE(SUM(w.durationSeconds), 0),
+               COALESCE(SUM(w.caloriesBurned), 0.0),
+               COUNT(w)
+        FROM Walk w
+        WHERE w.user.id = :userId AND w.startTime >= :start AND w.startTime < :end
+    """)
+    fun aggregateWalkStats(
+        @Param("userId") userId: Long,
+        @Param("start") start: java.time.LocalDateTime,
+        @Param("end") end: java.time.LocalDateTime
+    ): List<Array<Any>>
+
     fun existsByUserIdAndStartTimeBetween(userId: Long, start: java.time.LocalDateTime, end: java.time.LocalDateTime): Boolean
 
     @Query(value = """
