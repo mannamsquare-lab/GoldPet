@@ -17,3 +17,8 @@
 - [ ] No new use of `photo.imageUrl` as `<img src>` without `imageUrlViewer` fallback
 - [ ] No `WINDOW_HALF > 1` in viewer
 - [ ] No regression of Vitest EXACTLY-3 assertion
+
+## data-testid 체크 (Playwright 안정성)
+- [ ] 신규 React 컴포넌트에 `data-testid` 부여
+- [ ] 기존 컴포넌트 수정 시 `data-testid` 보존
+- [ ] selector drift 발생 시 24h 내 spec 수정 SLA
