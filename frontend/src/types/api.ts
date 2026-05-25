@@ -131,6 +131,7 @@ export type EmoticonResponse = Schemas['EmoticonResponse'];
 // `FriendResponse[]` that the frontend reshapes into its own `HomeRecommendation`
 // display model — keep that conversion local to homeService.ts.
 export type HomeRecentWalkResponse = Schemas['HomeRecentWalkResponse'];
+export type HomeTodayWalkResponse = Schemas['HomeTodayWalkResponse'];
 export type HomeResponse = Schemas['HomeResponse'];
 
 // --- Friend domain (Phase 3.10) ---

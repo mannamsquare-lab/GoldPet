@@ -1,7 +1,7 @@
 // Home Service - API integration for Home features
 
 import { typedClient } from './api/typedClient';
-import type { HomeResponse, UnreadCountResponse } from '../types/api';
+import type { HomeResponse, HomeTodayWalkResponse, UnreadCountResponse } from '../types/api';
 import { truncateLocation, formatDistanceKm } from '../utils/formatters';
 
 export interface HomeRecommendation {
@@ -46,18 +46,7 @@ export interface HomeRecentWalk {
 }
 
 /** 오늘(자정 기준) 누적 산책 통계 + 대표 반려동물 정보. */
-export interface HomeTodayWalk {
-  distanceKm: number;
-  durationMinutes: number;
-  caloriesBurned: number;
-  earnedGold: number;
-  walkCount: number;
-  petName: string | null;
-  petBreed: string | null;
-  locationText: string | null;
-  petProfileImageUrl: string | null;
-  petProfileImageUrlThumbnail: string | null;
-}
+export type HomeTodayWalk = HomeTodayWalkResponse;
 
 export interface HomeDataResponse {
   recommendations: HomeRecommendation[];
@@ -76,11 +65,6 @@ const emptyTodayWalk: HomeTodayWalk = {
   caloriesBurned: 0,
   earnedGold: 0,
   walkCount: 0,
-  petName: null,
-  petBreed: null,
-  locationText: null,
-  petProfileImageUrl: null,
-  petProfileImageUrlThumbnail: null,
 };
 
 const emptyHomeData: HomeDataResponse = {
@@ -91,18 +75,12 @@ const emptyHomeData: HomeDataResponse = {
   myPetNames: [],
 };
 
-/**
- * `todayWalk` is not yet in the generated OpenAPI schema (Phase 3.10 Home is
- * partial). Narrow it locally until the schema regenerates — same approach the
- * file already takes for `recommendations`.
- */
-type RawHomeResponse = HomeResponse & { todayWalk?: HomeTodayWalk };
 
 export const homeService = {
   getHomeData: async (): Promise<HomeDataResponse> => {
     try {
       const response = await typedClient.get('/api/v1/home');
-      const data = response.data as RawHomeResponse;
+      const data = response.data as HomeResponse;
 
       const recommendations: HomeRecommendation[] = (data.recommendations ?? []).map((r) => {
         const hasImages = r.images?.length > 0;
