@@ -38,15 +38,13 @@ test.describe('home-dashboard: 홈 4대 핵심 컴포넌트', () => {
   });
 
   test('② 오늘의 산책 카드가 표시된다', async ({ page }) => {
-    await expect(page.locator('.today_walk__card')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('home-today-walk-card')).toBeVisible({ timeout: 10_000 });
     // 산책 시작 버튼 포함 확인
-    await expect(
-      page.locator('button', { hasText: '산책 시작하기' }),
-    ).toBeVisible();
+    await expect(page.getByTestId('walk-start-button')).toBeVisible();
   });
 
   test('③ 빠른 메뉴(QuickMenu) 4항목이 표시된다', async ({ page }) => {
-    const quickMenu = page.locator('.home_quickmenu');
+    const quickMenu = page.getByTestId('home-quick-menu');
     await expect(quickMenu).toBeVisible({ timeout: 10_000 });
 
     // 4개 항목: 산책 코스, 건강 체크, 랭킹, 미션
@@ -56,7 +54,7 @@ test.describe('home-dashboard: 홈 4대 핵심 컴포넌트', () => {
 
   test('④ AI 배너가 최초 진입 시 표시된다', async ({ page }) => {
     // AI 배너는 showAiBanner state가 true일 때만 렌더. 초기값 true이므로 표시되어야 함.
-    await expect(page.locator('.home_ai_banner')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('home-ai-banner')).toBeVisible({ timeout: 10_000 });
     // 배너 내 안내 문구
     await expect(
       page.locator('text=아직 AI 프로필이 없으시네요?'),

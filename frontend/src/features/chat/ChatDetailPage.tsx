@@ -198,6 +198,7 @@ const ChatMessageItem = React.memo(function ChatMessageItem({ msg, isMine, isGro
                         msg._optimistic && !msg._rejectedReason ? 'chat_detail_message_optimistic' : '',
                         msg._rejectedReason ? `chat_detail_message_rejected chat_detail_message_rejected_${msg._rejectedReason.toLowerCase()}` : '',
                     ].filter(Boolean).join(' ')}
+                    data-testid="chat-message-bubble"
                     {...(isDeleted ? {} : { onClick: handleClick })}
                 >
                     {hasReply && (

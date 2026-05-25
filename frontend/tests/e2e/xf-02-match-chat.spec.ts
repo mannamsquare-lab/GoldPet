@@ -88,7 +88,7 @@ test.describe('xf-02: 매칭 + 채팅 플로우', () => {
 
     // Step 8: 전송한 메시지가 메시지 버블 DOM에 있어야 함
     await expect(
-      page.locator('.chat_detail_message_bubble', { hasText: testMsg }).first(),
+      page.getByTestId('chat-message-bubble').filter({ hasText: testMsg }).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 });

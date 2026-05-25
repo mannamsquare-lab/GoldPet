@@ -38,7 +38,7 @@ test.describe('xf-01: 첫 산책 진입 플로우', () => {
     ).toBeGreaterThan(0);
 
     // 5. "산책 시작하기" 버튼 표시 확인
-    const startWalkBtn = page.locator('button', { hasText: '산책 시작하기' });
+    const startWalkBtn = page.getByTestId('walk-start-button');
     await expect(startWalkBtn).toBeVisible({ timeout: 5_000 });
 
     // 6. 클릭 후 /walk로 라우팅

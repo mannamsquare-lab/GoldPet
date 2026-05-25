@@ -31,7 +31,7 @@ export function TodayWalkCard({ data, onCreateCourse, onStartWalk }: TodayWalkCa
     ];
 
     return (
-        <div className="today_walk__card">
+        <div className="today_walk__card" data-testid="home-today-walk-card">
             <img className="today_walk__bg" src="/assets/images/home/walk_card_bg.svg" alt="" />
 
             <div className="today_walk__head">
@@ -71,7 +71,7 @@ export function TodayWalkCard({ data, onCreateCourse, onStartWalk }: TodayWalkCa
                 <button type="button" className="today_walk__btn--secondary" onClick={onCreateCourse}>
                     코스 만들기
                 </button>
-                <button type="button" className="today_walk__btn--primary" onClick={onStartWalk}>
+                <button type="button" className="today_walk__btn--primary" onClick={onStartWalk} data-testid="walk-start-button">
                     산책 시작하기
                 </button>
             </div>

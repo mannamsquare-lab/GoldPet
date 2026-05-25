@@ -113,13 +113,13 @@ test.describe('community-detail-keyboard: flex container 구조 검증', () => {
 
     const isDirectChild = await page.evaluate(() => {
       const container     = document.getElementById('communityContainer');
-      const commentSubmit = document.querySelector('.comment_submit');
+      const commentSubmit = document.querySelector('[data-testid="comment-submit-area"]');
       if (!container || !commentSubmit) return false;
       return commentSubmit.parentElement === container;
     });
     expect(
       isDirectChild,
-      '.comment_submit은 #communityContainer의 직접 자식(형제 of .detail_wrap)이어야 함',
+      '[data-testid="comment-submit-area"]은 #communityContainer의 직접 자식(형제 of .detail_wrap)이어야 함',
     ).toBe(true);
   });
 
@@ -128,7 +128,7 @@ test.describe('community-detail-keyboard: flex container 구조 검증', () => {
     await loginAndGoTo(page, sharedUser!, `/community/${postId}`);
     await page.waitForLoadState('networkidle');
 
-    const textarea = page.locator('.comment_submit textarea');
+    const textarea = page.getByTestId('comment-textarea');
     await expect(textarea).toBeVisible({ timeout: 10_000 });
 
     await textarea.focus();

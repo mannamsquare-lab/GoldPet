@@ -10,7 +10,7 @@ export function AiProfileBanner({ petName, onClose }: AiProfileBannerProps) {
     const subject = petName ?? '반려동물';
 
     return (
-        <div className="home_ai_banner">
+        <div className="home_ai_banner" data-testid="home-ai-banner">
             <button
                 type="button"
                 className="home_ai_banner__main"

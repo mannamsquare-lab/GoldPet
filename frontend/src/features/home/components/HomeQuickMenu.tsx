@@ -11,7 +11,7 @@ export function HomeQuickMenu() {
     const navigate = useNavigate();
 
     return (
-        <section className="home_quickmenu">
+        <section className="home_quickmenu" data-testid="home-quick-menu">
             {QUICK_MENU.map((menu) => (
                 <button
                     key={menu.label}

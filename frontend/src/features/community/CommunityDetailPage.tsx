@@ -551,7 +551,7 @@ export default function CommunityDetailPage() {
       </div>
 
       {/* Comment Input: direct child of container for flex layout (not inside detail_wrap) */}
-      <div className="comment_submit">
+      <div className="comment_submit" data-testid="comment-submit-area">
         {replyTargetId && replyTargetNickname && (
           <div className="reply_indicator">
             <span>@{replyTargetNickname} 에게 답글 중</span>
@@ -561,6 +561,7 @@ export default function CommunityDetailPage() {
         <div className="comment_input_row">
           <textarea
             ref={mainInputRef}
+            data-testid="comment-textarea"
             placeholder={replyTargetId ? '답글을 남겨보세요' : '댓글을 남겨보세요'}
             value={commentInput}
             rows={1}

@@ -102,7 +102,7 @@ export default function HomePage() {
             <img className="home_page__bg" src="/assets/images/home/home_redesign_bg.svg" alt="" />
 
             {/* 새로운 친구 추천 */}
-            <section className="home_section">
+            <section className="home_section" data-testid="home-friend-recommend">
                 <div className="home_section__head">
                     <h2>새로운 친구 추천</h2>
                     <button
