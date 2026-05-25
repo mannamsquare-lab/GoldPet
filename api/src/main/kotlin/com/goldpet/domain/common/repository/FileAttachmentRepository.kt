@@ -62,4 +62,27 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
         @Param("width") width: Int,
         @Param("height") height: Int
     )
+
+    /** T2: same as updateAllVariantUrls but also writes the three WebP variant columns. */
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query(
+        "UPDATE file_attachments SET " +
+            "thumbnail_url = :thumbUrl, medium_url = :medUrl, viewer_url = :viewerUrl, " +
+            "thumbnail_url_webp = :thumbWebpUrl, medium_url_webp = :medWebpUrl, viewer_url_webp = :viewerWebpUrl, " +
+            "width = :width, height = :height, updated_at = CURRENT_TIMESTAMP " +
+            "WHERE id = :id",
+        nativeQuery = true
+    )
+    fun updateAllVariantUrlsWithWebp(
+        @Param("id") id: Long,
+        @Param("thumbUrl") thumbUrl: String?,
+        @Param("medUrl") medUrl: String?,
+        @Param("viewerUrl") viewerUrl: String?,
+        @Param("thumbWebpUrl") thumbWebpUrl: String?,
+        @Param("medWebpUrl") medWebpUrl: String?,
+        @Param("viewerWebpUrl") viewerWebpUrl: String?,
+        @Param("width") width: Int,
+        @Param("height") height: Int
+    )
 }

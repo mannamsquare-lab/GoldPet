@@ -319,17 +319,41 @@ class FileService(
 
                 val stored = if (isPublic) "$publicEndpoint/$bucket/$variantFilename" else variantFilename
                 results[variant.suffix.removePrefix("_")] = stored
+
+                // T2: WebP variant — non-fatal; JPEG fallback remains if encoder unavailable
+                try {
+                    val webpFilename = "${baseFilename}${variant.suffix}.webp"
+                    val webpOut = ByteArrayOutputStream()
+                    Thumbnails.of(image)
+                        .size(variant.maxDimension, variant.maxDimension)
+                        .outputFormat("webp")
+                        .outputQuality(variant.quality)
+                        .toOutputStream(webpOut)
+                    val webpBytes = webpOut.toByteArray()
+                    amazonS3.putObject(
+                        bucket, webpFilename,
+                        ByteArrayInputStream(webpBytes),
+                        objectMetadataWithCache("image/webp", webpBytes.size.toLong())
+                    )
+                    results["${variant.suffix.removePrefix("_")}_webp"] =
+                        if (isPublic) "$publicEndpoint/$bucket/$webpFilename" else webpFilename
+                } catch (e: Exception) {
+                    log.warn("webp variant-gen skipped attachment={} variant={}: {}", attachmentId, variant.suffix, e.message)
+                }
             }
 
             if (results.isEmpty()) {
                 recordVariantOutcome("skip", metricCategory, sample)
                 return
             }
-            fileAttachmentRepository.updateAllVariantUrls(
+            fileAttachmentRepository.updateAllVariantUrlsWithWebp(
                 id = attachmentId,
                 thumbUrl = results["thumb"],
                 medUrl = results["medium"],
                 viewerUrl = results["viewer"],
+                thumbWebpUrl = results["thumb_webp"],
+                medWebpUrl = results["medium_webp"],
+                viewerWebpUrl = results["viewer_webp"],
                 width = image.width,
                 height = image.height
             )

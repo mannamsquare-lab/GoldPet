@@ -87,6 +87,24 @@ class FileAttachmentLookupService(
         return fa.thumbnailUrl ?: fa.url
     }
 
+    /** T2: WebP thumbnail variant. WebP 미생성 행(구 업로드)은 null 반환 — 클라이언트 fallback 처리. */
+    fun thumbnailUrlWebpFor(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        return resolve(url)?.thumbnailUrlWebp
+    }
+
+    /** T2: WebP medium variant. */
+    fun mediumUrlWebpFor(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        return resolve(url)?.mediumUrlWebp
+    }
+
+    /** T2: WebP viewer variant. */
+    fun viewerUrlWebpFor(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        return resolve(url)?.viewerUrlWebp
+    }
+
     /** URL 업데이트 이벤트 (Emoticon/Pet 프로필 변경 등) 에서 수동 호출. */
     fun invalidate(url: String) {
         cache.invalidate(url)
@@ -155,6 +173,12 @@ data class ResolvedAttachment(
     val thumbnailUrl: String?,
     val mediumUrl: String?,
     val viewerUrl: String?,
+    /** T2: WebP thumbnail (200px). Null for rows uploaded before WebP pipeline. */
+    val thumbnailUrlWebp: String? = null,
+    /** T2: WebP medium (600px). Null for rows uploaded before WebP pipeline. */
+    val mediumUrlWebp: String? = null,
+    /** T2: WebP viewer (1600px). Null for rows uploaded before WebP pipeline. */
+    val viewerUrlWebp: String? = null,
     val fileType: String,
     val mimeType: String,
     val originalFileName: String?,
@@ -169,6 +193,9 @@ data class ResolvedAttachment(
             thumbnailUrl = fa.thumbnailUrl,
             mediumUrl = fa.mediumUrl,
             viewerUrl = fa.viewerUrl,
+            thumbnailUrlWebp = fa.thumbnailUrlWebp,
+            mediumUrlWebp = fa.mediumUrlWebp,
+            viewerUrlWebp = fa.viewerUrlWebp,
             fileType = fa.fileType,
             mimeType = fa.mimeType,
             originalFileName = fa.originalFileName,

@@ -66,6 +66,7 @@ class HomeService(
                 petProfileImageUrls = petUrls,
                 petProfileImageUrlsThumbnail = petUrls.map { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
                 petProfileImageUrlsViewer = petUrls.map { fileAttachmentLookupService.viewerUrlFor(it) ?: it },
+                petProfileImageUrlsThumbnailWebp = petUrls.map { fileAttachmentLookupService.thumbnailUrlWebpFor(it) },
             )
         }
 
@@ -96,6 +97,8 @@ class HomeService(
             petProfileImageUrl = primaryPetImageUrl,
             petProfileImageUrlThumbnail = primaryPetImageUrl
                 ?.let { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
+            petProfileImageUrlThumbnailWebp = primaryPetImageUrl
+                ?.let { fileAttachmentLookupService.thumbnailUrlWebpFor(it) },
         )
 
         return HomeResponse(

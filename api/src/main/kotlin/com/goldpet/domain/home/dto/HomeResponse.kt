@@ -26,6 +26,8 @@ data class HomeTodayWalkResponse(
     val locationText: String?,
     val petProfileImageUrl: String?,
     val petProfileImageUrlThumbnail: String? = null,
+    /** T2: WebP thumbnail for primary pet profile image. */
+    val petProfileImageUrlThumbnailWebp: String? = null,
 )
 
 data class NotificationSummary(
@@ -45,4 +47,6 @@ data class HomeRecentWalkResponse(
     val petProfileImageUrlsThumbnail: List<String>? = null,
     /** T1-1.5: pet profile images viewer list. */
     val petProfileImageUrlsViewer: List<String>? = null,
+    /** T2: WebP thumbnail list for pet profile images. */
+    val petProfileImageUrlsThumbnailWebp: List<String?>? = null,
 )

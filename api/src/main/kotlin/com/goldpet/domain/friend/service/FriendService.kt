@@ -170,6 +170,8 @@ class FriendService(
             profileImages = ownerImages, // Owner's all profile images
             profileImagesThumbnail = ownerImages.map { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
             profileImagesViewer = ownerImages.map { fileAttachmentLookupService.viewerUrlFor(it) ?: it },
+            profileImageUrlThumbnailWebp = fileAttachmentLookupService.thumbnailUrlWebpFor(ownerPrimary),
+            profileImagesThumbnailWebp = ownerImages.map { fileAttachmentLookupService.thumbnailUrlWebpFor(it) },
             ownerGender = user.gender,
             ownerAge = ownerAge,
             ownerIntro = user.intro,
@@ -187,6 +189,7 @@ class FriendService(
             images = petImages, // Pet images (large, main slider)
             imagesThumbnail = petImages.map { fileAttachmentLookupService.thumbnailUrlFor(it) ?: it },
             imagesViewer = petImages.map { fileAttachmentLookupService.viewerUrlFor(it) ?: it },
+            imagesThumbnailWebp = petImages.map { fileAttachmentLookupService.thumbnailUrlWebpFor(it) },
             distance = distance,
             status = "offline",
             location = null, // Privacy: precise coordinates not exposed

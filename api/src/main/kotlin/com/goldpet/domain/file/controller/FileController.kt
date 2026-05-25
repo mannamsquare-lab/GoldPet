@@ -32,6 +32,12 @@ data class FileUploadResponse(
     /** T1-5: viewer variant (1600px). async variant-gen 완료 전에는 null. 클라이언트는
      *  업로드 직후 DOM 에 url 사용, 이후 재조회 시 viewerUrl 로 전환 가능. */
     val viewerUrl: String?,
+    /** T2: WebP thumbnail (200px). async variant-gen 완료 전에는 null. */
+    val thumbnailUrlWebp: String? = null,
+    /** T2: WebP medium (600px). async variant-gen 완료 전에는 null. */
+    val mediumUrlWebp: String? = null,
+    /** T2: WebP viewer (1600px). async variant-gen 완료 전에는 null. */
+    val viewerUrlWebp: String? = null,
     val fileType: String,
     val mimeType: String,
     val originalFileName: String?,
@@ -86,6 +92,9 @@ class FileController(
             thumbnailUrl = fileAttachment.thumbnailUrl,
             mediumUrl = fileAttachment.mediumUrl,
             viewerUrl = fileAttachment.viewerUrl,
+            thumbnailUrlWebp = fileAttachment.thumbnailUrlWebp,
+            mediumUrlWebp = fileAttachment.mediumUrlWebp,
+            viewerUrlWebp = fileAttachment.viewerUrlWebp,
             fileType = fileAttachment.fileType,
             mimeType = fileAttachment.mimeType,
             originalFileName = fileAttachment.originalFileName,

@@ -15,6 +15,10 @@ data class FriendResponse(
     val profileImagesThumbnail: List<String>? = null,
     /** T1-1.4b: owner profile images viewer list. */
     val profileImagesViewer: List<String>? = null,
+    /** T2: WebP thumbnail for primary owner profile image. */
+    val profileImageUrlThumbnailWebp: String? = null,
+    /** T2: WebP thumbnail list for owner profile images. */
+    val profileImagesThumbnailWebp: List<String?>? = null,
     val ownerGender: String?,         // "MALE" | "FEMALE"
     val ownerAge: Int?,               // calculated from birthDate
     val ownerIntro: String?,          // self introduction
@@ -35,6 +39,8 @@ data class FriendResponse(
     val imagesThumbnail: List<String>? = null,
     /** T1-1.4b: pet images viewer list. */
     val imagesViewer: List<String>? = null,
+    /** T2: WebP thumbnail list for pet images. */
+    val imagesThumbnailWebp: List<String?>? = null,
     val distance: Double, // in meters
     val status: String, // "online", "offline", "walking"
     @Deprecated("Location coordinates removed for privacy. Use locationText and distance instead.")

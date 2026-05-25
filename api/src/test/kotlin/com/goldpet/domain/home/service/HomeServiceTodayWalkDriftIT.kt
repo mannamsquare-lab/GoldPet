@@ -74,7 +74,8 @@ class HomeServiceTodayWalkDriftIT : IntegrationTestBase() {
      */
     private val OPENAPI_ALL_FIELDS = setOf(
         "caloriesBurned", "distanceKm", "durationMinutes", "earnedGold", "walkCount",
-        "petName", "petBreed", "locationText", "petProfileImageUrl", "petProfileImageUrlThumbnail"
+        "petName", "petBreed", "locationText", "petProfileImageUrl", "petProfileImageUrlThumbnail",
+        "petProfileImageUrlThumbnailWebp"
     )
 
     @BeforeEach

@@ -42,6 +42,18 @@ class FileAttachment(
     @Column(name = "viewer_url")
     var viewerUrl: String? = null,
 
+    /** T2: WebP thumbnail variant (200px). Null for rows uploaded before WebP pipeline. */
+    @Column(name = "thumbnail_url_webp")
+    var thumbnailUrlWebp: String? = null,
+
+    /** T2: WebP medium variant (600px). Null for rows uploaded before WebP pipeline. */
+    @Column(name = "medium_url_webp")
+    var mediumUrlWebp: String? = null,
+
+    /** T2: WebP viewer variant (1600px). Null for rows uploaded before WebP pipeline. */
+    @Column(name = "viewer_url_webp")
+    var viewerUrlWebp: String? = null,
+
     @Column(name = "duration_sec")
     val durationSec: Int? = null,
 

@@ -58,6 +58,7 @@ class CommunityService(
         val thumbnails: List<String>,
         val mediums: List<String>,
         val viewers: List<String>,
+        val thumbnailWebps: List<String?>,
     )
 
     private fun postImageUrls(post: CommunityPost): PostImageUrls {
@@ -67,6 +68,7 @@ class CommunityService(
             thumbnails = sorted.map { it.file.thumbnailUrl ?: it.file.url },
             mediums = sorted.map { it.file.mediumUrl ?: it.file.url },
             viewers = sorted.map { it.file.viewerUrl ?: it.file.url },
+            thumbnailWebps = sorted.map { it.file.thumbnailUrlWebp },
         )
     }
 
@@ -143,6 +145,7 @@ class CommunityService(
                 imageUrlsThumbnail = img.thumbnails,
                 imageUrlsMedium = img.mediums,
                 imageUrlsViewer = img.viewers,
+                imageUrlsThumbnailWebp = img.thumbnailWebps,
                 isMine = currentUser?.id == post.user.id
             )
         }
@@ -225,6 +228,7 @@ class CommunityService(
             imageUrlsThumbnail = img.thumbnails,
             imageUrlsMedium = img.mediums,
             imageUrlsViewer = img.viewers,
+            imageUrlsThumbnailWebp = img.thumbnailWebps,
             isMine = true
         )
     }
@@ -409,6 +413,7 @@ class CommunityService(
             imageUrlsThumbnail = img.thumbnails,
             imageUrlsMedium = img.mediums,
             imageUrlsViewer = img.viewers,
+            imageUrlsThumbnailWebp = img.thumbnailWebps,
             comments = comments,
             isMine = currentUserId == post.user.id
         )
@@ -545,6 +550,7 @@ class CommunityService(
                 imageUrlsThumbnail = img.thumbnails,
                 imageUrlsMedium = img.mediums,
                 imageUrlsViewer = img.viewers,
+                imageUrlsThumbnailWebp = img.thumbnailWebps,
                 isMine = true
             )
         }

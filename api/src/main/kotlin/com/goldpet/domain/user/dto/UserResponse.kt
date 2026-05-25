@@ -24,6 +24,10 @@ data class UserResponse(
     val profileImageUrlsViewer: List<String>? = null,
     /** T1-1.2: thumbnail variant list matching profileImageUrls order. */
     val profileImageUrlsThumbnail: List<String>? = null,
+    /** T2: WebP thumbnail variant for primary profile image. Null for pre-WebP uploads. */
+    val profileImageUrlThumbnailWebp: String? = null,
+    /** T2: WebP thumbnail variant list matching profileImageUrls order. */
+    val profileImageUrlsThumbnailWebp: List<String?>? = null,
     val name: String?,
     val birthDate: String?,
     val phoneNumber: String?,
@@ -61,6 +65,8 @@ data class UserResponse(
                 profileImageUrlThumbnail = variantResolver?.thumbnailUrlFor(primary),
                 profileImageUrlsViewer = variantResolver?.let { r -> urls.map { r.viewerUrlFor(it) ?: it } },
                 profileImageUrlsThumbnail = variantResolver?.let { r -> urls.map { r.thumbnailUrlFor(it) ?: it } },
+                profileImageUrlThumbnailWebp = variantResolver?.thumbnailUrlWebpFor(primary),
+                profileImageUrlsThumbnailWebp = variantResolver?.let { r -> urls.map { r.thumbnailUrlWebpFor(it) } },
                 name = user.name,
                 birthDate = user.birthDate?.toString(),
                 phoneNumber = user.phoneNumber,
@@ -95,6 +101,8 @@ data class UserResponse(
                 profileImageUrlThumbnail = variantResolver?.thumbnailUrlFor(primary),
                 profileImageUrlsViewer = variantResolver?.let { r -> urls.map { r.viewerUrlFor(it) ?: it } },
                 profileImageUrlsThumbnail = variantResolver?.let { r -> urls.map { r.thumbnailUrlFor(it) ?: it } },
+                profileImageUrlThumbnailWebp = variantResolver?.thumbnailUrlWebpFor(primary),
+                profileImageUrlsThumbnailWebp = variantResolver?.let { r -> urls.map { r.thumbnailUrlWebpFor(it) } },
                 name = null,
                 birthDate = null,
                 phoneNumber = null,

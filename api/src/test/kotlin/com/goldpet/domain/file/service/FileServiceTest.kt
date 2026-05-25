@@ -89,8 +89,8 @@ class FileServiceTest {
         verify(amazonS3).putObject(eq(publicBucket), eq("uuid-portrait_thumb.jpg"), any(), any())
         verify(amazonS3).putObject(eq(publicBucket), eq("uuid-portrait_medium.jpg"), any(), any())
         verify(amazonS3).putObject(eq(publicBucket), eq("uuid-portrait_viewer.jpg"), any(), any())
-        verify(fileAttachmentRepository).updateAllVariantUrls(
-            eq(1L), anyOrNull(), anyOrNull(), anyOrNull(), eq(900), eq(1600)
+        verify(fileAttachmentRepository).updateAllVariantUrlsWithWebp(
+            eq(1L), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), eq(900), eq(1600)
         )
 
         val successCount = meterRegistry.counter(
@@ -121,8 +121,8 @@ class FileServiceTest {
         verify(amazonS3).putObject(eq(publicBucket), eq("uuid-small_thumb.jpg"), any(), any())
         verify(amazonS3).putObject(eq(publicBucket), eq("uuid-small_medium.jpg"), any(), any())
         verify(amazonS3).putObject(eq(publicBucket), eq("uuid-small_viewer.jpg"), any(), any())
-        verify(fileAttachmentRepository).updateAllVariantUrls(
-            eq(2L), anyOrNull(), anyOrNull(), anyOrNull(), eq(200), eq(200)
+        verify(fileAttachmentRepository).updateAllVariantUrlsWithWebp(
+            eq(2L), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), eq(200), eq(200)
         )
     }
 

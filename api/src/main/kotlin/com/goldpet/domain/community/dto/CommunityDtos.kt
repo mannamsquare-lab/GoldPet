@@ -37,6 +37,8 @@ data class CommunityPostResponse(
     val imageUrlsMedium: List<String>? = null,
     /** T1-2 Phase 5: post body 이미지 viewer (1600px). 갤러리 모달 전체 화면 렌더용. */
     val imageUrlsViewer: List<String>? = null,
+    /** T2: post body 이미지 WebP 썸네일. imageUrlsThumbnail 과 길이 매치 — WebP 미생성 시 null. */
+    val imageUrlsThumbnailWebp: List<String?>? = null,
     val comments: List<CommunityCommentResponse> = emptyList(),
     @get:JsonProperty("isMine")
     val isMine: Boolean = false
