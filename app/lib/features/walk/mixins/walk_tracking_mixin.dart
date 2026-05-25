@@ -145,6 +145,11 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     _initializeLocation();
   }
 
+  // WALK-05: Overridable in tests to verify the dispose-path server save fires
+  // without needing real platform channels or HTTP infrastructure.
+  @visibleForTesting
+  Future<void> Function(CreateWalkRequest)? serverSaveOnDisposeOverride;
+
   void disposeTracking() {
     _trackingTimer?.cancel();
     _trackingPositionSub?.cancel();
@@ -152,21 +157,71 @@ mixin WalkTrackingMixin<T extends StatefulWidget> on State<T> {
     _trackingProgrammaticMoveTimer = null;
     _trackingLastBearing = null;
     _stopWalkWidget();
-    trackingDurationNotifier.dispose();
-    trackingDistanceNotifier.dispose();
-    trackingBearingNotifier.dispose();
 
-    // Best-effort local save if walk was active
+    // WALK-05: Capture request BEFORE disposing notifiers so _buildWalkRequest
+    // can safely read ValueNotifier.value. Must happen prior to .dispose() calls.
+    CreateWalkRequest? emergencyRequest;
+    final wasWalking = trackingIsWalking;
     if ((trackingIsWalking || trackingIsSaving) &&
         _trackingStartTime != null &&
         trackingPath.length >= 2) {
       try {
-        final request = _buildWalkRequest(DateTime.now());
-        WalkLocalStorage.saveWalkDataBestEffort(request);
+        emergencyRequest = _buildWalkRequest(DateTime.now());
       } catch (e) {
-        debugPrint('[WalkTracking] Dispose emergency save failed: $e');
+        debugPrint('[WalkTracking] Dispose request build failed: $e');
       }
     }
+
+    trackingDurationNotifier.dispose();
+    trackingDistanceNotifier.dispose();
+    trackingBearingNotifier.dispose();
+
+    if (emergencyRequest != null) {
+      try {
+        WalkLocalStorage.saveWalkDataBestEffort(emergencyRequest);
+      } catch (e) {
+        debugPrint('[WalkTracking] Dispose local save failed: $e');
+      }
+      // WALK-05: Fire-and-forget server save when walk was still in progress.
+      // Skip when trackingIsSaving — stopWalk() already has an in-flight request.
+      if (wasWalking) {
+        unawaited(_stopWalkOnDispose(emergencyRequest));
+      }
+    }
+  }
+
+  // WALK-05: Server-side best-effort save invoked from disposeTracking().
+  // Does NOT touch ValueNotifiers (already disposed), setState, or context.
+  // The request is pre-built synchronously before this future is scheduled.
+  Future<void> _stopWalkOnDispose(CreateWalkRequest request) async {
+    final override = serverSaveOnDisposeOverride;
+    if (override != null) {
+      await override(request);
+      return;
+    }
+    try {
+      await ApiClient().dio.post('/api/v1/walks', data: request.toJson());
+      await WalkLocalStorage.clearWalkData();
+      debugPrint('[WalkTracking] WALK-05: dispose server save succeeded');
+    } catch (e) {
+      debugPrint('[WalkTracking] WALK-05: dispose server save failed (local copy preserved): $e');
+    }
+  }
+
+  /// Test-only: initialises the minimal walk state required to exercise the
+  /// dispose-guard code path without GPS, GoogleMaps, or real API calls.
+  @visibleForTesting
+  void testOnlyInitWalkState({
+    required DateTime startTime,
+    required List<LatLng> path,
+    double distanceKm = 0.05,
+  }) {
+    _trackingStartTime = startTime;
+    trackingPath = List<LatLng>.from(path);
+    trackingIsWalking = true;
+    trackingDistanceNotifier.value = distanceKm;
+    trackingDurationNotifier.value =
+        DateTime.now().difference(startTime).inSeconds;
   }
 
   // --- Location initialization ---
