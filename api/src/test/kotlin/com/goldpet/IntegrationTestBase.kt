@@ -130,6 +130,23 @@ abstract class IntegrationTestBase {
                 userId
             )
         }
+
+        // Same cleanup for admin_users: orphan ciphertext rows (encrypted with an unknown key,
+        // e.g. dev-server keys leaked into the local test DB) cause rotateAdminRow() to return
+        // FAILED, which surfaces as result.failed > 0 and HTTP 500 in HttpLayerRotationIntegrationTest.
+        // PiiKeyRotationService queries admin_users WHERE is_active = true, so deactivating
+        // the orphan row removes it from the rotation scope without deleting real data.
+        jdbcTemplate.queryForList(
+            "SELECT id, email FROM admin_users WHERE is_active = true AND email IS NOT NULL"
+        ).forEach { row ->
+            val adminId = (row["id"] as Number).toLong()
+            val rawEmail = row["email"] as? String ?: return@forEach
+            if (tryDecryptAesGcm(rawEmail, primaryKey) != null) return@forEach
+            if (secondaryKey.isNotBlank() && tryDecryptAesGcm(rawEmail, secondaryKey) != null) return@forEach
+            if (looksLikeBase64Ciphertext(rawEmail)) {
+                jdbcTemplate.update("UPDATE admin_users SET is_active = false WHERE id = ?", adminId)
+            }
+        }
     }
 
     private fun looksLikeBase64Ciphertext(s: String): Boolean {
