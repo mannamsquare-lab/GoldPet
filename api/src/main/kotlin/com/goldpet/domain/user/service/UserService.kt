@@ -277,12 +277,12 @@ class UserService(
                 user.profileImages[0].imageUrl = it
             }
         }
-        request.profileImageUrls?.let { urls ->
+        request.profileImageUrls?.takeIf { it.isNotEmpty() }?.let { urls ->
             user.profileImages.clear()
             urls.forEachIndexed { index, url ->
                 user.profileImages.add(UserProfileImage(user = user, imageUrl = url, orderIndex = index))
             }
-            user.profileImageUrl = urls.firstOrNull()
+            user.profileImageUrl = urls.first()
         }
         
         return userRepository.save(user)

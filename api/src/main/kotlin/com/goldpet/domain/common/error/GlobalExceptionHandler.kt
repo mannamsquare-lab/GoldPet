@@ -12,7 +12,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import com.goldpet.config.openapi.OpenApiInternal
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -119,6 +121,26 @@ class GlobalExceptionHandler {
     fun handleHttpMessageNotReadableException(ex: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> {
         log.warn("Malformed request body: {}", ex.message)
         return buildResponse(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "요청 본문을 읽을 수 없습니다")
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException::class)
+    fun handleMissingServletRequestParameter(ex: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> {
+        log.warn("Missing request parameter: {}", ex.message)
+        return buildResponse(
+            HttpStatus.BAD_REQUEST,
+            "MISSING_PARAMETER",
+            "필수 파라미터가 누락되었습니다: ${ex.parameterName}"
+        )
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
+    fun handleHttpRequestMethodNotSupported(ex: HttpRequestMethodNotSupportedException): ResponseEntity<ErrorResponse> {
+        log.warn("Method not supported: {}", ex.message)
+        return buildResponse(
+            HttpStatus.METHOD_NOT_ALLOWED,
+            "METHOD_NOT_ALLOWED",
+            "지원하지 않는 HTTP 메서드입니다: ${ex.method}"
+        )
     }
 
     // --- Spring Security exceptions ---
