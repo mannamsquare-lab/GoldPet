@@ -309,6 +309,46 @@ class UserServiceTest {
         assertEquals("https://example.com/image.jpg", result.profileImageUrl)
     }
 
+    // Regression guard for profile-image silent-fail bug.
+    // 클라이언트가 profileImageUrl 만 보내면 DTO 의 profileImageUrls default 가 null 이어야
+    // 두 번째 블록이 스킵되고 단일 url 이 보존된다. default 가 emptyList() 였을 때는
+    // clear() + firstOrNull() = null 로 덮어써져 HTTP 200 인데 DB 가 null 로 비는 silent fail 이 났다.
+    @Test
+    fun `updateUserProfileImages should persist single url when only profileImageUrl is set (DTO default)`() {
+        // Given — 실제 클라이언트가 profileImageUrl 만 보내는 시나리오 (DTO default 의존)
+        val request = ProfileImageUpdateRequest(profileImageUrl = "https://example.com/single.jpg")
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+
+        // When
+        val result = userService.updateUserProfileImages(1L, request)
+
+        // Then — DTO default 가 null 이므로 두 번째 블록이 진입하지 않아야 단일 url 이 보존됨
+        assertEquals("https://example.com/single.jpg", result.profileImageUrl)
+        assertEquals(1, result.profileImages.size)
+        assertEquals("https://example.com/single.jpg", result.profileImages[0].imageUrl)
+    }
+
+    // Regression guard: 명시적으로 빈 리스트를 보내도 단일 url 이 보존되어야 한다
+    // (service 의 isNotEmpty 가드 동작 검증)
+    @Test
+    fun `updateUserProfileImages should preserve single url when profileImageUrls is explicit empty list`() {
+        // Given
+        val request = ProfileImageUpdateRequest(
+            profileImageUrl = "https://example.com/keep.jpg",
+            profileImageUrls = emptyList()
+        )
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+
+        // When
+        val result = userService.updateUserProfileImages(1L, request)
+
+        // Then — 빈 리스트는 takeIf 가드로 스킵되어 단일 url 보존
+        assertEquals("https://example.com/keep.jpg", result.profileImageUrl)
+        assertEquals(1, result.profileImages.size)
+    }
+
     @Test
     fun `updateUserProfileImages should update multiple images`() {
         // Given
