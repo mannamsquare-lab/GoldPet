@@ -18,6 +18,10 @@
 | [M-WALK-02](#m-walk-02) | 산책 중 강제 종료 → 데이터 복구 | 산책 관련 PR 머지 후 |
 | [M-VERSION-01](#m-version-01) | 강제 업데이트 시나리오 | min_version 변경 배포 후 |
 | [M-ADMIN-01](#m-admin-01) | Admin VIEWER role 403 회귀 | 어드민 권한 변경 PR 머지 후 |
+| [M-WALK-01](#m-walk-01) | Live Activity + Walk Widget | prod 배포 직후 / iOS 업데이트 후 |
+| [M-FILE-01](#m-file-01) | Android WebView FileProvider 업로드 | prod 배포 직후 / Android targetSdk 업데이트 후 |
+| [M-WEB-01](#m-web-01) | iOS 키보드 + 댓글 입력 | prod 배포 직후 / iOS WebView 업데이트 후 |
+| [XF-08](#xf-08) | PII Phase 2 키 교체 D-day | 키 교체 D-day 1회 |
 
 ---
 
@@ -308,6 +312,246 @@ BUG-05: VIEWER role 어드민 계정이 `/admin/backup-jobs` 페이지에 접근
 - [ ] VIEWER: `/admin/backup-jobs` 접근 불가 (403 또는 리다이렉트)
 - [ ] ADMIN: `/admin/backup-jobs` 접근 가능
 - [ ] API 레벨 403 확인
+
+---
+
+## M-WALK-01
+
+### Live Activity + Walk Widget — iOS 산책 위젯 동작 확인 (15분)
+
+| 항목 | 내용 |
+|------|------|
+| **수행 빈도** | prod 배포 직후 1회; iOS 메이저 업데이트 후 |
+| **수행 트리거** | `walk_screen.dart`, Live Activity 관련 Flutter/Swift 코드 변경 PR 머지, 또는 prod 빌드 배포 |
+| **담당자** | iOS 실기기 보유 개발자 |
+| **evidence 첨부 방식** | (1) Lock Screen Live Activity 스크린샷, (2) Dynamic Island 스크린샷, (3) 홈 위젯 갱신 스크린샷 |
+
+#### 사전 조건
+
+- [ ] iOS 16.1+ 실기기 (Live Activity 지원 OS)
+- [ ] 홈 화면에 GoldPet Walk 위젯 추가 완료
+- [ ] prod 또는 dev 빌드 설치 (`flutter build ipa --dart-define=ENV=dev`)
+
+#### 체크리스트
+
+**시나리오 A — Live Activity (Lock Screen)**
+
+- [ ] 산책 시작 → 기기 잠금 → Lock Screen에서 산책 진행 시간·거리 표시 확인
+  - Evidence: Lock Screen Live Activity 스크린샷 (시간·거리 수치 포함)
+- [ ] 산책 종료 → Lock Screen Live Activity 사라짐 또는 완료 상태로 전환 확인
+
+**시나리오 B — Dynamic Island (iPhone 14 Pro+)**
+
+- [ ] 산책 시작 → Dynamic Island에 걸음수 또는 타이머 표시 확인
+  - Evidence: Dynamic Island 확장 뷰 스크린샷
+- [ ] Dynamic Island 탭 → 산책 화면으로 딥링크 이동 확인
+
+**시나리오 C — 홈 위젯 데이터 갱신**
+
+- [ ] 산책 종료 후 홈 화면 위젯에 최신 산책 데이터(날짜·거리) 갱신 확인
+  - Evidence: 홈 위젯 스크린샷 (최신 수치 확인)
+
+#### 합격 기준
+
+- [ ] Lock Screen Live Activity 표시 정상 (시나리오 A)
+- [ ] Dynamic Island 표시 정상 (iPhone 14 Pro+ 기기에서만, 시나리오 B)
+- [ ] 위젯 데이터 산책 종료 후 갱신 확인 (시나리오 C)
+- [ ] 알림·Live Activity 관련 콘솔 에러 없음
+
+---
+
+## M-FILE-01
+
+### Android WebView FileProvider 업로드 — content:// URI 검증 (10분)
+
+| 항목 | 내용 |
+|------|------|
+| **수행 빈도** | prod 배포 직후 1회; Android targetSdk 변경 또는 FileProvider 설정 변경 시 |
+| **수행 트리거** | `AndroidManifest.xml`, `file_paths.xml`, `MainActivity.kt` MethodChannel, `S3_PUBLIC_ENDPOINT` 환경 변수 변경 |
+| **담당자** | Android 실기기 보유 개발자 |
+| **evidence 첨부 방식** | (1) 이미지 선택 후 업로드 완료 화면 스크린샷, (2) 콘솔 또는 네트워크 탭에서 content:// URI 확인 캡처 |
+
+#### 사전 조건
+
+- [ ] Android 10+ 실기기
+- [ ] `S3_PUBLIC_ENDPOINT`가 기기에서 접근 가능한 IP로 설정 (로컬 dev: LAN IP, prod: CDN URL)
+- [ ] `AndroidManifest.xml` FileProvider 설정 및 `res/xml/file_paths.xml` 존재 확인
+
+#### 체크리스트
+
+**시나리오 A — 프로필 이미지 업로드 (갤러리)**
+
+- [ ] 마이페이지 → 프로필 편집 → 이미지 변경 → 갤러리에서 사진 선택
+- [ ] Page refresh 없이 이미지 크롭/선택 화면으로 전환 확인
+- [ ] 업로드 완료 후 프로필 이미지 변경 확인
+  - Evidence: 업로드 완료 후 프로필 화면 스크린샷
+
+**시나리오 B — 산책 사진 업로드 (카메라)**
+
+- [ ] 산책 종료 후 사진 업로드 화면 → 카메라 촬영 선택
+- [ ] 카메라 앱 실행 → 촬영 → Page refresh 없이 업로드 화면 복귀 확인
+- [ ] 업로드 완료 후 산책 기록에 사진 표시 확인
+  - Evidence: 산책 기록 사진 표시 스크린샷
+
+**시나리오 C — URI 타입 확인**
+
+- [ ] Chrome Remote Debugging (`chrome://inspect`) 콘솔에서 파일 선택 이벤트 로그 확인
+- [ ] `file://` URI 대신 `content://` URI 사용 확인 (Page refresh 미발생)
+  - Evidence: 콘솔 로그 스크린샷 또는 네트워크 탭 multipart 업로드 요청 캡처
+
+#### 합격 기준
+
+- [ ] 갤러리·카메라 선택 시 Page refresh 없음
+- [ ] `content://` URI로 파일 전달 확인
+- [ ] 프로필·산책 사진 서버 저장 및 화면 표시 정상
+- [ ] 업로드 관련 콘솔 에러 없음
+
+---
+
+## M-WEB-01
+
+### iOS 키보드 + 댓글 입력 — WKWebView flex container 동작 (10분)
+
+| 항목 | 내용 |
+|------|------|
+| **수행 빈도** | prod 배포 직후 1회; iOS 메이저 업데이트 후 |
+| **수행 트리거** | `CommunityDetailPage.css`, `ChatDetailPage.css`, `--app-height` 또는 `visualViewport` 관련 코드 변경 |
+| **담당자** | iOS 실기기 보유 개발자 |
+| **evidence 첨부 방식** | 댓글 입력 중 키보드가 올라온 상태에서 comment_submit이 키보드 바로 위에 표시된 스크린샷 |
+
+#### 배경
+
+iOS WKWebView에서 `position: fixed; bottom: 0` + document scroll 조합은 키보드 표시 시
+comment_submit 버튼이 키보드 아래로 숨는 버그가 발생한다.
+`flex container + --app-height + visualViewport.resize` 패턴으로 수정되어 있으며,
+iOS 업데이트 또는 관련 CSS 변경 시 회귀 여부를 확인해야 한다.
+
+#### 사전 조건
+
+- [ ] iOS 15+ 실기기 (Safari/WKWebView)
+- [ ] 커뮤니티 게시글 1건 이상 존재 (댓글 입력 가능 상태)
+
+#### 체크리스트
+
+- [ ] 커뮤니티 → 게시글 상세 진입 → 댓글 입력창 탭
+  - 키보드 상승 시 comment_submit(댓글 전송 버튼)이 키보드 바로 위에 표시됨 확인
+  - Evidence: 키보드 올라온 상태 스크린샷 (버튼 위치 포함)
+- [ ] 댓글 입력 후 전송 버튼 탭 → 댓글 등록 확인
+- [ ] 키보드 내리기(return 또는 외부 탭) → comment_submit 하단 원위치 확인
+- [ ] 채팅 상세 페이지에서도 동일 동작 확인 (ChatDetailPage)
+  - Evidence: 채팅 키보드 상승 상태 스크린샷
+
+#### 합격 기준
+
+- [ ] 키보드 상승 시 댓글/채팅 입력 버튼 가려지지 않음
+- [ ] 댓글·채팅 전송 정상 동작
+- [ ] 키보드 내린 후 레이아웃 복원 확인
+- [ ] `position: fixed` 버그 회귀 없음
+
+---
+
+## XF-08
+
+### PII Phase 2 키 교체 D-day — 복호화 연속성 확인 (20분)
+
+| 항목 | 내용 |
+|------|------|
+| **수행 빈도** | PII 키 교체 D-day **1회만** 수행 |
+| **수행 트리거** | dev 듀얼키 인프라 배포 완료 상태에서 Phase 2 실제 키 교체 진행 시 |
+| **담당자** | PII 로테이션 담당 개발자 + 인프라 담당자 |
+| **evidence 첨부 방식** | (1) 키 교체 전 신규 가입 스크린샷, (2) 키 교체 직후 로그인·프로필 정상 표시 스크린샷, (3) 서버 복호화 성공 로그 |
+
+#### 배경
+
+PII Key Rotation Phase 1에서 dev 듀얼키 인프라 배포가 완료되었다(2026-04-19).
+Phase 2는 실제 키 교체로, 교체 직전에 암호화된 기존 데이터가 교체 후에도 정상 복호화되는지
+연속성을 반드시 검증해야 한다.
+
+#### 사전 조건
+
+- [ ] dev 환경 듀얼키 인프라 배포 완료 확인 (`project_pii_key_rotation.md` 참조)
+- [ ] 교체 전 PII 암호화 키(OLD_KEY) 백업 확인
+- [ ] 새 PII 키(NEW_KEY) 준비 및 롤백 플랜 확인
+- [ ] Admin 콘솔 또는 DB 접근 권한 보유
+
+#### 체크리스트
+
+**Phase A — 키 교체 직전 기준점 확보**
+
+- [ ] 신규 테스트 계정 가입 (이메일·전화번호 입력)
+  - Evidence: 가입 완료 화면 스크린샷 (이메일·전화번호 표시)
+- [ ] 기존 테스트 계정 1건 로그인 → 프로필(이메일·전화번호) 정상 표시 확인
+  - Evidence: 프로필 화면 스크린샷 (마스킹 또는 일부 표시)
+- [ ] DB에서 암호화된 컬럼 값 캡처 (base64 등 암호문 형태)
+  ```sql
+  SELECT id, email_encrypted, phone_encrypted FROM users WHERE id = <TEST_USER_ID>;
+  ```
+
+**Phase B — 키 교체 진행**
+
+- [ ] NEW_KEY 서버 환경 변수 반영 및 서버 재시작
+- [ ] 서버 로그에서 키 교체 완료 및 듀얼키 복호화 활성화 확인
+
+**Phase C — 키 교체 직후 복호화 연속성 검증**
+
+- [ ] Phase A에서 가입한 신규 계정으로 로그인 → 이메일·전화번호 정상 복호화 확인
+  - Evidence: 로그인 후 프로필 화면 스크린샷 (Phase A와 동일 데이터)
+- [ ] Phase A 기존 테스트 계정 재로그인 → 프로필 정상 표시 확인
+  - Evidence: 프로필 화면 스크린샷
+- [ ] 서버 로그에서 `PII decryption success` 또는 동등 로그 확인
+  - Evidence: 서버 로그 캡처 (user id + 성공 라인)
+- [ ] 토큰 갱신 (`/auth/refresh`) 후에도 PII 정상 복호화 확인
+
+**Phase D — 롤백 검증 (선택)**
+
+- [ ] OLD_KEY로 롤백 시 복호화 정상 여부 확인 (필요 시)
+
+#### 합격 기준
+
+- [ ] 교체 전 암호화 데이터가 교체 후에도 정상 복호화
+- [ ] 신규 가입 데이터(NEW_KEY 암호화)도 정상 복호화
+- [ ] 서버 에러 로그 없음 (복호화 실패 없음)
+- [ ] 토큰 갱신 후에도 PII 정상
+
+---
+
+## 회차 룰
+
+### 수행 시점별 필수 항목
+
+| 수행 시점 | 필수 항목 | 예상 시간 |
+|----------|----------|---------|
+| **회사 계정 전환 직전 (D-7)** | M-AUTH-01, M-PUSH-01 | ~50분 |
+| **회사 계정 전환 직후 (D+0)** | M-AUTH-01, M-PUSH-01, XF-08 (해당 시) | ~70분 |
+| **prod 배포 직후** | M-WALK-01, M-FILE-01, M-WEB-01 | ~35분 |
+| **격주 정기** | P2 smoke (`scripts/smoke/{gamification,checkin,health,report}.sh`) | ~15분 |
+| **PII 키 교체 D-day** | XF-08 | ~20분 |
+| **수시** | M-VERSION-01, M-WALK-02 (관련 코드 변경 시) | ~각 15–20분 |
+
+### 풀스캔 순서 (회사 계정 전환 직전+직후)
+
+```
+D-7:  XF-NATIVE-01 → M-AUTH-01 → M-PUSH-01
+D+0:  M-AUTH-01 → M-PUSH-01 → XF-08
+      → M-WALK-01 → M-FILE-01 → M-WEB-01 → M-VERSION-01
+```
+
+**총 검토 시간**: ~125분 (D-7 + D+0 풀스캔 기준)
+
+### 항목별 소요 시간 요약
+
+| 항목 | 소요 시간 |
+|------|---------|
+| XF-NATIVE-01 | ~15분 |
+| M-AUTH-01 | ~30분 |
+| M-PUSH-01 | ~20분 |
+| M-WALK-02 | ~15분 |
+| M-VERSION-01 | ~15분 |
+| M-ADMIN-01 | ~10분 |
+| M-WALK-01 | ~15분 |
+| M-FILE-01 | ~10분 |
+| M-WEB-01 | ~10분 |
+| XF-08 | ~20분 |
 
 ---
 
