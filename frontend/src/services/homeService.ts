@@ -14,6 +14,9 @@ export interface HomeRecommendation {
   images: string[];
   imagesThumbnail?: string[];
   imagesViewer?: string[];
+  /** T2-D2: WebP variant URLs (backend D1 공급 시 자동 활용) */
+  imagesThumbnailWebp?: (string | null)[];
+  imagesViewerWebp?: (string | null)[];
   isNeutered: boolean;
   gender: 'MALE' | 'FEMALE';
   nickname: string;
@@ -23,6 +26,8 @@ export interface HomeRecommendation {
   profileImages: string[];  // Owner's all profile images
   profileImagesThumbnail?: string[];
   profileImagesViewer?: string[];
+  /** T2-D2: WebP variant URLs (backend D1 공급 시 자동 활용) */
+  profileImagesThumbnailWebp?: (string | null)[];
   ownerGender?: string;
   ownerAge?: number;
   ownerIntro?: string;

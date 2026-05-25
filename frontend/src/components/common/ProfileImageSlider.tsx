@@ -14,9 +14,15 @@ interface ProfileImageSliderProps {
     imagesThumbnail?: (string | null | undefined)[];
     /** T1-2 variant: backend 가 공급한 _viewer 파생 URL. images 와 같은 길이. */
     imagesViewer?: (string | null | undefined)[];
+    /** T2-D2: WebP thumbnail variant URLs. images 와 같은 길이. */
+    imagesWebpThumbnail?: (string | null | undefined)[];
+    /** T2-D2: WebP viewer variant URLs. images 와 같은 길이. */
+    imagesWebpViewer?: (string | null | undefined)[];
     secondaryImage?: string;
     /** T1-2 variant: 보조(butler/pet) 썸네일 URL. */
     secondaryImageThumbnail?: string | null;
+    /** T2-D2: WebP thumbnail for secondary image. */
+    secondaryImageWebpThumbnail?: string | null;
     secondaryImageClass?: string; // 'butler_img' or 'pet_img'
     onImageClick?: () => void;
     onSecondaryImageClick?: () => void;  // callback when small (butler) image is tapped
@@ -36,8 +42,11 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     images,
     imagesThumbnail,
     imagesViewer,
+    imagesWebpThumbnail,
+    imagesWebpViewer,
     secondaryImage,
     secondaryImageThumbnail,
+    secondaryImageWebpThumbnail,
     secondaryImageClass = 'butler_img',
     onImageClick,
     onSecondaryImageClick,
@@ -71,6 +80,8 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
     const singleImage = images[0] || "/assets/images/main/main_slide_img01.png";
     const singleThumb = imagesThumbnail?.[0] ?? null;
     const singleViewer = imagesViewer?.[0] ?? null;
+    const singleWebpThumb = imagesWebpThumbnail?.[0] ?? null;
+    const singleWebpViewer = imagesWebpViewer?.[0] ?? null;
     const hasVariants = Boolean(singleThumb || singleViewer);
 
     // Returns WebP variant path for known static /assets/images/ files
@@ -101,6 +112,8 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             src={singleImage}
             thumbnailSrc={singleThumb}
             viewerSrc={singleViewer}
+            webpThumbnailSrc={singleWebpThumb}
+            webpViewerSrc={singleWebpViewer}
             variant="medium"
             className="pet_img"
             alt="프로필 이미지"
@@ -149,6 +162,8 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
             {images.map((img, index) => {
                 const thumb = imagesThumbnail?.[index] ?? null;
                 const viewer = imagesViewer?.[index] ?? null;
+                const webpThumb = imagesWebpThumbnail?.[index] ?? null;
+                const webpViewer = imagesWebpViewer?.[index] ?? null;
                 const slideHasVariants = Boolean(thumb || viewer);
                 const isLcp = priority && index === 0;
                 const slideStyle: React.CSSProperties = {
@@ -165,6 +180,8 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                                 src={img}
                                 thumbnailSrc={thumb}
                                 viewerSrc={viewer}
+                                webpThumbnailSrc={webpThumb}
+                                webpViewerSrc={webpViewer}
                                 variant="medium"
                                 className="pet_img"
                                 alt={`슬라이드 이미지 ${index + 1}`}
@@ -225,6 +242,7 @@ export const ProfileImageSlider: React.FC<ProfileImageSliderProps> = ({
                         <GpImage
                             src={secondaryImage}
                             thumbnailSrc={secondaryImageThumbnail}
+                            webpThumbnailSrc={secondaryImageWebpThumbnail}
                             variant="thumbnail"
                             alt="보조 이미지"
                         />

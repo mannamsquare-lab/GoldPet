@@ -1,8 +1,11 @@
 import { useCallback, useMemo, useState, type ImgHTMLAttributes } from 'react';
 
 /**
- * T1-2 GpImage — 백엔드 variant 파이프라인(T1-1.x)이 공급하는 thumbnail/medium/viewer
+ * T1-2 / T2-D2 GpImage — 백엔드 variant 파이프라인이 공급하는 thumbnail/medium/viewer
  * URL 중 가장 적절한 variant 를 선택해 렌더링하는 공용 컴포넌트.
+ *
+ * WebP 지원: `webpThumbnailSrc` / `webpMediumSrc` / `webpViewerSrc` 중 하나라도 제공되면
+ * `<picture><source type="image/webp">` 패턴으로 렌더. 미제공 시 plain `<img>` 유지.
  *
  * ## 사용 예시
  * ```tsx
@@ -10,6 +13,7 @@ import { useCallback, useMemo, useState, type ImgHTMLAttributes } from 'react';
  * <GpImage
  *   src={friend.profileImageUrl}
  *   thumbnailSrc={friend.profileImageUrlThumbnail}
+ *   webpThumbnailSrc={friend.profileImageUrlThumbnailWebp}
  *   variant="thumbnail"
  *   alt={friend.nickname}
  *   className="avatar"
@@ -41,6 +45,9 @@ import { useCallback, useMemo, useState, type ImgHTMLAttributes } from 'react';
 
 type Variant = 'thumbnail' | 'medium' | 'viewer' | 'auto';
 
+/** jpg + 대응 webp(없으면 null) 쌍. chain 각 entry 는 중복 제거된 후보. */
+type ChainEntry = { jpg: string; webp: string | null };
+
 export interface GpImageProps
   extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'loading' | 'decoding' | 'fetchPriority'> {
   /** 원본 URL — 항상 fallback 맨 끝. null/undefined 허용. */
@@ -48,11 +55,21 @@ export interface GpImageProps
   thumbnailSrc?: string | null;
   mediumSrc?: string | null;
   viewerSrc?: string | null;
+  /** T2-D2: WebP thumbnail variant. 제공 시 <picture><source> 패턴 활성화. */
+  webpThumbnailSrc?: string | null;
+  /** T2-D2: WebP medium variant. */
+  webpMediumSrc?: string | null;
+  /** T2-D2: WebP viewer variant. */
+  webpViewerSrc?: string | null;
   variant?: Variant;
   loading?: ImgHTMLAttributes<HTMLImageElement>['loading'];
   decoding?: ImgHTMLAttributes<HTMLImageElement>['decoding'];
   /** React 19 camelCase. `fetchpriority` 가 아닌 `fetchPriority` 사용. */
   fetchPriority?: 'high' | 'low' | 'auto';
+  /** intrinsic 너비 — CLS 방지용. */
+  width?: number | string;
+  /** intrinsic 높이 — CLS 방지용. */
+  height?: number | string;
 }
 
 function buildChain(
@@ -61,27 +78,52 @@ function buildChain(
   thumbnailSrc: string | null | undefined,
   mediumSrc: string | null | undefined,
   viewerSrc: string | null | undefined,
-): string[] {
-  const order: Array<string | null | undefined> = (() => {
+  webpThumbnailSrc: string | null | undefined,
+  webpMediumSrc: string | null | undefined,
+  webpViewerSrc: string | null | undefined,
+): ChainEntry[] {
+  // jpg variant 와 대응 webp variant 를 쌍으로 묶어 순서 결정
+  const ordered: [string | null | undefined, string | null | undefined][] = (() => {
     switch (variant) {
       case 'thumbnail':
-        return [thumbnailSrc, mediumSrc, viewerSrc, src];
+        return [
+          [thumbnailSrc, webpThumbnailSrc],
+          [mediumSrc, webpMediumSrc],
+          [viewerSrc, webpViewerSrc],
+          [src, null],
+        ];
       case 'medium':
-        return [mediumSrc, thumbnailSrc, viewerSrc, src];
+        return [
+          [mediumSrc, webpMediumSrc],
+          [thumbnailSrc, webpThumbnailSrc],
+          [viewerSrc, webpViewerSrc],
+          [src, null],
+        ];
       case 'viewer':
-        return [viewerSrc, mediumSrc, thumbnailSrc, src];
+        return [
+          [viewerSrc, webpViewerSrc],
+          [mediumSrc, webpMediumSrc],
+          [thumbnailSrc, webpThumbnailSrc],
+          [src, null],
+        ];
       case 'auto':
       default:
-        return [viewerSrc, mediumSrc, thumbnailSrc, src];
+        return [
+          [viewerSrc, webpViewerSrc],
+          [mediumSrc, webpMediumSrc],
+          [thumbnailSrc, webpThumbnailSrc],
+          [src, null],
+        ];
     }
   })();
-  // 중복 URL 제거 (variant 가 원본과 동일한 fallback 을 내릴 때)
+
+  // 중복 jpg URL 제거 (variant 가 원본과 동일한 fallback 을 내릴 때)
   const seen = new Set<string>();
-  const result: string[] = [];
-  for (const candidate of order) {
-    if (candidate && candidate.length > 0 && !seen.has(candidate)) {
-      seen.add(candidate);
-      result.push(candidate);
+  const result: ChainEntry[] = [];
+  for (const [jpg, webp] of ordered) {
+    if (jpg && jpg.length > 0 && !seen.has(jpg)) {
+      seen.add(jpg);
+      result.push({ jpg, webp: webp && webp.length > 0 ? webp : null });
     }
   }
   return result;
@@ -92,6 +134,9 @@ export function GpImage({
   thumbnailSrc,
   mediumSrc,
   viewerSrc,
+  webpThumbnailSrc,
+  webpMediumSrc,
+  webpViewerSrc,
   variant = 'auto',
   loading = 'lazy',
   decoding = 'async',
@@ -101,8 +146,8 @@ export function GpImage({
   ...rest
 }: GpImageProps) {
   const chain = useMemo(
-    () => buildChain(variant, src, thumbnailSrc, mediumSrc, viewerSrc),
-    [variant, src, thumbnailSrc, mediumSrc, viewerSrc],
+    () => buildChain(variant, src, thumbnailSrc, mediumSrc, viewerSrc, webpThumbnailSrc, webpMediumSrc, webpViewerSrc),
+    [variant, src, thumbnailSrc, mediumSrc, viewerSrc, webpThumbnailSrc, webpMediumSrc, webpViewerSrc],
   );
   const [index, setIndex] = useState(0);
 
@@ -118,12 +163,12 @@ export function GpImage({
     return null;
   }
 
-  const currentSrc = chain[Math.min(index, chain.length - 1)];
+  const current = chain[Math.min(index, chain.length - 1)];
 
-  return (
+  const imgEl = (
     <img
       {...rest}
-      src={currentSrc}
+      src={current.jpg}
       alt={alt}
       loading={loading}
       decoding={decoding}
@@ -131,6 +176,17 @@ export function GpImage({
       onError={handleError}
     />
   );
+
+  if (current.webp) {
+    return (
+      <picture>
+        <source type="image/webp" srcSet={current.webp} />
+        {imgEl}
+      </picture>
+    );
+  }
+
+  return imgEl;
 }
 
 export default GpImage;
