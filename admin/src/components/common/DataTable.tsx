@@ -28,6 +28,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
   rowClassName?: (row: T) => string;
+  rowDataTestId?: (row: T) => string;
 }
 
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
@@ -68,6 +69,7 @@ export function DataTable<T>({
   emptyMessage = '데이터가 없습니다.',
   onRowClick,
   rowClassName,
+  rowDataTestId,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -173,6 +175,7 @@ export function DataTable<T>({
             <tr
               key={row.id}
               onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+              data-testid={rowDataTestId?.(row.original)}
               className={clsx(
                 'border-b border-gray-100 transition-colors',
                 onRowClick && 'cursor-pointer',

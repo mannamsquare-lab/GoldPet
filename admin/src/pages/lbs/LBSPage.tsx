@@ -308,6 +308,7 @@ export default function LBSPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
                   <input
                     type="text"
+                    data-testid="lbs-name-input"
                     value={placeForm.name}
                     onChange={(e) => setPlaceForm({ ...placeForm, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -353,6 +354,7 @@ export default function LBSPage() {
                 <Button
                   variant="primary"
                   size="sm"
+                  data-testid="lbs-form-submit"
                   loading={editingPlace ? updatePlaceMutation.isPending : createPlaceMutation.isPending}
                   onClick={() => editingPlace ? updatePlaceMutation.mutate(editingPlace.id) : createPlaceMutation.mutate()}
                 >
@@ -376,7 +378,7 @@ export default function LBSPage() {
                 <div className="p-8 text-center text-gray-500">등록된 장소가 없습니다.</div>
               ) : (
                 places.map((place) => (
-                  <div key={place.id} className="p-4 hover:bg-gray-50">
+                  <div key={place.id} data-testid="lbs-place-row" className="p-4 hover:bg-gray-50">
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-2">
@@ -388,8 +390,8 @@ export default function LBSPage() {
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="link" size="sm" onClick={() => handleEditPlace(place)}>수정</Button>
-                        <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDeletePlace(place.id)}>삭제</Button>
+                        <Button variant="link" size="sm" data-testid="lbs-edit-button" onClick={() => handleEditPlace(place)}>수정</Button>
+                        <Button variant="link" size="sm" data-testid="lbs-delete-button" className="text-red-600 hover:text-red-900" onClick={() => handleDeletePlace(place.id)}>삭제</Button>
                       </div>
                     </div>
                   </div>

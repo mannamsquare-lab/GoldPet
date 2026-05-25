@@ -99,14 +99,14 @@ test.describe('ADM-02 UI: 장소 수정 — 409 Optimistic Lock 에러', () => {
     await expect(page.getByText('서울숲')).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('PARK')).toBeVisible();
 
-    // 목록에서 수정 버튼 클릭 (폼이 없을 때 유일한 "수정" 버튼)
-    await page.getByRole('button', { name: '수정' }).first().click();
+    // 목록에서 수정 버튼 클릭
+    await page.getByTestId('lbs-edit-button').first().click();
 
     // 수정 폼 열림 확인
     await expect(page.getByText('장소 수정')).toBeVisible();
 
-    // 폼 submit 버튼 — 폼이 열린 후 DOM 순서상 첫 번째 "수정" 버튼이 primary submit
-    const submitButton = page.getByRole('button', { name: '수정' }).first();
+    // 폼 submit 버튼
+    const submitButton = page.getByTestId('lbs-form-submit');
     await expect(submitButton).toBeVisible();
 
     // 수정 제출 → PUT 409 응답
@@ -122,11 +122,11 @@ test.describe('ADM-02 UI: 장소 수정 — 409 Optimistic Lock 에러', () => {
     await expect(page.getByText('서울숲')).toBeVisible({ timeout: 5000 });
 
     // 수정 버튼 클릭
-    await page.getByRole('button', { name: '수정' }).first().click();
+    await page.getByTestId('lbs-edit-button').first().click();
     await expect(page.getByText('장소 수정')).toBeVisible();
 
     // 기존 이름 자동 채워짐 확인
-    const nameInput = page.locator('div.bg-gray-50 input[type="text"]').first();
+    const nameInput = page.getByTestId('lbs-name-input');
     await expect(nameInput).toHaveValue('서울숲');
 
     // 취소 → 폼 닫힘

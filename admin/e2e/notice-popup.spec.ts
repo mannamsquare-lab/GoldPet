@@ -81,7 +81,7 @@ test.describe('ADM-05: 공지/팝업 관리', () => {
     await expect(page.getByText('공지가 없습니다.')).toBeVisible();
 
     // 2. "+ 공지 추가" 클릭 → 폼 다이얼로그(preview 모달) 열림
-    await page.getByRole('button', { name: '+ 공지 추가' }).click();
+    await page.getByTestId('notice-add-button').click();
 
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
@@ -137,8 +137,8 @@ test.describe('ADM-05: 공지/팝업 관리', () => {
     await expect(page.getByText('활성 공지', { exact: true })).toBeVisible();
     await expect(page.getByText('비활성 공지', { exact: true })).toBeVisible();
 
-    // 활성 탭 클릭 (exact+first: 탭 버튼 vs 테이블 내 상태 토글 버튼 구분)
-    await page.getByRole('button', { name: '활성', exact: true }).first().click();
+    // 활성 탭 클릭
+    await page.getByTestId('notice-tab-active').click();
     await expect(page.getByText('활성 공지', { exact: true })).toBeVisible();
     await expect(page.getByText('비활성 공지', { exact: true })).not.toBeVisible();
   });

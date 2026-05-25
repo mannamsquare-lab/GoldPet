@@ -4,6 +4,7 @@ import clsx from 'clsx';
 interface Tab {
   key: string;
   label: string;
+  testId?: string;
 }
 
 interface TabsProps {
@@ -20,6 +21,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange }) => {
           <button
             key={tab.key}
             onClick={() => onTabChange(tab.key)}
+            data-testid={tab.testId}
             className={clsx(
               'px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
               activeTab === tab.key

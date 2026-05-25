@@ -32,9 +32,9 @@ const SCREEN_OPTIONS = [
 ];
 
 const FILTER_TABS = [
-  { key: 'all', label: '전체' },
-  { key: 'active', label: '활성' },
-  { key: 'inactive', label: '비활성' },
+  { key: 'all', label: '전체', testId: 'notice-tab-all' },
+  { key: 'active', label: '활성', testId: 'notice-tab-active' },
+  { key: 'inactive', label: '비활성', testId: 'notice-tab-inactive' },
 ];
 
 const noticeSchema = z.object({
@@ -216,6 +216,7 @@ export default function NoticeManagementPage() {
       render: (value, row) => (
         <button
           type="button"
+          data-testid="notice-toggle-active"
           className={`px-2 py-1 text-xs rounded-full cursor-pointer transition-colors ${value ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
           onClick={async () => {
             const next = !value;
@@ -254,7 +255,7 @@ export default function NoticeManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">공지/팝업 관리</h1>
-        <Button variant="primary" onClick={openCreateForm}>+ 공지 추가</Button>
+        <Button variant="primary" data-testid="notice-add-button" onClick={openCreateForm}>+ 공지 추가</Button>
       </div>
 
       <Tabs tabs={FILTER_TABS} activeTab={activeFilter} onTabChange={setActiveFilter} />
@@ -265,6 +266,7 @@ export default function NoticeManagementPage() {
           data={filteredNotices}
           loading={isLoading}
           emptyMessage="공지가 없습니다."
+          rowDataTestId={() => 'notice-row'}
         />
       </div>
 
