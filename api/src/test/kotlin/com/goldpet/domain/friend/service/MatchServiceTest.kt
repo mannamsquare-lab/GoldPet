@@ -5,6 +5,7 @@ import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
+import com.goldpet.domain.chat.repository.ChatRoomRepository
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
@@ -40,6 +41,9 @@ class MatchServiceTest {
 
     @Mock
     private lateinit var petRepository: com.goldpet.domain.pet.repository.PetRepository
+
+    @Mock
+    private lateinit var chatRoomRepository: ChatRoomRepository
 
     @InjectMocks
     private lateinit var matchService: MatchService

@@ -55,6 +55,7 @@ class AdminSystemController(
 
     @Operation(summary = "백업 작업 목록 조회")
     @GetMapping("/backup/jobs")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun getBackupJobs(
         @RequestParam(defaultValue = "20") limit: Int
     ): ResponseEntity<List<BackupJobResponse>> {
