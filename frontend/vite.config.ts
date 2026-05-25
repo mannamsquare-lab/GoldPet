@@ -2,8 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  esbuild: {
+    pure: mode === 'production' ? ['console.log', 'console.debug'] : [],
+  },
   server: {
     port: 5173,
     host: true, // 외부 접근 허용 (Flutter WebView에서 접근 가능하도록)
@@ -28,4 +31,4 @@ export default defineConfig({
   define: {
     global: 'globalThis', // SockJS compatibility for browser
   },
-});
+}));

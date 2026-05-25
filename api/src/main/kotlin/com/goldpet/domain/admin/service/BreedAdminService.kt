@@ -5,6 +5,7 @@ import com.goldpet.domain.admin.dto.UpdateBreedRequest
 import com.goldpet.domain.pet.dto.BreedResponse
 import com.goldpet.domain.pet.entity.PetBreed
 import com.goldpet.domain.pet.repository.PetBreedRepository
+import com.goldpet.domain.common.exception.NotFoundException
 import com.goldpet.domain.pet.repository.PetSpeciesRepository
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -29,7 +30,7 @@ class BreedAdminService(
 
     fun getBreed(breedId: Int): BreedResponse {
         val breed = petBreedRepository.findById(breedId)
-            .orElseThrow { RuntimeException("품종을 찾을 수 없습니다.") }
+            .orElseThrow { NotFoundException("품종을 찾을 수 없습니다.") }
         return breed.toResponse()
     }
 
@@ -37,7 +38,7 @@ class BreedAdminService(
     @CacheEvict(value = ["breeds"], allEntries = true)
     fun createBreed(request: CreateBreedRequest): BreedResponse {
         val species = petSpeciesRepository.findById(request.speciesId)
-            .orElseThrow { RuntimeException("종을 찾을 수 없습니다.") }
+            .orElseThrow { NotFoundException("종을 찾을 수 없습니다.") }
 
         val breed = PetBreed(
             petSpecies = species,
@@ -53,7 +54,7 @@ class BreedAdminService(
     @CacheEvict(value = ["breeds"], allEntries = true)
     fun updateBreed(breedId: Int, request: UpdateBreedRequest): BreedResponse {
         val breed = petBreedRepository.findById(breedId)
-            .orElseThrow { RuntimeException("품종을 찾을 수 없습니다.") }
+            .orElseThrow { NotFoundException("품종을 찾을 수 없습니다.") }
 
         breed.update(request.name, request.category, request.description)
         val saved = petBreedRepository.save(breed)
@@ -64,7 +65,7 @@ class BreedAdminService(
     @CacheEvict(value = ["breeds"], allEntries = true)
     fun deleteBreed(breedId: Int) {
         if (!petBreedRepository.existsById(breedId)) {
-            throw RuntimeException("품종을 찾을 수 없습니다.")
+            throw NotFoundException("품종을 찾을 수 없습니다.")
         }
         petBreedRepository.deleteById(breedId)
     }

@@ -14,6 +14,7 @@ import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.common.exception.ConflictException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -181,7 +182,7 @@ class ChatServiceTest {
         whenever(chatRoomRepository.findByMatchId(1L)).thenReturn(Optional.of(testChatRoom))
 
         // When & Then
-        assertThrows<IllegalStateException> {
+        assertThrows<ConflictException> {
             chatService.createChatRoom(request, 1L)
         }
     }
@@ -261,7 +262,7 @@ class ChatServiceTest {
             .thenReturn(Optional.of(existingParticipant))
 
         // When & Then
-        assertThrows<IllegalStateException> {
+        assertThrows<ConflictException> {
             chatService.addParticipant(1L, 2L)
         }
     }

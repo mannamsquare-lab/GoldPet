@@ -359,7 +359,7 @@ class FileService(
     ): com.goldpet.domain.common.entity.FileAttachment {
         try {
             if (file.isEmpty) {
-                throw RuntimeException("Failed to store empty file.")
+                throw BadRequestException("Failed to store empty file.")
             }
             val originalFilename = file.originalFilename ?: "unknown"
             val extension = originalFilename.substringAfterLast(".", "")

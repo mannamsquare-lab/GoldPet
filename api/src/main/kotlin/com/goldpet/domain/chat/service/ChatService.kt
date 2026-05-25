@@ -50,7 +50,7 @@ class ChatService(
 
             // Check if a direct chat room for this match already exists
             chatRoomRepository.findByMatchId(match.id).ifPresent {
-                throw IllegalStateException("Direct chat room for match ${match.id} already exists.")
+                throw ConflictException("Direct chat room for match ${match.id} already exists.")
             }
 
             val chatRoom = ChatRoom(
@@ -94,7 +94,7 @@ class ChatService(
         val user = userRepository.findById(userId).orElseThrow { NotFoundException("User not found with id: $userId") }
 
         if (chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId).isPresent) {
-            throw IllegalStateException("User ${user.nickname} is already a participant in chat room ${chatRoom.title}.")
+            throw ConflictException("User ${user.nickname} is already a participant in chat room ${chatRoom.title}.")
         }
 
         val participant = ChatRoomParticipant(chatRoom = chatRoom, user = user, role = role)

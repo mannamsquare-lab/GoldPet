@@ -5,6 +5,7 @@ import com.goldpet.domain.aiprofile.dto.CreateLoadingTipRequest
 import com.goldpet.domain.aiprofile.dto.UpdateLoadingTipRequest
 import com.goldpet.domain.aiprofile.entity.AILoadingTip
 import com.goldpet.domain.aiprofile.repository.AILoadingTipRepository
+import com.goldpet.domain.common.exception.NotFoundException
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
@@ -40,7 +41,7 @@ class LoadingTipAdminService(
     @CacheEvict(value = ["ai:loading-tips"], allEntries = true)
     fun updateTip(tipId: Int, request: UpdateLoadingTipRequest): AILoadingTipResponse {
         val tip = aiLoadingTipRepository.findById(tipId)
-            .orElseThrow { RuntimeException("로딩 팁을 찾을 수 없습니다.") }
+            .orElseThrow { NotFoundException("로딩 팁을 찾을 수 없습니다.") }
 
         request.content?.let { tip.content = it }
         request.displayOrder?.let { tip.displayOrder = it }
@@ -53,7 +54,7 @@ class LoadingTipAdminService(
     @CacheEvict(value = ["ai:loading-tips"], allEntries = true)
     fun deleteTip(tipId: Int) {
         if (!aiLoadingTipRepository.existsById(tipId)) {
-            throw RuntimeException("로딩 팁을 찾을 수 없습니다.")
+            throw NotFoundException("로딩 팁을 찾을 수 없습니다.")
         }
         aiLoadingTipRepository.deleteById(tipId)
     }

@@ -101,7 +101,7 @@ class AdminAuthService(
             .orElseThrow { RuntimeException("User not found") }
 
         if (!adminTotpService.validateCode(secret, code)) {
-            throw RuntimeException("Invalid Code")
+            throw BadRequestException("Invalid Code")
         }
 
         adminUser.otpSecret = secret
