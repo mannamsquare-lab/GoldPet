@@ -14,9 +14,11 @@ interface FriendRecommendCardProps {
     loading: boolean;
     onLike: (id: number, name: string) => void;
     onOpenGallery: (images: string[], index: number) => void;
+    /** 첫 번째 카드이면 true — 첫 슬라이드를 LCP 우선순위로 로드 */
+    isLCP?: boolean;
 }
 
-export function FriendRecommendCard({ item, liked, loading, onLike, onOpenGallery }: FriendRecommendCardProps) {
+export function FriendRecommendCard({ item, liked, loading, onLike, onOpenGallery, isLCP = false }: FriendRecommendCardProps) {
     const [petMode, setPetMode] = useState(true);
 
     const ownerImages = item.profileImages.length > 0
@@ -26,6 +28,7 @@ export function FriendRecommendCard({ item, liked, loading, onLike, onOpenGaller
 
     const currentImages = petMode ? petImages : ownerImages;
     const currentThumbs = petMode ? item.imagesThumbnail : item.profileImagesThumbnail;
+    const currentWebpThumbs = petMode ? item.imagesThumbnailWebp : item.profileImagesThumbnailWebp;
 
     // 토글 아바타 = 반대 모드의 첫 이미지
     const toggleSrc = petMode
@@ -54,6 +57,8 @@ export function FriendRecommendCard({ item, liked, loading, onLike, onOpenGaller
                         >
                             {currentImages.map((img, imgIdx) => {
                                 const thumb = currentThumbs?.[imgIdx] ?? null;
+                                const webpThumb = currentWebpThumbs?.[imgIdx] ?? null;
+                                const isFirstSlide = isLCP && imgIdx === 0;
                                 return (
                                     <SwiperSlide key={imgIdx}>
                                         {thumb ? (
@@ -61,10 +66,12 @@ export function FriendRecommendCard({ item, liked, loading, onLike, onOpenGaller
                                                 className="friend_card__photo"
                                                 src={img}
                                                 thumbnailSrc={thumb}
+                                                webpThumbnailSrc={webpThumb}
                                                 variant="thumbnail"
                                                 alt={displayName}
-                                                loading="lazy"
-                                                decoding="async"
+                                                loading={isFirstSlide ? 'eager' : 'lazy'}
+                                                decoding={isFirstSlide ? 'sync' : 'async'}
+                                                fetchPriority={isFirstSlide ? 'high' : undefined}
                                                 onClick={() => onOpenGallery(currentImages, imgIdx)}
                                             />
                                         ) : (
@@ -72,8 +79,9 @@ export function FriendRecommendCard({ item, liked, loading, onLike, onOpenGaller
                                                 className="friend_card__photo"
                                                 src={getImageUrl(img, 'thumbnail')}
                                                 alt={displayName}
-                                                loading="lazy"
-                                                decoding="async"
+                                                loading={isFirstSlide ? 'eager' : 'lazy'}
+                                                decoding={isFirstSlide ? 'sync' : 'async'}
+                                                fetchPriority={isFirstSlide ? 'high' : undefined}
                                                 onClick={() => onOpenGallery(currentImages, imgIdx)}
                                                 onError={(e) => {
                                                     const target = e.currentTarget;

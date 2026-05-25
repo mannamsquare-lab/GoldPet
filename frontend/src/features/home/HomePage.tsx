@@ -116,7 +116,7 @@ export default function HomePage() {
                 </div>
                 {recommendations.length > 0 ? (
                     <div className="home_friends__scroll">
-                        {recommendations.map((item) => (
+                        {recommendations.map((item, idx) => (
                             <FriendRecommendCard
                                 key={item.id}
                                 item={item}
@@ -126,6 +126,7 @@ export default function HomePage() {
                                 onOpenGallery={(images, index) =>
                                     setGalleryState({ open: true, images, index })
                                 }
+                                isLCP={idx === 0}
                             />
                         ))}
                     </div>

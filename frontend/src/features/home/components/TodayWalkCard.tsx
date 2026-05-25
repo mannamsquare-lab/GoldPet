@@ -42,8 +42,8 @@ export function TodayWalkCard({ data, onCreateCourse, onStartWalk }: TodayWalkCa
                             thumbnailSrc={data.petProfileImageUrlThumbnail}
                             variant="thumbnail"
                             alt={petName}
-                            loading="lazy"
-                            decoding="async"
+                            loading="eager"
+                            decoding="sync"
                         />
                     ) : (
                         <img src="/assets/images/common/pet_none_img02.svg" alt="" />
