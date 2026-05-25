@@ -16,4 +16,25 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 5174,
   },
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'query': ['@tanstack/react-query', '@tanstack/react-table'],
+          'radix': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-icons',
+            '@radix-ui/react-label',
+            '@radix-ui/react-select',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-tabs',
+          ],
+          'form': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'ui-utils': ['lucide-react', 'axios'],
+        },
+      },
+    },
+  },
 }))
