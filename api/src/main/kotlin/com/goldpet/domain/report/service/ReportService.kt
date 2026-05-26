@@ -27,6 +27,7 @@ class ReportService(
     private val postRepository: CommunityPostRepository,
     private val commentRepository: CommunityCommentRepository,
     private val walkCourseRepository: WalkCourseRepository,
+    private val chatMessageRepository: com.goldpet.domain.chat.repository.ChatMessageRepository,
     private val systemSettingService: SystemSettingService,
     private val adminCommunityService: AdminCommunityService,
     private val walkSpotRepository: WalkSpotRepository
@@ -135,7 +136,20 @@ class ReportService(
                     reportRepository.save(report)
                 }
             }
-            else -> { /* USER, CHAT, WALK_SPOT: 자동 숨김 대상 아님 */ }
+            ReportType.CHAT -> {
+                // V68 — Sprint 3 BLOCKER #5 (Apple Guideline 1.2). 임계값 누적 시 자동 hide.
+                val message = chatMessageRepository.findById(report.targetId).orElse(null) ?: return
+                if (message.hiddenAt == null) {
+                    message.hide("자동 제재: 신고 ${totalCount}건 누적 (임계값: ${threshold})")
+                    chatMessageRepository.save(message)
+                    report.status = ReportStatus.RESOLVED
+                    report.resolvedAt = LocalDateTime.now()
+                    report.actionType = ReportActionType.HIDE_CHAT
+                    report.adminNote = "자동 제재: 신고 ${totalCount}건 누적 (임계값: ${threshold})"
+                    reportRepository.save(report)
+                }
+            }
+            else -> { /* USER, WALK_SPOT: 자동 숨김 대상 아님 — admin 수동 처리 */ }
         }
     }
 

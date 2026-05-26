@@ -48,11 +48,25 @@ class ChatMessage(
     val replyTo: ChatMessage? = null,
 
     @Column(name = "deleted_at")
-    var deletedAt: LocalDateTime? = null
+    var deletedAt: LocalDateTime? = null,
+
+    /** V68 — admin/자동 신고 처리 hide 시점. deletedAt (사용자 삭제) 와 의미 분리. */
+    @Column(name = "hidden_at")
+    var hiddenAt: LocalDateTime? = null,
+
+    /** V68 — hide 사유 (자동 제재 신고 누적 수 등). */
+    @Column(name = "hidden_reason", length = 64)
+    var hiddenReason: String? = null
 
 ) : BaseTimeEntity() {
     fun softDelete() {
         this.deletedAt = LocalDateTime.now()
         // DO NOT clear textContent - preserve for reply chain references and audit trail
+    }
+
+    /** V68 — admin/자동 신고 처리 hide. */
+    fun hide(reason: String) {
+        this.hiddenAt = LocalDateTime.now()
+        this.hiddenReason = reason
     }
 }
