@@ -63,6 +63,36 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
         @Param("height") height: Int
     )
 
+    /**
+     * T2 WebP backfill: rows that already have JPEG variants but are missing the WebP counterparts.
+     * Excludes GIFs (their thumbnail is a first-frame JPEG but re-encoding doesn't add value here).
+     */
+    @Query(
+        "SELECT f FROM FileAttachment f " +
+            "WHERE f.fileType = 'IMAGE' " +
+            "AND f.thumbnailUrl IS NOT NULL " +
+            "AND f.thumbnailUrlWebp IS NULL " +
+            "AND f.mimeType <> 'image/gif'"
+    )
+    fun findImagesWithJpegVariantsButNoWebp(pageable: Pageable): Page<FileAttachment>
+
+    /** T2 WebP backfill: update only the three WebP variant columns, leaving JPEG columns untouched. */
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query(
+        "UPDATE file_attachments SET " +
+            "thumbnail_url_webp = :thumbWebpUrl, medium_url_webp = :medWebpUrl, viewer_url_webp = :viewerWebpUrl, " +
+            "updated_at = CURRENT_TIMESTAMP " +
+            "WHERE id = :id",
+        nativeQuery = true
+    )
+    fun updateWebpVariantUrls(
+        @Param("id") id: Long,
+        @Param("thumbWebpUrl") thumbWebpUrl: String?,
+        @Param("medWebpUrl") medWebpUrl: String?,
+        @Param("viewerWebpUrl") viewerWebpUrl: String?
+    )
+
     /** T2: same as updateAllVariantUrls but also writes the three WebP variant columns. */
     @Modifying(clearAutomatically = true)
     @Transactional

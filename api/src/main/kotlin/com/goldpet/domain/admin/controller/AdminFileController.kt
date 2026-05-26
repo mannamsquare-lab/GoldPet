@@ -2,6 +2,7 @@ package com.goldpet.domain.admin.controller
 
 import com.goldpet.config.security.AdminUserPrincipal
 import com.goldpet.domain.file.service.FileService
+import com.goldpet.domain.file.service.WebPBackfillService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -25,7 +26,8 @@ data class AdminFileUploadResponse(
 @RequestMapping("/api/v1/admin/files")
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminFileController(
-    private val fileService: FileService
+    private val fileService: FileService,
+    private val webPBackfillService: WebPBackfillService
 ) {
     @Operation(summary = "어드민 파일 업로드")
     @PostMapping("/upload")
@@ -83,5 +85,22 @@ class AdminFileController(
         principal ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         fileService.stopBackfillRetry()
         return ResponseEntity.ok(mapOf("status" to "stopped", "flag" to FileService.RETRY_ENABLED_KEY))
+    }
+
+    @Operation(
+        summary = "WebP variant 일괄 백필",
+        description = "thumbnail_url IS NOT NULL AND thumbnail_url_webp IS NULL 인 row에 WebP variant 생성. " +
+            "dryRun=true(기본값)이면 S3/DB 쓰기 없이 통계만 반환."
+    )
+    @PostMapping("/webp-backfill")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    fun backfillWebpVariants(
+        @RequestParam(defaultValue = "true") dryRun: Boolean,
+        @RequestParam(defaultValue = "100") batchSize: Int,
+        @AuthenticationPrincipal principal: AdminUserPrincipal?
+    ): ResponseEntity<WebPBackfillService.BackfillResult> {
+        principal ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        val result = webPBackfillService.backfillBatch(dryRun = dryRun, batchSize = batchSize)
+        return ResponseEntity.ok(result)
     }
 }
