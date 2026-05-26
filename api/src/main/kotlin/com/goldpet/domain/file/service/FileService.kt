@@ -32,6 +32,10 @@ import javax.imageio.ImageIO
 private const val MAX_IMAGE_SIZE = 10 * 1024 * 1024L // 10MB
 private val ALLOWED_IMAGE_TYPES = setOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml")
 
+// V68 BLOCKER #6: EXIF GPS strip 대상 mime 화이트리스트.
+// JPEG/PNG 만 ImageIO 표준 plugin 으로 re-encode 가능. WebP/HEIC 는 별도 plugin 의존성 sprint.
+private val MIME_TYPES_WITH_METADATA_STRIP = setOf("image/jpeg", "image/png")
+
 enum class StorageBucket {
     PUBLIC,  // Profile images, pet images - directly accessible via public URL
     PRIVATE  // Chat images, community posts - requires presigned URL
@@ -188,9 +192,11 @@ class FileService(
             return ProcessedImage(originalBytes, null, null, null)
         }
 
-        // Strip EXIF GPS for JPEG
-        val strippedBytes = if (mimeType == "image/jpeg") {
-            stripExifGpsData(originalBytes)
+        // V68 BLOCKER #6: Strip EXIF GPS for JPEG/PNG (location PII 보호).
+        // PNG eXIf chunk 도 GPS 메타 보유 가능 → metadata-extractor 가 GpsDirectory 로 검출.
+        // WebP/HEIC 는 별도 sprint (TwelveMonkeys WebP writer + libheif JNI 의존성).
+        val strippedBytes = if (mimeType in MIME_TYPES_WITH_METADATA_STRIP) {
+            stripImageMetadata(originalBytes, mimeType)
         } else {
             originalBytes
         }
@@ -211,17 +217,32 @@ class FileService(
         )
     }
 
-    private fun stripExifGpsData(fileBytes: ByteArray): ByteArray {
+    /**
+     * V68 BLOCKER #6: Strip EXIF (특히 GPS) metadata from image bytes.
+     *
+     * 지원 mime:
+     *   - image/jpeg → ImageIO.write(..., "jpg") 로 re-encode (raw pixels 만 유지)
+     *   - image/png  → ImageIO.write(..., "png") 로 re-encode (eXIf/tEXt chunks 손실)
+     *
+     * 보안 우선 — GPS 메타 보유 시에만 re-encode (no-op for clean images, latency minimal).
+     * WebP/HEIC 는 ImageIO 표준 plugin 미지원 → 별도 sprint 처리.
+     */
+    private fun stripImageMetadata(fileBytes: ByteArray, mimeType: String): ByteArray {
         return try {
             val metadata = ImageMetadataReader.readMetadata(ByteArrayInputStream(fileBytes))
             val gpsDirectory = metadata.getFirstDirectoryOfType(GpsDirectory::class.java)
             if (gpsDirectory == null || gpsDirectory.isEmpty) return fileBytes
             val image: BufferedImage = ImageIO.read(ByteArrayInputStream(fileBytes)) ?: return fileBytes
             val outputStream = ByteArrayOutputStream()
-            ImageIO.write(image, "jpg", outputStream)
+            val format = when (mimeType) {
+                "image/jpeg" -> "jpg"
+                "image/png"  -> "png"
+                else -> return fileBytes
+            }
+            ImageIO.write(image, format, outputStream)
             outputStream.toByteArray()
         } catch (e: Exception) {
-            log.warn("Failed to strip EXIF data: ${e.message}")
+            log.warn("Failed to strip image metadata ($mimeType): ${e.message}")
             fileBytes
         }
     }
