@@ -209,13 +209,10 @@ class ChatRoomController(
     ): ResponseEntity<Void> {
         val oldLastReadAt = chatService.markAsRead(roomId, userDetails.id)
 
-        // Fetch messages that were newly read (between old and new lastReadAt)
-        val newlyReadMessages = if (oldLastReadAt != null) {
-            chatMessageRepository.findByChatRoomIdAndCreatedAtAfter(roomId, oldLastReadAt)
-        } else {
-            // First time reading: all messages in the room
-            chatMessageRepository.findAllByChatRoomId(roomId)
-        }
+        // V68 BLOCKER #5 — 사용자 read count 갱신은 visible 메시지만 (hidden/deleted 제외).
+        // 첫 read 시 oldLastReadAt=null → LocalDateTime.MIN 으로 통합 (모든 visible 메시지 fetch).
+        val sinceTimestamp = oldLastReadAt ?: java.time.LocalDateTime.MIN
+        val newlyReadMessages = chatMessageRepository.findVisibleByChatRoomIdAndCreatedAtAfter(roomId, sinceTimestamp)
 
         if (newlyReadMessages.isEmpty()) {
             return ResponseEntity.ok().build()

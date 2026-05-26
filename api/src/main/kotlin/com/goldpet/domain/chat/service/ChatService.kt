@@ -246,7 +246,8 @@ class ChatService(
     fun getChatHistory(roomId: Long, page: Int, size: Int): List<ChatMessage> {
         chatRoomRepository.findById(roomId).orElseThrow { NotFoundException("Chat room not found with id: $roomId") }
         val pageable = PageRequest.of(page, size)
-        return chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(roomId, pageable).content.reversed()
+        // V68 BLOCKER #5 — 사용자 노출 경로: visible 메서드 (hidden_at/deleted_at IS NULL).
+        return chatMessageRepository.findVisibleByChatRoomIdOrderByCreatedAtDesc(roomId, pageable).content.reversed()
     }
 
     @Transactional(readOnly = true)
