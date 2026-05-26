@@ -178,8 +178,40 @@
   - 🧪 **Idempotency 동시성 IT**: Spring Boot Context 1회 부팅 + 100 thread × 80ms PROCESSING window로 race 실증 검증. Testcontainers 없이 local Docker Postgres + `IntegrationTestBase` 패턴 재사용.
 
 ### Sprint 2
+- **시작일**: 2026-05-26 (Sprint 1과 동시 가동)
+- **종료 목표**: 2026-06-09 (2주)
+- **완료 commit** (3건):
+  - `8f208ec` feat(api): V67 OAuth nonce — confirmLink replay 차단 (BLOCKER #3)
+  - `dfd6a47` feat(admin): V69/V70 TOTP replay 차단 + audit userAgent + nginx IP allowlist (BLOCKER #7 보강)
+  - `f1c15dd` test(api): V66 RefreshTokenRotationIT 5 시나리오 PASS (BLOCKER #2 follow-up)
+- **완료 항목**:
+  - ✅ BLOCKER #3 **V67 OAuth nonce 전체** — 마이그레이션 + Entity + Repository + OAuthNonceService.issue/consume(atomic) + SocialLoginService 통합 (generateLinkSuggestionToken/confirmLink) + CleanupJob + 단위 5 case PASS
+  - ✅ BLOCKER #7 **V69/V70 보강** — TOTP replay 차단 (last_otp_used_at), audit userAgent 전파 (3 사이트), nginx admin IP allowlist snippet placeholder
+  - ✅ BLOCKER #2 **V66 RefreshTokenRotationIT** — 실 토큰 5 시나리오 (issueInitial / 정상 회전 / legacy compat / grace window / reuse detection) IntegrationTestBase 기반 PASS
+- **평가 v2.1 v2.3 보정 노트**:
+  - 🔍 **BLOCKER #7 대규모 보정** — AdminTotpService + AdminAuthService.setup2fa/confirm2fa/verify2fa/cancel2fa + V12 admin_audit_logs + AdminAuditService + CriticalAction AOP **모두 이미 운영 중**. 7 PD 추정 → 실제 ~2 PD.
+  - 🗑️ **Redundant 삭제** — 내가 신규 작성 시도한 AdminTotpSecret entity + Repository 삭제 (AdminUser.otpSecret 컬럼 재사용).
+  - 🔄 **V70 ALTER 패턴 전환** — 신규 테이블 → V12 기존 테이블 보강 (user_agent + 인덱스만 추가).
+- **POST-LAUNCH 강등**:
+  - BLOCKER #7 `AdminUser.otpSecret` 평문 → AES-GCM 암호화 (기존 데이터 reencryption 도구 필요)
+  - BLOCKER #7 `@CriticalAction` 적용 범위 확대 (현재 7 endpoint, 미부착은 AdminAuditInterceptor silent 적재)
+  - BLOCKER #10 `deploy-prod/nginx` IaC 작성
 
 ### Sprint 3
+- **시작일**: 2026-05-26 (Sprint 1/2와 동시 가동)
+- **종료 목표**: 2026-06-16 (3주)
+- **완료 commit** (1건):
+  - `15acafc` feat(api): V68 chat 모더레이션 자동 hide (BLOCKER #5, Apple Guideline 1.2)
+- **완료 항목**:
+  - ✅ BLOCKER #5 **V68 chat 모더레이션 BE 핵심** — ALTER chat_messages (hidden_at + hidden_reason), ChatMessage.hide() 메서드, ReportActionType.HIDE_CHAT, ReportService.checkAutoSanction CHAT 케이스 활성화
+- **평가 v2.1 v2.3 보정 노트**:
+  - 🔍 **BLOCKER #5 부분 보정** — Report 도메인 + 자동 hide 임계값 (REPORT_AUTO_HIDE_THRESHOLD, default 5) + POST/COMMENT/COURSE 자동 hide + UserBlock 운영 중. 실제 갭은 CHAT 자동 hide만 (line 138 else 분기).
+- **진행 중 / 다음 작업**:
+  - 🔄 BLOCKER #4 Walk 종료 트랜잭션 통합 + outbox 패턴 (walk + walk_photo + gold reward 단일 @Transactional + 도메인 이벤트)
+  - 📋 BLOCKER #6 EXIF 전 mime strip (JPEG/HEIC/PNG/WebP — `metadata-extractor` 라이브러리 도입)
+  - 📋 BLOCKER #5 FE 신고/차단 UI (Sprint 3 client)
+  - 📋 BLOCKER #5 ChatMessageRepository.find* 메서드 hiddenAt IS NULL 필터 보강 (회귀 검증 필요)
+  - 📋 BLOCKER #11 Walk dispose 회귀 테스트 (Flutter)
 
 ### Sprint 4
 
