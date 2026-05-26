@@ -46,7 +46,7 @@ pipeline {
                     dir('frontend') {
                         sh '''
                             OPENAPI_CONTRACT_BASE=https://api.mannamsquare.com \
-                                npx playwright test e2e/api-contract.spec.ts --reporter=line
+                                npx playwright test api-contract.spec.ts --reporter=line
                         '''
                     }
                 }
