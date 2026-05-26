@@ -7,7 +7,10 @@ import org.springframework.security.core.Authentication
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.config.security.AdminUserPrincipal
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Date
+import java.util.UUID
 import javax.crypto.SecretKey
 
 @Component
@@ -84,10 +87,21 @@ class JwtTokenProvider(
         return Jwts.builder()
             .subject(userId.toString())
             .claim("type", "REFRESH")
+            .id(UUID.randomUUID().toString())  // jti — V66 rotation token uniqueness (same userId 동시 발급 충돌 방지)
             .issuedAt(now)
             .expiration(expiryDate)
             .signWith(key)
             .compact()
+    }
+
+    /** V66: refresh token expiry parsed as LocalDateTime — RotationService persists this in user_refresh_tokens.expires_at. */
+    fun getRefreshExpiry(token: String): LocalDateTime {
+        val claims = Jwts.parser()
+            .verifyWith(key)
+            .build()
+            .parseSignedClaims(token)
+            .payload
+        return claims.expiration.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
     }
 
     fun validateRefreshToken(token: String): Boolean {

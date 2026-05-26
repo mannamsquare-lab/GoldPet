@@ -26,8 +26,10 @@ import com.goldpet.domain.auth.dto.VerifyAccountRequest
 import com.goldpet.service.auth.SocialLoginService
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.auth.service.RefreshTokenRotationService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 
 @Tag(name = "인증", description = "회원가입, 로그인, 토큰 갱신, SNS 소셜 로그인 관련 API")
@@ -37,7 +39,8 @@ class AuthController(
     private val authService: AuthService,
     private val userRepository: UserRepository,
     private val socialLoginService: SocialLoginService,
-    private val jwtTokenProvider: JwtTokenProvider
+    private val jwtTokenProvider: JwtTokenProvider,
+    private val refreshTokenRotationService: RefreshTokenRotationService,
 ) {
     @Operation(summary = "자체 회원가입")
     @PostMapping("/signup")
@@ -156,33 +159,43 @@ class AuthController(
         return ResponseEntity.ok(mapOf("success" to true))
     }
 
-    @Operation(summary = "액세스 토큰 갱신 (리프레시 토큰으로 재발급)")
+    @Operation(
+        summary = "액세스 토큰 갱신 (리프레시 토큰으로 재발급)",
+        description = "V66 rotation — 매 호출마다 새 refresh token 발급 + 기존 token DB revoke. " +
+            "이미 revoked된 token 재사용 시 401 + 해당 device chain 전체 revoke. " +
+            "동일 device_id + 5초 내 race 호출은 grace window로 허용. **X-Device-Id 헤더 권장** (없으면 'legacy-{userId}' fallback).",
+    )
     @PostMapping("/refresh")
-    fun refreshToken(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<AuthResponse> {
-        val refreshToken = request.refreshToken
-
-        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
-            throw UnauthorizedException("Invalid refresh token")
-        }
-
-        val userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken)
-        val user = userRepository.findById(userId).orElseThrow { UnauthorizedException("Invalid refresh token") }
+    fun refreshToken(
+        @Valid @RequestBody request: RefreshTokenRequest,
+        @RequestHeader(name = "X-Device-Id", required = false) deviceId: String?,
+        httpRequest: HttpServletRequest,
+    ): ResponseEntity<AuthResponse> {
+        val rotation = refreshTokenRotationService.rotate(
+            oldToken = request.refreshToken,
+            deviceId = deviceId,
+            userAgent = httpRequest.getHeader("User-Agent"),
+            ipAddress = httpRequest.remoteAddr,
+        )
+        val user = userRepository.findById(rotation.userId)
+            .orElseThrow { UnauthorizedException("User not found for rotated refresh token") }
 
         val userPrincipal = UserPrincipal.create(user)
         val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
         val newAccessToken = jwtTokenProvider.generateToken(auth)
-        val newRefreshToken = jwtTokenProvider.generateRefreshToken(user.id)
 
-        return ResponseEntity.ok(AuthResponse(
-            accessToken = newAccessToken,
-            refreshToken = newRefreshToken,
-            user = AuthResponse.UserInfo(
-                id = user.id,
-                username = user.username ?: user.oauthId,
-                nickname = user.nickname ?: "User",
-                email = user.email,
-                phoneNumber = user.phoneNumber
+        return ResponseEntity.ok(
+            AuthResponse(
+                accessToken = newAccessToken,
+                refreshToken = rotation.newRefreshToken,
+                user = AuthResponse.UserInfo(
+                    id = user.id,
+                    username = user.username ?: user.oauthId,
+                    nickname = user.nickname ?: "User",
+                    email = user.email,
+                    phoneNumber = user.phoneNumber,
+                ),
             )
-        ))
+        )
     }
 }
