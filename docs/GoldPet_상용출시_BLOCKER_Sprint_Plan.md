@@ -214,5 +214,34 @@
   - 📋 BLOCKER #11 Walk dispose 회귀 테스트 (Flutter)
 
 ### Sprint 4
+- **시작일**: 2026-05-26 (Sprint 1-3와 동시 가동, BE 사전 착수)
+- **종료 목표**: 2026-06-23 (4주)
+- **완료 commit** (3건, Sprint 3/4 경계 — EXIF는 Sprint 3 BLOCKER 이지만 함께 정리):
+  - `8ab11b6` feat(api): EXIF GPS strip JPEG → JPEG+PNG 확장 (Sprint 3 BLOCKER #6 부분)
+  - `d6aea23` feat(api): FCM invalid token 자동 cleanup (BLOCKER #8 BE)
+  - `f66d1fb` docs: Sprint 2/3 retrospective + 평가 v2.1 v2.3 보정 노트
+- **완료 항목**:
+  - ✅ BLOCKER #6 **EXIF GPS strip BE 부분** — JPEG only → JPEG+PNG 확장 (stripImageMetadata + MIME_TYPES_WITH_METADATA_STRIP 화이트리스트). HEIC 는 ALLOWED 미포함으로 차단됨 (안전). WebP/HEIC re-encode 는 POST-LAUNCH (TwelveMonkeys/libheif 의존성).
+  - ✅ BLOCKER #8 **FCM invalid token cleanup BE** — FcmSendResult sealed + sendDetailed/sendToMultipleDetailed (backward compat) + FirebaseFcmPushSender MessagingErrorCode 화이트리스트 (UNREGISTERED/INVALID_ARGUMENT/SENDER_ID_MISMATCH) + UserDeviceRepository.deactivateByFcmToken + NotificationService.createNotification 자동 cleanup.
+- **평가 v2.1 v2.4 누적 보정 노트** (BE BLOCKER 13건 중 8건 완료):
+  - 🔍 **BLOCKER #4 누락 분석 발견** — Walk 종료 트랜잭션 이미 단일 `@Transactional` (WalkService.createWalk line 91) + `WalkCompletedEvent` + `@TransactionalEventListener(phase=AFTER_COMMIT, propagation=REQUIRES_NEW)` outbox-like 패턴 운영 중 (CourseWalkEventListener). 명시적 atomicity 코멘트 line 179 "골드 실패 시 walk 도 롤백". 평가 v2.1 → BLOCKER 분류 부정확.
+  - 🔍 **누적 평가 보정**: BLOCKER #4/#5/#7 모두 부분 또는 전체 이미 운영 — 실제 BE 작업 ~30 PD 추정이 ~10 PD 로 절감 (기존 인프라 재활용).
+- **잔여 작업 (Sprint 4 후반 + Sprint 2/3 client 합류)**:
+  - 📋 BLOCKER #2 V66 client — FE axios refresh rotation + Flutter `auth_service` grace window mutex + X-Device-Id 헤더 송신
+  - 📋 BLOCKER #5 FE 채팅 신고/차단 UI + ChatMessageRepository hiddenAt 필터 보강
+  - 📋 BLOCKER #6 WebP/HEIC EXIF strip (POST-LAUNCH 강등 — TwelveMonkeys/libheif JNI)
+  - 📋 BLOCKER #8 AdminMarketingService caller migration (현재 send/sendToMultiple 사용 추정) + Flutter onTokenRefresh sync 검증
+  - 📋 BLOCKER #11 Walk dispose 회귀 테스트 (Flutter)
+  - 📋 BLOCKER #12 골드 잔액 multi-device polling 3s + ETag (BE + FE)
+  - 📋 BLOCKER #13 산책 종료 multi-device push 검증 (BE + Flutter)
+- **외부 작업 대기** (담당자 별도 진행):
+  - ⏳ BLOCKER #9 Sentry SDK 4 프로젝트 (DSN 발급 후 SDK 통합)
+  - ⏳ BLOCKER #10 BCP runbook + RDS PITR 검증
+- **세션 종합** (2026-05-26 단일 세션 작업 회고):
+  - 📊 **11 commits push** (`df6b02b..d6aea23`)
+  - 📊 **마이그레이션 V65-V70 작성 + 적용** (V65 gold_idempotency_keys, V66 user_refresh_tokens, V67 oauth_nonces, V68 chat_messages.hidden_at ALTER, V69 admin_users.last_otp_used_at ALTER, V70 admin_audit_logs.user_agent ALTER)
+  - 📊 **단위 테스트 19 케이스 PASS** (IdempotencyServiceTest 7 + RefreshTokenRotationServiceTest 7 + OAuthNonceServiceTest 5)
+  - 📊 **통합 테스트 7 케이스 PASS** (IdempotencyConcurrencyIT 2 + RefreshTokenRotationIT 5)
+  - 📊 **Sprint 0 산출물 5종** (ADR-001, Sentry runbook, Grafana runbook, post-launch roadmap, corporate tracker)
 
 ### Sprint 5-6 (Closed Test)
