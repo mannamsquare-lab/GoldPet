@@ -69,7 +69,8 @@ class CriticalActionAuditAspect(
                 ipAddress = request?.remoteAddr,
                 requestPath = request?.requestURI,
                 requestMethod = request?.method,
-                responseStatus = responseStatus
+                responseStatus = responseStatus,
+                userAgent = request?.getHeader("User-Agent")
             )
         } catch (e: Exception) {
             log.error("Critical audit logging failed for action={}, adminUserId={}", action, adminUserId, e)

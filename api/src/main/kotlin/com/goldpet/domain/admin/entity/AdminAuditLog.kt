@@ -37,6 +37,10 @@ class AdminAuditLog(
     @Column(columnDefinition = "TEXT")
     val details: String? = null,
 
+    /** V70 — Sprint 2 BLOCKER #7. 운영자 브라우저/CLI 식별. */
+    @Column(name = "user_agent", length = 500)
+    val userAgent: String? = null,
+
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()
 )

@@ -24,7 +24,8 @@ class AdminAuditService(
         requestPath: String? = null,
         requestMethod: String? = null,
         responseStatus: Int? = null,
-        details: String? = null
+        details: String? = null,
+        userAgent: String? = null
     ) {
         auditLogRepository.save(
             AdminAuditLog(
@@ -36,7 +37,8 @@ class AdminAuditService(
                 requestPath = requestPath,
                 requestMethod = requestMethod,
                 responseStatus = responseStatus,
-                details = details
+                details = details,
+                userAgent = userAgent
             )
         )
     }
@@ -54,7 +56,8 @@ class AdminAuditService(
         ipAddress: String? = null,
         requestPath: String? = null,
         requestMethod: String? = null,
-        responseStatus: Int? = null
+        responseStatus: Int? = null,
+        userAgent: String? = null
     ) {
         log(
             adminUserId = adminUserId,
@@ -65,7 +68,8 @@ class AdminAuditService(
             requestPath = requestPath,
             requestMethod = requestMethod,
             responseStatus = responseStatus,
-            details = AdminAuditDetailsCodec.encode(details)
+            details = AdminAuditDetailsCodec.encode(details),
+            userAgent = userAgent
         )
     }
 

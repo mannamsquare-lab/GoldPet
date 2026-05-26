@@ -10,6 +10,7 @@ import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
 import java.time.LocalDateTime
 
 @Service
@@ -22,6 +23,9 @@ class AdminAuthService(
 
     companion object {
         val ADMIN_PASSWORD_REGEX = Regex("^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#\$%^&*()_+\\-=\\[\\]{}|;:',.<>?/~`]).{8,}$")
+
+        /** V69 — TOTP code 재사용 차단 window (Google Authenticator 30s step + 약간의 여유). */
+        const val TOTP_REPLAY_WINDOW_SECONDS: Long = 30
     }
 
     @Transactional
@@ -80,6 +84,14 @@ class AdminAuthService(
         if (!adminTotpService.validateCode(adminUser.otpSecret!!, code)) {
             throw BadCredentialsException("Invalid 2FA Code")
         }
+
+        // V69 — replay 차단. 동일 30s window 코드 재사용 거부 (탈취된 OTP screenshot 재사용 방지).
+        val now = LocalDateTime.now()
+        val lastUsed = adminUser.lastOtpUsedAt
+        if (lastUsed != null && Duration.between(lastUsed, now).seconds < TOTP_REPLAY_WINDOW_SECONDS) {
+            throw BadCredentialsException("2FA Code already used recently — wait for next code")
+        }
+        adminUser.lastOtpUsedAt = now
 
         return Pair(generateToken(adminUser), adminUser)
     }

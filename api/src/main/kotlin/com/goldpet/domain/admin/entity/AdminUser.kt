@@ -39,6 +39,10 @@ class AdminUser(
 
     var otpSecret: String? = null,
 
+    /** V69 — TOTP replay 보호. 동일 30s window 코드 재사용 차단. */
+    @Column(name = "last_otp_used_at")
+    var lastOtpUsedAt: LocalDateTime? = null,
+
     @Column(nullable = false)
     var isActive: Boolean = true,
 

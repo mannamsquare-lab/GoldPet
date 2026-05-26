@@ -43,7 +43,8 @@ class AdminAuditInterceptor(
                 ipAddress = request.remoteAddr,
                 requestPath = path,
                 requestMethod = request.method,
-                responseStatus = response.status
+                responseStatus = response.status,
+                userAgent = request.getHeader("User-Agent")
             )
         } catch (e: Exception) {
             log.warn("Audit logging failed: ${e.message}")
