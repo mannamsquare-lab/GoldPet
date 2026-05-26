@@ -7,6 +7,7 @@ import com.goldpet.domain.auth.dto.LinkSuggestionInfo
 import com.goldpet.domain.auth.entity.UserAuthProvider
 import com.goldpet.domain.auth.exception.AccountStatusException
 import com.goldpet.domain.auth.repository.UserAuthProviderRepository
+import com.goldpet.domain.auth.service.OAuthNonceService
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.user.entity.User
@@ -42,6 +43,7 @@ class SocialLoginService(
     private val jwtTokenProvider: JwtTokenProvider,
     private val userAuthProviderRepository: UserAuthProviderRepository,
     private val systemSettingService: SystemSettingService,
+    private val oauthNonceService: OAuthNonceService,
     @Value("\${app.jwt.secret}")
     private val jwtSecret: String
 ) {
@@ -418,6 +420,13 @@ class SocialLoginService(
             throw BadRequestException("Invalid token type")
         }
 
+        // V67: nonce atomic consume — 1회용 검증. pre-V67 token (nonce 없음) 도 거부 (replay 차단 우선).
+        val nonceClaim = claims["nonce"] as? String
+            ?: throw BadRequestException("Link token missing nonce — re-initiate link flow")
+        if (!oauthNonceService.consume(nonceClaim)) {
+            throw BadRequestException("Link token already used or expired — replay rejected")
+        }
+
         val userId = claims.subject.toLong()
         val newProvider = claims["newProvider"] as String
         val newProviderId = claims["newProviderId"] as String
@@ -478,6 +487,8 @@ class SocialLoginService(
     }
 
     private fun generateLinkSuggestionToken(userId: Long, newProvider: String, newProviderId: String): String {
+        // V67: nonce 발급 — confirmLink 시 1회용 검증으로 replay 차단.
+        val nonce = oauthNonceService.issue(userId, "LINK_SUGGESTION", ttlSeconds = linkSuggestionTtlMs / 1000)
         val now = Date()
         val expiry = Date(now.time + linkSuggestionTtlMs)
         return Jwts.builder()
@@ -485,6 +496,7 @@ class SocialLoginService(
             .claim("type", "LINK_SUGGESTION")
             .claim("newProvider", newProvider)
             .claim("newProviderId", newProviderId)
+            .claim("nonce", nonce.toString())
             .issuedAt(now)
             .expiration(expiry)
             .signWith(tempKey)
