@@ -4,6 +4,7 @@ import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.gold.dto.*
 import com.goldpet.domain.gold.entity.TransactionType
 import com.goldpet.domain.gold.service.GoldService
+import com.goldpet.domain.gold.service.IdempotencyService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -17,7 +18,8 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v1/gold")
 class GoldController(
-    private val goldService: GoldService
+    private val goldService: GoldService,
+    private val idempotencyService: IdempotencyService,
 ) {
     @Operation(summary = "내 골드 잔액")
     @GetMapping("/balance")
@@ -41,22 +43,53 @@ class GoldController(
         return ResponseEntity.ok(goldService.getTransactions(principal.id, pageable, type))
     }
 
-    @Operation(summary = "골드 충전", description = "IAP 후 골드 지급 처리")
+    @Operation(
+        summary = "골드 충전",
+        description = "IAP 후 골드 지급 처리. **Idempotency-Key 헤더 필수** — UUID 권장, 동일 key 재요청 시 저장된 응답 반환.",
+    )
     @PostMapping("/charge")
     fun chargeGold(
         @AuthenticationPrincipal principal: UserPrincipal,
-        @RequestBody request: ChargeRequest
+        @RequestHeader("Idempotency-Key") idempotencyKey: String,
+        @RequestBody request: ChargeRequest,
     ): ResponseEntity<TransactionResponse> {
-        return ResponseEntity.ok(goldService.chargeGold(principal.id, request))
+        val hash = idempotencyService.hashRequest(principal.id, "POST /api/v1/gold/charge", request)
+        val response = idempotencyService.execute(
+            key = idempotencyKey,
+            userId = principal.id,
+            requestHash = hash,
+            responseType = TransactionResponse::class.java,
+        ) {
+            val tx = goldService.chargeGold(principal.id, request)
+            tx to tx.id
+        }
+        return ResponseEntity.ok(response)
     }
 
-    @Operation(summary = "골드 사용")
+    @Operation(
+        summary = "골드 사용",
+        description = "**Idempotency-Key 헤더 권장** (옵션). 헤더 없으면 idempotency 보호 없음 (네트워크 retry 시 중복 차감 위험).",
+    )
     @PostMapping("/spend")
     fun spendGold(
         @AuthenticationPrincipal principal: UserPrincipal,
-        @RequestBody request: SpendRequest
+        @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?,
+        @RequestBody request: SpendRequest,
     ): ResponseEntity<TransactionResponse> {
-        return ResponseEntity.ok(goldService.spendGold(principal.id, request))
+        if (idempotencyKey.isNullOrBlank()) {
+            return ResponseEntity.ok(goldService.spendGold(principal.id, request))
+        }
+        val hash = idempotencyService.hashRequest(principal.id, "POST /api/v1/gold/spend", request)
+        val response = idempotencyService.execute(
+            key = idempotencyKey,
+            userId = principal.id,
+            requestHash = hash,
+            responseType = TransactionResponse::class.java,
+        ) {
+            val tx = goldService.spendGold(principal.id, request)
+            tx to tx.id
+        }
+        return ResponseEntity.ok(response)
     }
 
     @Operation(summary = "골드 환불", description = "SPEND 거래에 대한 환불 처리")
