@@ -65,7 +65,7 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
 
     /**
      * T2 WebP backfill: rows that already have JPEG variants but are missing the WebP counterparts.
-     * Excludes GIFs (their thumbnail is a first-frame JPEG but re-encoding doesn't add value here).
+     * Excludes GIFs (first-frame JPEG, no value in re-encoding) and SVGs (vector, can't raster).
      */
     @Query(
         "SELECT f FROM FileAttachment f " +
@@ -73,7 +73,9 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
             "AND f.thumbnailUrl IS NOT NULL " +
             "AND f.thumbnailUrl <> '' " +
             "AND f.thumbnailUrlWebp IS NULL " +
-            "AND f.mimeType <> 'image/gif'"
+            "AND f.mimeType <> 'image/gif' " +
+            "AND f.mimeType <> 'image/svg+xml' " +
+            "AND LOWER(f.thumbnailUrl) NOT LIKE '%.svg'"
     )
     fun findImagesWithJpegVariantsButNoWebp(pageable: Pageable): Page<FileAttachment>
 

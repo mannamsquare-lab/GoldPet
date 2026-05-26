@@ -228,4 +228,13 @@ class WebPBackfillServiceTest {
             eq("$publicEndpoint/goldpet-public/99_viewer.webp")
         )
     }
+
+    @Test
+    fun `convertJpegToWebp returns null for SVG URL — no S3 download or upload`() {
+        // Repository query에서 이미 제외되지만 service 단 안전망 검증.
+        val result = service.convertJpegToWebp("http://s3.test/goldpet-public/abc.svg")
+        assertEquals(null, result)
+        verify(amazonS3, never()).getObject(any<String>(), any<String>())
+        verify(amazonS3, never()).putObject(any<String>(), any<String>(), any(), any())
+    }
 }

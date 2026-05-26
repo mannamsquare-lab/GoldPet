@@ -129,6 +129,12 @@ class WebPBackfillService(
      * Returns null if the URL cannot be parsed or the image cannot be decoded.
      */
     internal fun convertJpegToWebp(variantUrl: String): String? {
+        // SVG는 벡터 포맷 — raster WebP로 변환 의미 없음.
+        // Repository query에서 이미 제외하지만 service 단에서도 안전망.
+        if (variantUrl.endsWith(".svg", ignoreCase = true)) {
+            log.debug("WebP backfill: skipping SVG variant url='{}'", variantUrl)
+            return null
+        }
         val ref = parseVariantUrl(variantUrl) ?: run {
             log.warn("WebP backfill: cannot parse variant URL '{}'", variantUrl)
             return null
