@@ -14,7 +14,7 @@
  *
  * Jenkins stage:
  *   OPENAPI_CONTRACT_BASE=https://api.mannamsquare.com \
- *   npx playwright test tests/e2e/api-contract.spec.ts
+ *   npx playwright test api-contract.spec.ts
  */
 
 import { test, expect, request } from '@playwright/test';
@@ -29,7 +29,8 @@ test.describe('OpenAPI contract', () => {
   test.skip(!BASE, 'OPENAPI_CONTRACT_BASE not set — skipping live contract checks');
 
   test('live spec contains every schema name and operationId we ship with', async () => {
-    const specPath = path.join(__dirname, '..', '..', 'api', 'openapi.json');
+    // __dirname = frontend/tests/e2e/ → ../../../api/openapi.json (3 단계 위, 2026-05-26 location 이동 후 보정)
+    const specPath = path.join(__dirname, '..', '..', '..', 'api', 'openapi.json');
     const localRaw = fs.readFileSync(specPath, 'utf-8');
     const local = JSON.parse(localRaw) as {
       components?: { schemas?: Record<string, unknown> };
