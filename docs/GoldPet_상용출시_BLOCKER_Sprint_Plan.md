@@ -155,7 +155,27 @@
 - **학습 / 회고**: TBD (Sprint 0 종료 후 작성)
 
 ### Sprint 1
-(이하 동일)
+- **시작일**: 2026-05-26 (Sprint 0 동시 가동 — 외부 작업 대기 중 코드 작업 즉시 진행)
+- **종료 목표**: 2026-06-02 (1주)
+- **완료 commit** (3건):
+  - `2b8e6a3` feat(api): V65 골드 idempotency + 상용 출시 평가 v2.1 + Sprint 0 산출물
+  - `1420c01` test(api): V65 동시성 IT 2 시나리오 PASS + OpenAPI 재생성
+  - `d1e4c33` feat(api): V66 JWT refresh token rotation + reuse detection (BLOCKER #2 BE 사전 착수)
+- **완료 항목**:
+  - ✅ BLOCKER #1 **V65 Idempotency 전체** — 마이그레이션 + Entity + Repository + IdempotencyService + GoldController.charge/spend 통합 + Cleanup Job + 단위 7 case PASS + 동시성 IT 2 시나리오 PASS (100 thread 1 key + 50 keys × 2 thread)
+  - ✅ BLOCKER #2 **V66 JWT rotation BE 핵심** — 마이그레이션 + Entity + Repository + JwtTokenProvider 확장 + RotationService 4 경로 알고리즘 (legacy/정상/grace/reuse) + AuthController.refreshToken 통합 + Cleanup Job + 단위 7 case PASS
+  - ✅ OpenAPI 재생성 + frontend/admin `schema.d.ts` typegen — Idempotency-Key + X-Device-Id 헤더 명세 drift 차단
+- **외부 작업 대기** (담당자 별도 진행):
+  - ⏳ BLOCKER #9 Sentry SDK 4 프로젝트 — DSN 발급 후 SDK 통합 (`runbook_sentry_setup.md` 가이드 작성 완료)
+  - ⏳ BLOCKER #10 BCP runbook + RDS PITR 검증
+- **Sprint 2로 이관**:
+  - BLOCKER #2 client 측 작업 — FE axios refresh rotation + Flutter `auth_service` grace window mutex
+  - V66 login/signup 4 위치 initial DB insert — Flutter X-Device-Id 헤더 송신과 동시 진행
+  - V66 통합 테스트 — 실 토큰 발급 → rotate → reuse 시도 전체 흐름
+- **학습 / 회고**:
+  - 🔍 **마이그레이션 번호 충돌**: 원안 V63/V64는 이미 사용 중 (`Place_Version_Column`, `File_Attachments_WebP_Variants`) → V65부터 시프트. v2.1 → v2.2 patch 통해 평가 + Sprint Plan 매핑 보정. **교훈**: 마이그레이션 plan 시 `ls db/migration/` 사전 확인 의무.
+  - 🛡️ **V66 lazy init 패턴**: pre-V66 token이 DB row 없어도 첫 회전 시 자동 생성. Sprint 2 client 작업이 늦어져도 BE 출시 안전 (no breaking change). backward compat 디자인이 critical path 의존성 끊음.
+  - 🧪 **Idempotency 동시성 IT**: Spring Boot Context 1회 부팅 + 100 thread × 80ms PROCESSING window로 race 실증 검증. Testcontainers 없이 local Docker Postgres + `IntegrationTestBase` 패턴 재사용.
 
 ### Sprint 2
 
