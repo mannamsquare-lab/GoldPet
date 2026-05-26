@@ -195,6 +195,16 @@ class AdminReportService(
                 course.isPublished = false
                 walkCourseRepository.save(course)
             }
+            ReportActionType.HIDE_CHAT -> {
+                // V68 — Sprint 3 BLOCKER #5. ReportService.checkAutoSanction 자동 처리 + admin 수동 처리 모두 지원.
+                if (report.type != ReportType.CHAT) throw BadRequestException("CHAT 신고만 메시지 숨김 가능")
+                val message = chatMessageRepository.findById(report.targetId)
+                    .orElseThrow { NotFoundException("메시지를 찾을 수 없습니다: ${report.targetId}") }
+                if (message.hiddenAt == null) {
+                    message.hide("admin 수동 hide (신고 처리)")
+                    chatMessageRepository.save(message)
+                }
+            }
         }
     }
 
