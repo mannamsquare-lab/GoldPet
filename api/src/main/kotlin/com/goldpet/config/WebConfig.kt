@@ -2,7 +2,10 @@ package com.goldpet.config
 
 import com.goldpet.config.security.AdminAuditInterceptor
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.web.servlet.FilterRegistrationBean
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.web.filter.ShallowEtagHeaderFilter
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
@@ -26,5 +29,23 @@ class WebConfig(
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(adminAuditInterceptor)
             .addPathPatterns("/api/v1/admin/**")
+    }
+
+    /**
+     * Sprint 4 BLOCKER #12 — 골드 잔액 multi-device polling 효율화.
+     *
+     * `GET /api/v1/gold/balance` 응답에 ETag (response body byte hash) 자동 부여.
+     * 클라이언트가 `If-None-Match` 헤더로 재요청 시 body 동일하면 304 Not Modified 응답.
+     * Multi-device polling 3s 시나리오에서 잔액 변경 없을 경우 RDS read 회피 불가하지만
+     * 네트워크/직렬화 비용 절감 (응답 byte 0 + Sentry/Grafana 측정 가능).
+     *
+     * 적용 범위: `/api/v1/gold/*` 만 — 다른 endpoint 영향 격리 (안전 우선).
+     */
+    @Bean
+    fun goldEtagFilter(): FilterRegistrationBean<ShallowEtagHeaderFilter> {
+        val bean = FilterRegistrationBean(ShallowEtagHeaderFilter())
+        bean.addUrlPatterns("/api/v1/gold/*")
+        bean.setName("goldEtagFilter")
+        return bean
     }
 }
