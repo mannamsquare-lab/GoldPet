@@ -1715,6 +1715,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/files/webp-backfill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * WebP variant 일괄 백필
+         * @description thumbnail_url IS NOT NULL AND thumbnail_url_webp IS NULL 인 row에 WebP variant 생성. dryRun=true(기본값)이면 S3/DB 쓰기 없이 통계만 반환.
+         */
+        post: operations["backfillWebpVariants"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/files/upload": {
         parameters: {
             query?: never;
@@ -4851,6 +4871,8 @@ export interface components {
             profileImageUrlThumbnail?: string;
             profileImageUrlsViewer?: string[];
             profileImageUrlsThumbnail?: string[];
+            profileImageUrlThumbnailWebp?: string;
+            profileImageUrlsThumbnailWebp?: string[];
             name?: string;
             birthDate?: string;
             phoneNumber?: string;
@@ -5132,6 +5154,7 @@ export interface components {
             imageUrlsThumbnail?: string[];
             imageUrlsMedium?: string[];
             imageUrlsViewer?: string[];
+            imageUrlsThumbnailWebp?: string[];
             comments: components["schemas"]["CommunityCommentResponse"][];
             isMine: boolean;
         };
@@ -5621,6 +5644,9 @@ export interface components {
             thumbnailUrl?: string;
             mediumUrl?: string;
             viewerUrl?: string;
+            thumbnailUrlWebp?: string;
+            mediumUrlWebp?: string;
+            viewerUrlWebp?: string;
             fileType: string;
             mimeType: string;
             originalFileName?: string;
@@ -5644,6 +5670,9 @@ export interface components {
             thumbnailUrl?: string;
             mediumUrl?: string;
             viewerUrl?: string;
+            thumbnailUrlWebp?: string;
+            mediumUrlWebp?: string;
+            viewerUrlWebp?: string;
             fileType: string;
             mimeType: string;
             originalFileName?: string;
@@ -6159,6 +6188,19 @@ export interface components {
             isRepeatable?: boolean;
             repeatCycle?: string;
         };
+        BackfillResult: {
+            /** Format: int64 */
+            total: number;
+            /** Format: int32 */
+            eligible: number;
+            /** Format: int32 */
+            processed: number;
+            /** Format: int32 */
+            succeeded: number;
+            /** Format: int32 */
+            failed: number;
+            mismatches: number[];
+        };
         AdminFileUploadResponse: {
             /** Format: int64 */
             id: number;
@@ -6166,18 +6208,6 @@ export interface components {
             thumbnailUrl?: string;
             mediumUrl?: string;
             originalFileName?: string;
-        };
-        BackfillResult: {
-            /** Format: int64 */
-            total: number;
-            /** Format: int32 */
-            processed: number;
-            /** Format: int32 */
-            skipped: number;
-            /** Format: int32 */
-            failed: number;
-            /** Format: int64 */
-            durationMs: number;
         };
         CreateEmoticonRequest: {
             name: string;
@@ -6445,15 +6475,15 @@ export interface components {
             rankings: components["schemas"]["WalkRankingResponse"][];
         };
         PageWalkResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WalkResponse"][];
@@ -6464,11 +6494,11 @@ export interface components {
         };
         PageableObject: {
             /** Format: int32 */
-            pageNumber?: number;
-            unpaged?: boolean;
-            /** Format: int32 */
             pageSize?: number;
             paged?: boolean;
+            /** Format: int32 */
+            pageNumber?: number;
+            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"];
@@ -6479,15 +6509,15 @@ export interface components {
             empty?: boolean;
         };
         PageWalkPhotoResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WalkPhotoResponse"][];
@@ -6620,15 +6650,15 @@ export interface components {
             createdAt?: string;
         };
         PageNotificationResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["NotificationResponse"][];
@@ -6677,6 +6707,8 @@ export interface components {
             profileImages: string[];
             profileImagesThumbnail?: string[];
             profileImagesViewer?: string[];
+            profileImageUrlThumbnailWebp?: string;
+            profileImagesThumbnailWebp?: string[];
             ownerGender?: string;
             /** Format: int32 */
             ownerAge?: number;
@@ -6696,6 +6728,7 @@ export interface components {
             images: string[];
             imagesThumbnail?: string[];
             imagesViewer?: string[];
+            imagesThumbnailWebp?: string[];
             /** Format: double */
             distance: number;
             status: string;
@@ -6720,6 +6753,7 @@ export interface components {
             petProfileImageUrls: string[];
             petProfileImageUrlsThumbnail?: string[];
             petProfileImageUrlsViewer?: string[];
+            petProfileImageUrlsThumbnailWebp?: string[];
         };
         HomeResponse: {
             recommendations: components["schemas"]["FriendResponse"][];
@@ -6744,6 +6778,7 @@ export interface components {
             locationText?: string;
             petProfileImageUrl?: string;
             petProfileImageUrlThumbnail?: string;
+            petProfileImageUrlThumbnailWebp?: string;
         };
         LocationDto: {
             /** Format: double */
@@ -6757,15 +6792,15 @@ export interface components {
             count: number;
         };
         PageStoolAnalysisResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StoolAnalysisResponse"][];
@@ -6790,15 +6825,15 @@ export interface components {
             count: number;
         };
         PageTransactionResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TransactionResponse"][];
@@ -6853,15 +6888,15 @@ export interface components {
             acquiredAt?: string;
         };
         PageFriendResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FriendResponse"][];
@@ -6874,15 +6909,15 @@ export interface components {
             url: string;
         };
         PageCourseCommentResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseCommentResponse"][];
@@ -6892,15 +6927,15 @@ export interface components {
             empty?: boolean;
         };
         PageCourseResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseResponse"][];
@@ -6910,15 +6945,15 @@ export interface components {
             empty?: boolean;
         };
         PageCommunityPostResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CommunityPostResponse"][];
@@ -6928,15 +6963,15 @@ export interface components {
             empty?: boolean;
         };
         PageCommunityCommentResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CommunityCommentResponse"][];
@@ -6954,15 +6989,15 @@ export interface components {
             postCount: number;
         };
         PagePlaceResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PlaceResponse"][];
@@ -6972,15 +7007,15 @@ export interface components {
             empty?: boolean;
         };
         PageCheckInResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CheckInResponse"][];
@@ -7017,15 +7052,15 @@ export interface components {
             presetId?: string;
         };
         PageAIProfileRequestResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AIProfileRequestResponse"][];
@@ -7035,15 +7070,15 @@ export interface components {
             empty?: boolean;
         };
         PageWalkAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WalkAdminResponse"][];
@@ -7163,15 +7198,15 @@ export interface components {
             walkCount: number;
         };
         PageUserListItemResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserListItemResponse"][];
@@ -7273,15 +7308,15 @@ export interface components {
             createdAt: string;
         };
         PageAdminAuditLog: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AdminAuditLog"][];
@@ -7305,15 +7340,15 @@ export interface components {
             createdAt?: string;
         };
         PageAdminStoolAnalysisItem: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AdminStoolAnalysisItem"][];
@@ -7341,15 +7376,15 @@ export interface components {
             estimatedCostKrw: number;
         };
         PageReportAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ReportAdminResponse"][];
@@ -7423,15 +7458,15 @@ export interface components {
             isActive: boolean;
         };
         PageTransactionAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TransactionAdminResponse"][];
@@ -7534,15 +7569,15 @@ export interface components {
             createdAt?: string;
         };
         PageCourseListItemResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseListItemResponse"][];
@@ -7610,15 +7645,15 @@ export interface components {
             orderIndex: number;
         };
         PagePostListItemResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PostListItemResponse"][];
@@ -7657,15 +7692,15 @@ export interface components {
             createdAt: string;
         };
         PageChatRoomAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ChatRoomAdminResponse"][];
@@ -7687,15 +7722,15 @@ export interface components {
             createdAt: string;
         };
         PageChatMessageAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ChatMessageAdminResponse"][];
@@ -7746,15 +7781,15 @@ export interface components {
             count: number;
         };
         PageAIRequestAdminResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AIRequestAdminResponse"][];
@@ -11040,6 +11075,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BadgeAdminResponse"];
+                };
+            };
+        };
+    };
+    backfillWebpVariants: {
+        parameters: {
+            query?: {
+                dryRun?: boolean;
+                batchSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BackfillResult"];
                 };
             };
         };
