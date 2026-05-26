@@ -108,19 +108,31 @@ class NotificationService(
             }
             val activeDevices = userDeviceRepository.findAllByUserIdAndIsActiveTrue(request.userId)
             val fcmTokens = activeDevices.mapNotNull { it.fcmToken }.distinct()
+            // Sprint 4 BLOCKER #8 — detailed 메서드로 invalid token 추출 후 deactivate.
             when {
-                fcmTokens.size == 1 -> fcmPushSender.send(
-                    fcmToken = fcmTokens.first(),
-                    title = request.title,
-                    message = request.message,
-                    data = pushData
-                )
-                fcmTokens.size > 1 -> fcmPushSender.sendToMultiple(
-                    fcmTokens = fcmTokens,
-                    title = request.title,
-                    message = request.message,
-                    data = pushData
-                )
+                fcmTokens.size == 1 -> {
+                    val token = fcmTokens.first()
+                    val result = fcmPushSender.sendDetailed(
+                        fcmToken = token,
+                        title = request.title,
+                        message = request.message,
+                        data = pushData,
+                    )
+                    if (result is FcmSendResult.InvalidToken) {
+                        userDeviceRepository.deactivateByFcmToken(token)
+                    }
+                }
+                fcmTokens.size > 1 -> {
+                    val multicast = fcmPushSender.sendToMultipleDetailed(
+                        fcmTokens = fcmTokens,
+                        title = request.title,
+                        message = request.message,
+                        data = pushData,
+                    )
+                    multicast.invalidTokens.forEach { invalid ->
+                        userDeviceRepository.deactivateByFcmToken(invalid)
+                    }
+                }
                 // No tokens: skip push, notification already saved
             }
         }

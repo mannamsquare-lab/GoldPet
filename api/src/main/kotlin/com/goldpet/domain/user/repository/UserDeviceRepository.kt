@@ -25,6 +25,11 @@ interface UserDeviceRepository : JpaRepository<UserDevice, Long> {
     @Query("UPDATE UserDevice d SET d.isActive = false WHERE d.fcmToken = :fcmToken AND d.user.id != :userId AND d.isActive = true")
     fun deactivateByFcmTokenExcludingUser(@Param("fcmToken") fcmToken: String?, @Param("userId") userId: Long): Int
 
+    /** Sprint 4 BLOCKER #8 — FCM UNREGISTERED/INVALID_ARGUMENT 신호 받은 무효 토큰 cleanup. */
+    @Modifying
+    @Query("UPDATE UserDevice d SET d.isActive = false WHERE d.fcmToken = :fcmToken AND d.isActive = true")
+    fun deactivateByFcmToken(@Param("fcmToken") fcmToken: String): Int
+
     @Modifying
     @Query("DELETE FROM UserDevice d WHERE d.isActive = false AND d.updatedAt < :cutoffDate")
     fun deleteStaleDevices(@Param("cutoffDate") cutoffDate: LocalDateTime): Int
