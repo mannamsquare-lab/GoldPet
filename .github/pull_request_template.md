@@ -22,3 +22,11 @@
 - [ ] 신규 React 컴포넌트에 `data-testid` 부여
 - [ ] 기존 컴포넌트 수정 시 `data-testid` 보존
 - [ ] selector drift 발생 시 24h 내 spec 수정 SLA
+
+## OpenAPI drift 체크
+<!-- REQUIRED when changing API DTO/controller signature. Jenkins verifyOpenApiSpec gate blocks merge if mismatched. -->
+- [ ] N/A — API DTO/controller 시그니처 변경 없음
+- [ ] `cd api && ./gradlew generateOpenApiDocs` 실행 후 `api/openapi.json` 재생성 commit
+- [ ] `cd frontend && npm run generate:api` 실행 후 `frontend/src/api/schema.d.ts` 재생성 commit
+- [ ] `cd admin && npm run generate:api` 실행 후 `admin/src/api/schema.d.ts` 재생성 commit
+- [ ] (선택) drift 발생 시 `cd api && ./gradlew verifyOpenApiSpec` 로컬 통과 확인
