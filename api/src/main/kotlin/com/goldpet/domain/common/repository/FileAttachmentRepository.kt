@@ -71,6 +71,7 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
         "SELECT f FROM FileAttachment f " +
             "WHERE f.fileType = 'IMAGE' " +
             "AND f.thumbnailUrl IS NOT NULL " +
+            "AND f.thumbnailUrl <> '' " +
             "AND f.thumbnailUrlWebp IS NULL " +
             "AND f.mimeType <> 'image/gif'"
     )

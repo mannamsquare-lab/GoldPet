@@ -165,6 +165,42 @@ class WebPBackfillServiceTest {
     }
 
     @Test
+    fun `blank thumbnail_url causes mismatch — no S3 call and no DB update`() {
+        // Simulates a stuck row whose thumbnail_url was stored as an empty string.
+        // The service should detect null thumbWebpUrl and skip updateWebpVariantUrls,
+        // preventing this row from looping forever in the next batch query.
+        val row = fakeRow(id = 60L, thumbUrl = "")
+        whenever(fileAttachmentRepository.findImagesWithJpegVariantsButNoWebp(any()))
+            .thenReturn(PageImpl(listOf(row), Pageable.unpaged(), 1L))
+
+        val result = service.backfillBatch(dryRun = false, batchSize = 100)
+
+        assertEquals(0, result.succeeded)
+        assertEquals(1, result.failed)
+        assertEquals(listOf(60L), result.mismatches)
+        verify(amazonS3, never()).getObject(any<String>(), any<String>())
+        verify(fileAttachmentRepository, never()).updateWebpVariantUrls(any(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `convertJpegToWebp returning null adds row to mismatches and skips DB update`() {
+        // URL has only a bucket segment, no key — parseVariantUrl returns null → convertJpegToWebp returns null.
+        // Service must add the row to mismatches and must NOT call updateWebpVariantUrls,
+        // so thumbnail_url_webp stays null by design (not by a null-write that re-queues the row).
+        val unparseable = "http://s3.test/only-bucket"
+        val row = fakeRow(id = 50L, thumbUrl = unparseable)
+        whenever(fileAttachmentRepository.findImagesWithJpegVariantsButNoWebp(any()))
+            .thenReturn(PageImpl(listOf(row), Pageable.unpaged(), 1L))
+
+        val result = service.backfillBatch(dryRun = false, batchSize = 100)
+
+        assertEquals(0, result.succeeded)
+        assertEquals(1, result.failed)
+        assertEquals(listOf(50L), result.mismatches)
+        verify(fileAttachmentRepository, never()).updateWebpVariantUrls(any(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
     fun `successful run uploads WebP for all three variants and calls DB update`() {
         val jpegBytes = solidJpegBytes()
         val row = fakeRow(99L)

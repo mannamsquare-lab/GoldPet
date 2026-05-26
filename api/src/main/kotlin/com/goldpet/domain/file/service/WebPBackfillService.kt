@@ -76,18 +76,31 @@ class WebPBackfillService(
 
         for (fa in page.content) {
             try {
-                val thumbWebpUrl = fa.thumbnailUrl?.let { convertJpegToWebp(it) }
-                val medWebpUrl = fa.mediumUrl?.let { convertJpegToWebp(it) }
-                val viewerWebpUrl = fa.viewerUrl?.let { convertJpegToWebp(it) }
+                // Convert thumbnail first — it is the required variant.
+                // If it returns null (blank URL or unparseable), skip the row entirely:
+                // no medium/viewer S3 calls, no DB write. This keeps thumbnail_url_webp
+                // NULL by design so the row does NOT reappear in the next batch query.
+                val thumbWebpUrl = fa.thumbnailUrl?.takeIf { it.isNotBlank() }?.let { convertJpegToWebp(it) }
+                if (thumbWebpUrl == null) {
+                    log.warn(
+                        "WebP backfill: thumb conversion null for id={} url='{}' — skipping to prevent infinite retry",
+                        fa.id, fa.thumbnailUrl
+                    )
+                    mismatches.add(fa.id)
+                    failed++
+                } else {
+                    val medWebpUrl = fa.mediumUrl?.takeIf { it.isNotBlank() }?.let { convertJpegToWebp(it) }
+                    val viewerWebpUrl = fa.viewerUrl?.takeIf { it.isNotBlank() }?.let { convertJpegToWebp(it) }
 
-                fileAttachmentRepository.updateWebpVariantUrls(
-                    id = fa.id,
-                    thumbWebpUrl = thumbWebpUrl,
-                    medWebpUrl = medWebpUrl,
-                    viewerWebpUrl = viewerWebpUrl
-                )
-                succeeded++
-                log.debug("WebP backfill ok id={} thumb={}", fa.id, thumbWebpUrl)
+                    fileAttachmentRepository.updateWebpVariantUrls(
+                        id = fa.id,
+                        thumbWebpUrl = thumbWebpUrl,
+                        medWebpUrl = medWebpUrl,
+                        viewerWebpUrl = viewerWebpUrl
+                    )
+                    succeeded++
+                    log.debug("WebP backfill ok id={} thumb={}", fa.id, thumbWebpUrl)
+                }
             } catch (e: Exception) {
                 log.warn("WebP backfill failed id={}: {}", fa.id, e.message, e)
                 mismatches.add(fa.id)
