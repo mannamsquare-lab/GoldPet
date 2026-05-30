@@ -2,15 +2,23 @@ package com.goldpet.domain.admin.audit
 
 import com.goldpet.config.security.AdminUserPrincipal
 import com.goldpet.domain.admin.service.AdminAuditService
+import com.goldpet.domain.common.exception.BadRequestException
+import com.goldpet.domain.common.exception.ConflictException
+import com.goldpet.domain.common.exception.ForbiddenException
+import com.goldpet.domain.common.exception.NotFoundException
+import com.goldpet.domain.common.exception.UnauthorizedException
 import jakarta.servlet.http.HttpServletRequest
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.slf4j.LoggerFactory
+import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
+import org.springframework.web.server.ResponseStatusException
 
 /**
  * [CriticalAction] 어노테이션이 부착된 컨트롤러 메서드를 wrap 하여 audit lane 을 보장한다.
@@ -38,11 +46,26 @@ class CriticalActionAuditAspect(
 
         try {
             val result = pjp.proceed()
-            persistOrThrow(adminUserId, criticalAction.action, request, responseStatus = 200, success = true)
+            val status = (result as? ResponseEntity<*>)?.statusCode?.value() ?: 200
+            persistOrThrow(adminUserId, criticalAction.action, request, responseStatus = status, success = true)
             return result
         } catch (e: Throwable) {
-            persistOrThrow(adminUserId, criticalAction.action, request, responseStatus = 500, success = false, failureReason = e.message ?: "UNKNOWN")
+            // GlobalExceptionHandler 와 동일하게 예외→상태코드를 해석해 audit 정확도 확보(하드코딩 500 금지).
+            persistOrThrow(adminUserId, criticalAction.action, request, responseStatus = resolveStatus(e), success = false, failureReason = e.message ?: "UNKNOWN")
             throw e
+        }
+    }
+
+    companion object {
+        /** GlobalExceptionHandler 의 예외→상태코드 매핑을 미러링. 미매핑 예외는 500. */
+        fun resolveStatus(e: Throwable): Int = when (e) {
+            is BadRequestException, is IllegalArgumentException -> 400
+            is UnauthorizedException -> 401
+            is ForbiddenException -> 403
+            is NotFoundException -> 404
+            is ConflictException, is OptimisticLockingFailureException -> 409
+            is ResponseStatusException -> e.statusCode.value()
+            else -> 500
         }
     }
 
