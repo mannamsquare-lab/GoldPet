@@ -4,6 +4,7 @@ import com.goldpet.IntegrationTestBase
 import com.goldpet.config.crypto.BlindIndexUtil
 import com.goldpet.domain.auth.entity.UserAuthProvider
 import com.goldpet.domain.auth.repository.UserAuthProviderRepository
+import com.goldpet.domain.auth.service.OAuthNonceService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.service.auth.SocialLoginService
@@ -36,6 +37,7 @@ class AccountLinkingIT : IntegrationTestBase() {
     @Autowired private lateinit var userRepository: UserRepository
     @Autowired private lateinit var userAuthProviderRepository: UserAuthProviderRepository
     @Autowired private lateinit var socialLoginService: SocialLoginService
+    @Autowired private lateinit var oauthNonceService: OAuthNonceService
 
     /**
      * SocialLoginService 가 link-suggestion JWT 서명에 사용하는 키.
@@ -103,6 +105,9 @@ class AccountLinkingIT : IntegrationTestBase() {
         // 반복마다 고유 providerId 사용 (중복 충돌 방지)
         val googleProviderId = "google_${UUID.randomUUID().toString().replace("-", "").take(8)}"
 
+        // V67: confirmLink 는 1회용 nonce 를 요구한다 — production 과 동일하게 발급해 claim 에 포함.
+        val nonce = oauthNonceService.issue(kakaoUser.id, "LINK_SUGGESTION", ttlSeconds = 300)
+
         // SocialLoginService.generateLinkSuggestionToken 과 동일한 알고리즘으로 JWT 생성
         val key = Keys.hmacShaKeyFor(appJwtSecret.toByteArray())
         val now = Date()
@@ -111,6 +116,7 @@ class AccountLinkingIT : IntegrationTestBase() {
             .claim("type", "LINK_SUGGESTION")
             .claim("newProvider", "google")
             .claim("newProviderId", googleProviderId)
+            .claim("nonce", nonce.toString())
             .issuedAt(now)
             .expiration(Date(now.time + 5 * 60 * 1_000L))
             .signWith(key)

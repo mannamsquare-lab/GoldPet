@@ -236,4 +236,62 @@ class AdminAuthServiceTest {
         assertTrue(qrUrl.contains("otpauth://totp"))
         assertTrue(qrUrl.contains("admin@goldpet.com"))
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // V69 — TOTP replay window (탈취된 OTP 재사용 차단) 단위 테스트
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private fun adminWith2fa(lastOtpUsedAt: LocalDateTime?): AdminUser =
+        AdminUser(
+            id = 1L,
+            email = "admin@goldpet.com",
+            passwordHash = passwordEncoder.encode("admin123"),
+            name = "테스트관리자",
+            role = AdminUserRole.SUPER_ADMIN,
+            otpSecret = "JBSWY3DPEHPK3PXP",
+            isActive = true
+        ).apply {
+            createdAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now()
+            this.lastOtpUsedAt = lastOtpUsedAt
+        }
+
+    @Test
+    fun `verify2fa should reject a valid code reused within the replay window`() {
+        // Given — 유효한 코드지만 최근(10초 전, 30s window 이내) 이미 사용된 OTP.
+        val userWith2FA = adminWith2fa(lastOtpUsedAt = LocalDateTime.now().minusSeconds(10))
+        whenever(adminUserRepository.findById(1L)).thenReturn(Optional.of(userWith2FA))
+        whenever(adminTotpService.validateCode("JBSWY3DPEHPK3PXP", 123456)).thenReturn(true)
+
+        // When & Then — TOTP 검증은 통과해도 replay window 분기에서 거부되어야 한다.
+        val exception = assertThrows<BadCredentialsException> {
+            adminAuthService.verify2fa(1L, 123456)
+        }
+        assertTrue(
+            exception.message!!.contains("already used"),
+            "replay window 이내 재사용은 'already used' 사유로 거부되어야 한다 (실제: ${exception.message})",
+        )
+        verify(jwtTokenProvider, never()).generateToken(any())
+    }
+
+    @Test
+    fun `verify2fa should accept a valid code outside the replay window and stamp lastOtpUsedAt`() {
+        // Given — 마지막 사용이 60초 전(30s window 밖) → 정상 통과해야 한다.
+        val lastUsed = LocalDateTime.now().minusSeconds(60)
+        val userWith2FA = adminWith2fa(lastOtpUsedAt = lastUsed)
+        whenever(adminUserRepository.findById(1L)).thenReturn(Optional.of(userWith2FA))
+        whenever(adminTotpService.validateCode("JBSWY3DPEHPK3PXP", 654321)).thenReturn(true)
+        whenever(jwtTokenProvider.generateToken(any())).thenReturn("verified-jwt")
+
+        // When
+        val (token, _) = adminAuthService.verify2fa(1L, 654321)
+
+        // Then — 토큰 발급 + lastOtpUsedAt 갱신(이전 값보다 최신).
+        assertEquals("verified-jwt", token)
+        assertNotNull(userWith2FA.lastOtpUsedAt)
+        assertTrue(
+            userWith2FA.lastOtpUsedAt!!.isAfter(lastUsed),
+            "성공 시 lastOtpUsedAt 이 현재 시각으로 갱신되어야 한다",
+        )
+    }
 }

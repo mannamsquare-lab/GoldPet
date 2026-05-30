@@ -359,7 +359,7 @@ class ChatServiceTest {
         }
 
         whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
-        whenever(chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(1L, PageRequest.of(0, 50)))
+        whenever(chatMessageRepository.findVisibleByChatRoomIdOrderByCreatedAtDesc(1L, PageRequest.of(0, 50)))
             .thenReturn(PageImpl(listOf(message2, message1)))
 
         // When

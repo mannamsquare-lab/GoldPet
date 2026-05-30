@@ -191,7 +191,8 @@ class OAuth2HashLookupIntegrationTest : IntegrationTestBase() {
             requestPath = isNull(),
             requestMethod = isNull(),
             responseStatus = isNull(),
-            details = any()
+            details = any(),
+            userAgent = isNull()
         )
     }
 

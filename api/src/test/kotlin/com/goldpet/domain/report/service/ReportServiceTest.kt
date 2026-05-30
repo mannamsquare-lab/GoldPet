@@ -43,6 +43,9 @@ class ReportServiceTest {
     private lateinit var walkCourseRepository: WalkCourseRepository
 
     @Mock
+    private lateinit var chatMessageRepository: com.goldpet.domain.chat.repository.ChatMessageRepository
+
+    @Mock
     private lateinit var systemSettingService: SystemSettingService
 
     @Mock
@@ -59,7 +62,7 @@ class ReportServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        reportService = ReportService(reportRepository, userRepository, postRepository, commentRepository, walkCourseRepository, systemSettingService, adminCommunityService, walkSpotRepository)
+        reportService = ReportService(reportRepository, userRepository, postRepository, commentRepository, walkCourseRepository, chatMessageRepository, systemSettingService, adminCommunityService, walkSpotRepository)
 
         testUser = User(
             id = 1L,

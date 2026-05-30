@@ -1,14 +1,20 @@
 package com.goldpet.domain.file.service
 
 import com.amazonaws.services.s3.AmazonS3
+import com.drew.imaging.ImageMetadataReader
+import com.drew.metadata.exif.GpsDirectory
+import com.goldpet.domain.common.exception.BadRequestException
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.walk.service.WalkSpotBackfillWorker
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -17,9 +23,15 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.mock.env.MockEnvironment
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
+import org.springframework.web.multipart.MultipartFile
 import java.awt.Color
 import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.lang.reflect.InvocationTargetException
+import javax.imageio.ImageIO
 
 class FileServiceTest {
 
@@ -70,6 +82,49 @@ class FileServiceTest {
         g.fillRect(0, 0, width, height)
         g.dispose()
         return img
+    }
+
+    private fun cleanJpeg(): ByteArray {
+        val baos = ByteArrayOutputStream()
+        ImageIO.write(solidImage(16, 16), "jpg", baos)
+        return baos.toByteArray()
+    }
+
+    /**
+     * 정상 JPEG 에 최소 GPS EXIF(APP1) 세그먼트를 주입한 픽스처.
+     * little-endian TIFF: IFD0 → GPSInfo(0x8825) 포인터 → GPS IFD(GPSVersionID 2.3.0.0).
+     * metadata-extractor 가 비어있지 않은 GpsDirectory 로 인식해야 strip 경로(re-encode)가 동작한다.
+     */
+    private fun jpegWithGpsExif(): ByteArray {
+        val tiff = byteArrayOf(
+            0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00,                  // TIFF header(II), IFD0 @8
+            0x01, 0x00,                                                      // IFD0: 1 entry
+            0x25.toByte(), 0x88.toByte(), 0x04, 0x00, 0x01, 0x00, 0x00, 0x00, // tag=GPSInfo(0x8825), LONG, count1
+            0x1A, 0x00, 0x00, 0x00,                                          // → GPS IFD @0x1A
+            0x00, 0x00, 0x00, 0x00,                                          // IFD0 next = 0
+            0x01, 0x00,                                                      // GPS IFD: 1 entry
+            0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x00, 0x00,                  // tag=GPSVersionID(0x0000), BYTE, count4
+            0x02, 0x03, 0x00, 0x00,                                         // value = 2.3.0.0
+            0x00, 0x00, 0x00, 0x00                                          // GPS IFD next = 0
+        )
+        // EXIF identifier = 'E','x','i','f', 0x00, 0x00 (NULL 2바이트 필수).
+        val exifData = byteArrayOf(0x45, 0x78, 0x69, 0x66, 0x00, 0x00) + tiff
+        val len = exifData.size + 2
+        val app1 = byteArrayOf(
+            0xFF.toByte(), 0xE1.toByte(),
+            (len shr 8 and 0xFF).toByte(), (len and 0xFF).toByte(),         // JPEG segment length (big-endian)
+        ) + exifData
+        val clean = cleanJpeg()
+        // SOI + APP1(EXIF) + (clean JPEG without its leading SOI)
+        return byteArrayOf(0xFF.toByte(), 0xD8.toByte()) + app1 + clean.copyOfRange(2, clean.size)
+    }
+
+    private fun invokeStripImageMetadata(bytes: ByteArray, mimeType: String): ByteArray {
+        val m = FileService::class.java.getDeclaredMethod(
+            "stripImageMetadata", ByteArray::class.java, String::class.java
+        )
+        m.isAccessible = true
+        return m.invoke(fileService, bytes, mimeType) as ByteArray
     }
 
     @Test
@@ -176,5 +231,50 @@ class FileServiceTest {
             .timer()
         assertNotNull(timer, "latency timer must be registered with category=profile tag")
         assertEquals(1L, timer!!.count())
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // V68 BLOCKER #6 — EXIF GPS strip 경로 단위 테스트
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `stripImageMetadata removes GPS EXIF from JPEG`() {
+        val jpegWithGps = jpegWithGpsExif()
+
+        // 픽스처 자체 검증 — strip 이전엔 GPS 디렉터리가 존재해야 (없으면 픽스처 결함).
+        val before = ImageMetadataReader.readMetadata(ByteArrayInputStream(jpegWithGps))
+            .getFirstDirectoryOfType(GpsDirectory::class.java)
+        assertNotNull(before, "fixture must contain a GPS EXIF directory before strip")
+        assertFalse(before!!.isEmpty, "fixture GPS directory must be non-empty (else strip is skipped)")
+
+        val stripped = invokeStripImageMetadata(jpegWithGps, "image/jpeg")
+
+        assertFalse(stripped.contentEquals(jpegWithGps), "stripped JPEG must be re-encoded (bytes differ)")
+        val after = ImageMetadataReader.readMetadata(ByteArrayInputStream(stripped))
+            .getFirstDirectoryOfType(GpsDirectory::class.java)
+        assertTrue(after == null || after.isEmpty, "GPS metadata must be gone after strip")
+    }
+
+    @Test
+    fun `stripImageMetadata is a no-op for clean JPEG without GPS`() {
+        val clean = cleanJpeg()
+        val result = invokeStripImageMetadata(clean, "image/jpeg")
+        assertTrue(
+            result.contentEquals(clean),
+            "clean image (no GPS) must be returned unchanged — no needless re-encode",
+        )
+    }
+
+    @Test
+    fun `validateImageFile rejects HEIC upload`() {
+        val m = FileService::class.java.getDeclaredMethod("validateImageFile", MultipartFile::class.java)
+        m.isAccessible = true
+        val heic = MockMultipartFile("file", "photo.heic", "image/heic", byteArrayOf(0x00, 0x01, 0x02))
+
+        val ex = assertThrows<InvocationTargetException> { m.invoke(fileService, heic) }
+        assertTrue(
+            ex.targetException is BadRequestException,
+            "HEIC 는 허용 MIME 목록에 없어 업로드 단계에서 거부되어야 한다 (실제: ${ex.targetException})",
+        )
     }
 }

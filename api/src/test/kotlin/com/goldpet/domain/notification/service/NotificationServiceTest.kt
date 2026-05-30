@@ -4,7 +4,9 @@ import com.goldpet.domain.notification.dto.CreateNotificationRequest
 import com.goldpet.domain.notification.entity.Notification
 import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.repository.NotificationRepository
+import com.goldpet.domain.user.entity.DeviceType
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.entity.UserDevice
 import com.goldpet.domain.user.repository.UserDeviceRepository
 import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.common.exception.*
@@ -15,6 +17,10 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -539,5 +545,77 @@ class NotificationServiceTest {
         assertDoesNotThrow {
             notificationService.notifyMatch(1L, 2L, 100L)
         }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // V70 BLOCKER #8 — FCM UNREGISTERED(InvalidToken) → deactivateByFcmToken cleanup
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private fun activeDevice(deviceId: String, fcmToken: String) =
+        UserDevice(
+            user = testUser,
+            deviceId = deviceId,
+            fcmToken = fcmToken,
+            deviceType = DeviceType.ANDROID,
+            isActive = true,
+        )
+
+    @Test
+    fun `createNotification deactivates a single device when FCM returns InvalidToken`() {
+        // Given — 활성 기기 1대, 그 토큰이 UNREGISTERED 로 무효.
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(notificationRepository.save(any<Notification>())).thenAnswer {
+            (it.getArgument(0) as Notification).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
+        whenever(userDeviceRepository.findAllByUserIdAndIsActiveTrue(1L))
+            .thenReturn(listOf(activeDevice("device-1", "bad-token")))
+        whenever(fcmPushSender.sendDetailed(any(), any(), any(), any()))
+            .thenReturn(FcmSendResult.InvalidToken)
+
+        // When
+        notificationService.createNotification(
+            CreateNotificationRequest(
+                userId = 1L,
+                type = NotificationType.WALK,
+                title = "산책 완료",
+                message = "보상 지급",
+            )
+        )
+
+        // Then — 무효 토큰 1건 deactivate.
+        verify(userDeviceRepository, times(1)).deactivateByFcmToken("bad-token")
+    }
+
+    @Test
+    fun `createNotification deactivates only invalid tokens from multicast result`() {
+        // Given — 활성 기기 2대(good/bad), multicast 응답이 bad 만 invalid 로 보고.
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(notificationRepository.save(any<Notification>())).thenAnswer {
+            (it.getArgument(0) as Notification).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
+        whenever(userDeviceRepository.findAllByUserIdAndIsActiveTrue(1L))
+            .thenReturn(listOf(activeDevice("device-1", "good-token"), activeDevice("device-2", "bad-token")))
+        whenever(fcmPushSender.sendToMultipleDetailed(any(), any(), any(), any()))
+            .thenReturn(FcmMulticastResult(successCount = 1, invalidTokens = listOf("bad-token"), totalSent = 2))
+
+        // When
+        notificationService.createNotification(
+            CreateNotificationRequest(
+                userId = 1L,
+                type = NotificationType.WALK,
+                title = "산책 완료",
+                message = "보상 지급",
+            )
+        )
+
+        // Then — invalid 토큰만 deactivate, 정상 토큰은 보존.
+        verify(userDeviceRepository, times(1)).deactivateByFcmToken("bad-token")
+        verify(userDeviceRepository, never()).deactivateByFcmToken("good-token")
     }
 }
