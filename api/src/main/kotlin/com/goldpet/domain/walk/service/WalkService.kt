@@ -190,7 +190,9 @@ class WalkService(
             log.warn("Failed to update gamification progress", e)
         }
 
-        applicationEventPublisher.publishEvent(WalkCompletedEvent(this, savedWalk.id, userId, savedWalk.followedCourseId))
+        applicationEventPublisher.publishEvent(
+            WalkCompletedEvent(this, savedWalk.id, userId, savedWalk.followedCourseId, savedWalk.distanceKm, goldReward)
+        )
 
         return WalkResponse.from(savedWalk, photoUrlSigner)
     }

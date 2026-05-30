@@ -31,6 +31,26 @@ class AsyncConfig {
     }
 
     /**
+     * 산책 완료 보상-요약 푸시 전용 풀 (저빈도).
+     *
+     * 산책 종료는 사용자당 간헐 이벤트라 chat 만큼의 동시성이 필요 없음. 작은 풀로 충분하며,
+     * `chatNotificationExecutor`(FCM hot path)와 분리해 상호 간섭을 막는다.
+     * 포화 시 기본 `AbortPolicy` 대신 `CallerRunsPolicy` — 호출자(AFTER_COMMIT 리스너 스레드)에서
+     * 실행되어 푸시 유실 대신 약간의 지연만 발생.
+     */
+    @Bean(name = ["walkNotificationExecutor"])
+    fun walkNotificationExecutor(): Executor {
+        val executor = ThreadPoolTaskExecutor()
+        executor.corePoolSize = 2
+        executor.maxPoolSize = 4
+        executor.queueCapacity = 100
+        executor.setThreadNamePrefix("walk-notif-")
+        executor.setRejectedExecutionHandler(ThreadPoolExecutor.CallerRunsPolicy())
+        executor.initialize()
+        return executor
+    }
+
+    /**
      * T-chat-latency-v2 Step 2 — chat 알림 전용 풀.
      *
      * `aiGenerationExecutor` 와 분리해 이미지 생성 장기 태스크와 FCM 푸시 단기 태스크가 풀을 다투지 않도록 함.

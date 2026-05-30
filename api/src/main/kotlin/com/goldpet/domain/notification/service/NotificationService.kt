@@ -206,6 +206,23 @@ class NotificationService(
         ))
     }
 
+    /**
+     * 산책 완료 보상-요약 푸시 (해석 A). 사용자의 모든 활성 기기로 fan-out (createNotification 단일 경로).
+     * 보상이 실제 적립된 경우에만 의미가 있으므로 goldReward > 0 일 때만 호출하는 것을 전제.
+     */
+    @Transactional
+    fun notifyWalkCompleted(userId: Long, walkId: Long, distanceKm: Double, goldReward: Int) {
+        createNotification(CreateNotificationRequest(
+            userId = userId,
+            type = NotificationType.WALK,
+            title = "산책 완료 🐾",
+            message = "${String.format("%.1f", distanceKm)}km 완주! +${goldReward} 골드 적립",
+            targetId = walkId,
+            targetType = "WALK",
+            senderId = null
+        ))
+    }
+
     @Transactional
     fun notifyReportResolved(toUserId: Long, actionLabel: String) {
         createNotification(CreateNotificationRequest(
