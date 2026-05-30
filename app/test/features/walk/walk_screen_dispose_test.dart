@@ -13,7 +13,7 @@ import 'package:goldpet_app/features/walk/mixins/walk_tracking_mixin.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeWalkWidget extends StatefulWidget {
-  const _FakeWalkWidget({super.key});
+  const _FakeWalkWidget();
 
   @override
   State<_FakeWalkWidget> createState() => _FakeWalkState();

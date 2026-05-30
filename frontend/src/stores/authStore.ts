@@ -8,6 +8,18 @@ import { nativeBridge } from '../bridge/nativeBridge';
 import { queryClient } from '../lib/queryClient';
 import { chatWebSocket } from '../services/websocket/chatWebSocket';
 
+const DEVICE_ID_STORAGE_KEY = 'gp-device-id';
+
+/** 스탠드얼론 브라우저(Flutter WebView 밖)용 영속 UUID 폴백 */
+function getOrCreateLocalDeviceId(): string {
+  let id = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(DEVICE_ID_STORAGE_KEY, id);
+  }
+  return id;
+}
+
 export interface User {
   id: number;
   nickname: string;
@@ -43,10 +55,12 @@ interface AuthState {
   refreshToken: string | null;
   user: User | null;
   isAuthenticated: boolean;
+  deviceId: string | null;
   login: (token: string, refreshToken: string, user: User) => void;
   logout: () => void;
   updateUser: (user: User) => void;
   setTokens: (token: string, refreshToken: string) => void;
+  setDeviceId: (deviceId: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -56,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       isAuthenticated: false,
+      deviceId: null,
       login: (token, refreshToken, user) => {
         // 방어적: 이전 유저 캐시 제거
         queryClient.cancelQueries();
@@ -64,8 +79,19 @@ export const useAuthStore = create<AuthState>()(
         if (nativeBridge.isAvailable()) {
           // Sync auth tokens to Flutter secure storage for native API calls
           nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch((e) => console.warn('[syncAuthToken] failed:', e));
-          // Register FCM token with backend
-          nativeBridge.callMethod('registerFcmToken', { accessToken: token }).catch(() => {});
+          // Register FCM token — capture deviceId from bridge response (primary mechanism)
+          nativeBridge
+            .callMethod('registerFcmToken', { accessToken: token })
+            .then((res) => {
+              const data = res as { deviceId?: string } | null;
+              if (data?.deviceId) {
+                set({ deviceId: data.deviceId });
+              }
+            })
+            .catch(() => {});
+        } else {
+          // Standalone browser (not in Flutter WebView): stable localStorage UUID fallback
+          set({ deviceId: getOrCreateLocalDeviceId() });
         }
       },
       logout: () => {
@@ -81,7 +107,7 @@ export const useAuthStore = create<AuthState>()(
         if (nativeBridge.isAvailable()) {
           nativeBridge.callMethod('clearAuthToken').catch(() => {});
         }
-        // 6. Zustand 상태 초기화
+        // 6. Zustand 상태 초기화 (deviceId 유지 — 기기는 변하지 않음)
         set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
       },
       updateUser: (user) => {
@@ -93,6 +119,9 @@ export const useAuthStore = create<AuthState>()(
           nativeBridge.callMethod('syncAuthToken', { accessToken: token, refreshToken }).catch((e) => console.warn('[syncAuthToken] failed:', e));
         }
       },
+      setDeviceId: (deviceId) => {
+        set({ deviceId });
+      },
     }),
     {
       name: 'auth-storage',
@@ -101,8 +130,19 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
         user: state.user,
+        deviceId: state.deviceId,
       }),
     }
   )
 );
+
+// Secondary deviceId capture: listen for Flutter → React 'deviceRegistered' event.
+// Fires after PUT /api/v1/users/me/devices succeeds on Flutter side; also buffered for
+// cold-start (BUFFERABLE_EVENTS in nativeBridge.ts) so early events are not dropped.
+nativeBridge.onEvent('deviceRegistered', (data) => {
+  const d = data as { deviceId?: string } | null;
+  if (d?.deviceId) {
+    useAuthStore.getState().setDeviceId(d.deviceId);
+  }
+});
 

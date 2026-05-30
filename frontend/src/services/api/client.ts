@@ -15,11 +15,14 @@ export const apiClient = axios.create({
   },
 });
 
-// 요청 인터셉터: 토큰 추가
+// 요청 인터셉터: 토큰 + 기기 ID 추가
 apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
+  const { token, deviceId } = useAuthStore.getState();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (deviceId) {
+    config.headers['X-Device-Id'] = deviceId;
   }
   return config;
 });
@@ -70,10 +73,13 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        const deviceId = useAuthStore.getState().deviceId;
+        const refreshHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (deviceId) refreshHeaders['X-Device-Id'] = deviceId;
         const response = await axios.post(
           `${API_BASE_URL}/api/v1/auth/refresh`,
           { refreshToken },
-          { headers: { 'Content-Type': 'application/json' } }
+          { headers: refreshHeaders }
         );
 
         const { accessToken: newToken, refreshToken: newRefreshToken } = response.data;

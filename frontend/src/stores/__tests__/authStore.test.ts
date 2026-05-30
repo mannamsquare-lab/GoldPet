@@ -5,6 +5,7 @@ vi.mock('../../bridge/nativeBridge', () => ({
   nativeBridge: {
     isAvailable: vi.fn(() => false),
     callMethod: vi.fn(),
+    onEvent: vi.fn(),
   },
 }))
 

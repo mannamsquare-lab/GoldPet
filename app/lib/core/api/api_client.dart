@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
 import '../constants/keys.dart';
+import '../services/push_notification_service.dart';
 import '../../features/walk/data/walk_local_storage.dart';
 import '../../features/walk/screens/walk_screen.dart';
 import '../../features/walk/screens/course_walk_screen.dart';
@@ -59,6 +60,8 @@ class ApiClient {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          final deviceId = await PushNotificationService().getOrCreateDeviceId();
+          options.headers['X-Device-Id'] = deviceId;
           return handler.next(options);
         },
         onError: (error, handler) async {
@@ -90,9 +93,13 @@ class ApiClient {
                   _refreshLock = Completer<void>();
                   try {
                     // Use a separate Dio instance to avoid interceptor loops
+                    final deviceId = await PushNotificationService().getOrCreateDeviceId();
                     final refreshDio = Dio(BaseOptions(
                       baseUrl: ApiConstants.baseUrl,
-                      headers: {'Content-Type': 'application/json'},
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-Device-Id': deviceId,
+                      },
                     ));
                     final response = await refreshDio.post(
                       '/api/v1/auth/refresh',
@@ -287,9 +294,13 @@ class ApiClient {
     }
     _refreshLock = Completer<void>();
     try {
+      final deviceId = await PushNotificationService().getOrCreateDeviceId();
       final refreshDio = Dio(BaseOptions(
         baseUrl: ApiConstants.baseUrl,
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Id': deviceId,
+        },
       ));
       final response = await refreshDio.post(
         '/api/v1/auth/refresh',

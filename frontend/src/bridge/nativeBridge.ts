@@ -22,6 +22,7 @@ class NativeBridge {
     'authExpired',
     'tokenSync',
     'walkCompleted',
+    'deviceRegistered',
   ]);
   private static readonly BUFFER_TTL_MS = 10_000; // 10 seconds
 

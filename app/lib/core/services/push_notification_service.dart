@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../bridge/native_bridge.dart';
 import '../config/environment.dart';
+import '../constants/keys.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -40,6 +41,10 @@ class PushNotificationService {
 
   RemoteMessage? _pendingInitialMessage;
   String? _currentChatRoomId; // 현재 보고 있는 채팅방 ID (알림 필터링용)
+
+  /// Inject a fake _registerDevice for unit tests to avoid real HTTP calls.
+  @visibleForTesting
+  Future<void> Function(String fcmToken, String accessToken)? testRegisterDeviceOverride;
 
   /// WebView 페이지 로드 완료 후 호출하여 pending 알림 이벤트 전달
   /// Cold boot 시 bridge setter에서 즉시 보내면 React 앱이 아직 로드되지 않아 이벤트 소실됨
@@ -294,13 +299,34 @@ class PushNotificationService {
 
       await _registerDevice(token, accessToken);
 
-      // Listen for token refresh
+      // Listen for token refresh — read fresh JWT from storage, not the
+      // closure-captured accessToken which may be stale after JWT rotation.
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
         debugPrint('[FCM] Token refreshed, re-registering...');
-        _registerDevice(newToken, accessToken);
+        handleFcmTokenRefresh(newToken);
       });
     } catch (e) {
       debugPrint('[FCM] Failed to register token: $e');
+    }
+  }
+
+  /// Reads the current JWT from secure storage and re-registers the device
+  /// with the new FCM token. Extracted so it can be unit-tested without
+  /// touching real Firebase streams.
+  @visibleForTesting
+  Future<void> handleFcmTokenRefresh(String newFcmToken) async {
+    const storage = FlutterSecureStorage(
+      iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+    );
+    final currentToken = await storage.read(key: StorageKeys.accessToken);
+    if (currentToken == null) {
+      debugPrint('[FCM] No access token in storage — skipping FCM re-registration');
+      return;
+    }
+    if (testRegisterDeviceOverride != null) {
+      await testRegisterDeviceOverride!(newFcmToken, currentToken);
+    } else {
+      _registerDevice(newFcmToken, currentToken);
     }
   }
 
