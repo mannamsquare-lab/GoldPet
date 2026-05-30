@@ -54,6 +54,9 @@ dependencies {
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
     implementation("com.bucket4j:bucket4j-core:8.10.1")
     implementation("com.bucket4j:bucket4j-redis:8.10.1")
+    // BLOCKER #9 — Sentry 에러 모니터링. DSN 부재/공백 시 SDK no-op (이벤트 미전송).
+    // 정확 patch 버전 고정 (range 금지). 착수 시점 latest-stable: 8.28.0.
+    implementation("io.sentry:sentry-spring-boot-starter-jakarta:8.28.0")
 
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")

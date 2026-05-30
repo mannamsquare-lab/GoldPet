@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:goldpet_app/hybrid_app.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -52,17 +53,39 @@ void main() async {
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    // TODO: Send to Crashlytics when integrated
     debugPrint('FlutterError: ${details.exception}');
   };
 
-  runZonedGuarded(() {
-    runApp(const ProviderScope(child: MainApp()));
-  }, (error, stackTrace) {
-    // TODO: Send to Crashlytics when integrated
-    debugPrint('Uncaught error: $error');
-    debugPrint('Stack trace: $stackTrace');
-  });
+  // Sentry: init only when a real DSN is injected via --dart-define=SENTRY_DSN.
+  // Empty/absent DSN → skip init entirely (no-op for local dev and CI).
+  // Locked version: sentry_flutter 9.21.0 (pub.dev 2026-05-30)
+  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
+  if (sentryDsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = sentryDsn;
+        options.tracesSampleRate = 0.1;
+        options.release = 'goldpet-app@0.1.0';
+        options.environment =
+            String.fromEnvironment('ENV', defaultValue: 'local');
+      },
+      appRunner: () => runZonedGuarded(
+        () => runApp(const ProviderScope(child: MainApp())),
+        (error, stack) async {
+          await Sentry.captureException(error, stackTrace: stack);
+          debugPrint('Uncaught error: $error');
+        },
+      ),
+    );
+  } else {
+    runZonedGuarded(
+      () => runApp(const ProviderScope(child: MainApp())),
+      (error, stackTrace) {
+        debugPrint('Uncaught error: $error');
+        debugPrint('Stack trace: $stackTrace');
+      },
+    );
+  }
 }
 
 class MainApp extends StatelessWidget {
