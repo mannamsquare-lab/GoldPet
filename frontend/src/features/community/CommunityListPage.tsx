@@ -14,6 +14,7 @@ export default function CommunityListPage() {
   const navigate = useNavigate();
   const handleProfileTap = useHandleProfileTap();
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined);
+  const [sortMode, setSortMode] = useState<'latest' | 'trending'>('latest');
 
   const { data: categories } = useQuery({
     queryKey: ['community', 'categories'],
@@ -22,8 +23,8 @@ export default function CommunityListPage() {
   });
 
   const { data: postsData, isLoading } = useQuery({
-    queryKey: ['community', 'posts', selectedCategory],
-    queryFn: () => communityService.getPosts(selectedCategory),
+    queryKey: ['community', 'posts', selectedCategory, sortMode],
+    queryFn: () => communityService.getPosts(selectedCategory, 0, 20, sortMode),
     ...CACHE_TIME.DYNAMIC,
   });
 
@@ -96,6 +97,32 @@ export default function CommunityListPage() {
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* Sort toggle: 최신순 / 인기순(트렌딩) */}
+      <div style={{ display: 'flex', gap: 8, padding: '10px 16px 4px' }}>
+        {([['latest', '최신순'], ['trending', '인기순']] as const).map(([mode, label]) => {
+          const active = sortMode === mode;
+          return (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setSortMode(mode)}
+              style={{
+                padding: '5px 14px',
+                borderRadius: 16,
+                fontSize: 13,
+                cursor: 'pointer',
+                border: 'none',
+                background: active ? '#2b2b2b' : '#f2f2f2',
+                color: active ? '#fff' : '#888',
+                fontWeight: active ? 700 : 400,
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Post List */}

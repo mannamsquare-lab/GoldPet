@@ -33,14 +33,20 @@ class CommunityController(
         return ResponseEntity.ok(communityService.getCategories())
     }
 
-    @Operation(summary = "게시글 목록 조회")
+    @Operation(summary = "게시글 목록 조회 (sort=trending 시 시간감쇠 인기순)")
     @GetMapping("/posts")
     fun getPosts(
         @RequestParam(required = false) categoryId: Long?,
+        @RequestParam(required = false) sort: String?,
         @PageableDefault(size = 20, sort = ["createdAt"], direction = Sort.Direction.DESC) pageable: Pageable,
         @AuthenticationPrincipal principal: UserPrincipal?
     ): ResponseEntity<Page<CommunityPostResponse>> {
-        return ResponseEntity.ok(communityService.getPosts(categoryId, pageable, principal?.id))
+        val result = if (sort.equals("trending", ignoreCase = true) || sort.equals("hot", ignoreCase = true)) {
+            communityService.getTrendingPosts(categoryId, pageable, principal?.id)
+        } else {
+            communityService.getPosts(categoryId, pageable, principal?.id)
+        }
+        return ResponseEntity.ok(result)
     }
 
     @Operation(summary = "게시글 상세 조회")

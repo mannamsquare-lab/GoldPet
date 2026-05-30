@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { MainHeader } from '../../components/common/MainHeader';
@@ -90,6 +91,8 @@ const HealthHistoryPage = () => {
   const [page, setPage] = useState(0);
   const [allAnalyses, setAllAnalyses] = useState<StoolAnalysisResponse[]>([]);
   const [selectedAnalysis, setSelectedAnalysis] = useState<StoolAnalysisResponse | null>(null);
+  const [trendMonths, setTrendMonths] = useState<3 | 6 | 12>(6);
+  const [show4C, setShow4C] = useState(false);
 
   useEffect(() => {
     if (paramPetId && pets.length > 0) {
@@ -117,8 +120,8 @@ const HealthHistoryPage = () => {
   }, [historyPage, page]);
 
   const { data: trend } = useQuery({
-    queryKey: ['health', 'trend', activePetId],
-    queryFn: () => stoolAnalysisService.getHealthTrend(activePetId!, 6),
+    queryKey: ['health', 'trend', activePetId, trendMonths],
+    queryFn: () => stoolAnalysisService.getHealthTrend(activePetId!, trendMonths),
     enabled: activePetId != null,
   });
 
@@ -129,10 +132,31 @@ const HealthHistoryPage = () => {
     setAllAnalyses([]);
   };
 
+  const round1 = (v: number | null | undefined) => (v == null ? null : parseFloat(v.toFixed(1)));
   const trendData = (trend?.monthlyScores ?? []).map(m => ({
     name: monthLabel(m.yearMonth),
     score: parseFloat(m.averageScore.toFixed(1)),
+    color: round1(m.colorAvg),
+    consistency: round1(m.consistencyAvg),
+    coating: round1(m.coatingAvg),
+    contents: round1(m.contentsAvg),
   }));
+
+  const summary = trend?.summary;
+  const summaryView = summary
+    ? {
+        IMPROVING: { text: '개선되고 있어요 ↑', color: '#12a150' },
+        DECLINING: { text: '주의가 필요해요 ↓', color: '#ff4d4f' },
+        STABLE: { text: '안정적으로 유지 중 →', color: '#888888' },
+      }[summary.direction] ?? { text: '안정적으로 유지 중 →', color: '#888888' }
+    : null;
+
+  const C4_LINES = [
+    { key: 'color', label: '색', stroke: '#ff7f0f' },
+    { key: 'consistency', label: '형태', stroke: '#0f97ff' },
+    { key: 'coating', label: '코팅', stroke: '#12a150' },
+    { key: 'contents', label: '내용물', stroke: '#8A497D' },
+  ] as const;
 
   const hasMore = historyPage ? !historyPage.last : false;
 
@@ -213,9 +237,38 @@ const HealthHistoryPage = () => {
         {/* Trend chart */}
         {trendData.length > 0 && (
           <div className="hh_trend_card">
-            <h2 className="hh_trend_title">최근 6개월 건강 추이</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <h2 className="hh_trend_title">최근 {trendMonths}개월 건강 추이</h2>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {([3, 6, 12] as const).map(mo => {
+                  const on = trendMonths === mo;
+                  return (
+                    <button key={mo} type="button" onClick={() => setTrendMonths(mo)}
+                      style={{ padding: '3px 10px', borderRadius: 12, fontSize: 12, border: 'none', cursor: 'pointer',
+                        background: on ? '#614108' : '#f2ece0', color: on ? '#fff' : '#A58A54', fontWeight: on ? 700 : 400 }}>
+                      {mo}개월
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {summaryView && summary && (
+              <p style={{ margin: '6px 0 0', fontSize: 13, fontWeight: 700, color: summaryView.color }}>
+                {summaryView.text}
+                <span style={{ marginLeft: 6, fontWeight: 400, color: '#aaa' }}>
+                  ({summary.firstMonth?.split('-')[1]}월→{summary.lastMonth?.split('-')[1]}월{summary.direction !== 'STABLE' ? `, ${summary.deltaOverall > 0 ? '+' : ''}${summary.deltaOverall.toFixed(1)}점` : ''})
+                </span>
+              </p>
+            )}
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#A58A54', margin: '8px 0 2px' }}>
+              <input type="checkbox" checked={show4C} onChange={e => setShow4C(e.target.checked)} />
+              4C 세부(색·형태·코팅·내용물) 보기
+            </label>
+
             <div className="hh_trend_chart">
-              <ResponsiveContainer width="100%" height={160}>
+              <ResponsiveContainer width="100%" height={show4C ? 200 : 160}>
                 <LineChart data={trendData} margin={{ top: 8, right: 16, left: -20, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#EFE1C4" />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#A58A54' }} />
@@ -226,16 +279,23 @@ const HealthHistoryPage = () => {
                   />
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: '1px solid #EFE1C4', fontSize: 13 }}
-                    formatter={(value) => [`${value}점`, '평균 점수']}
+                    formatter={(value, name) => [`${value}점`, name as string]}
                   />
+                  {show4C && <Legend wrapperStyle={{ fontSize: 11 }} />}
                   <Line
                     type="monotone"
                     dataKey="score"
+                    name="종합"
                     stroke="#614108"
                     strokeWidth={2}
                     dot={{ fill: '#614108', r: 4 }}
                     activeDot={{ r: 6 }}
+                    connectNulls
                   />
+                  {show4C && C4_LINES.map(l => (
+                    <Line key={l.key} type="monotone" dataKey={l.key} name={l.label}
+                      stroke={l.stroke} strokeWidth={1.5} dot={{ r: 2 }} connectNulls />
+                  ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>

@@ -64,14 +64,39 @@ data class HealthTrendResponse(
     val petId: Long,
     val petName: String,
     val monthlyScores: List<MonthlyScore>,
-    val totalAnalyses: Long
+    val totalAnalyses: Long,
+    /** 첫↔마지막 달 종합점수 비교 요약 (데이터 2개월 미만이면 null) */
+    val summary: TrendSummary? = null
 )
 
 data class MonthlyScore(
     val yearMonth: String,
     val averageScore: Double,
+    // 4C 세부 월 평균 (null = 해당 월 데이터 없음)
+    val colorAvg: Double? = null,
+    val consistencyAvg: Double? = null,
+    val coatingAvg: Double? = null,
+    val contentsAvg: Double? = null,
     val count: Int
 )
+
+data class TrendSummary(
+    /** IMPROVING | DECLINING | STABLE */
+    val direction: String,
+    /** 마지막 달 − 첫 달 종합 평균 (양수=개선) */
+    val deltaOverall: Double,
+    val firstMonth: String?,
+    val lastMonth: String?
+) {
+    companion object {
+        /** ±0.5 데드존: 그 안은 STABLE. */
+        fun directionOf(delta: Double): String = when {
+            delta >= 0.5 -> "IMPROVING"
+            delta <= -0.5 -> "DECLINING"
+            else -> "STABLE"
+        }
+    }
+}
 
 data class PetContextDto(
     val species: String,

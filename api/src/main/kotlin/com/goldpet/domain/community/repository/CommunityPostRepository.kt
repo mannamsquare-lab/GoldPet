@@ -133,4 +133,47 @@ interface CommunityPostRepository : JpaRepository<CommunityPost, Long> {
         @Param("blockedUserIds") blockedUserIds: List<Long>,
         pageable: Pageable,
     ): List<CommunityPost>
+
+    /**
+     * 트렌딩(인기) 랭킹 — 시간 감쇠 hot score.
+     *
+     * score = (like*wLike + view*wView + comment*wComment) / (ageHours + 2)^gravity
+     * - 최근 [since] 이후 글만 후보(오래된 글 영구 상단 방지).
+     * - is_hidden=false, 카테고리(nullable), 차단 유저 제외.
+     * - `blockedUserIds` 는 비어있지 않은 list 를 넘긴다(JPQL/SQL IN () 회피, sentinel `listOf(0L)`).
+     * - Pageable 은 **unsorted** 로 넘긴다(여기 ORDER BY 와 충돌 방지).
+     */
+    @Query(
+        value = """
+            SELECT * FROM community_posts p
+            WHERE p.is_hidden = false
+              AND p.created_at >= :since
+              AND (CAST(:categoryId AS bigint) IS NULL OR p.category_id = :categoryId)
+              AND p.user_id NOT IN (:blockedUserIds)
+            ORDER BY (
+              (p.like_count * :wLike + p.view_count * :wView
+                + COALESCE((SELECT COUNT(*) FROM community_comments c
+                            WHERE c.post_id = p.id AND c.is_hidden = false), 0) * :wComment)
+              / POWER(EXTRACT(EPOCH FROM (now() - p.created_at)) / 3600.0 + 2, :gravity)
+            ) DESC
+        """,
+        countQuery = """
+            SELECT COUNT(*) FROM community_posts p
+            WHERE p.is_hidden = false
+              AND p.created_at >= :since
+              AND (CAST(:categoryId AS bigint) IS NULL OR p.category_id = :categoryId)
+              AND p.user_id NOT IN (:blockedUserIds)
+        """,
+        nativeQuery = true,
+    )
+    fun findTrending(
+        @Param("categoryId") categoryId: Long?,
+        @Param("blockedUserIds") blockedUserIds: List<Long>,
+        @Param("since") since: LocalDateTime,
+        @Param("wLike") wLike: Double,
+        @Param("wComment") wComment: Double,
+        @Param("wView") wView: Double,
+        @Param("gravity") gravity: Double,
+        pageable: Pageable,
+    ): Page<CommunityPost>
 }

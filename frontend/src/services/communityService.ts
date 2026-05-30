@@ -83,10 +83,11 @@ export const communityService = {
     }
   },
 
-  getPosts: async (categoryId?: number, page = 0, size = 20): Promise<{ posts: CommunityPost[]; hasMore: boolean; totalCount?: number }> => {
+  getPosts: async (categoryId?: number, page = 0, size = 20, sort?: 'latest' | 'trending'): Promise<{ posts: CommunityPost[]; hasMore: boolean; totalCount?: number }> => {
     try {
-      const params: Record<string, number> = { page, size };
+      const params: Record<string, number | string> = { page, size };
       if (categoryId) params.categoryId = categoryId;
+      if (sort === 'trending') params.sort = 'trending';
 
       const response = await typedClient.get('/api/v1/community/posts', { params });
       const data = response.data as {

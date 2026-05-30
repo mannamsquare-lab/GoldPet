@@ -9,6 +9,7 @@ import com.goldpet.domain.health.dto.HealthTrendResponse
 import com.goldpet.domain.health.dto.MonthlyScore
 import com.goldpet.domain.health.dto.RequestStoolAnalysisRequest
 import com.goldpet.domain.health.dto.StoolAnalysisResponse
+import com.goldpet.domain.health.dto.TrendSummary
 import com.goldpet.domain.health.event.StoolAnalysisRequestedEvent
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.walk.entity.AnalysisStatus
@@ -99,6 +100,7 @@ class StoolAnalysisService(
             .filter { it.status == AnalysisStatus.COMPLETED && it.overallScore != null }
 
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM")
+        fun avgOrNull(values: List<Int>): Double? = if (values.isEmpty()) null else values.average()
         val monthlyScores = analyses
             .groupBy { it.createdAt?.format(formatter) ?: "" }
             .filter { it.key.isNotEmpty() }
@@ -106,16 +108,29 @@ class StoolAnalysisService(
                 MonthlyScore(
                     yearMonth = yearMonth,
                     averageScore = group.mapNotNull { it.overallScore }.average(),
+                    colorAvg = avgOrNull(group.mapNotNull { it.colorScore }),
+                    consistencyAvg = avgOrNull(group.mapNotNull { it.consistencyScore }),
+                    coatingAvg = avgOrNull(group.mapNotNull { it.coatingScore }),
+                    contentsAvg = avgOrNull(group.mapNotNull { it.contentsScore }),
                     count = group.size
                 )
             }
             .sortedBy { it.yearMonth }
 
+        // 첫↔마지막 달 종합점수 비교 요약 (2개월 이상일 때만; ±0.5 STABLE 데드존)
+        val summary = if (monthlyScores.size >= 2) {
+            val first = monthlyScores.first()
+            val last = monthlyScores.last()
+            val delta = last.averageScore - first.averageScore
+            TrendSummary(TrendSummary.directionOf(delta), delta, first.yearMonth, last.yearMonth)
+        } else null
+
         return HealthTrendResponse(
             petId = petId,
             petName = pet.name,
             monthlyScores = monthlyScores,
-            totalAnalyses = stoolAnalysisRepository.countByPetId(petId)
+            totalAnalyses = stoolAnalysisRepository.countByPetId(petId),
+            summary = summary
         )
     }
 

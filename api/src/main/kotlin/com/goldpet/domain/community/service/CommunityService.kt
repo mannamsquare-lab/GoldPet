@@ -105,6 +105,36 @@ class CommunityService(
             }
         }
 
+        return toResponsePage(posts, currentUserId)
+    }
+
+    /**
+     * 트렌딩(인기) 목록 — 최근 글 중 시간감쇠 hot score 상위.
+     * 가중치/감쇠/윈도우는 SystemSetting 으로 튜닝(community.trending.*).
+     */
+    fun getTrendingPosts(categoryId: Long?, pageable: Pageable, currentUserId: Long?): Page<CommunityPostResponse> {
+        val blockedUserIds = (currentUserId?.let { userBlockRepository.findBlockedUserIds(it) } ?: emptyList())
+            .ifEmpty { listOf(0L) } // sentinel: native NOT IN () 회피 (user id 는 양수)
+        val windowDays = systemSettingService.getInt("community.trending.window_days", 14)
+        val since = java.time.LocalDateTime.now().minusDays(windowDays.toLong())
+        fun w(key: String, default: Double) =
+            systemSettingService.getString(key, default.toString()).toDoubleOrNull() ?: default
+        // ORDER BY 충돌 방지 위해 unsorted Pageable 사용
+        val unsorted = org.springframework.data.domain.PageRequest.of(pageable.pageNumber, pageable.pageSize)
+        val posts = postRepository.findTrending(
+            categoryId = categoryId,
+            blockedUserIds = blockedUserIds,
+            since = since,
+            wLike = w("community.trending.w_like", 3.0),
+            wComment = w("community.trending.w_comment", 5.0),
+            wView = w("community.trending.w_view", 1.0),
+            gravity = w("community.trending.gravity", 1.5),
+            pageable = unsorted,
+        )
+        return toResponsePage(posts, currentUserId)
+    }
+
+    private fun toResponsePage(posts: Page<CommunityPost>, currentUserId: Long?): Page<CommunityPostResponse> {
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
         val previewLength = systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100)
 
@@ -114,7 +144,7 @@ class CommunityService(
             val isLiked = currentUser?.let { likeRepository.existsByPostAndUser(post, it) } ?: false
             val isCommented = currentUserId?.let { commentRepository.existsByPostIdAndUserId(post.id, it) } ?: false
             val commentCount = commentRepository.countByPostId(post.id)
-            
+
             val contentPreview = if (post.content.length > previewLength) {
                 post.content.substring(0, previewLength) + "..."
             } else {
