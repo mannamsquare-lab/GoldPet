@@ -496,6 +496,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/profile-boost/purchase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 프로필 부스트 구매
+         * @description 골드를 차감하고 부스트 윈도우 생성. **Idempotency-Key 헤더 필수** — 동일 key 재요청 시 저장된 응답 반환(중복 차감 방지).
+         */
+        post: operations["purchaseBoost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pets": {
         parameters: {
             query?: never;
@@ -638,6 +658,29 @@ export interface paths {
          * @description SPEND 거래에 대한 환불 처리
          */
         post: operations["refundGold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gold/iap/verify-receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * IAP 영수증 검증
+         * @description App Store / Google Play 영수증을 서버에서 검증하고 골드를 지급합니다.
+         *
+         *                 **현재 상태: NOT_IMPLEMENTED** — 법인 개발자 계정 전환 후 활성화됩니다.
+         *                 골드는 지급되지 않으며 verified=false를 반환합니다.
+         */
+        post: operations["verifyReceipt"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2925,6 +2968,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/streaks/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 내 산책 스트릭 조회
+         * @description 현재/최장 연속 일수, 프리즈 보유, 오늘 활동 여부
+         */
+        get: operations["getMyStreak"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/public": {
         parameters: {
             query?: never;
@@ -2957,6 +3020,23 @@ export interface paths {
          * @description 내가 제출한 신고 목록을 조회합니다.
          */
         get: operations["getMyReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile-boost/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 현재 활성 부스트 조회 */
+        get: operations["getActiveBoost"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3310,6 +3390,26 @@ export interface paths {
         };
         /** 내 골드 잔액 */
         get: operations["getBalance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gamification/missions/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 오늘의 데일리 미션 조회
+         * @description 오늘(KST) 노출 미션 3종 + 완료/진행 상태
+         */
+        get: operations["getTodayMissions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4914,12 +5014,14 @@ export interface components {
             chatAlert: boolean;
             communityAlert: boolean;
             marketingAlert: boolean;
+            reengagementAlert: boolean;
         };
         NotificationSettingsResponse: {
             pushAlert: boolean;
             chatAlert: boolean;
             communityAlert: boolean;
             marketingAlert: boolean;
+            reengagementAlert: boolean;
         };
         UpdateFcmTokenRequest: {
             fcmToken?: string;
@@ -5527,6 +5629,19 @@ export interface components {
             status: "PENDING" | "RESOLVED" | "DISMISSED";
             createdAt?: string;
         };
+        ProfileBoostResponse: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: int32 */
+            goldCost: number;
+            active: boolean;
+            /** Format: int64 */
+            remainingSeconds: number;
+        };
         CreatePetRequest: {
             name: string;
             /** Format: int32 */
@@ -5627,6 +5742,19 @@ export interface components {
             refundedAmount: number;
             /** Format: int32 */
             balanceAfter: number;
+        };
+        IapVerifyReceiptRequest: {
+            /** @enum {string} */
+            platform: "IOS" | "ANDROID";
+            receiptData: string;
+            productId: string;
+        };
+        IapVerifyReceiptResponse: {
+            verified: boolean;
+            status: string;
+            /** Format: int32 */
+            goldGranted: number;
+            message?: string;
         };
         ChargeRequest: {
             /** Format: int32 */
@@ -6628,6 +6756,21 @@ export interface components {
             /** Format: int32 */
             orderIndex: number;
         };
+        StreakResponse: {
+            /** Format: int32 */
+            currentStreak: number;
+            /** Format: int32 */
+            longestStreak: number;
+            /** Format: date */
+            lastActiveDate?: string;
+            /** Format: int32 */
+            freezeCount: number;
+            activeToday: boolean;
+        };
+        ActiveBoostResponse: {
+            active: boolean;
+            boost?: components["schemas"]["ProfileBoostResponse"];
+        };
         SpeciesResponse: {
             /** Format: int32 */
             id: number;
@@ -6641,7 +6784,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type: "MATCH" | "MESSAGE" | "LIKE" | "COMMENT" | "FOLLOW" | "WALK" | "NOTICE" | "EVENT" | "SYSTEM" | "REPORT_RESOLVED";
+            type: "MATCH" | "MESSAGE" | "LIKE" | "COMMENT" | "FOLLOW" | "WALK" | "NOTICE" | "EVENT" | "SYSTEM" | "REPORT_RESOLVED" | "REENGAGEMENT";
             title: string;
             message: string;
             /** Format: int64 */
@@ -6872,6 +7015,28 @@ export interface components {
             totalCharged: number;
             /** Format: int32 */
             totalSpent: number;
+        };
+        DailyMissionResponse: {
+            /** Format: date */
+            missionDate: string;
+            missions: components["schemas"]["MissionItem"][];
+        };
+        MissionItem: {
+            /** Format: int64 */
+            badgeId: number;
+            name: string;
+            description: string;
+            imageUrl: string;
+            conditionType?: string;
+            /** Format: int32 */
+            conditionValue?: number;
+            /** Format: int32 */
+            rewardGold?: number;
+            /** Format: int32 */
+            currentValue?: number;
+            completed: boolean;
+            /** Format: date-time */
+            completedAt?: string;
         };
         BadgeResponse: {
             /** Format: int64 */
@@ -9052,6 +9217,28 @@ export interface operations {
             };
         };
     };
+    purchaseBoost: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileBoostResponse"];
+                };
+            };
+        };
+    };
     createPet: {
         parameters: {
             query?: never;
@@ -9236,6 +9423,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RefundResponse"];
+                };
+            };
+        };
+    };
+    verifyReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IapVerifyReceiptRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IapVerifyReceiptResponse"];
                 };
             };
         };
@@ -12917,6 +13128,26 @@ export interface operations {
             };
         };
     };
+    getMyStreak: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StreakResponse"];
+                };
+            };
+        };
+    };
     getPublicSettings: {
         parameters: {
             query?: never;
@@ -12955,6 +13186,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReportResponse"][];
+                };
+            };
+        };
+    };
+    getActiveBoost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActiveBoostResponse"];
                 };
             };
         };
@@ -13411,6 +13662,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["GoldBalanceResponse"];
+                };
+            };
+        };
+    };
+    getTodayMissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DailyMissionResponse"];
                 };
             };
         };
