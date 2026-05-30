@@ -16,6 +16,8 @@ import { FriendRecommendCard } from './components/FriendRecommendCard';
 import { TodayWalkCard } from './components/TodayWalkCard';
 import { HomeQuickMenu } from './components/HomeQuickMenu';
 import { AiProfileBanner } from './components/AiProfileBanner';
+import { StreakWidget } from './components/StreakWidget';
+import { streakService } from '../../services/streakService';
 import './HomePage.css';
 
 function ArrowRight() {
@@ -47,6 +49,12 @@ export default function HomePage() {
     const { data: homeData, isLoading } = useQuery({
         queryKey: ['homeData'],
         queryFn: homeService.getHomeData,
+        ...CACHE_TIME.DYNAMIC,
+    });
+
+    const { data: streakData } = useQuery({
+        queryKey: ['streak', 'me'],
+        queryFn: streakService.getMyStreak,
         ...CACHE_TIME.DYNAMIC,
     });
 
@@ -154,6 +162,16 @@ export default function HomePage() {
                     onStartWalk={() => navigate('/walk')}
                 />
             </section>
+
+            {/* 산책 스트릭 */}
+            {streakData && (
+                <section className="home_section">
+                    <div className="home_section__head">
+                        <h2>산책 스트릭</h2>
+                    </div>
+                    <StreakWidget data={streakData} />
+                </section>
+            )}
 
             <HomeQuickMenu />
         </div>

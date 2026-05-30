@@ -5,6 +5,7 @@ export interface NotificationSettings {
   chatAlert: boolean;
   communityAlert: boolean;
   marketingAlert: boolean;
+  reengagementAlert: boolean; // W2c: 산책 리마인더 / 재참여 알림 (backend: isReengagementAlertEnabled)
 }
 
 export interface PrivacySettings {

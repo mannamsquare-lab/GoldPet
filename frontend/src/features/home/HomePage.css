@@ -482,3 +482,102 @@
     letter-spacing: -0.02em;
     color: var(--color-bg);
 }
+
+/* === Walk Streak Widget === */
+.streak_widget {
+    padding: 16px;
+    background: var(--color-bg-white);
+    border-radius: var(--radius-card);
+}
+
+.streak_widget__empty {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: 8px 0;
+}
+
+.streak_widget__main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.streak_widget__flame_wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.streak_widget__flame_icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.streak_widget__count {
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--color-primary);
+}
+
+.streak_widget__unit {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-primary);
+}
+
+.streak_widget__today_badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 1000px;
+    background: var(--color-primary);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-text-white);
+}
+
+.streak_widget__divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 12px 0;
+}
+
+.streak_widget__stats {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.streak_widget__stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.streak_widget__stat + .streak_widget__stat {
+    border-left: 1px solid var(--color-border);
+}
+
+.streak_widget__stat_label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: #505050;
+}
+
+.streak_widget__stat_value {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-primary);
+}

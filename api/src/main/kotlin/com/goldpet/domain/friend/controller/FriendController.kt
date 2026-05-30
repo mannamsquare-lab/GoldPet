@@ -26,7 +26,7 @@ class FriendController(
     fun getFriends(
         @AuthenticationPrincipal principal: UserPrincipal,
         @RequestParam(required = false) distance: String?, // e.g., "1km", "3km"
-        @RequestParam(required = false) sort: String?, // "registered", "popular", "distance"
+        @RequestParam(required = false) sort: String?, // "registered", "popular", "distance", "compatible"
         @RequestParam(required = false) petTypes: List<String>?,
         @RequestParam(required = false) genders: List<String>?,
         @RequestParam(required = false) lat: Double?,

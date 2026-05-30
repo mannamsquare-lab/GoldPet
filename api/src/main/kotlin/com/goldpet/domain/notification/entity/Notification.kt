@@ -14,7 +14,8 @@ enum class NotificationType {
     NOTICE,          // 공지사항
     EVENT,           // 이벤트
     SYSTEM,          // 시스템 알림
-    REPORT_RESOLVED  // 신고 처리 결과 알림 (resolve/dismiss 모두 사용)
+    REPORT_RESOLVED, // 신고 처리 결과 알림 (resolve/dismiss 모두 사용)
+    REENGAGEMENT     // 재참여 넛지(휴면/스트릭-위기) — 전용 동의 카테고리 (W2c)
 }
 
 @Entity

@@ -164,7 +164,13 @@ export const FriendFindPage = () => {
                 } else {
                     appliedGenders.forEach(g => items.push({ key: `gender-${g}`, label: g === 'MALE' ? '남아' : '여아' }));
                 }
-                if (appliedSortOrder) items.push({ key: 'sort', label: appliedSortOrder === 'registered' ? '등록순' : '인기순' });
+                if (appliedSortOrder) {
+                    const sortLabel = appliedSortOrder === 'registered' ? '등록순'
+                        : appliedSortOrder === 'popular' ? '인기순'
+                        : appliedSortOrder === 'compatible' ? '궁합순'
+                        : appliedSortOrder;
+                    items.push({ key: 'sort', label: sortLabel });
+                }
                 return (
                     <div className="applied_filter_bar" onClick={toggleFilterVisibility}>
                         <div className="filter_bar_inner">
@@ -250,7 +256,7 @@ export const FriendFindPage = () => {
                         </div>
                     </li>
                     <li>
-                        <p>등록순</p>
+                        <p>정렬</p>
                         <div className="filter_list">
                             <div className="check_wrap">
                                 <input type="checkbox" id="for12" checked={selectedSortOrder === 'registered'} onChange={() => handleSortChange('registered')} />
@@ -259,6 +265,10 @@ export const FriendFindPage = () => {
                             <div className="check_wrap">
                                 <input type="checkbox" id="for13" checked={selectedSortOrder === 'popular'} onChange={() => handleSortChange('popular')} />
                                 <label htmlFor="for13">인기순</label>
+                            </div>
+                            <div className="check_wrap">
+                                <input type="checkbox" id="for14" checked={selectedSortOrder === 'compatible'} onChange={() => handleSortChange('compatible')} />
+                                <label htmlFor="for14">궁합순</label>
                             </div>
                         </div>
                     </li>

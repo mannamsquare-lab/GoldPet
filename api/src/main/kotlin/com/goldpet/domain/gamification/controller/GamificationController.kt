@@ -1,6 +1,8 @@
 package com.goldpet.domain.gamification.controller
 
 import com.goldpet.domain.gamification.dto.BadgeResponse
+import com.goldpet.domain.gamification.dto.DailyMissionResponse
+import com.goldpet.domain.gamification.service.DailyMissionService
 import com.goldpet.domain.gamification.service.GamificationService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -14,8 +16,17 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/v1/gamification")
 class GamificationController(
-    private val gamificationService: GamificationService
+    private val gamificationService: GamificationService,
+    private val dailyMissionService: DailyMissionService
 ) {
+
+    @Operation(summary = "오늘의 데일리 미션 조회", description = "오늘(KST) 노출 미션 3종 + 완료/진행 상태")
+    @GetMapping("/missions/today")
+    fun getTodayMissions(
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
+    ): ResponseEntity<DailyMissionResponse> {
+        return ResponseEntity.ok(dailyMissionService.getTodayMissions(userDetails.id))
+    }
 
     @Operation(summary = "전체 뱃지 목록 조회")
     @GetMapping("/badges")

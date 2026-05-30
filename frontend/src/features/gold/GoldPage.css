@@ -55,6 +55,72 @@
 .gold-balance-small .label { font-size: 14px; color: #727272; }
 .gold-balance-small .amount { font-size: 16px; font-weight: 700; color: var(--color-primary); }
 
+/* Profile Boost */
+.boost-section { padding: 16px 0; }
+
+.boost-active-card,
+.boost-inactive-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.boost-active-card { border: 2px solid var(--color-primary); }
+
+.boost-active-icon,
+.boost-inactive-icon { font-size: 48px; line-height: 1; }
+
+.boost-active-title,
+.boost-inactive-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.boost-active-countdown {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.boost-active-expires {
+  font-size: 13px;
+  font-weight: 500;
+  color: #727272;
+  margin: 0;
+}
+
+.boost-inactive-desc {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  word-break: keep-all;
+}
+
+.boost-purchase-btn {
+  margin-top: 8px;
+  width: 100%;
+  height: 48px;
+  border-radius: 48px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+.boost-purchase-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* Store Page */
 .store-page { padding-bottom: 80px; }
 .store-title { font-size: 18px; font-weight: 700; color: #614108; padding: 16px 16px 0; }

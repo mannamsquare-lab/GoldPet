@@ -110,6 +110,7 @@ class UserService(
         user.isChatAlertEnabled = request.chatAlert
         user.isCommunityAlertEnabled = request.communityAlert
         user.isMarketingAlertEnabled = request.marketingAlert
+        user.isReengagementAlertEnabled = request.reengagementAlert
         userRepository.save(user)
         return NotificationSettingsResponse.from(user)
     }

@@ -26,6 +26,7 @@ const SettingsPage: React.FC = () => {
     chatAlert: true,
     communityAlert: true,
     marketingAlert: false,
+    reengagementAlert: true, // default on; matches backend isReengagementAlertEnabled default
   });
 
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
@@ -148,6 +149,15 @@ const SettingsPage: React.FC = () => {
               <div className="toggle-switch">
                 <input type="checkbox" id="marketing-alert" checked={notificationSettings.marketingAlert} onChange={() => handleNotificationToggle('marketingAlert')} />
                 <label htmlFor="marketing-alert"></label>
+              </div>
+            </div>
+          </div>
+          <div className="settings-card">
+            <div className="settings-row">
+              <span className="settings-label">산책 리마인더</span>
+              <div className="toggle-switch">
+                <input type="checkbox" id="reengagement-alert" checked={notificationSettings.reengagementAlert} onChange={() => handleNotificationToggle('reengagementAlert')} />
+                <label htmlFor="reengagement-alert"></label>
               </div>
             </div>
           </div>

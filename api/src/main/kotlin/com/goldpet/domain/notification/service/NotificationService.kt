@@ -145,6 +145,8 @@ class NotificationService(
             NotificationType.MESSAGE -> user.isChatAlertEnabled
             NotificationType.COMMENT, NotificationType.FOLLOW -> user.isCommunityAlertEnabled
             NotificationType.NOTICE, NotificationType.EVENT -> user.isMarketingAlertEnabled
+            // W2c: 재참여 넛지는 전용 동의 카테고리. WALK 의 else->true 상시 레인 사용 금지(동의 우회 방지).
+            NotificationType.REENGAGEMENT -> user.isReengagementAlertEnabled
             else -> true // MATCH, LIKE, WALK, SYSTEM - always allowed
         }
     }
@@ -209,14 +211,19 @@ class NotificationService(
     /**
      * 산책 완료 보상-요약 푸시 (해석 A). 사용자의 모든 활성 기기로 fan-out (createNotification 단일 경로).
      * 보상이 실제 적립된 경우에만 의미가 있으므로 goldReward > 0 일 때만 호출하는 것을 전제.
+     *
+     * W2a: walk-완료 + streak 를 단일 푸시로 병합(한 산책=한 푸시). [streakDays] 가 2 이상이면
+     * 연속 산책 문구를 본문 뒤에 덧붙인다(별도 streak 푸시 금지 — 중복 방지).
      */
     @Transactional
-    fun notifyWalkCompleted(userId: Long, walkId: Long, distanceKm: Double, goldReward: Int) {
+    fun notifyWalkCompleted(userId: Long, walkId: Long, distanceKm: Double, goldReward: Int, streakDays: Int? = null) {
+        val base = "${String.format("%.1f", distanceKm)}km 완주! +${goldReward} 골드 적립"
+        val message = if (streakDays != null && streakDays >= 2) "$base · 🔥${streakDays}일 연속 산책!" else base
         createNotification(CreateNotificationRequest(
             userId = userId,
             type = NotificationType.WALK,
             title = "산책 완료 🐾",
-            message = "${String.format("%.1f", distanceKm)}km 완주! +${goldReward} 골드 적립",
+            message = message,
             targetId = walkId,
             targetType = "WALK",
             senderId = null

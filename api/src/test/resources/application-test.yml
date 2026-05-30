@@ -25,6 +25,10 @@ spring:
     enabled: true
     baseline-on-migrate: true
     validate-on-migrate: false
+    # 공유 테스트 DB에서 병렬 워커가 서로 다른 순번 마이그레이션을 추가할 때
+    # 번호 역전(예: V75 먼저 적용 후 V74 추가)으로 인한 무음 스킵 방지.
+    # dev/prod 와 동일 정책(out-of-order:true). 참고: memory feedback_flyway_out_of_order.
+    out-of-order: true
   cache:
     type: simple
 
