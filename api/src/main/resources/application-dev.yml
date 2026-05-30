@@ -15,6 +15,16 @@ spring:
     enabled: true
     baseline-on-migrate: true
     baseline-version: 0
+    # V68 가 V69/V70 보다 늦게 추가돼 스킵된 환경에서도 back-apply 되도록 허용.
+    # V68/V71 모두 IF NOT EXISTS 라 재적용/순서 무관하게 안전. schema_history 정합 + validate 실패 방지.
+    out-of-order: true
+
+# BLOCKER #9 — Sentry. SENTRY_DSN_API 미설정 시 dsn 공백 → SDK no-op (이벤트 미전송).
+sentry:
+  dsn: ${SENTRY_DSN_API:}
+  environment: dev
+  release: ${SENTRY_RELEASE:goldpet-api@0.0.1-SNAPSHOT}
+  traces-sample-rate: 0.1
 
 # 개발 서버 환경 URL 설정 (mannamsquare.com)
 app:
