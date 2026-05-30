@@ -1,7 +1,9 @@
 package com.goldpet.domain.friend.dto
 
 data class LikeRequest(
-    val toUserId: Long
+    val toUserId: Long,
+    /** 좋아요 발생 리스트/정렬 출처(compatible|distance|popular 등) — like_events 기록용. nullable. */
+    val source: String? = null
 )
 
 data class MatchResponse(

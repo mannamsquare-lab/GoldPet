@@ -78,7 +78,7 @@ export default function HomePage() {
         if (loadingId) return;
         setLoadingId(id);
         try {
-            const result = await friendService.likeUser(id);
+            const result = await friendService.likeUser(id, 'home');
             setLikedIds((prev) => new Set(prev).add(id));
             showAlert(
                 result.isMutual

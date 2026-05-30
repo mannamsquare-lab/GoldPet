@@ -8,6 +8,8 @@ import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
+import com.goldpet.domain.metrics.entity.LikeEventAction
+import com.goldpet.domain.metrics.service.LikeEventRecorder
 import com.goldpet.domain.notification.dto.CreateNotificationRequest
 import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.notification.service.NotificationService
@@ -23,14 +25,17 @@ class LikeService(
     private val matchRepository: MatchRepository,
     private val userRepository: UserRepository,
     private val notificationService: NotificationService,
-    private val userBlockRepository: UserBlockRepository
+    private val userBlockRepository: UserBlockRepository,
+    private val likeEventRecorder: LikeEventRecorder
 ) {
     /**
      * Like a user. Creates new like or reactivates canceled one.
      * Sends notification to target user.
      * Returns mutual status (true if target also likes me).
+     *
+     * @param source 좋아요가 발생한 리스트/정렬 출처(compatible|distance|popular 등) — like_events 기록용. nullable.
      */
-    fun likeUser(fromUserId: Long, toUserId: Long): LikeResponse {
+    fun likeUser(fromUserId: Long, toUserId: Long, source: String? = null): LikeResponse {
         val fromUser = userRepository.findById(fromUserId).orElseThrow {
             NotFoundException("User not found: $fromUserId")
         }
@@ -81,7 +86,11 @@ class LikeService(
             targetType = "USER",
             senderId = fromUserId
         ))
-        
+
+        // like_events append (W1(2), V80): point-in-time 퍼널 사실. is_match = THIS 좋아요가 지금 매치를 만들었는지(=isMutual).
+        // cohort 는 recorder 가 experiment_assignment 에서 read(재계산 금지). ACTIVE seam.
+        likeEventRecorder.record(fromUserId, toUserId, LikeEventAction.LIKE, isMatch = isMutual, source = source)
+
         return LikeResponse(
             likeId = like.id,
             toUserId = toUserId,
@@ -91,8 +100,10 @@ class LikeService(
     
     /**
      * Unlike/dislike a user. Sets status to CANCELED.
+     *
+     * @param source 취소가 발생한 리스트/정렬 출처 — like_events 기록용. nullable.
      */
-    fun unlikeUser(fromUserId: Long, toUserId: Long): Boolean {
+    fun unlikeUser(fromUserId: Long, toUserId: Long, source: String? = null): Boolean {
         val fromUser = userRepository.findById(fromUserId).orElse(null) ?: return false
         val toUser = userRepository.findById(toUserId).orElse(null) ?: return false
         
@@ -114,6 +125,9 @@ class LikeService(
             matchRepository.findByUserIds(fromUserId, toUserId).ifPresent { match ->
                 matchRepository.delete(match)
             }
+
+            // like_events append (W1(2), V80): CANCEL 은 매치를 만들지 않으므로 is_match=false. ACTIVE seam.
+            likeEventRecorder.record(fromUserId, toUserId, LikeEventAction.CANCEL, isMatch = false, source = source)
 
             return true
         }

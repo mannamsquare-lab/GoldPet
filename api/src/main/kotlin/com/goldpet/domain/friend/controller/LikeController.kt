@@ -23,9 +23,10 @@ class LikeController(
     @PostMapping("/{targetUserId}/like")
     fun likeUser(
         @AuthenticationPrincipal principal: UserPrincipal,
-        @PathVariable targetUserId: Long
+        @PathVariable targetUserId: Long,
+        @RequestParam(required = false) source: String?
     ): ResponseEntity<LikeResponse> {
-        val response = likeService.likeUser(principal.id, targetUserId)
+        val response = likeService.likeUser(principal.id, targetUserId, source)
         return ResponseEntity.ok(response)
     }
 
@@ -33,9 +34,10 @@ class LikeController(
     @DeleteMapping("/{targetUserId}/like")
     fun unlikeUser(
         @AuthenticationPrincipal principal: UserPrincipal,
-        @PathVariable targetUserId: Long
+        @PathVariable targetUserId: Long,
+        @RequestParam(required = false) source: String?
     ): ResponseEntity<Map<String, Boolean>> {
-        val success = likeService.unlikeUser(principal.id, targetUserId)
+        val success = likeService.unlikeUser(principal.id, targetUserId, source)
         return ResponseEntity.ok(mapOf("success" to success))
     }
 

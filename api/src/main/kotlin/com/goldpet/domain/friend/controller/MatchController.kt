@@ -25,7 +25,7 @@ class MatchController(
         @AuthenticationPrincipal principal: UserPrincipal,
         @RequestBody request: LikeRequest
     ): ResponseEntity<Map<String, Any>> {
-        val isMatchCreated = matchService.likeUser(principal.id, request.toUserId)
+        val isMatchCreated = matchService.likeUser(principal.id, request.toUserId, request.source)
         val response = mapOf(
             "isMatch" to isMatchCreated,
             "message" to if (isMatchCreated) "매칭되었습니다!" else "좋아요를 보냈습니다."

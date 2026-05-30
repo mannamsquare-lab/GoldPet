@@ -49,6 +49,10 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
   static const _deepLinkChannel = MethodChannel('com.mannam.goldpet/deep_link');
   bool _isPushingWalkScreen = false;
   bool _versionCheckInProgress = false;
+  // DAU: app-open active signal sent once per session (reset on cold start, i.e.
+  // when this State is recreated). Stays false until a 2xx so a pre-login 401
+  // is retried on the next resume.
+  bool _sessionActiveRecorded = false;
 
   @override
   void initState() {
@@ -56,7 +60,12 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _setupDeepLinkListener();
     // 앱 시작 시 버전 체크 (첫 프레임 이후 BuildContext 사용 가능)
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAppVersion());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAppVersion();
+      // 콜드 스타트(이미 resumed 상태로 시작)에서는 didChangeAppLifecycleState가
+      // 발생하지 않을 수 있으므로 여기서도 DAU 신호를 시도한다.
+      _recordSessionActive();
+    });
   }
 
   @override
@@ -73,6 +82,7 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
       _refreshTokenOnResume();
       _checkAppVersion();
       _checkPendingDeepLink();
+      _recordSessionActive();
     }
   }
 
@@ -84,6 +94,26 @@ class _HybridAppState extends State<HybridApp> with WidgetsBindingObserver {
       debugPrint('[TokenRefresh] App resume token refresh completed');
     } catch (e) {
       debugPrint('[TokenRefresh] App resume token refresh failed (non-blocking): $e');
+    }
+  }
+
+  /// 앱 오픈(DAU) 활성 신호를 서버에 1회/세션 기록한다.
+  /// - 세션당 1회: 성공(2xx) 시에만 플래그를 세팅 → 로그인 전 401은 다음 resume에 재시도.
+  /// - 비차단: fire-and-forget, 실패해도 앱 동작에 영향 없음.
+  /// - 인증: ApiClient 인터셉터가 기존 액세스 토큰을 자동 첨부.
+  /// - 순수 폴링 엔드포인트가 아니므로 서버에서 KST 일자 기준 1행으로 집계된다.
+  Future<void> _recordSessionActive() async {
+    if (_sessionActiveRecorded) return;
+    try {
+      final resp = await ApiClient().post('/api/v1/session/active');
+      final code = resp.statusCode ?? 0;
+      if (code >= 200 && code < 300) {
+        _sessionActiveRecorded = true;
+        debugPrint('[DAU] session/active recorded');
+      }
+    } catch (e) {
+      // 미로그인(401)·네트워크 오류 등 — 플래그 유지(false)로 다음 resume에 재시도.
+      debugPrint('[DAU] session/active skipped (non-blocking): $e');
     }
   }
 

@@ -286,14 +286,22 @@ class AdminSystemService(
     }
 
     fun getAllConfigs(): List<com.goldpet.domain.admin.controller.AppConfigResponse> {
-        return systemSettingService.getAllSettings().map {
-            com.goldpet.domain.admin.controller.AppConfigResponse(
-                key = it.key,
-                value = it.value,
-                description = it.description
-            )
-        }
+        return systemSettingService.getAllSettings()
+            // A/B 무결성: 코호트 예측에 악용될 수 있는 실험 salt 류는 노출 금지(security LOW#2).
+            // 이 엔드포인트엔 메서드 단위 role 게이트가 없어 VIEWER 도 읽을 수 있으므로 서버에서 제거한다.
+            .filterNot { isSensitiveConfigKey(it.key) }
+            .map {
+                com.goldpet.domain.admin.controller.AppConfigResponse(
+                    key = it.key,
+                    value = it.value,
+                    description = it.description
+                )
+            }
     }
+
+    /** 클라이언트/하위 권한 관리자에게 평문 노출하면 안 되는 설정 키. */
+    private fun isSensitiveConfigKey(key: String): Boolean =
+        key.endsWith(".salt") || key.endsWith(".salt_version")
 
     fun updateConfig(key: String, value: String) {
         systemSettingService.setValue(key, value)

@@ -94,12 +94,19 @@ export const friendService = {
     }
   },
 
-  likeUser: async (targetUserId: number): Promise<{ likeId: number; toUserId: number; isMutual: boolean }> => {
+  // `source` = originating sort/list (compatible|distance|popular|received|home …). Sent as a query
+  // param so it reaches the backend like_events log WITHOUT requiring an OpenAPI schema regen
+  // (the endpoint declares no request body). Omitted when not provided.
+  likeUser: async (
+    targetUserId: number,
+    source?: string,
+  ): Promise<{ likeId: number; toUserId: number; isMutual: boolean }> => {
     try {
       const response = await typedClient.postPath(
         '/api/v1/friends/{targetUserId}/like',
         { targetUserId },
         undefined,
+        source ? { params: { source } } : undefined,
       );
       return response.data as { likeId: number; toUserId: number; isMutual: boolean };
     } catch (error: unknown) {
@@ -108,11 +115,14 @@ export const friendService = {
     }
   },
 
-  unlikeUser: async (targetUserId: number): Promise<{ success: boolean }> => {
+  // `source` mirrors likeUser — sent as a query param so the CANCEL like_events row also records
+  // its originating list/sort (symmetry with LIKE). Omitted when not provided.
+  unlikeUser: async (targetUserId: number, source?: string): Promise<{ success: boolean }> => {
     try {
       const response = await typedClient.deletePath(
         '/api/v1/friends/{targetUserId}/like',
         { targetUserId },
+        source ? { params: { source } } : undefined,
       );
       return response.data as unknown as { success: boolean };
     } catch (error: unknown) {

@@ -149,6 +149,7 @@ export const FriendsListPage = () => {
                                 activeSubTab === 'likes_me' ? 'received_like' :
                                 'default'
                             }
+                            source={activeSubTab === 'likes_me' ? 'received' : undefined}
                         />
                     ))
                 ) : (

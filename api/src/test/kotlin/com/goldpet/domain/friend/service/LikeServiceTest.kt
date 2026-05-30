@@ -6,6 +6,8 @@ import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
+import com.goldpet.domain.metrics.entity.LikeEventAction
+import com.goldpet.domain.metrics.service.LikeEventRecorder
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import com.goldpet.domain.common.exception.*
 import java.time.LocalDateTime
@@ -37,6 +40,9 @@ class LikeServiceTest {
     @Mock
     private lateinit var userBlockRepository: UserBlockRepository
 
+    @Mock
+    private lateinit var likeEventRecorder: LikeEventRecorder
+
     private lateinit var likeService: LikeService
 
     private lateinit var testUser: User
@@ -45,7 +51,7 @@ class LikeServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        likeService = LikeService(likeRepository, matchRepository, userRepository, notificationService, userBlockRepository)
+        likeService = LikeService(likeRepository, matchRepository, userRepository, notificationService, userBlockRepository, likeEventRecorder)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
         targetUser = createTestUser(2L, "targetuser", "대상유저")
@@ -113,6 +119,8 @@ class LikeServiceTest {
         assertNotNull(result)
         assertEquals(2L, result.toUserId)
         assertFalse(result.isMutual)
+        // like_events (W1(2)): one LIKE row, is_match=false (not mutual)
+        verify(likeEventRecorder).record(1L, 2L, LikeEventAction.LIKE, false, null)
     }
 
     @Test
@@ -157,6 +165,8 @@ class LikeServiceTest {
 
         // Then
         assertTrue(result.isMutual)
+        // like_events (W1(2)): one LIKE row, is_match=true (this like produced a match now)
+        verify(likeEventRecorder).record(1L, 2L, LikeEventAction.LIKE, true, null)
     }
 
     @Test
@@ -238,6 +248,8 @@ class LikeServiceTest {
         // Then
         assertTrue(result)
         assertEquals(LikeStatus.CANCELED, existingLike.status)
+        // like_events (W1(2)): one CANCEL row, is_match=false (cancel never produces a match)
+        verify(likeEventRecorder).record(1L, 2L, LikeEventAction.CANCEL, false, null)
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.goldpet.domain.common.util.toHttps
 import com.goldpet.domain.friend.dto.FriendResponse
 import com.goldpet.util.GeoUtils
 import com.goldpet.domain.common.service.SystemSettingService
+import com.goldpet.domain.experiment.service.ExperimentService
 import com.goldpet.domain.friend.repository.FriendRepository
 import com.goldpet.domain.pet.repository.PetRepository
 import com.goldpet.domain.profileboost.service.ProfileBoostService
@@ -100,7 +101,8 @@ class FriendService(
     private val fileAttachmentLookupService: FileAttachmentLookupService,
     private val userRepository: UserRepository,
     private val systemSettingService: SystemSettingService,
-    private val profileBoostService: ProfileBoostService
+    private val profileBoostService: ProfileBoostService,
+    private val experimentService: ExperimentService
 ) {
     companion object {
         // 거리 native SQL 1차 후보집합 상한 (앱-레이어 재정렬 입력). 플랜 §2.1 N=200.
@@ -122,11 +124,22 @@ class FriendService(
         // W1: 신규 compatible 모드. 플래그 ON 일 때만 가중 재정렬 경로.
         // 플래그 OFF → distance-only 로 폴백(롤백 안전 — 기존 3모드 불변).
         if (sortBy == "compatible") {
-            return if (systemSettingService.getBoolean("match.compatibility.enabled", false)) {
-                getCompatibleFriends(myUserId, myLat, myLng, radiusMeters, petTypes, genders, pageable)
-            } else {
-                getFriends(myUserId, myLat, myLng, distanceKm, "distance", petTypes, genders, pageable)
+            // kill-switch: match.compatibility.enabled OFF → 전원 distance (compatible 경로 자체 비활성).
+            if (!systemSettingService.getBoolean("match.compatibility.enabled", false)) {
+                return getFriends(myUserId, myLat, myLng, distanceKm, "distance", petTypes, genders, pageable)
             }
+            // A/B(plan §1 W1(1)): experiment.compatibility.enabled ON 이면 write-once 코호트가 노출을 가른다.
+            //   TREATMENT → compatible 스코어링 / CONTROL → distance. like_events 도 같은 행에서 cohort read.
+            // experiment OFF → 코호트 미사용, 전원 compatible (A/B 도입 전 원래 동작 보존).
+            if (systemSettingService.getBoolean("experiment.compatibility.enabled", false)) {
+                val cohort = experimentService.getOrAssignCohort(myUserId, ExperimentService.COMPATIBILITY_KEY)
+                return if (cohort == ExperimentService.COHORT_TREATMENT) {
+                    getCompatibleFriends(myUserId, myLat, myLng, radiusMeters, petTypes, genders, pageable)
+                } else {
+                    getFriends(myUserId, myLat, myLng, distanceKm, "distance", petTypes, genders, pageable)
+                }
+            }
+            return getCompatibleFriends(myUserId, myLat, myLng, radiusMeters, petTypes, genders, pageable)
         }
 
         // Create a new pageable WITHOUT sort - sorting is handled in native query

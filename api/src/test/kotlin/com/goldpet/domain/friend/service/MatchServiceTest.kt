@@ -6,6 +6,7 @@ import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.chat.repository.ChatRoomRepository
+import com.goldpet.domain.metrics.entity.LikeEventAction
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
@@ -44,6 +45,9 @@ class MatchServiceTest {
 
     @Mock
     private lateinit var chatRoomRepository: ChatRoomRepository
+
+    @Mock
+    private lateinit var likeEventRecorder: com.goldpet.domain.metrics.service.LikeEventRecorder
 
     @InjectMocks
     private lateinit var matchService: MatchService
@@ -111,6 +115,8 @@ class MatchServiceTest {
         verify(likeRepository, times(1)).save(any(Like::class.java))
         verify(matchRepository, never()).save(any(Match::class.java))
         assertThat(isMatchCreated).isFalse()
+        // second seam (guardrail #1): like_events LIKE row with is_match=false (no match produced)
+        verify(likeEventRecorder, times(1)).record(user1.id, user2.id, LikeEventAction.LIKE, false, null)
     }
 
     @Test
@@ -145,6 +151,8 @@ class MatchServiceTest {
         verify(likeRepository, times(1)).save(any(Like::class.java))
         verify(matchRepository, times(1)).save(any(Match::class.java))
         assertThat(isMatchCreated).isTrue()
+        // second seam (guardrail #1): like_events LIKE row with is_match=true (mutual produced a match now)
+        verify(likeEventRecorder, times(1)).record(user1.id, user2.id, LikeEventAction.LIKE, true, null)
     }
 
     @Test
@@ -165,6 +173,8 @@ class MatchServiceTest {
         verify(likeRepository, never()).save(any(Like::class.java))
         verify(matchRepository, never()).save(any(Match::class.java))
         assertThat(isMatchCreated).isFalse()
+        // no new like row → no like_events append
+        verifyNoInteractions(likeEventRecorder)
     }
 
     @Test

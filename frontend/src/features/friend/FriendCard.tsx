@@ -21,12 +21,14 @@ interface FriendCardProps {
     onLikeStateChange?: () => void;
     viewMode?: 'default' | 'sent_like' | 'received_like' | 'mutual';
     onOpenGallery?: (images: string[], startIndex: number) => void;
+    /** Originating sort/list for like_events analytics (compatible|distance|popular|received …). */
+    source?: string;
 }
 
 const OWNER_FALLBACK = "/assets/images/common/profile_none_img.svg";
 const PET_FALLBACK = "/assets/images/main/main_slide_img01.png";
 
-export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOpenGallery }: FriendCardProps) => {
+export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOpenGallery, source }: FriendCardProps) => {
     const navigate = useNavigate();
     const { showAlert, showConfirm } = useAlert();
     const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +66,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
         if (isLoading) return;
         setIsLoading(true);
         try {
-            const result = await friendService.likeUser(data.id);
+            const result = await friendService.likeUser(data.id, source);
             setIsLiked(true);
             setIsMutual(result.isMutual);
 
@@ -90,7 +92,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
                 await friendService.rejectLike(data.id);
                 showAlert(`${data.petName}님의 좋아요를 거절했어요 😢`);
             } else {
-                await friendService.unlikeUser(data.id);
+                await friendService.unlikeUser(data.id, source);
 
                 if (viewMode === 'sent_like') {
                     showAlert(`${data.petName}님에게 보낸 좋아요를 취소했어요 ↩️`);

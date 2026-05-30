@@ -114,6 +114,16 @@ describe('friendService', () => {
       expect(mockedClient.post).toHaveBeenCalledWith('/friends/5/like', undefined, undefined)
       expect(result.isMutual).toBe(false)
     })
+
+    it('forwards source as a query param when provided', async () => {
+      mockedClient.post.mockResolvedValueOnce({ data: { likeId: 1, toUserId: 5, isMutual: false } })
+
+      await friendService.likeUser(5, 'compatible')
+
+      expect(mockedClient.post).toHaveBeenCalledWith('/friends/5/like', undefined, {
+        params: { source: 'compatible' },
+      })
+    })
   })
 
   describe('getMutualLikes', () => {

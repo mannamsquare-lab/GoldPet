@@ -293,6 +293,7 @@ export const FriendFindPage = () => {
                         data={friend}
                         onLikeStateChange={() => handleLikeStateChange(friend.id)}
                         onOpenGallery={(images, index) => setGalleryState({ open: true, images, index })}
+                        source={appliedSortOrder}
                     />
                 ))}
                 
