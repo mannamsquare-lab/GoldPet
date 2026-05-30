@@ -152,7 +152,7 @@ class AdminSystemController(
     @Operation(summary = "매칭 궁합 점수 설정 수정 (가중치 합 1.0 검증)")
     @PutMapping("/matching-config")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @CriticalAction(action = "MATCHING_CONFIG_UPDATE")
+    @CriticalAction(action = "MATCH_CONFIG_UPDATE") // ≤20자 (admin_audit_logs.action VARCHAR(20))
     fun updateMatchingConfig(@RequestBody request: MatchingConfigRequest): ResponseEntity<Void> {
         adminSystemService.updateMatchingConfig(request)
         return ResponseEntity.ok().build()
