@@ -39,7 +39,7 @@ class WebConfig(
      * Multi-device polling 3s 시나리오에서 잔액 변경 없을 경우 RDS read 회피 불가하지만
      * 네트워크/직렬화 비용 절감 (응답 byte 0 + Sentry/Grafana 측정 가능).
      *
-     * 적용 범위: `/api/v1/gold/*` 만 — 다른 endpoint 영향 격리 (안전 우선).
+     * 적용 범위: `/api/v1/gold` 하위 경로 패턴만 — 다른 endpoint 영향 격리 (안전 우선).
      */
     @Bean
     fun goldEtagFilter(): FilterRegistrationBean<ShallowEtagHeaderFilter> {

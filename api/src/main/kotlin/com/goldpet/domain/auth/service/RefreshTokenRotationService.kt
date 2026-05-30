@@ -49,8 +49,13 @@ class RefreshTokenRotationService(
     /**
      * Rotate. 반환은 (newRefreshToken, userId).
      * 검증 실패 / reuse 시 [UnauthorizedException].
+     *
+     * `noRollbackFor = UnauthorizedException`: reuse-detection 경로(d)는
+     * [revokeAllForDevice] 로 device chain 전체를 revoke 한 직후 401 을 던진다.
+     * 기본 rollback 정책이면 이 revoke 가 함께 롤백되어 보안 조치가 무효화되므로,
+     * UnauthorizedException 발생 시에도 revoke 가 commit 되도록 명시한다.
      */
-    @Transactional
+    @Transactional(noRollbackFor = [UnauthorizedException::class])
     fun rotate(
         oldToken: String,
         deviceId: String?,
