@@ -8,6 +8,7 @@ import { petService } from '../../services/petService';
 import { goldService } from '../../services/goldService';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { TAB_DURATION, TAB_EASING } from '../../config/cardFlipAnimation';
+import { useGoldBalancePolling } from '../../hooks/useGoldBalancePolling';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { ProfileImageSlider } from '../../components/common/ProfileImageSlider';
 import { ImageGalleryModal } from '../../components/common/ImageGalleryModal';
@@ -44,6 +45,9 @@ const MyPage: React.FC = () => {
     queryFn: petService.getMyPets,
     ...CACHE_TIME.DYNAMIC,
   });
+
+  // ETag 기반 골드 잔액 폴링 (10 s 간격, 304 시 리렌더 스킵)
+  useGoldBalancePolling();
 
   const { data: goldBalance } = useQuery({
     queryKey: ['gold', 'balance'],

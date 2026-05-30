@@ -15,11 +15,39 @@ export type GoldTransaction = TransactionResponse;
 export type ChargeGoldRequest = ChargeRequest;
 export type SpendGoldRequest = SpendRequest;
 
+export interface GoldBalanceETagResult {
+  status: 200 | 304;
+  data: GoldBalance | null;
+  etag: string | null;
+}
+
 // Service - real API calls only, no mock fallbacks
 export const goldService = {
   getBalance: async (): Promise<GoldBalance> => {
     const response = await typedClient.get('/api/v1/gold/balance');
     return response.data;
+  },
+
+  /**
+   * ETag 기반 잔액 조회.
+   * - ifNoneMatch: 직전 ETag 값 (첫 호출 시 null)
+   * - 200: 새 잔액 + ETag 반환
+   * - 304: data=null, etag=null (변경 없음 — invalidateQueries 금지)
+   */
+  getBalanceWithETag: async (ifNoneMatch: string | null): Promise<GoldBalanceETagResult> => {
+    const headers: Record<string, string> = {};
+    if (ifNoneMatch) {
+      headers['If-None-Match'] = ifNoneMatch;
+    }
+    const response = await typedClient.get('/api/v1/gold/balance', {
+      headers,
+      validateStatus: (s) => s === 200 || s === 304,
+    });
+    const etag = (response.headers as Record<string, string>)['etag'] ?? null;
+    if (response.status === 304) {
+      return { status: 304, data: null, etag: null };
+    }
+    return { status: 200, data: response.data, etag };
   },
 
   getProducts: async (): Promise<GoldProduct[]> => {
