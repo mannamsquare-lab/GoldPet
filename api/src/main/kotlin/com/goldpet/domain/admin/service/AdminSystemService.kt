@@ -40,6 +40,14 @@ class AdminSystemService(
 ) {
     companion object {
         private val ADMIN_PASSWORD_REGEX = AdminAuthService.ADMIN_PASSWORD_REGEX
+
+        // 매칭 궁합 점수 설정 키 (FriendService.getCompatibleFriends 와 동일)
+        private const val MATCH_ENABLED_KEY = "match.compatibility.enabled"
+        private const val MATCH_W_DISTANCE_KEY = "match.score.w_distance"
+        private const val MATCH_W_INTEREST_KEY = "match.score.w_interest"
+        private const val MATCH_W_HOBBY_KEY = "match.score.w_hobby"
+        private const val MATCH_W_TEMPERAMENT_KEY = "match.score.w_temperament"
+        private const val BOOST_RANK_BONUS_KEY = "profile.boost.rank_bonus"
     }
 
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -289,5 +297,48 @@ class AdminSystemService(
 
     fun updateConfig(key: String, value: String) {
         systemSettingService.setValue(key, value)
+    }
+
+    // ── 매칭 궁합 점수 설정 (W1) ─────────────────────────────────────────────
+    fun getMatchingConfig(): com.goldpet.domain.admin.controller.MatchingConfigResponse {
+        fun w(key: String, default: Double) =
+            systemSettingService.getString(key, default.toString()).toDoubleOrNull() ?: default
+        return com.goldpet.domain.admin.controller.MatchingConfigResponse(
+            enabled = systemSettingService.getBoolean(MATCH_ENABLED_KEY, false),
+            weightDistance = w(MATCH_W_DISTANCE_KEY, 0.40),
+            weightInterest = w(MATCH_W_INTEREST_KEY, 0.25),
+            weightHobby = w(MATCH_W_HOBBY_KEY, 0.20),
+            weightTemperament = w(MATCH_W_TEMPERAMENT_KEY, 0.15),
+            boostRankBonus = w(BOOST_RANK_BONUS_KEY, 0.15)
+        )
+    }
+
+    @Transactional
+    fun updateMatchingConfig(req: com.goldpet.domain.admin.controller.MatchingConfigRequest) {
+        val weights = listOf(
+            "거리 근접도" to req.weightDistance,
+            "관심사 일치" to req.weightInterest,
+            "취미 일치" to req.weightHobby,
+            "기질 일치" to req.weightTemperament,
+            "부스트 가산점" to req.boostRankBonus
+        )
+        weights.forEach { (label, v) ->
+            if (v.isNaN() || v < 0.0 || v > 1.0) {
+                throw BadRequestException("$label 가중치는 0~1 사이여야 합니다 (현재 $v)", "MATCH_WEIGHT_RANGE")
+            }
+        }
+        val sum = req.weightDistance + req.weightInterest + req.weightHobby + req.weightTemperament
+        if (sum < 0.99 || sum > 1.01) {
+            throw BadRequestException(
+                "가중치 합(거리+관심사+취미+기질)은 1.0 이어야 합니다 (현재 ${"%.2f".format(sum)})",
+                "MATCH_WEIGHT_SUM"
+            )
+        }
+        systemSettingService.setValue(MATCH_ENABLED_KEY, req.enabled.toString())
+        systemSettingService.setValue(MATCH_W_DISTANCE_KEY, req.weightDistance.toString())
+        systemSettingService.setValue(MATCH_W_INTEREST_KEY, req.weightInterest.toString())
+        systemSettingService.setValue(MATCH_W_HOBBY_KEY, req.weightHobby.toString())
+        systemSettingService.setValue(MATCH_W_TEMPERAMENT_KEY, req.weightTemperament.toString())
+        systemSettingService.setValue(BOOST_RANK_BONUS_KEY, req.boostRankBonus.toString())
     }
 }

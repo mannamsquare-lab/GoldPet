@@ -18,6 +18,15 @@ export interface BackupJob {
 export type SystemInfo = SystemInfoResponse;
 export type AppConfig = AppConfigResponse;
 
+export interface MatchingConfig {
+  enabled: boolean;
+  weightDistance: number;
+  weightInterest: number;
+  weightHobby: number;
+  weightTemperament: number;
+  boostRankBonus: number;
+}
+
 export interface AdminUser {
   id: number;
   email: string;
@@ -78,6 +87,15 @@ export const systemService = {
 
   async updateConfig(key: string, value: string): Promise<void> {
     await typedClient.post('/api/v1/admin/system/configs', { key, value });
+  },
+
+  async getMatchingConfig(): Promise<MatchingConfig> {
+    const response = await typedClient.get('/api/v1/admin/system/matching-config');
+    return response.data as unknown as MatchingConfig;
+  },
+
+  async updateMatchingConfig(cfg: MatchingConfig): Promise<void> {
+    await typedClient.put('/api/v1/admin/system/matching-config', cfg);
   },
 
   async createAdmin(data: AdminCreateRequest): Promise<AdminCreateResponse> {

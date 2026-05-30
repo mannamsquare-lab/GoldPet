@@ -143,6 +143,21 @@ class AdminSystemController(
         return ResponseEntity.ok().build()
     }
 
+    @Operation(summary = "매칭 궁합 점수 설정 조회")
+    @GetMapping("/matching-config")
+    fun getMatchingConfig(): ResponseEntity<MatchingConfigResponse> {
+        return ResponseEntity.ok(adminSystemService.getMatchingConfig())
+    }
+
+    @Operation(summary = "매칭 궁합 점수 설정 수정 (가중치 합 1.0 검증)")
+    @PutMapping("/matching-config")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "MATCHING_CONFIG_UPDATE")
+    fun updateMatchingConfig(@RequestBody request: MatchingConfigRequest): ResponseEntity<Void> {
+        adminSystemService.updateMatchingConfig(request)
+        return ResponseEntity.ok().build()
+    }
+
     @Operation(summary = "기존 PII 데이터 암호화 마이그레이션 (일회성)")
     @PostMapping("/migrate-pii-encryption")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
@@ -171,6 +186,24 @@ data class AppConfigResponse(
 data class UpdateConfigRequest(
     val key: String,
     val value: String
+)
+
+data class MatchingConfigResponse(
+    val enabled: Boolean,
+    val weightDistance: Double,
+    val weightInterest: Double,
+    val weightHobby: Double,
+    val weightTemperament: Double,
+    val boostRankBonus: Double
+)
+
+data class MatchingConfigRequest(
+    val enabled: Boolean,
+    val weightDistance: Double,
+    val weightInterest: Double,
+    val weightHobby: Double,
+    val weightTemperament: Double,
+    val boostRankBonus: Double
 )
 
 data class SystemInfoResponse(
