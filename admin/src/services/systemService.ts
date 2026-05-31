@@ -27,6 +27,13 @@ export interface MatchingConfig {
   boostRankBonus: number;
 }
 
+export interface ExperimentConfig {
+  enabled: boolean;
+  splitPct: number;
+  saltVersion: number;
+  hasSalt: boolean;
+}
+
 export interface AdminUser {
   id: number;
   email: string;
@@ -96,6 +103,15 @@ export const systemService = {
 
   async updateMatchingConfig(cfg: MatchingConfig): Promise<void> {
     await typedClient.put('/api/v1/admin/system/matching-config', cfg);
+  },
+
+  async getExperimentConfig(): Promise<ExperimentConfig> {
+    const response = await typedClient.get('/api/v1/admin/system/experiment-config');
+    return response.data as unknown as ExperimentConfig;
+  },
+
+  async updateExperimentConfig(cfg: { enabled: boolean; splitPct: number }): Promise<void> {
+    await typedClient.put('/api/v1/admin/system/experiment-config', cfg);
   },
 
   async createAdmin(data: AdminCreateRequest): Promise<AdminCreateResponse> {

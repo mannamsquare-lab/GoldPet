@@ -48,6 +48,12 @@ class AdminSystemService(
         private const val MATCH_W_HOBBY_KEY = "match.score.w_hobby"
         private const val MATCH_W_TEMPERAMENT_KEY = "match.score.w_temperament"
         private const val BOOST_RANK_BONUS_KEY = "profile.boost.rank_bonus"
+
+        // A/B 실험(궁합 매칭) 설정 키 (ExperimentService.getOrAssignCohort 와 동일, key=compatibility)
+        private const val EXP_COMPAT_ENABLED_KEY = "experiment.compatibility.enabled"
+        private const val EXP_COMPAT_SALT_KEY = "experiment.compatibility.salt"
+        private const val EXP_COMPAT_SPLIT_KEY = "experiment.compatibility.split_pct"
+        private const val EXP_COMPAT_SALT_VERSION_KEY = "experiment.compatibility.salt_version"
     }
 
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -348,5 +354,37 @@ class AdminSystemService(
         systemSettingService.setValue(MATCH_W_HOBBY_KEY, req.weightHobby.toString())
         systemSettingService.setValue(MATCH_W_TEMPERAMENT_KEY, req.weightTemperament.toString())
         systemSettingService.setValue(BOOST_RANK_BONUS_KEY, req.boostRankBonus.toString())
+    }
+
+    // ── A/B 실험 (궁합 매칭) ──────────────────────────────────────────────────
+    // 궁합순 노출을 TREATMENT(궁합 스코어링)/CONTROL(거리순) 으로 가르는 write-once 코호트 실험.
+    // salt 자체는 sensitive(유저가 자기 버킷 예측 못하게) — 평문 노출 없이 보유 여부/버전만 응답한다.
+    fun getExperimentConfig(): com.goldpet.domain.admin.controller.ExperimentConfigResponse {
+        val salt = systemSettingService.getString(EXP_COMPAT_SALT_KEY, "")
+        return com.goldpet.domain.admin.controller.ExperimentConfigResponse(
+            enabled = systemSettingService.getBoolean(EXP_COMPAT_ENABLED_KEY, false),
+            splitPct = systemSettingService.getInt(EXP_COMPAT_SPLIT_KEY, 50),
+            saltVersion = systemSettingService.getInt(EXP_COMPAT_SALT_VERSION_KEY, 1),
+            hasSalt = salt.isNotBlank()
+        )
+    }
+
+    @Transactional
+    fun updateExperimentConfig(req: com.goldpet.domain.admin.controller.ExperimentConfigRequest) {
+        if (req.splitPct < 0 || req.splitPct > 100) {
+            throw BadRequestException(
+                "TREATMENT 분할 비율은 0~100 사이여야 합니다 (현재 ${req.splitPct})",
+                "EXP_SPLIT_RANGE"
+            )
+        }
+        // 활성화 시 salt 가 비어 있으면 자동 생성 → 결정적 버킷팅 보장(평문 노출 안 함).
+        // split/salt 변경은 ExperimentService 계약상 미할당 신규 유저에만 적용(기존 행 불변).
+        if (req.enabled && systemSettingService.getString(EXP_COMPAT_SALT_KEY, "").isBlank()) {
+            systemSettingService.setValue(EXP_COMPAT_SALT_KEY, java.util.UUID.randomUUID().toString())
+            systemSettingService.setValue(EXP_COMPAT_SALT_VERSION_KEY, "1")
+        }
+        // split 을 enabled 보다 먼저 — 켜지는 순간 분할 비율이 이미 반영돼 있도록.
+        systemSettingService.setValue(EXP_COMPAT_SPLIT_KEY, req.splitPct.toString())
+        systemSettingService.setValue(EXP_COMPAT_ENABLED_KEY, req.enabled.toString())
     }
 }

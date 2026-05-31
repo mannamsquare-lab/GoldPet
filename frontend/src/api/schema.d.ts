@@ -257,6 +257,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/experiment-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A/B 실험(궁합 매칭) 설정 조회 */
+        get: operations["getExperimentConfig"];
+        /** A/B 실험(궁합 매칭) on/off·TREATMENT 분할 설정 */
+        put: operations["updateExperimentConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/admins/{id}": {
         parameters: {
             query?: never;
@@ -5419,6 +5437,11 @@ export interface components {
             /** Format: double */
             boostRankBonus: number;
         };
+        ExperimentConfigRequest: {
+            enabled: boolean;
+            /** Format: int32 */
+            splitPct: number;
+        };
         UpdateAdminRequest: {
             name?: string;
             /** @enum {string} */
@@ -7635,6 +7658,14 @@ export interface components {
             /** Format: double */
             storageTotal: number;
         };
+        ExperimentConfigResponse: {
+            enabled: boolean;
+            /** Format: int32 */
+            splitPct: number;
+            /** Format: int32 */
+            saltVersion: number;
+            hasSalt: boolean;
+        };
         AppConfigResponse: {
             key: string;
             value: string;
@@ -8927,6 +8958,48 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MatchingConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getExperimentConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExperimentConfigResponse"];
+                };
+            };
+        };
+    };
+    updateExperimentConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentConfigRequest"];
             };
         };
         responses: {

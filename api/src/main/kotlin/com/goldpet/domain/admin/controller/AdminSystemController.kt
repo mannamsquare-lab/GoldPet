@@ -158,6 +158,21 @@ class AdminSystemController(
         return ResponseEntity.ok().build()
     }
 
+    @Operation(summary = "A/B 실험(궁합 매칭) 설정 조회")
+    @GetMapping("/experiment-config")
+    fun getExperimentConfig(): ResponseEntity<ExperimentConfigResponse> {
+        return ResponseEntity.ok(adminSystemService.getExperimentConfig())
+    }
+
+    @Operation(summary = "A/B 실험(궁합 매칭) on/off·TREATMENT 분할 설정")
+    @PutMapping("/experiment-config")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "EXP_CONFIG_UPDATE") // ≤20자 (admin_audit_logs.action VARCHAR(20))
+    fun updateExperimentConfig(@RequestBody request: ExperimentConfigRequest): ResponseEntity<Void> {
+        adminSystemService.updateExperimentConfig(request)
+        return ResponseEntity.ok().build()
+    }
+
     @Operation(summary = "기존 PII 데이터 암호화 마이그레이션 (일회성)")
     @PostMapping("/migrate-pii-encryption")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
@@ -204,6 +219,18 @@ data class MatchingConfigRequest(
     val weightHobby: Double,
     val weightTemperament: Double,
     val boostRankBonus: Double
+)
+
+data class ExperimentConfigResponse(
+    val enabled: Boolean,
+    val splitPct: Int,
+    val saltVersion: Int,
+    val hasSalt: Boolean
+)
+
+data class ExperimentConfigRequest(
+    val enabled: Boolean,
+    val splitPct: Int
 )
 
 data class SystemInfoResponse(

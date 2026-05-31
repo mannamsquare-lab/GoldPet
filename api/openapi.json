@@ -1093,6 +1093,49 @@
         }
       }
     },
+    "/api/v1/admin/system/experiment-config": {
+      "get": {
+        "tags": [
+          "Admin System Management"
+        ],
+        "summary": "A/B 실험(궁합 매칭) 설정 조회",
+        "operationId": "getExperimentConfig",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin System Management"
+        ],
+        "summary": "A/B 실험(궁합 매칭) on/off·TREATMENT 분할 설정",
+        "operationId": "updateExperimentConfig",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentConfigRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/admins/{id}": {
       "put": {
         "tags": [
@@ -12676,6 +12719,22 @@
           "weightTemperament"
         ]
       },
+      "ExperimentConfigRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "splitPct": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "enabled",
+          "splitPct"
+        ]
+      },
       "UpdateAdminRequest": {
         "type": "object",
         "properties": {
@@ -17036,12 +17095,12 @@
       "PageableObject": {
         "type": "object",
         "properties": {
-          "unpaged": {
-            "type": "boolean"
-          },
           "pageNumber": {
             "type": "integer",
             "format": "int32"
+          },
+          "unpaged": {
+            "type": "boolean"
           },
           "pageSize": {
             "type": "integer",
@@ -19556,6 +19615,31 @@
           "storageUsed",
           "uptime",
           "version"
+        ]
+      },
+      "ExperimentConfigResponse": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "splitPct": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "saltVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasSalt": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "hasSalt",
+          "saltVersion",
+          "splitPct"
         ]
       },
       "AppConfigResponse": {
