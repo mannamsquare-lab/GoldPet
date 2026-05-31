@@ -43,7 +43,8 @@ const bannerSchema = z.object({
   title: z.string().trim().min(1, '제목을 입력해주세요.'),
   imageUrl: z.string().default(''),
   link: z.string().default(''),
-  displayOrder: z.number().int().min(1).default(1),
+  displayOrder: z.number().int().min(0).default(0),
+  isActive: z.boolean().default(true),
 });
 
 const sendSchema = z.object({
@@ -90,6 +91,7 @@ export default function MarketingPage() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | null>(null);
   const [bannerDialogOpen, setBannerDialogOpen] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [sendDialogTemplateId, setSendDialogTemplateId] = useState<number | null>(null);
   // Local state drives conditional rendering without form.watch()
   const [sendTargetType, setSendTargetType] = useState<'ALL' | 'USER'>('ALL');
@@ -108,7 +110,7 @@ export default function MarketingPage() {
 
   const bannerForm = useForm<BannerFormValues>({
     resolver: zodResolver(bannerSchema),
-    defaultValues: { title: '', imageUrl: '', link: '', displayOrder: 1 },
+    defaultValues: { title: '', imageUrl: '', link: '', displayOrder: 0, isActive: true },
   });
 
   const sendForm = useForm<SendFormValues>({
@@ -183,27 +185,51 @@ export default function MarketingPage() {
 
   // Banner dialog handlers
   const openCreateBanner = () => {
-    bannerForm.reset({ title: '', imageUrl: '', link: '', displayOrder: 1 });
+    setEditingBanner(null);
+    bannerForm.reset({ title: '', imageUrl: '', link: '', displayOrder: 0, isActive: true });
+    setBannerDialogOpen(true);
+  };
+
+  const openEditBanner = (banner: Banner) => {
+    setEditingBanner(banner);
+    bannerForm.reset({
+      title: banner.title,
+      imageUrl: banner.imageUrl ?? '',
+      link: banner.link ?? '',
+      displayOrder: banner.displayOrder,
+      isActive: banner.isActive,
+    });
     setBannerDialogOpen(true);
   };
 
   const closeBannerDialog = () => {
     setBannerDialogOpen(false);
+    setEditingBanner(null);
     bannerForm.reset();
   };
 
   const onBannerSubmit = async (values: BannerFormValues) => {
     try {
-      await marketingService.createBanner({
-        title: values.title,
-        imageUrl: values.imageUrl || null,
-        link: values.link || null,
-        displayOrder: values.displayOrder,
-      });
+      if (editingBanner) {
+        await marketingService.updateBanner(editingBanner.id, {
+          title: values.title,
+          imageUrl: values.imageUrl || null,
+          link: values.link || null,
+          displayOrder: values.displayOrder,
+          isActive: values.isActive,
+        });
+      } else {
+        await marketingService.createBanner({
+          title: values.title,
+          imageUrl: values.imageUrl || null,
+          link: values.link || null,
+          displayOrder: values.displayOrder,
+        });
+      }
       closeBannerDialog();
       queryClient.invalidateQueries({ queryKey: ['marketing-banners'] });
     } catch {
-      toast.error('배너 생성에 실패했습니다.');
+      toast.error(editingBanner ? '배너 수정에 실패했습니다.' : '배너 생성에 실패했습니다.');
     }
   };
 
@@ -315,6 +341,7 @@ export default function MarketingPage() {
       align: 'right',
       render: (_v, row) => (
         <div className="flex justify-end gap-2">
+          <Button variant="link" size="sm" onClick={() => openEditBanner(row)}>수정</Button>
           <Button variant="link" size="sm" className="text-red-600 hover:text-red-900" onClick={() => handleDeleteBanner(row.id)}>삭제</Button>
         </div>
       ),
@@ -445,7 +472,7 @@ export default function MarketingPage() {
       <Dialog open={bannerDialogOpen} onOpenChange={(open) => { if (!open) closeBannerDialog(); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>새 배너</DialogTitle>
+            <DialogTitle>{editingBanner ? '배너 수정' : '새 배너'}</DialogTitle>
             <DialogDescription>배너 정보를 입력하세요.</DialogDescription>
           </DialogHeader>
           <Form {...bannerForm}>
@@ -492,19 +519,38 @@ export default function MarketingPage() {
                     <FormControl>
                       <Input
                         type="number"
-                        min={1}
+                        min={0}
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              {editingBanner && (
+                <FormField
+                  name="isActive"
+                  control={bannerForm.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>상태</FormLabel>
+                      <Select onValueChange={(v) => field.onChange(v === 'true')} value={String(field.value)}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="true">활성</SelectItem>
+                          <SelectItem value="false">비활성</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <DialogFooter>
                 <UIButton type="button" variant="outline" onClick={closeBannerDialog}>취소</UIButton>
                 <UIButton type="submit" disabled={bannerForm.formState.isSubmitting}>
-                  {bannerForm.formState.isSubmitting ? '저장 중...' : '생성'}
+                  {bannerForm.formState.isSubmitting ? '저장 중...' : (editingBanner ? '수정' : '생성')}
                 </UIButton>
               </DialogFooter>
             </form>

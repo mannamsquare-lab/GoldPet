@@ -350,6 +350,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/marketing/banners/{bannerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 배너 수정 */
+        put: operations["updateBanner"];
+        post?: never;
+        /** 배너 삭제 */
+        delete: operations["deleteBanner"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/lbs/places/{id}": {
         parameters: {
             query?: never;
@@ -4919,23 +4937,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/marketing/banners/{bannerId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** 배너 삭제 */
-        delete: operations["deleteBanner"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/data/species/{id}": {
         parameters: {
             query?: never;
@@ -5535,6 +5536,26 @@ export interface components {
             category: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        BannerUpdateRequest: {
+            title: string;
+            imageUrl?: string;
+            link?: string;
+            isActive: boolean;
+            /** Format: int32 */
+            displayOrder: number;
+        };
+        BannerResponse: {
+            /** Format: int64 */
+            id: number;
+            title: string;
+            imageUrl?: string;
+            imageUrlThumbnail?: string;
+            imageUrlViewer?: string;
+            link?: string;
+            isActive: boolean;
+            /** Format: int32 */
+            displayOrder: number;
         };
         UpdatePlaceRequest: {
             name?: string;
@@ -6469,18 +6490,6 @@ export interface components {
             title: string;
             imageUrl?: string;
             link?: string;
-        };
-        BannerResponse: {
-            /** Format: int64 */
-            id: number;
-            title: string;
-            imageUrl?: string;
-            imageUrlThumbnail?: string;
-            imageUrlViewer?: string;
-            link?: string;
-            isActive: boolean;
-            /** Format: int32 */
-            displayOrder: number;
         };
         CreateBadgeRequest: {
             name: string;
@@ -9182,6 +9191,52 @@ export interface operations {
             header?: never;
             path: {
                 id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateBanner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bannerId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BannerUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BannerResponse"];
+                };
+            };
+        };
+    };
+    deleteBanner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bannerId: number;
             };
             cookie?: never;
         };
@@ -16038,26 +16093,6 @@ export interface operations {
             header?: never;
             path: {
                 yearMonth: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    deleteBanner: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bannerId: number;
             };
             cookie?: never;
         };

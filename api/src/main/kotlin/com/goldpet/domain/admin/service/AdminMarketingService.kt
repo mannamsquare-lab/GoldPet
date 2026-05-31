@@ -72,6 +72,30 @@ class AdminMarketingService(
     }
 
     @Transactional
+    fun updateBanner(bannerId: Long, request: BannerUpdateRequest): BannerResponse {
+        val banner = bannerRepository.findById(bannerId)
+            .orElseThrow { NotFoundException("Banner not found: $bannerId") }
+
+        banner.title = request.title
+        banner.imageUrl = request.imageUrl
+        banner.link = request.link
+        banner.isActive = request.isActive
+        banner.displayOrder = request.displayOrder
+
+        val saved = bannerRepository.save(banner)
+        return BannerResponse(
+            id = saved.id,
+            title = saved.title,
+            imageUrl = saved.imageUrl,
+            imageUrlThumbnail = fileAttachmentLookupService.thumbnailUrlFor(saved.imageUrl),
+            imageUrlViewer = fileAttachmentLookupService.viewerUrlFor(saved.imageUrl),
+            link = saved.link,
+            isActive = saved.isActive,
+            displayOrder = saved.displayOrder
+        )
+    }
+
+    @Transactional
     fun deleteBanner(bannerId: Long) {
         bannerRepository.deleteById(bannerId)
     }

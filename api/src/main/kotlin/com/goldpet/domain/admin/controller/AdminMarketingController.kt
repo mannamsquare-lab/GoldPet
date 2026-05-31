@@ -28,6 +28,16 @@ class AdminMarketingController(
         return ResponseEntity.ok(adminMarketingService.createBanner(request))
     }
 
+    @Operation(summary = "배너 수정")
+    @PutMapping("/banners/{bannerId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
+    fun updateBanner(
+        @PathVariable bannerId: Long,
+        @RequestBody request: BannerUpdateRequest
+    ): ResponseEntity<BannerResponse> {
+        return ResponseEntity.ok(adminMarketingService.updateBanner(bannerId, request))
+    }
+
     @Operation(summary = "배너 삭제")
     @DeleteMapping("/banners/{bannerId}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")

@@ -1397,6 +1397,71 @@
         }
       }
     },
+    "/api/v1/admin/marketing/banners/{bannerId}": {
+      "put": {
+        "tags": [
+          "Admin Marketing"
+        ],
+        "summary": "배너 수정",
+        "operationId": "updateBanner",
+        "parameters": [
+          {
+            "name": "bannerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BannerUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannerResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin Marketing"
+        ],
+        "summary": "배너 삭제",
+        "operationId": "deleteBanner",
+        "parameters": [
+          {
+            "name": "bannerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/lbs/places/{id}": {
       "put": {
         "tags": [
@@ -11318,31 +11383,6 @@
         }
       }
     },
-    "/api/v1/admin/marketing/banners/{bannerId}": {
-      "delete": {
-        "tags": [
-          "Admin Marketing"
-        ],
-        "summary": "배너 삭제",
-        "operationId": "deleteBanner",
-        "parameters": [
-          {
-            "name": "bannerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/v1/admin/data/species/{id}": {
       "delete": {
         "tags": [
@@ -13058,6 +13098,69 @@
           "category",
           "createdAt",
           "id",
+          "title"
+        ]
+      },
+      "BannerUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "displayOrder",
+          "isActive",
+          "title"
+        ]
+      },
+      "BannerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "imageUrlThumbnail": {
+            "type": "string"
+          },
+          "imageUrlViewer": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "displayOrder",
+          "id",
+          "isActive",
           "title"
         ]
       },
@@ -16057,43 +16160,6 @@
           }
         },
         "required": [
-          "title"
-        ]
-      },
-      "BannerResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "title": {
-            "type": "string"
-          },
-          "imageUrl": {
-            "type": "string"
-          },
-          "imageUrlThumbnail": {
-            "type": "string"
-          },
-          "imageUrlViewer": {
-            "type": "string"
-          },
-          "link": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "displayOrder": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "required": [
-          "displayOrder",
-          "id",
-          "isActive",
           "title"
         ]
       },

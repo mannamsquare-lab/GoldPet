@@ -90,6 +90,16 @@ export const marketingService = {
     return response.data as unknown as Record<string, unknown>;
   },
 
+  updateBanner: async (id: number, request: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    const body = request as unknown as Parameters<typeof typedClient.putPath<'/api/v1/admin/marketing/banners/{bannerId}'>>[2];
+    const response = await typedClient.putPath(
+      '/api/v1/admin/marketing/banners/{bannerId}',
+      { bannerId: id },
+      body,
+    );
+    return response.data as unknown as Record<string, unknown>;
+  },
+
   deleteBanner: async (id: number): Promise<void> => {
     await typedClient.deletePath(
       '/api/v1/admin/marketing/banners/{bannerId}',

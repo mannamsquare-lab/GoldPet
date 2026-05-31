@@ -22,6 +22,14 @@ data class BannerCreateRequest(
     val link: String? = null
 )
 
+data class BannerUpdateRequest(
+    val title: String,
+    val imageUrl: String? = null,
+    val link: String? = null,
+    val isActive: Boolean = true,
+    val displayOrder: Int = 0
+)
+
 data class CampaignResponse(
     val id: Long,
     val name: String,
