@@ -11,6 +11,7 @@ import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
 import { useShare } from '../share';
 import './WalkMapExpand.css';
+import './styles/walkMapMarkers.css';
 
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.9780;

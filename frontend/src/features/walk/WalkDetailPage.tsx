@@ -17,6 +17,7 @@ import { spotMarkerImage, spotTypeLabel, spotTypeMarkerIcon, formatSpotTimestamp
 import { useWalkPhotoGallery } from './hooks/useWalkPhotoGallery';
 import { useShare } from '../share';
 import './WalkDetail.css';
+import './styles/walkMapMarkers.css';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 

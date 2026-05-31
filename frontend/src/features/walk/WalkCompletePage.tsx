@@ -6,6 +6,7 @@ import { walkService } from '../../services/walkService';
 import type { WalkSpot } from '../../services/walkService';
 import { spotMarkerImage, petCircleMarkerHtml, createPolylinePath } from './utils/walkMapUtils';
 import './WalkCompletePage.css';
+import './styles/walkMapMarkers.css';
 
 export default function WalkCompletePage() {
   const { walkId } = useParams<{ walkId: string }>();
