@@ -94,10 +94,11 @@ class BannerControllerIT : IntegrationTestBase() {
     }
 
     @Test
-    fun `GET banners sets Cache-Control and ETag, returns 304 on If-None-Match`() {
+    fun `GET banners sets Cache-Control no-cache and ETag, returns 304 on If-None-Match`() {
+        // no-cache: 매 요청 재검증(admin 비활성화가 클라 캐시에 묶이지 않도록). 미변경 시 ETag 304.
         val result = mockMvc.perform(get("/api/v1/banners"))
             .andExpect(status().isOk)
-            .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("max-age=60")))
+            .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-cache")))
             .andExpect(header().exists("ETag"))
             .andReturn()
 

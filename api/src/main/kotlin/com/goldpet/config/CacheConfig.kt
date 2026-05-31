@@ -62,6 +62,9 @@ class CacheConfig {
             .withCacheConfiguration("user:stats", postFeedConfig)
             .withCacheConfiguration("emoticons", staticDataConfig)
             .withCacheConfiguration("ai:loading-tips", staticDataConfig)
+            // 공개 배너: admin 쓰기 @CacheEvict 가 1차 무효화. 짧은 TTL 은 예약 배너의
+            // 시간 기반 노출 전환을 흡수하고 evict 누락 시 안전망 역할.
+            .withCacheConfiguration("banners:public", postFeedConfig)
             .build()
     }
 

@@ -10,6 +10,7 @@ import com.goldpet.domain.admin.entity.PushDeliveryLog
 import com.goldpet.domain.admin.repository.BannerRepository
 import com.goldpet.domain.admin.repository.CampaignRepository
 import com.goldpet.domain.admin.repository.NotificationTemplateRepository
+import org.springframework.cache.annotation.CacheEvict
 import com.goldpet.domain.admin.repository.PushDeliveryLogRepository
 import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.notification.dto.CreateNotificationRequest
@@ -60,6 +61,7 @@ class AdminMarketingService(
     }
 
     @Transactional
+    @CacheEvict(cacheNames = ["banners:public"], allEntries = true)
     fun createBanner(request: BannerCreateRequest): BannerResponse {
         val banner = bannerRepository.save(Banner(
             title = request.title,
@@ -81,6 +83,7 @@ class AdminMarketingService(
     }
 
     @Transactional
+    @CacheEvict(cacheNames = ["banners:public"], allEntries = true)
     fun updateBanner(bannerId: Long, request: BannerUpdateRequest): BannerResponse {
         val banner = bannerRepository.findById(bannerId)
             .orElseThrow { NotFoundException("Banner not found: $bannerId") }
@@ -111,6 +114,7 @@ class AdminMarketingService(
             .getOrElse { throw BadRequestException("유효하지 않은 placement 값입니다: $value (허용값: ${BannerPlacement.entries.joinToString()})") }
 
     @Transactional
+    @CacheEvict(cacheNames = ["banners:public"], allEntries = true)
     fun deleteBanner(bannerId: Long) {
         bannerRepository.deleteById(bannerId)
     }
