@@ -48,4 +48,17 @@ class WebConfig(
         bean.setName("goldEtagFilter")
         return bean
     }
+
+    /**
+     * 공개 배너 `GET /api/v1/banners` 응답에 ETag(response body byte hash) 자동 부여.
+     * `If-None-Match` 일치 시 304 Not Modified. gold 필터는 gold 경로 전용이라
+     * banners 엔 미적용 → 별도 등록 필요. Cache-Control: public, max-age=60 과 병용.
+     */
+    @Bean
+    fun bannerEtagFilter(): FilterRegistrationBean<ShallowEtagHeaderFilter> {
+        val bean = FilterRegistrationBean(ShallowEtagHeaderFilter())
+        bean.addUrlPatterns("/api/v1/banners")
+        bean.setName("bannerEtagFilter")
+        return bean
+    }
 }

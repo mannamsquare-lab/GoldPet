@@ -14,6 +14,7 @@ import MaintenanceBanner from '../../components/common/MaintenanceBanner';
 import EventBanner from '../../components/common/EventBanner';
 import { FriendRecommendCard } from './components/FriendRecommendCard';
 import { TodayWalkCard } from './components/TodayWalkCard';
+import { PlacementBanner } from '../../components/common/PlacementBanner';
 import { HomeQuickMenu } from './components/HomeQuickMenu';
 import { AiProfileBanner } from './components/AiProfileBanner';
 import { StreakWidget } from './components/StreakWidget';
@@ -142,6 +143,8 @@ export default function HomePage() {
                     <p className="home_friends__empty">주변 반려동물 친구를 찾아보세요!</p>
                 )}
             </section>
+
+            <PlacementBanner placement="HOME" />
 
             {/* 오늘의 산책 */}
             <section className="home_section">

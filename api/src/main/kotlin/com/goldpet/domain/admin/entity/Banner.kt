@@ -28,5 +28,9 @@ class Banner(
     var startDate: LocalDateTime? = null,
 
     @Column(name = "end_date")
-    var endDate: LocalDateTime? = null
+    var endDate: LocalDateTime? = null,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "placement", nullable = false, length = 20)
+    var placement: BannerPlacement = BannerPlacement.HOME
 ) : BaseTimeEntity()

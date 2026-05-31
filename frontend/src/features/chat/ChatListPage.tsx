@@ -10,6 +10,7 @@ import { useChatListWebSocket } from '../../hooks/useChatListWebSocket';
 import '../../styles/chat.css';
 import { Loading } from '../../components/common/Loading';
 import CreateGroupChatModal from './CreateGroupChatModal';
+import { PlacementBanner } from '../../components/common/PlacementBanner';
 
 // Empty state component
 const ChatEmptyState = () => {
@@ -118,6 +119,8 @@ const ChatListPage = () => {
                     대화요청
                 </button>
             </div>
+
+            {activeTab !== 'request' && <PlacementBanner placement="CHAT" />}
 
             {/* 1:1 Chat List */}
             {activeTab === 'one' && (

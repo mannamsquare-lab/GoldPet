@@ -3950,6 +3950,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/banners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getBanners_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/app/version": {
         parameters: {
             query?: never;
@@ -5544,6 +5560,7 @@ export interface components {
             isActive: boolean;
             /** Format: int32 */
             displayOrder: number;
+            placement: string;
         };
         BannerResponse: {
             /** Format: int64 */
@@ -5556,6 +5573,7 @@ export interface components {
             isActive: boolean;
             /** Format: int32 */
             displayOrder: number;
+            placement: string;
         };
         UpdatePlaceRequest: {
             name?: string;
@@ -6490,6 +6508,7 @@ export interface components {
             title: string;
             imageUrl?: string;
             link?: string;
+            placement: string;
         };
         CreateBadgeRequest: {
             name: string;
@@ -7403,6 +7422,22 @@ export interface components {
             status: "PENDING" | "ACCEPTED" | "REJECTED";
             /** Format: date-time */
             createdAt: string;
+        };
+        PublicBannerResponse: {
+            /** Format: int64 */
+            id: number;
+            title: string;
+            imageUrl?: string;
+            imageUrlThumbnail?: string;
+            imageUrlViewer?: string;
+            link?: string;
+            placement: string;
+        };
+        PublicBannersResponse: {
+            home: components["schemas"]["PublicBannerResponse"][];
+            chat: components["schemas"]["PublicBannerResponse"][];
+            walk: components["schemas"]["PublicBannerResponse"][];
+            community: components["schemas"]["PublicBannerResponse"][];
         };
         AppVersionResponse: {
             forceUpdate: boolean;
@@ -11663,7 +11698,9 @@ export interface operations {
     };
     getBanners: {
         parameters: {
-            query?: never;
+            query?: {
+                placement?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14754,6 +14791,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ChatRoomResponse"][];
+                };
+            };
+        };
+    };
+    getBanners_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicBannersResponse"];
                 };
             };
         };

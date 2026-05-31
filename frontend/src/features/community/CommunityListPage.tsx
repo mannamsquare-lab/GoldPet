@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { communityService } from '../../services/communityService';
 import { systemService } from '../../services/systemService';
 import { CACHE_TIME } from '../../config/queryConfig';
 import { GpImage } from '../../components/common/GpImage';
+import { PlacementBanner } from '../../components/common/PlacementBanner';
 import { useHandleProfileTap } from '../../hooks/useHandleProfileTap';
 import './CommunityPage.css';
 
@@ -137,8 +138,12 @@ export default function CommunityListPage() {
           </div>
         ) : (
           <ul className="community_list">
-            {postsData?.posts.map((post) => (
-              <li key={post.id} onClick={() => navigate(`/community/${post.id}`)}>
+            {postsData?.posts.map((post, idx) => {
+              const allPosts = postsData.posts;
+              const insertIdx = allPosts.length > 3 ? 2 : allPosts.length - 1;
+              return (
+              <Fragment key={post.id}>
+              <li onClick={() => navigate(`/community/${post.id}`)}>
                 <div
                   className="list_profile"
                   onClick={(e) => handleProfileTap(post.authorId, e)}
@@ -208,7 +213,14 @@ export default function CommunityListPage() {
                     </div>
                 </div>
               </li>
-            ))}
+              {idx === insertIdx && (
+                <li className="community_ad_slot">
+                  <PlacementBanner placement="COMMUNITY" />
+                </li>
+              )}
+              </Fragment>
+              );
+            })}
           </ul>
         )}
       </div>

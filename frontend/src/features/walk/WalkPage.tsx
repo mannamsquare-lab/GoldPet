@@ -8,6 +8,7 @@ import { useShare } from '../share';
 import type { CourseFilters } from '../course/utils/courseHelpers';
 import { WalkRouteThumbnail } from './components/WalkRouteThumbnail';
 import { WalkPhotoCollection } from './components/WalkPhotoCollection';
+import { PlacementBanner } from '../../components/common/PlacementBanner';
 import { CourseCard } from '../course/components/CourseCard';
 import { CourseFilterWalkTab } from '../course/components/CourseFilterWalkTab';
 import { RegionFilter } from '../../components/common/RegionFilter';
@@ -406,6 +407,7 @@ export const WalkPage = () => {
                                 </button>
                             )}
                             <WalkPhotoCollection />
+                            <PlacementBanner placement="WALK" />
                         </div>
                     )}
 

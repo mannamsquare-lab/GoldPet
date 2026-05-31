@@ -26,7 +26,18 @@ interface Banner {
   link: string | null;
   isActive: boolean;
   displayOrder: number;
+  placement: string;
 }
+
+const PLACEMENT_OPTIONS = [
+  { value: 'HOME', label: '홈' },
+  { value: 'CHAT', label: '채팅' },
+  { value: 'WALK', label: '산책' },
+  { value: 'COMMUNITY', label: '커뮤니티' },
+] as const;
+
+const getPlacementLabel = (placement: string) =>
+  PLACEMENT_OPTIONS.find((o) => o.value === placement)?.label ?? placement;
 
 const TABS = [
   { key: 'templates', label: '푸시 알림' },
@@ -46,6 +57,7 @@ const bannerSchema = z.object({
   link: z.string().default(''),
   displayOrder: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
+  placement: z.enum(['HOME', 'CHAT', 'WALK', 'COMMUNITY'], { required_error: '노출 위치를 선택해주세요.' }),
 });
 
 const sendSchema = z.object({
@@ -112,7 +124,7 @@ export default function MarketingPage() {
 
   const bannerForm = useForm<BannerFormValues>({
     resolver: zodResolver(bannerSchema),
-    defaultValues: { title: '', imageUrl: '', link: '', displayOrder: 0, isActive: true },
+    defaultValues: { title: '', imageUrl: '', link: '', displayOrder: 0, isActive: true, placement: 'HOME' },
   });
 
   const sendForm = useForm<SendFormValues>({
@@ -188,7 +200,7 @@ export default function MarketingPage() {
   // Banner dialog handlers
   const openCreateBanner = () => {
     setEditingBanner(null);
-    bannerForm.reset({ title: '', imageUrl: '', link: '', displayOrder: 0, isActive: true });
+    bannerForm.reset({ title: '', imageUrl: '', link: '', displayOrder: 0, isActive: true, placement: 'HOME' });
     setBannerDialogOpen(true);
   };
 
@@ -200,6 +212,7 @@ export default function MarketingPage() {
       link: banner.link ?? '',
       displayOrder: banner.displayOrder,
       isActive: banner.isActive,
+      placement: banner.placement as BannerFormValues['placement'],
     });
     setBannerDialogOpen(true);
   };
@@ -235,6 +248,7 @@ export default function MarketingPage() {
           link: values.link || null,
           displayOrder: values.displayOrder,
           isActive: values.isActive,
+          placement: values.placement,
         });
       } else {
         await marketingService.createBanner({
@@ -242,6 +256,7 @@ export default function MarketingPage() {
           imageUrl: values.imageUrl || null,
           link: values.link || null,
           displayOrder: values.displayOrder,
+          placement: values.placement,
         });
       }
       closeBannerDialog();
@@ -342,6 +357,15 @@ export default function MarketingPage() {
 
   const bannerColumns: ColumnDef<Banner>[] = [
     { key: 'title', header: '제목', render: (_v, row) => <span className="font-medium">{row.title}</span> },
+    {
+      key: 'placement',
+      header: '노출 위치',
+      render: (_v, row) => (
+        <span className="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-700">
+          {getPlacementLabel(row.placement)}
+        </span>
+      ),
+    },
     { key: 'link', header: '링크', render: (_v, row) => row.link || '-' },
     { key: 'displayOrder', header: '순서' },
     {
@@ -502,6 +526,24 @@ export default function MarketingPage() {
                   <FormItem>
                     <FormLabel>제목</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="placement"
+                control={bannerForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>노출 위치 <span className="text-red-500">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="노출 위치 선택" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {PLACEMENT_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

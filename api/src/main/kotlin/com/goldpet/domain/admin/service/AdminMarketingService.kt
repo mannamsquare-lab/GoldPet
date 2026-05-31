@@ -2,6 +2,7 @@ package com.goldpet.domain.admin.service
 
 import com.goldpet.domain.admin.dto.*
 import com.goldpet.domain.admin.entity.Banner
+import com.goldpet.domain.admin.entity.BannerPlacement
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.admin.entity.Campaign
 import com.goldpet.domain.admin.entity.NotificationTemplate
@@ -34,8 +35,13 @@ class AdminMarketingService(
 ) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    fun getBanners(): List<BannerResponse> {
-        val banners = bannerRepository.findAllByOrderByDisplayOrderAsc()
+    fun getBanners(placement: String? = null): List<BannerResponse> {
+        val banners = if (placement != null) {
+            val p = parsePlacement(placement)
+            bannerRepository.findAllByPlacementOrderByDisplayOrderAsc(p)
+        } else {
+            bannerRepository.findAllByOrderByDisplayOrderAsc()
+        }
         // T1-1.5 batch prefetch
         fileAttachmentLookupService.batchLookup(banners.mapNotNull { it.imageUrl })
         return banners.map {
@@ -47,7 +53,8 @@ class AdminMarketingService(
                 imageUrlViewer = fileAttachmentLookupService.viewerUrlFor(it.imageUrl),
                 link = it.link,
                 isActive = it.isActive,
-                displayOrder = it.displayOrder
+                displayOrder = it.displayOrder,
+                placement = it.placement.name
             )
         }
     }
@@ -57,7 +64,8 @@ class AdminMarketingService(
         val banner = bannerRepository.save(Banner(
             title = request.title,
             imageUrl = request.imageUrl,
-            link = request.link
+            link = request.link,
+            placement = parsePlacement(request.placement)
         ))
         return BannerResponse(
             id = banner.id,
@@ -67,7 +75,8 @@ class AdminMarketingService(
             imageUrlViewer = fileAttachmentLookupService.viewerUrlFor(banner.imageUrl),
             link = banner.link,
             isActive = banner.isActive,
-            displayOrder = banner.displayOrder
+            displayOrder = banner.displayOrder,
+            placement = banner.placement.name
         )
     }
 
@@ -81,6 +90,7 @@ class AdminMarketingService(
         banner.link = request.link
         banner.isActive = request.isActive
         banner.displayOrder = request.displayOrder
+        banner.placement = parsePlacement(request.placement)
 
         val saved = bannerRepository.save(banner)
         return BannerResponse(
@@ -91,9 +101,14 @@ class AdminMarketingService(
             imageUrlViewer = fileAttachmentLookupService.viewerUrlFor(saved.imageUrl),
             link = saved.link,
             isActive = saved.isActive,
-            displayOrder = saved.displayOrder
+            displayOrder = saved.displayOrder,
+            placement = saved.placement.name
         )
     }
+
+    private fun parsePlacement(value: String): BannerPlacement =
+        runCatching { BannerPlacement.valueOf(value.uppercase()) }
+            .getOrElse { throw BadRequestException("유효하지 않은 placement 값입니다: $value (허용값: ${BannerPlacement.entries.joinToString()})") }
 
     @Transactional
     fun deleteBanner(bannerId: Long) {

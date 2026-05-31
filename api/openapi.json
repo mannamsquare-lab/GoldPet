@@ -4757,6 +4757,16 @@
         ],
         "summary": "배너 목록 조회",
         "operationId": "getBanners",
+        "parameters": [
+          {
+            "name": "placement",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -9194,6 +9204,26 @@
         }
       }
     },
+    "/api/v1/banners": {
+      "get": {
+        "tags": [
+          "banner-controller"
+        ],
+        "operationId": "getBanners_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBannersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/app/version": {
       "get": {
         "tags": [
@@ -13119,11 +13149,15 @@
           "displayOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "placement": {
+            "type": "string"
           }
         },
         "required": [
           "displayOrder",
           "isActive",
+          "placement",
           "title"
         ]
       },
@@ -13155,12 +13189,16 @@
           "displayOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "placement": {
+            "type": "string"
           }
         },
         "required": [
           "displayOrder",
           "id",
           "isActive",
+          "placement",
           "title"
         ]
       },
@@ -16157,9 +16195,13 @@
           },
           "link": {
             "type": "string"
+          },
+          "placement": {
+            "type": "string"
           }
         },
         "required": [
+          "placement",
           "title"
         ]
       },
@@ -18910,6 +18952,73 @@
           "id",
           "requesterNickname",
           "status"
+        ]
+      },
+      "PublicBannerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "imageUrlThumbnail": {
+            "type": "string"
+          },
+          "imageUrlViewer": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "placement": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "placement",
+          "title"
+        ]
+      },
+      "PublicBannersResponse": {
+        "type": "object",
+        "properties": {
+          "home": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicBannerResponse"
+            }
+          },
+          "chat": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicBannerResponse"
+            }
+          },
+          "walk": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicBannerResponse"
+            }
+          },
+          "community": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicBannerResponse"
+            }
+          }
+        },
+        "required": [
+          "chat",
+          "community",
+          "home",
+          "walk"
         ]
       },
       "AppVersionResponse": {

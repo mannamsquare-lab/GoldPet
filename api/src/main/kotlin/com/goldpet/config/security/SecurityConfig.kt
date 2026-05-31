@@ -64,6 +64,8 @@ class SecurityConfig(
                             // remove)
                             .requestMatchers(HttpMethod.GET, "/api/v1/walks/ranking")
                             .permitAll() // Allow public walk ranking
+                            .requestMatchers(HttpMethod.GET, "/api/v1/banners")
+                            .permitAll() // Allow public banner listing (app/web, no auth)
                             .requestMatchers(HttpMethod.GET, "/api/v1/ai-profile/loading-tips")
                             .permitAll() // Allow public loading tips
                             .requestMatchers("/oauth2/**")

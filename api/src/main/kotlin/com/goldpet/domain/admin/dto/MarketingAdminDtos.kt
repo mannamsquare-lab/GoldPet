@@ -13,13 +13,15 @@ data class BannerResponse(
     val link: String?,
     @get:JsonProperty("isActive")
     val isActive: Boolean,
-    val displayOrder: Int
+    val displayOrder: Int,
+    val placement: String
 )
 
 data class BannerCreateRequest(
     val title: String,
     val imageUrl: String? = null,
-    val link: String? = null
+    val link: String? = null,
+    val placement: String
 )
 
 data class BannerUpdateRequest(
@@ -27,7 +29,8 @@ data class BannerUpdateRequest(
     val imageUrl: String? = null,
     val link: String? = null,
     val isActive: Boolean = true,
-    val displayOrder: Int = 0
+    val displayOrder: Int = 0,
+    val placement: String
 )
 
 data class CampaignResponse(

@@ -17,8 +17,10 @@ class AdminMarketingController(
 ) {
     @Operation(summary = "배너 목록 조회")
     @GetMapping("/banners")
-    fun getBanners(): ResponseEntity<List<BannerResponse>> {
-        return ResponseEntity.ok(adminMarketingService.getBanners())
+    fun getBanners(
+        @RequestParam(required = false) placement: String?
+    ): ResponseEntity<List<BannerResponse>> {
+        return ResponseEntity.ok(adminMarketingService.getBanners(placement))
     }
 
     @Operation(summary = "배너 생성")
