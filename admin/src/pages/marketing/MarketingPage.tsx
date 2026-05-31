@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { marketingService } from '../../services/marketingService';
 import type { NotificationTemplate, DeliveryLog } from '../../services/marketingService';
+import { fileService } from '../../services/fileService';
 import { Tabs } from '../../components/common/Tabs';
 import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
@@ -92,6 +93,7 @@ export default function MarketingPage() {
   const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | null>(null);
   const [bannerDialogOpen, setBannerDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+  const [bannerUploading, setBannerUploading] = useState(false);
   const [sendDialogTemplateId, setSendDialogTemplateId] = useState<number | null>(null);
   // Local state drives conditional rendering without form.watch()
   const [sendTargetType, setSendTargetType] = useState<'ALL' | 'USER'>('ALL');
@@ -206,6 +208,22 @@ export default function MarketingPage() {
     setBannerDialogOpen(false);
     setEditingBanner(null);
     bannerForm.reset();
+  };
+
+  const handleBannerImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerUploading(true);
+    try {
+      const result = await fileService.uploadFile(file, 'banner');
+      bannerForm.setValue('imageUrl', result.url, { shouldValidate: true });
+    } catch (error) {
+      console.error('Failed to upload banner image:', error);
+      toast.error('이미지 업로드에 실패했습니다.');
+    } finally {
+      setBannerUploading(false);
+      e.target.value = '';
+    }
   };
 
   const onBannerSubmit = async (values: BannerFormValues) => {
@@ -493,8 +511,37 @@ export default function MarketingPage() {
                 control={bannerForm.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>이미지 URL</FormLabel>
-                    <FormControl><Input {...field} placeholder="/banners/example.jpg" /></FormControl>
+                    <FormLabel>이미지</FormLabel>
+                    <div className="flex items-center gap-3">
+                      {field.value ? (
+                        <img
+                          src={field.value}
+                          alt="배너 미리보기"
+                          className="h-16 w-28 object-cover rounded border border-gray-200"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                        />
+                      ) : (
+                        <div className="h-16 w-28 rounded border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400">
+                          미리보기
+                        </div>
+                      )}
+                      <label className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors ${bannerUploading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
+                        {bannerUploading ? '업로드 중...' : '이미지 선택'}
+                        <input type="file" accept="image/*" onChange={handleBannerImageUpload} disabled={bannerUploading} className="hidden" />
+                      </label>
+                      {field.value && (
+                        <button
+                          type="button"
+                          onClick={() => bannerForm.setValue('imageUrl', '', { shouldValidate: true })}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                    <FormControl>
+                      <Input {...field} placeholder="또는 이미지 URL 직접 입력 (/banners/example.jpg)" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -549,7 +596,7 @@ export default function MarketingPage() {
               )}
               <DialogFooter>
                 <UIButton type="button" variant="outline" onClick={closeBannerDialog}>취소</UIButton>
-                <UIButton type="submit" disabled={bannerForm.formState.isSubmitting}>
+                <UIButton type="submit" disabled={bannerForm.formState.isSubmitting || bannerUploading}>
                   {bannerForm.formState.isSubmitting ? '저장 중...' : (editingBanner ? '수정' : '생성')}
                 </UIButton>
               </DialogFooter>
