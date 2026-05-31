@@ -3,6 +3,7 @@ package com.goldpet.domain.walk.service
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import com.goldpet.domain.walk.repository.WalkSpotRepository
 import io.micrometer.core.instrument.MeterRegistry
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.scheduling.annotation.Scheduled
@@ -28,6 +29,7 @@ class WalkSpotVariantSyncScheduler(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(fixedDelay = 300_000)
+    @SchedulerLock(name = "walkSpotVariantSync", lockAtMostFor = "4m", lockAtLeastFor = "30s")
     fun sweepMissingVariants() {
         val reconciledFromAttachments = reconcile(batchSize = 100)
         val backfilled = backfillStragglers(batchSize = 50)

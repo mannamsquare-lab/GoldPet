@@ -57,6 +57,12 @@ dependencies {
     // BLOCKER #9 — Sentry 에러 모니터링. DSN 부재/공백 시 SDK no-op (이벤트 미전송).
     // 정확 patch 버전 고정 (range 금지). 착수 시점 latest-stable: 8.28.0.
     implementation("io.sentry:sentry-spring-boot-starter-jakarta:8.28.0")
+    // ShedLock — 멀티인스턴스(스케일아웃) 환경에서 @Scheduled 잡 중복발화 방지.
+    // LockProvider = JDBC(shedlock 테이블, V82). Redis 캐시는 maxmemory-policy=allkeys-lru(인스턴스 전역)라
+    // TTL 락 키가 evict → 락 증발 위험 → DB 영속(eviction 면역) JDBC provider 채택.
+    // Spring Boot 3.4 호환 5.x 핀 (6.x 점프 금지 — 잠재 호환 변경).
+    implementation("net.javacrumbs.shedlock:shedlock-spring:5.16.0")
+    implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.16.0")
 
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")

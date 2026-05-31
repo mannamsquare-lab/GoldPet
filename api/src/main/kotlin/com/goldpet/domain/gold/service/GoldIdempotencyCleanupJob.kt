@@ -1,6 +1,7 @@
 package com.goldpet.domain.gold.service
 
 import com.goldpet.domain.gold.repository.GoldIdempotencyKeyRepository
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -19,6 +20,7 @@ class GoldIdempotencyCleanupJob(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(cron = "0 30 4 * * *")
+    @SchedulerLock(name = "goldIdempotencyCleanup", lockAtMostFor = "10m")
     @Transactional
     fun cleanupExpired() {
         val deleted = repo.deleteExpired(LocalDateTime.now())

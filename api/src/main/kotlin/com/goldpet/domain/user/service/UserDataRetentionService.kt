@@ -2,6 +2,7 @@ package com.goldpet.domain.user.service
 
 import com.goldpet.domain.user.repository.DeletedUserRepository
 import com.goldpet.domain.user.repository.UserRepository
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -20,6 +21,7 @@ class UserDataRetentionService(
      * Deletes S3 profile images for users whose 30-day retention period has expired.
      */
     @Scheduled(cron = "0 0 3 * * *")
+    @SchedulerLock(name = "userDataRetentionDaily", lockAtMostFor = "20m")
     @Transactional
     fun cleanupExpiredDeletedUsers() {
         val now = LocalDateTime.now()
@@ -49,6 +51,7 @@ class UserDataRetentionService(
      * Users who haven't logged in for 90+ days get their FCM tokens cleared.
      */
     @Scheduled(cron = "0 0 4 * * SUN")
+    @SchedulerLock(name = "userDataRetentionWeekly", lockAtMostFor = "20m")
     @Transactional
     fun cleanupInactiveFcmTokens() {
         val cutoffDate = LocalDateTime.now().minusDays(90)

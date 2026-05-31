@@ -2,6 +2,7 @@ package com.goldpet.domain.metrics.service
 
 import com.goldpet.domain.metrics.repository.LikeEventRepository
 import com.goldpet.domain.metrics.repository.UserDailyActiveRepository
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -29,6 +30,7 @@ class MetricsRetentionJob(
 
     /** Runs daily at 04:30 KST (offset from the 04:00 refresh-token job). */
     @Scheduled(cron = "0 30 4 * * *", zone = ZONE)
+    @SchedulerLock(name = "metricsRetention", lockAtMostFor = "10m")
     @Transactional
     fun purgeExpiredMetrics() {
         val likeCutoff = LocalDateTime.now(KST).minusMonths(RETENTION_MONTHS)

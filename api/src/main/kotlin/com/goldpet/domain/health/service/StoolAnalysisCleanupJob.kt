@@ -2,6 +2,7 @@ package com.goldpet.domain.health.service
 
 import com.goldpet.domain.walk.entity.AnalysisStatus
 import com.goldpet.domain.walk.repository.StoolAnalysisRepository
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -15,6 +16,7 @@ class StoolAnalysisCleanupJob(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(fixedRate = 300_000)
+    @SchedulerLock(name = "stoolAnalysisCleanup", lockAtMostFor = "4m", lockAtLeastFor = "30s")
     @Transactional
     fun markStuckAnalysesFailed() {
         val threshold = LocalDateTime.now().minusMinutes(5)

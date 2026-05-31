@@ -2,6 +2,7 @@ package com.goldpet.domain.notification.reengagement.service
 
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.notification.reengagement.repository.ReengagementSendRepository
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -37,10 +38,12 @@ class ReengagementService(
 
     /** 휴면-복귀 넛지 — 18:00 KST. */
     @Scheduled(cron = "0 0 18 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(name = "reengagementDormancyNudge", lockAtMostFor = "15m", lockAtLeastFor = "1m")
     fun runDormancyNudge() = runNudge(NudgeType.DORMANCY)
 
     /** 스트릭-위기 넛지 — 20:00 KST. */
     @Scheduled(cron = "0 0 20 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(name = "reengagementStreakAtRiskNudge", lockAtMostFor = "15m", lockAtLeastFor = "1m")
     fun runStreakAtRiskNudge() = runNudge(NudgeType.STREAK_AT_RISK)
 
     fun runNudge(type: NudgeType): Int {

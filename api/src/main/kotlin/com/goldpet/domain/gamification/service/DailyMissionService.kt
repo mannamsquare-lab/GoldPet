@@ -10,6 +10,7 @@ import com.goldpet.domain.gamification.repository.BadgeRepository
 import com.goldpet.domain.gamification.repository.DailyMissionSetRepository
 import com.goldpet.domain.gamification.repository.UserBadgeRepository
 import com.goldpet.domain.user.repository.UserRepository
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.scheduling.annotation.Scheduled
@@ -49,6 +50,7 @@ class DailyMissionService(
      * 회전 cron — KST 00:05 (기존 03:00-04:40 혼잡창 회피). 하루 1행만 생성(idempotent).
      */
     @Scheduled(cron = "0 5 0 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(name = "dailyMissionRotation", lockAtMostFor = "15m")
     @Transactional
     fun rotateDailyMissions() {
         val today = LocalDate.now(KST)

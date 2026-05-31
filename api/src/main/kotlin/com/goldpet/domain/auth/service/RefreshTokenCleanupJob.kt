@@ -1,6 +1,7 @@
 package com.goldpet.domain.auth.service
 
 import com.goldpet.domain.auth.repository.UserRefreshTokenRepository
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -19,6 +20,7 @@ class RefreshTokenCleanupJob(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(cron = "0 35 4 * * *")
+    @SchedulerLock(name = "refreshTokenCleanup", lockAtMostFor = "5m")
     @Transactional
     fun cleanupExpired() {
         val deleted = repo.deleteExpired(LocalDateTime.now())
