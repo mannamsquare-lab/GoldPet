@@ -9,6 +9,7 @@ import TransactionItem from './components/TransactionItem';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import { useAlert } from '../../contexts/AlertContext';
 import { CACHE_TIME } from '../../config/queryConfig';
+import { PAYMENT_ENABLED } from '../../config/featureFlags';
 import './GoldPage.css';
 
 type FilterType = 'ALL' | 'CHARGE' | 'SPEND' | 'REWARD' | 'REFUND';
@@ -18,7 +19,7 @@ function GoldMainPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showAlert, showConfirm } = useAlert();
-  const [activeTab, setActiveTab] = useState<TabType>('charge');
+  const [activeTab, setActiveTab] = useState<TabType>(PAYMENT_ENABLED ? 'charge' : 'history');
   const [filter, setFilter] = useState<FilterType>('ALL');
   const [page, setPage] = useState(0);
 
@@ -71,12 +72,14 @@ function GoldMainPage() {
       <GoldBalanceCard balance={balance} />
 
       <div className="gold-tabs">
-        <button
-          className={`gold-tab${activeTab === 'charge' ? ' active' : ''}`}
-          onClick={() => setActiveTab('charge')}
-        >
-          충전하기
-        </button>
+        {PAYMENT_ENABLED && (
+          <button
+            className={`gold-tab${activeTab === 'charge' ? ' active' : ''}`}
+            onClick={() => setActiveTab('charge')}
+          >
+            충전하기
+          </button>
+        )}
         <button
           className={`gold-tab${activeTab === 'history' ? ' active' : ''}`}
           onClick={() => setActiveTab('history')}
@@ -91,7 +94,7 @@ function GoldMainPage() {
         </button>
       </div>
 
-      {activeTab === 'charge' && (
+      {PAYMENT_ENABLED && activeTab === 'charge' && (
         <div className="gold-charge-content">
           <button className="gold-charge-btn" onClick={() => navigate('/gold/purchase')}>
             골드 스토어로 이동
@@ -103,10 +106,14 @@ function GoldMainPage() {
         <div>
           <div className="gold-filter-tabs">
             <button className={filter === 'ALL' ? 'active' : ''} onClick={() => handleFilterChange('ALL')}>전체</button>
-            <button className={filter === 'CHARGE' ? 'active' : ''} onClick={() => handleFilterChange('CHARGE')}>충전</button>
+            {PAYMENT_ENABLED && (
+              <button className={filter === 'CHARGE' ? 'active' : ''} onClick={() => handleFilterChange('CHARGE')}>충전</button>
+            )}
             <button className={filter === 'SPEND' ? 'active' : ''} onClick={() => handleFilterChange('SPEND')}>사용</button>
             <button className={filter === 'REWARD' ? 'active' : ''} onClick={() => handleFilterChange('REWARD')}>적립</button>
-            <button className={filter === 'REFUND' ? 'active' : ''} onClick={() => handleFilterChange('REFUND')}>환불</button>
+            {PAYMENT_ENABLED && (
+              <button className={filter === 'REFUND' ? 'active' : ''} onClick={() => handleFilterChange('REFUND')}>환불</button>
+            )}
           </div>
 
           <div>

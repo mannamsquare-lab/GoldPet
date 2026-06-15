@@ -100,9 +100,9 @@ class AIProfileService(
 
         // 골드 비용 계산
         val goldCost = when (request.type) {
-            AIRequestType.IMAGE -> 10
-            AIRequestType.VIDEO -> 30
-            AIRequestType.AVATAR -> 50
+            AIRequestType.IMAGE -> systemSettingService.getInt("ai.profile.cost.image", 10)
+            AIRequestType.VIDEO -> 30  // forward-looking: not reachable at launch (FE forces IMAGE)
+            AIRequestType.AVATAR -> 50 // forward-looking: not reachable at launch (FE forces IMAGE)
         }
 
         // 골드 차감

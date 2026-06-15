@@ -1,6 +1,8 @@
 package com.goldpet.domain.gold.controller
 
 import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.common.exception.ForbiddenException
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.gold.dto.*
 import com.goldpet.domain.gold.entity.TransactionType
 import com.goldpet.domain.gold.service.GoldService
@@ -20,7 +22,17 @@ import org.springframework.web.bind.annotation.*
 class GoldController(
     private val goldService: GoldService,
     private val idempotencyService: IdempotencyService,
+    private val systemSettingService: SystemSettingService,
 ) {
+    companion object {
+        const val PAYMENT_FLAG_KEY = "gold.payment.enabled"
+        const val PAYMENT_FLAG_DEFAULT = "false"
+    }
+
+    // PG 미계약 출시 대비: 결제(충전) 마스터 토글. PhotoUrlSigner 플래그 선례.
+    private fun paymentEnabled(): Boolean =
+        systemSettingService.getString(PAYMENT_FLAG_KEY, PAYMENT_FLAG_DEFAULT).equals("true", ignoreCase = true)
+
     @Operation(summary = "내 골드 잔액")
     @GetMapping("/balance")
     fun getBalance(@AuthenticationPrincipal principal: UserPrincipal): ResponseEntity<GoldBalanceResponse> {
@@ -30,6 +42,10 @@ class GoldController(
     @Operation(summary = "골드 상품 목록")
     @GetMapping("/products")
     fun getProducts(): ResponseEntity<List<GoldProductResponse>> {
+        // 결제 off면 상품 비노출(DB drift 없이 결정적으로 빈 리스트)
+        if (!paymentEnabled()) {
+            return ResponseEntity.ok(emptyList())
+        }
         return ResponseEntity.ok(goldService.getProducts())
     }
 
@@ -53,6 +69,10 @@ class GoldController(
         @RequestHeader("Idempotency-Key") idempotencyKey: String,
         @RequestBody request: ChargeRequest,
     ): ResponseEntity<TransactionResponse> {
+        // PG 미계약 출시: 결제 off면 충전 차단(서비스 로직 진입 전 403)
+        if (!paymentEnabled()) {
+            throw ForbiddenException("골드 충전 기능이 비활성화되어 있습니다.", errorCode = "PAYMENT_DISABLED")
+        }
         val hash = idempotencyService.hashRequest(principal.id, "POST /api/v1/gold/charge", request)
         val response = idempotencyService.execute(
             key = idempotencyKey,
