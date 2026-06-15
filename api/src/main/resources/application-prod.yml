@@ -49,3 +49,12 @@ deepl:
 
 openai:
   api-key: ${OPENAI_API_KEY}
+
+# NCloud SENS SMS (휴대폰 인증 발송). 비밀키는 서버 env 에서만 주입 — 값 하드코딩 금지.
+ncloud:
+  sms:
+    host: ${NCLOUD_SMS_HOST:https://sens.apigw.ntruss.com}
+    access-key: ${NCLOUD_SMS_ACCESS_KEY:}
+    secret-key: ${NCLOUD_SMS_SECRET_KEY:}
+    service-id: ${NCLOUD_SMS_SERVICE_ID:}
+    sender-number: ${NCLOUD_SMS_FROM:}

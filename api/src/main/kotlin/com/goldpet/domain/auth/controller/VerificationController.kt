@@ -25,8 +25,10 @@ class VerificationController(
     @PostMapping("/request")
     fun requestVerificationCode(@RequestBody request: VerificationRequest): ResponseEntity<VerificationResponse> {
         val code = verificationService.sendVerificationCode(request.phoneNumber)
+        // 인증코드는 local 에서만 응답에 노출(개발 편의). dev/prod 는 실제 SMS 로만 전달 —
+        // dev 를 운영처럼 쓰므로 dev 노출 시 SMS 인증 우회가 가능해 local 전용으로 제한.
         val activeProfiles = environment.activeProfiles.toSet()
-        val devCode = if ("local" in activeProfiles || "dev" in activeProfiles) code else null
+        val devCode = if ("local" in activeProfiles) code else null
         return ResponseEntity.ok(VerificationResponse(true, "인증번호가 발송되었습니다.", devCode))
     }
 
