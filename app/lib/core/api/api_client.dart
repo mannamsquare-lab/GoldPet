@@ -136,9 +136,12 @@ class ApiClient {
                 _refreshLock = null;
               }
             }
-            // Trigger auth expiry callback (dedup: only once)
+            // Trigger auth expiry callback (dedup: only once).
+            // refreshToken 이 애초에 없으면 "로그인한 적 없는" 정상 상태이므로
+            // 만료 알럿을 띄우지 않는다(신규 설치 첫 실행 시 오알럿 방지).
             // Set flag before async clearToken() to prevent race on concurrent 401s
-            if (!_isAuthExpired) {
+            final hadSession = refreshToken != null && refreshToken.isNotEmpty;
+            if (!_isAuthExpired && hadSession) {
               _isAuthExpired = true;
               debugPrint('[AuthExpiry] Token refresh failed, showing expiry dialog');
               onAuthExpired?.call();
