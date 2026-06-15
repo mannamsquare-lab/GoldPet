@@ -22,6 +22,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { useAppHeight } from './hooks/useAppHeight';
 import MaintenanceGuard from './components/common/MaintenancePage';
 import { ShareRedirectBridge } from './features/share/ShareRedirect';
+import { PAYMENT_ENABLED } from './config/featureFlags';
 
 // Named-export pages (adapter pattern)
 const OnboardingPage = lazy(() => import('./features/onboarding/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
@@ -156,7 +157,7 @@ function App() {
 
               {/* No Layout: Gold pages */}
               <Route path="/gold" element={<Suspense fallback={null}><GoldMainPage /></Suspense>} />
-              <Route path="/gold/purchase" element={<Suspense fallback={null}><GoldPurchasePage /></Suspense>} />
+              <Route path="/gold/purchase" element={PAYMENT_ENABLED ? <Suspense fallback={null}><GoldPurchasePage /></Suspense> : <Navigate to="/gold" replace />} />
               <Route path="/gold/history" element={<Suspense fallback={null}><GoldHistoryPage /></Suspense>} />
 
               {/* Health */}

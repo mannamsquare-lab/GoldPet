@@ -7,6 +7,7 @@ import { userService } from '../../services/userService';
 import { petService } from '../../services/petService';
 import { goldService } from '../../services/goldService';
 import { CACHE_TIME } from '../../config/queryConfig';
+import { PAYMENT_ENABLED } from '../../config/featureFlags';
 import { TAB_DURATION, TAB_EASING } from '../../config/cardFlipAnimation';
 import { useGoldBalancePolling } from '../../hooks/useGoldBalancePolling';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
@@ -227,9 +228,11 @@ const MyPage: React.FC = () => {
                     {(goldBalance?.balance || 0).toLocaleString()}
                   </span>
                 </div>
-                <button className="mypage-gold-charge-btn" onClick={() => navigate('/gold/purchase')}>
-                  충전
-                </button>
+                {PAYMENT_ENABLED && (
+                  <button className="mypage-gold-charge-btn" onClick={() => navigate('/gold/purchase')}>
+                    충전
+                  </button>
+                )}
               </div>
             </div>
 

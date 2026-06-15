@@ -525,12 +525,16 @@ class WalkService(
     }
 
     private fun calculateWalkReward(distanceKm: Double): Int {
-        return when {
+        val base = when {
             distanceKm < 0.5 -> 0       // 500m 미만: 보상 없음
             distanceKm < 1.0 -> 1       // 500m~1km: 1골드
             distanceKm < 3.0 -> 3       // 1km~3km: 3골드
             distanceKm < 5.0 -> 5       // 3km~5km: 5골드
             else -> 10                   // 5km 이상: 10골드
         }
+        if (base == 0) return 0
+        // ADR-001 보상 +20%: walk.reward.multiplier(기본 1.2) 곱 후 반올림
+        val multiplier = systemSettingService.getString("walk.reward.multiplier", "1.2").toDoubleOrNull() ?: 1.2
+        return Math.round(base * multiplier).toInt()
     }
 }

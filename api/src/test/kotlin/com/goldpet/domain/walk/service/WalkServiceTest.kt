@@ -91,6 +91,8 @@ class WalkServiceTest {
         MockitoAnnotations.openMocks(this)
         walkService = WalkService(walkRepository, walkSpotRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, geocodingService, applicationEventPublisher, systemSettingService, userBlockRepository, photoUrlSigner, meterRegistry, fileAttachmentRepository)
         whenever(geocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
+        // ADR-001 보상 +20% 배수(walk.reward.multiplier). 보상 단언은 배수 적용 후 값 기준.
+        whenever(systemSettingService.getString(eq("walk.reward.multiplier"), any())).thenReturn("1.2")
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
     }
@@ -325,16 +327,16 @@ class WalkServiceTest {
 
     @Test
     fun `createWalk should grant gold reward for walk over 0_5km`() {
-        val request = createWalkRequest(1.5) // 1km~3km = 3 gold
+        val request = createWalkRequest(1.5) // 1km~3km = base 3 골드 × 1.2 = 4 (round)
 
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
         mockWalkSave()
-        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(3))
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(4))
         whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
 
         walkService.createWalk(1L, request)
 
-        verify(goldService).grantReward(eq(1L), eq(3), argThat { contains("1.5km") })
+        verify(goldService).grantReward(eq(1L), eq(4), argThat { contains("1.5km") })
     }
 
     @Test
@@ -351,17 +353,17 @@ class WalkServiceTest {
     }
 
     @Test
-    fun `createWalk should grant 10 gold for walk over 5km`() {
-        val request = createWalkRequest(7.2) // >= 5km = 10 gold
+    fun `createWalk should grant 12 gold for walk over 5km`() {
+        val request = createWalkRequest(7.2) // >= 5km = base 10 골드 × 1.2 = 12
 
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
         mockWalkSave()
-        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(10))
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(12))
         whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
 
         walkService.createWalk(1L, request)
 
-        verify(goldService).grantReward(eq(1L), eq(10), any())
+        verify(goldService).grantReward(eq(1L), eq(12), any())
     }
 
     @Test

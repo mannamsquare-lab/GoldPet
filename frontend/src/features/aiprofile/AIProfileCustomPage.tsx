@@ -5,6 +5,7 @@ import { petService } from '../../services/petService';
 import { goldService } from '../../services/goldService';
 import { aiProfileService } from '../../services/aiProfileService';
 import { useAlert } from '../../contexts/AlertContext';
+import { PAYMENT_ENABLED } from '../../config/featureFlags';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
 import CustomSelect from '../../components/common/CustomSelect';
 import { AIProfileTabMenu } from './components/AIProfileTabMenu';
@@ -121,7 +122,7 @@ export default function AIProfileCustomPage() {
       return;
     }
     if (goldBalance && goldBalance.balance < CUSTOM_GOLD_COST) {
-      showAlert('골드가 부족합니다. 골드를 충전해주세요.');
+      showAlert(PAYMENT_ENABLED ? '골드가 부족합니다. 골드를 충전해주세요.' : '골드가 부족합니다. 산책·미션으로 골드를 모아보세요.');
       return;
     }
     const sourceImageUrl = filledImages[0] || null;
