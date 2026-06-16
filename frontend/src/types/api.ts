@@ -35,11 +35,11 @@ export type RefreshTokenRequest = Schemas['RefreshTokenRequest'];
 export type ConfirmLinkRequest = Schemas['ConfirmLinkRequest'];
 
 export type SignupRequest = Omit<Schemas['SignupRequest'], 'gender'> & {
-  gender: Gender;
+  gender?: Gender;
 };
 
 export type SnsSignupRequest = Omit<Schemas['SnsSignupRequest'], 'gender'> & {
-  gender: Gender;
+  gender?: Gender;
 };
 
 // --- Chat domain (Phase 3.3) ---

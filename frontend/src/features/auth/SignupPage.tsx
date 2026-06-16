@@ -297,9 +297,10 @@ export const SignupPage = () => {
         email: formData.email, // Optional
         nickname: formData.nickname,
         name: formData.name,
-        birthDate: formData.birthDate,
-        gender: formData.gender as 'MALE' | 'FEMALE',
-        phoneNumber: formData.phoneNumber,
+        // 선택 항목 (Apple 5.1.1(v)): 미입력 시 undefined로 정규화
+        birthDate: formData.birthDate || undefined,
+        gender: formData.gender ? (formData.gender as 'MALE' | 'FEMALE') : undefined,
+        phoneNumber: formData.phoneNumber || undefined,
       });
       // Store tokens in memory via authStore (not localStorage)
       login(response.accessToken, response.refreshToken, response.user);
@@ -482,7 +483,7 @@ export const SignupPage = () => {
                 { label: '남성', value: 'MALE' },
                 { label: '여성', value: 'FEMALE' },
               ]}
-              placeholder="성별을 선택해주세요"
+              placeholder="선택사항 (선택하지 않아도 됩니다)"
               onChange={(value) => {
                 setFormData(prev => ({ ...prev, gender: value }));
                 if (errors.gender) setErrors(prev => ({ ...prev, gender: '' }));
@@ -501,7 +502,7 @@ export const SignupPage = () => {
               type="tel"
               name="phoneNumber"
               className={`signup-input signup-input-rounded ${errors.phoneNumber ? 'error' : ''}`}
-              placeholder="휴대폰 번호를 입력해주세요 (- 제외)"
+              placeholder="선택사항 (입력하지 않아도 됩니다, - 제외)"
               value={formData.phoneNumber}
               onChange={handleChange}
               disabled={isLoading}

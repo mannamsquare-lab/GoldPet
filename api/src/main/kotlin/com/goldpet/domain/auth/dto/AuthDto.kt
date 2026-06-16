@@ -56,7 +56,10 @@ data class AuthResponse(
         val username: String,
         val nickname: String,
         val email: String?,
-        val phoneNumber: String? = null
+        val phoneNumber: String? = null,
+        // 가입 완료 판정용: snsSignup 완료 시에만 set, first-touch OAuth 사용자는 null.
+        // nickname은 OAuth 프로필에서 채워져 신호로 못 쓰므로 name을 노출.
+        val name: String? = null
     )
 }
 

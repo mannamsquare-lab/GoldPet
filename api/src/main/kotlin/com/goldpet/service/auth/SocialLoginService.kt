@@ -247,7 +247,8 @@ class SocialLoginService(
                     username = user.username ?: user.nickname ?: "User",
                     nickname = user.nickname ?: "User",
                     email = user.email,
-                    phoneNumber = user.phoneNumber
+                    phoneNumber = user.phoneNumber,
+                    name = user.name
                 )
             )
         }
@@ -327,7 +328,8 @@ class SocialLoginService(
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
                 email = user.email,
-                phoneNumber = user.phoneNumber
+                phoneNumber = user.phoneNumber,
+                name = user.name
             )
         )
     }
@@ -384,7 +386,8 @@ class SocialLoginService(
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
                 email = user.email,
-                phoneNumber = user.phoneNumber
+                phoneNumber = user.phoneNumber,
+                name = user.name
             )
         )
     }
@@ -460,7 +463,8 @@ class SocialLoginService(
                 username = user.username ?: user.nickname ?: "User",
                 nickname = user.nickname ?: "User",
                 email = user.email,
-                phoneNumber = user.phoneNumber
+                phoneNumber = user.phoneNumber,
+                name = user.name
             )
         )
     }

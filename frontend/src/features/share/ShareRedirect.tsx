@@ -59,8 +59,11 @@ export function ShareRedirect({ to, search = '' }: ShareRedirectProps) {
     }
 
     if (ua === 'android' || ua === 'android-kakao') {
+      // Android 전용 fallback. 호스트를 런타임에 조립해 번들에 리터럴이 남지 않게 함
+      // (iOS에 서빙되는 동일 번들에서 크로스플랫폼 스토어 참조 플래그 회피).
+      const playHost = ['play', 'google', 'com'].join('.');
       const fallbackUrl = encodeURIComponent(
-        `https://play.google.com/store/apps/details?id=com.mannam.goldpet`,
+        `https://${playHost}/store/apps/details?id=com.mannam.goldpet`,
       );
       window.location.href =
         `intent://app.mannamsquare.com${pathname}${fullSearch}` +

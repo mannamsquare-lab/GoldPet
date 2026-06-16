@@ -100,14 +100,15 @@ class NativeBridge {
             // So even if we have a user, if they lack required info (like phoneNumber), it's a signup flow.
             if (newResult.containsKey('user')) {
               final user = newResult['user'] as Map<String, dynamic>;
-              // Check if essential fields are present.
-              // Based on Sign-UP_Join.md, additional info includes: name, birthDate, gender, phoneNumber.
-              // We'll check phoneNumber as a strong indicator of a completed signup.
-              final hasPhoneNumber =
-                  user['phoneNumber'] != null &&
-                  (user['phoneNumber'] as String).isNotEmpty;
+              // 가입 완료 판정 = name 존재 여부.
+              // name은 snsSignup(필수)을 완료해야만 set되고, OAuth first-touch 사용자는 null.
+              // nickname은 OAuth 프로필에서 자동으로 채워지므로 신호로 못 씀.
+              // phoneNumber/gender/birthDate는 선택 항목(Apple 5.1.1(v))이라 완료 기준 불가
+              // — 생략한 사용자가 매번 가입 화면으로 되돌아가는 버그를 유발.
+              final name = user['name'] as String?;
+              final hasCompletedSignup = name != null && name.isNotEmpty;
 
-              if (hasPhoneNumber) {
+              if (hasCompletedSignup) {
                 newResult['type'] = 'LOGIN_SUCCESS';
               } else {
                 newResult['type'] = 'SIGNUP_REQUIRED';
