@@ -29,7 +29,9 @@ be a standalone **onboarding-state** fact.
 Introduce `User.signupCompletedAt: LocalDateTime?` as the **single source of truth** for
 onboarding completion, fully decoupled from every PII field. Expose it to clients as a
 derived **boolean** `signupCompleted` (the raw timestamp stays server-side — least-leaky).
-Both clients converge on `signupCompleted` as the sole criterion.
+Both clients adopt `signupCompleted` as the sole criterion, in two waves matched to their
+release vehicles: **server + web converge in this deploy; Flutter native converges in the
+next app build** (backward-compatible until then — see Rollout).
 
 Apple narrative stays clean: *"성별/생년월일/전화번호는 선택이며, 가입 완료 여부는 별도
 온보딩 완료 상태(`signupCompletedAt`)로 관리한다."*
@@ -60,8 +62,10 @@ WHERE oauth_provider = 'LOCAL'   -- LOCAL members: complete by definition
 ```
 
 Notes:
-- `created_at` is currently NOT NULL (`BaseTimeEntity.createdAt` is `lateinit`); `COALESCE`
-  is null-safety insurance and harmless.
+- `created_at` is a JPA-auditing field (`BaseTimeEntity.createdAt`); existing rows are
+  expected to carry it. The `lateinit` declaration alone does not prove a DB-level NOT NULL
+  constraint, so `COALESCE(created_at, updated_at, CURRENT_TIMESTAMP)` is kept as defensive
+  null-safety regardless of the actual column constraint.
 - `name` / `phone_number` are AES-256-GCM encrypted via `EncryptionConverter`. The backfill
   only **null-checks the ciphertext column** (never compares decrypted values), which is the
   intended semantics — a row has a name iff the encrypted column is non-null.
@@ -93,10 +97,13 @@ Set `signupCompleted = user.signupCompletedAt != null` at every **real-user** co
 - `AuthController.kt`: **refresh-token rotation response (191)** — builds `UserInfo` manually; must include the field
 - Link-suggestion **stub** sites (`SocialLoginService.kt:245, 271`, `id = 0` empty user): keep default `false` ✅
 
-**`UserResponse`** (`UserResponse.kt`): add `val signupCompleted: Boolean`, derived as
-`user.signupCompletedAt != null` in **both** `from()` and `publicFrom()`. This is the
-`/api/v1/users/me` payload the web flow reads — must carry the same boolean meaning as
-`UserInfo`.
+**`UserResponse`** (`UserResponse.kt`): add `val signupCompleted: Boolean`.
+- `from()` (the `/api/v1/users/me` self payload the web flow reads): derive as
+  `user.signupCompletedAt != null` — must carry the same boolean meaning as `UserInfo`.
+- `publicFrom()` (other users' public profiles): hard-code `false`. A stranger's onboarding
+  state is not part of the public-profile contract — `publicFrom` already hides `name`,
+  `birthDate`, `phoneNumber`, `goldBalance`; completion state is likewise omitted. The field
+  exists only because the data class is shared; it is never a meaningful value here.
 
 ### 5. Clients — converge on `signupCompleted`
 
@@ -127,8 +134,10 @@ reading `name` (backend continues to populate it) — fully backward compatible.
 
 - **Migration/backfill:** LOCAL rows → flag set; social-with-name → set; nickname-only social
   → stays NULL; null-`created_at` edge handled by `COALESCE`.
-- **Service:** `signup()` stamps flag; `snsSignup()` stamps once and is idempotent on re-call;
-  first-touch social login leaves it null.
+- **Service:** `signup()` stamps the flag; `snsSignup()` stamps the flag on completion and
+  **preserves an already-set `signupCompletedAt`** (timestamp unchanged if the user re-runs
+  the screen — note `snsSignup` still overwrites `nickname`/`name`, so this is timestamp
+  stability only, not full-API idempotency); first-touch social login leaves it null.
 - **DTO:** `UserInfo.signupCompleted` and `UserResponse.signupCompleted` reflect
   `signupCompletedAt != null` across all construction sites; refresh path included; stub sites
   return `false`.
