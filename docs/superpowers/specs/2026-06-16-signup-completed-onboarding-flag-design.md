@@ -140,9 +140,9 @@ reading `name` (backend continues to populate it) — fully backward compatible.
   **preserves an already-set `signupCompletedAt`** (timestamp unchanged if the user re-runs
   the screen — note `snsSignup` still overwrites `nickname`/`name`, so this is timestamp
   stability only, not full-API idempotency); first-touch social login leaves it null.
-- **DTO:** `UserInfo.signupCompleted` and `UserResponse.signupCompleted` reflect
-  `signupCompletedAt != null` across all construction sites; refresh path included; stub sites
-  return `false`.
+- **DTO:** `UserInfo.signupCompleted` and `UserResponse.from().signupCompleted` reflect
+  `signupCompletedAt != null`; `UserResponse.publicFrom().signupCompleted` is `null`; the
+  refresh-token path includes the field; link-suggestion stub sites return `false`.
 - **Regression:** update existing tests asserting `UserInfo` / `UserResponse` shape.
 
 ## Out of scope (noted follow-ups)
