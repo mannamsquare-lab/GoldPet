@@ -227,14 +227,7 @@ export const SignupPage = () => {
     // 이름
     if (!formData.name) return false;
 
-    // 생년월일
-    if (!formData.birthDate) return false;
-
-    // 성별
-    if (!formData.gender) return false;
-
-    // 휴대폰 번호
-    if (!formData.phoneNumber) return false;
+    // 생년월일·성별·휴대폰 번호: 선택 항목 (Apple 5.1.1(v)) — 미입력 허용
 
     // 닉네임: 2-10자, 중복확인 완료
     if (!formData.nickname || formData.nickname.length < 2 || formData.nickname.length > 10 || isNicknameAvailable !== true) {
@@ -277,20 +270,7 @@ export const SignupPage = () => {
       newErrors.name = '이름을 입력해주세요.';
     }
 
-    // 생년월일
-    if (!formData.birthDate) {
-      newErrors.birthDate = '생년월일을 입력해주세요.';
-    }
-
-    // 성별
-    if (!formData.gender) {
-      newErrors.gender = '성별을 선택해주세요.';
-    }
-
-    // 휴대폰 번호
-    if (!formData.phoneNumber) {
-      newErrors.phoneNumber = '휴대폰 번호를 입력해주세요.';
-    }
+    // 생년월일·성별·휴대폰 번호는 선택 항목 (Apple 5.1.1(v)) — 검증하지 않음
 
     if (!formData.nickname || formData.nickname.length < 2) {
       newErrors.nickname = '닉네임은 2자 이상이어야 합니다.';
@@ -469,7 +449,7 @@ export const SignupPage = () => {
 
           {/* 생년월일 */}
           <div className="signup-input-group">
-            <label className="signup-input-label">생년월일</label>
+            <label className="signup-input-label">생년월일 <span style={{ color: '#999', fontWeight: 400 }}>(선택)</span></label>
             <div className="signup-input-wrapper">
               <input
                 type="date"
@@ -494,7 +474,7 @@ export const SignupPage = () => {
 
           {/* 성별 */}
           <div className="signup-input-group">
-            <label className="signup-input-label">성별</label>
+            <label className="signup-input-label">성별 <span style={{ color: '#999', fontWeight: 400 }}>(선택)</span></label>
             <CustomSelect
               className={errors.gender ? 'error' : ''}
               value={formData.gender}
@@ -516,7 +496,7 @@ export const SignupPage = () => {
 
           {/* 휴대폰 번호 */}
           <div className="signup-input-group">
-            <label className="signup-input-label">휴대폰 번호</label>
+            <label className="signup-input-label">휴대폰 번호 <span style={{ color: '#999', fontWeight: 400 }}>(선택)</span></label>
             <input
               type="tel"
               name="phoneNumber"

@@ -67,14 +67,17 @@ class AuthService(
                         password = passwordEncoder.encode(request.password),
                         nickname = request.nickname,
                         name = request.name,
-                        birthDate = java.time.LocalDate.parse(request.birthDate),
-                        phoneNumber = request.phoneNumber,
-                        gender = request.gender,
+                        // Optional (Apple 5.1.1(v)): blank/null demographics are allowed.
+                        birthDate = request.birthDate?.takeIf { it.isNotBlank() }?.let { java.time.LocalDate.parse(it) },
+                        phoneNumber = request.phoneNumber?.takeIf { it.isNotBlank() },
+                        gender = request.gender?.takeIf { it.isNotBlank() },
                         birthYear = request.birthYear,
                         mainLocationText = request.mainLocationText,
                         mainLocationGeom = null,
                         profileImageUrl = null,
-                        profileLockedAt = LocalDateTime.now()
+                        // Only lock the profile once an identity anchor (phone) is provided,
+                        // so users who skip optional fields can still complete them later.
+                        profileLockedAt = if (!request.phoneNumber.isNullOrBlank()) LocalDateTime.now() else null
                 )
         // Race-condition backstop: concurrent signups may both pass the pre-check
         // and one hits the uq_users_email_hash / username constraint.
@@ -145,12 +148,12 @@ class AuthService(
                     NotFoundException("User not found")
                 }
 
-        // Update user info
+        // Update user info — demographics optional per Apple 5.1.1(v)
         user.nickname = request.nickname
         user.name = request.name
-        user.birthDate = java.time.LocalDate.parse(request.birthDate)
-        user.gender = request.gender
-        user.phoneNumber = request.phoneNumber
+        user.birthDate = request.birthDate?.takeIf { it.isNotBlank() }?.let { java.time.LocalDate.parse(it) }
+        user.gender = request.gender?.takeIf { it.isNotBlank() }
+        user.phoneNumber = request.phoneNumber?.takeIf { it.isNotBlank() }
         // Note: Pet info should be saved to a Pet entity, but for now we'll just update the user or
         // assume Pet entity creation logic is here.
         // Since the User entity doesn't have pet fields, and we haven't seen a Pet entity yet, I'll
@@ -158,7 +161,10 @@ class AuthService(
         // However, the request has pet info. I should check if there is a PetRepository.
         // For this task, I will just update the User's nickname and return the response.
         // Real implementation should save Pet info.
-        user.profileLockedAt = LocalDateTime.now()
+        // Lock only once an identity anchor (phone) is provided; optional fields stay editable.
+        if (!request.phoneNumber.isNullOrBlank()) {
+            user.profileLockedAt = LocalDateTime.now()
+        }
 
         userRepository.save(user)
 

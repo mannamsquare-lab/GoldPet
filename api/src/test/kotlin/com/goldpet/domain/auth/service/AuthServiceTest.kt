@@ -1,6 +1,7 @@
 package com.goldpet.domain.auth.service
 
 import com.goldpet.domain.common.exception.*
+import com.goldpet.config.crypto.EncryptionConfig
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.domain.auth.dto.LoginRequest
 import com.goldpet.domain.auth.dto.SignupRequest
@@ -36,6 +37,9 @@ class AuthServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
+        // signup()이 BlindIndexUtil.hash(email)를 호출하므로 EncryptionConfig.instance 필요
+        // (단독 실행 시 Spring 컨텍스트가 없어 lateinit 미초기화 방지)
+        EncryptionConfig("auth-service-test-key-32-chars!!", "").validate()
         passwordEncoder = BCryptPasswordEncoder()
         authService = AuthService(userRepository, passwordEncoder, jwtTokenProvider, systemSettingService)
         whenever(systemSettingService.getBoolean("allow_signups", true)).thenReturn(true)

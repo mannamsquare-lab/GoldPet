@@ -21,11 +21,10 @@ data class SignupRequest(
     @field:NotBlank(message = "Name is required")
     val name: String,
 
-    @field:NotBlank(message = "Birthdate is required")
-    val birthDate: String,
+    // Apple Guideline 5.1.1(v): demographic fields must be optional, not required.
+    val birthDate: String?,
 
-    @field:NotBlank(message = "Phone number is required")
-    val phoneNumber: String,
+    val phoneNumber: String?,
 
     @field:Email(message = "Invalid email format")
     val email: String?,
