@@ -194,6 +194,7 @@ class AuthController(
                     nickname = user.nickname ?: "User",
                     email = user.email,
                     phoneNumber = user.phoneNumber,
+                    signupCompleted = user.signupCompletedAt != null,
                 ),
             )
         )

@@ -40,7 +40,9 @@ data class UserResponse(
     @get:JsonProperty("isActive")
     val isActive: Boolean,
     val oauthProvider: String,
-    val isProfileLocked: Boolean
+    val isProfileLocked: Boolean,
+    // 온보딩 완료 단일 기준. self(from)에서만 실제 boolean, 타 사용자 공개(publicFrom)에선 null(해당없음).
+    val signupCompleted: Boolean? = null
 ) {
     companion object {
         /**
@@ -78,7 +80,8 @@ data class UserResponse(
                 goldBalance = user.goldBalance,
                 isActive = user.isActive,
                 oauthProvider = user.oauthProvider,
-                isProfileLocked = user.profileLockedAt != null
+                isProfileLocked = user.profileLockedAt != null,
+                signupCompleted = user.signupCompletedAt != null
             )
         }
 
@@ -114,7 +117,9 @@ data class UserResponse(
                 goldBalance = 0,
                 isActive = user.isActive,
                 oauthProvider = user.oauthProvider,
-                isProfileLocked = user.profileLockedAt != null
+                isProfileLocked = user.profileLockedAt != null,
+                // 타 사용자의 온보딩 상태는 공개 계약에 포함하지 않음 → null(해당없음).
+                signupCompleted = null
             )
         }
     }

@@ -77,7 +77,9 @@ class AuthService(
                         profileImageUrl = null,
                         // Only lock the profile once an identity anchor (phone) is provided,
                         // so users who skip optional fields can still complete them later.
-                        profileLockedAt = if (!request.phoneNumber.isNullOrBlank()) LocalDateTime.now() else null
+                        profileLockedAt = if (!request.phoneNumber.isNullOrBlank()) LocalDateTime.now() else null,
+                        // LOCAL 가입은 이 시점에 온보딩 완료.
+                        signupCompletedAt = LocalDateTime.now()
                 )
         // Race-condition backstop: concurrent signups may both pass the pre-check
         // and one hits the uq_users_email_hash / username constraint.
@@ -107,7 +109,8 @@ class AuthService(
                                 nickname = saved.nickname!!,
                                 email = saved.email,
                                 phoneNumber = saved.phoneNumber,
-                                name = saved.name
+                                name = saved.name,
+                                signupCompleted = saved.signupCompletedAt != null
                         )
         )
     }
@@ -135,7 +138,8 @@ class AuthService(
                                 nickname = user.nickname!!,
                                 email = user.email,
                                 phoneNumber = user.phoneNumber,
-                                name = user.name
+                                name = user.name,
+                                signupCompleted = user.signupCompletedAt != null
                         )
         )
     }
@@ -167,6 +171,8 @@ class AuthService(
         if (!request.phoneNumber.isNullOrBlank()) {
             user.profileLockedAt = LocalDateTime.now()
         }
+        // 추가가입(온보딩) 완료. 이미 완료된 사용자의 최초 완료 시각은 보존.
+        user.signupCompletedAt = user.signupCompletedAt ?: LocalDateTime.now()
 
         userRepository.save(user)
 
@@ -188,7 +194,8 @@ class AuthService(
                                 nickname = user.nickname!!,
                                 email = user.email,
                                 phoneNumber = user.phoneNumber,
-                                name = user.name
+                                name = user.name,
+                                signupCompleted = user.signupCompletedAt != null
                         )
         )
     }
@@ -266,7 +273,8 @@ class AuthService(
                                 nickname = user.nickname ?: "Test User",
                                 email = user.email,
                                 phoneNumber = user.phoneNumber,
-                                name = user.name
+                                name = user.name,
+                                signupCompleted = user.signupCompletedAt != null
                         )
         )
     }

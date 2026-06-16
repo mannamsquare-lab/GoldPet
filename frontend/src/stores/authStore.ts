@@ -48,6 +48,8 @@ export interface User {
   isActive?: boolean;
   oauthProvider?: string;
   isProfileLocked?: boolean;
+  // 온보딩/추가가입 완료 단일 기준. self(/users/me)에서만 실제 boolean.
+  signupCompleted?: boolean;
 }
 
 interface AuthState {

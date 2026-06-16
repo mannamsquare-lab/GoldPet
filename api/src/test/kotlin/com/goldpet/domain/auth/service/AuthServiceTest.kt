@@ -5,6 +5,8 @@ import com.goldpet.config.crypto.EncryptionConfig
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.domain.auth.dto.LoginRequest
 import com.goldpet.domain.auth.dto.SignupRequest
+import com.goldpet.domain.auth.dto.SnsSignupRequest
+import java.time.LocalDateTime
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
@@ -308,5 +310,106 @@ class AuthServiceTest {
         assertNotNull(response)
         assertEquals("test-access-token", response.accessToken)
         assertEquals("devuser", response.user.username)
+    }
+
+    // --- signupCompletedAt: 온보딩 완료 단일 기준 ---
+
+    private fun oauthFirstTouchUser(id: Long, signupCompletedAt: LocalDateTime? = null): User =
+        User(
+            id = id,
+            email = "kakao$id@kakao.com",
+            oauthProvider = "kakao",
+            oauthId = "kakao_$id",
+            username = null,
+            password = null,
+            nickname = "자동닉네임", // OAuth 프로필에서 자동 채워진 값 (완료 신호 아님)
+            name = null,
+            birthDate = null,
+            phoneNumber = null,
+            gender = null,
+            birthYear = null,
+            mainLocationText = null,
+            mainLocationGeom = null,
+            profileImageUrl = null,
+            signupCompletedAt = signupCompletedAt
+        )
+
+    @Test
+    fun `signup should stamp signupCompletedAt and expose signupCompleted=true`() {
+        val request = SignupRequest(
+            username = "localuser", password = "password123", nickname = "로컬유저",
+            name = "홍길동", birthDate = null, phoneNumber = null, email = null,
+            gender = null, birthYear = null, mainLocationText = null
+        )
+        whenever(userRepository.findByUsername("localuser")).thenReturn(Optional.empty())
+        // save 시 signupCompletedAt 보존 (기존 테스트 mock은 드롭함)
+        whenever(userRepository.save(any<User>())).thenAnswer { invocation ->
+            val u = invocation.getArgument<User>(0)
+            User(
+                id = 1L, email = u.email, oauthProvider = u.oauthProvider, oauthId = u.oauthId,
+                username = u.username, password = u.password, nickname = u.nickname, name = u.name,
+                birthDate = u.birthDate, phoneNumber = u.phoneNumber, gender = u.gender,
+                birthYear = u.birthYear, mainLocationText = u.mainLocationText,
+                mainLocationGeom = u.mainLocationGeom, profileImageUrl = u.profileImageUrl,
+                signupCompletedAt = u.signupCompletedAt
+            )
+        }
+        whenever(jwtTokenProvider.generateToken(any())).thenReturn("t")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("r")
+
+        val response = authService.signup(request)
+
+        assertTrue(response.user.signupCompleted, "LOCAL 가입은 즉시 완료여야 한다")
+    }
+
+    @Test
+    fun `snsSignup should stamp signupCompletedAt when not yet completed`() {
+        val user = oauthFirstTouchUser(1L, signupCompletedAt = null)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(user))
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+        whenever(jwtTokenProvider.generateToken(any())).thenReturn("t")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("r")
+
+        val request = SnsSignupRequest(
+            provider = "kakao", nickname = "닉네임", name = "홍길동",
+            birthDate = null, gender = null, phoneNumber = null // 데모그래픽 선택
+        )
+
+        val response = authService.snsSignup(1L, request)
+
+        assertNotNull(user.signupCompletedAt, "추가가입 완료 시 timestamp가 set돼야 한다")
+        assertTrue(response.user.signupCompleted)
+    }
+
+    @Test
+    fun `snsSignup should preserve existing signupCompletedAt timestamp`() {
+        val fixed = LocalDateTime.of(2025, 1, 1, 0, 0)
+        val user = oauthFirstTouchUser(1L, signupCompletedAt = fixed)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(user))
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+        whenever(jwtTokenProvider.generateToken(any())).thenReturn("t")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("r")
+
+        val request = SnsSignupRequest(
+            provider = "kakao", nickname = "닉네임", name = "홍길동",
+            birthDate = null, gender = null, phoneNumber = null
+        )
+
+        authService.snsSignup(1L, request)
+
+        assertEquals(fixed, user.signupCompletedAt, "최초 완료 시각은 재호출에도 보존돼야 한다")
+    }
+
+    @Test
+    fun `login should expose signupCompleted from signupCompletedAt`() {
+        val completed = createTestUser(1L, "completeduser", "완료유저")
+            .apply { signupCompletedAt = LocalDateTime.now() }
+        whenever(userRepository.findByUsername("completeduser")).thenReturn(Optional.of(completed))
+        whenever(jwtTokenProvider.generateToken(any())).thenReturn("t")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("r")
+
+        val response = authService.login(LoginRequest("completeduser", "password123"))
+
+        assertTrue(response.user.signupCompleted)
     }
 }

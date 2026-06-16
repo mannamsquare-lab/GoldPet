@@ -54,6 +54,8 @@ class User(
         @Column(name = "is_profile_public", nullable = false) var isProfilePublic: Boolean = true,
         @Column(name = "fcm_token") var fcmToken: String? = null,
         @Column(name = "profile_locked_at") var profileLockedAt: LocalDateTime? = null,
+        // 온보딩/추가가입 완료의 단일 기준. PII 필드(name/nickname/phone)와 무관.
+        @Column(name = "signup_completed_at") var signupCompletedAt: LocalDateTime? = null,
         @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
         @OrderBy("orderIndex ASC")
         var profileImages: MutableList<UserProfileImage> = mutableListOf(),

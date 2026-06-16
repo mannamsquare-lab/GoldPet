@@ -57,9 +57,11 @@ data class AuthResponse(
         val nickname: String,
         val email: String?,
         val phoneNumber: String? = null,
-        // 가입 완료 판정용: snsSignup 완료 시에만 set, first-touch OAuth 사용자는 null.
-        // nickname은 OAuth 프로필에서 채워져 신호로 못 쓰므로 name을 노출.
-        val name: String? = null
+        // name은 표시/프로필 값일 뿐 완료 신호가 아니다(장기적으로 선택 항목 검토 대상).
+        val name: String? = null,
+        // 온보딩/추가가입 완료 단일 기준 = user.signupCompletedAt != null.
+        // first-touch OAuth/링크제안 stub은 false.
+        val signupCompleted: Boolean = false
     )
 }
 

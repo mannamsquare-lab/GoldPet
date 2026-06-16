@@ -214,7 +214,8 @@ class SocialLoginService(
 
     // --- Core logic ---
 
-    private fun handleOAuthLogin(
+    // internal(테스트 가시성): 기존 소셜 계정 로그인 경로의 signupCompleted 노출 검증용.
+    internal fun handleOAuthLogin(
         provider: String,
         oauthId: String,
         email: String?,
@@ -248,7 +249,8 @@ class SocialLoginService(
                     nickname = user.nickname ?: "User",
                     email = user.email,
                     phoneNumber = user.phoneNumber,
-                    name = user.name
+                    name = user.name,
+                    signupCompleted = user.signupCompletedAt != null
                 )
             )
         }
@@ -329,7 +331,8 @@ class SocialLoginService(
                 nickname = user.nickname ?: "User",
                 email = user.email,
                 phoneNumber = user.phoneNumber,
-                name = user.name
+                name = user.name,
+                signupCompleted = user.signupCompletedAt != null
             )
         )
     }
@@ -387,7 +390,8 @@ class SocialLoginService(
                 nickname = user.nickname ?: "User",
                 email = user.email,
                 phoneNumber = user.phoneNumber,
-                name = user.name
+                name = user.name,
+                signupCompleted = user.signupCompletedAt != null
             )
         )
     }
@@ -464,7 +468,8 @@ class SocialLoginService(
                 nickname = user.nickname ?: "User",
                 email = user.email,
                 phoneNumber = user.phoneNumber,
-                name = user.name
+                name = user.name,
+                signupCompleted = user.signupCompletedAt != null
             )
         )
     }

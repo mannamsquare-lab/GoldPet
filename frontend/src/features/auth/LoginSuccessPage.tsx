@@ -23,7 +23,7 @@ export const LoginSuccessPage = () => {
 
                     // Check if running in popup
                     if (window.opener) {
-                        if (!user.nickname) {
+                        if (!user.signupCompleted) {
                             // Incomplete -> Send SIGNUP_REQUIRED message
                             window.opener.postMessage({
                                 type: 'LOGIN_ERROR',
@@ -54,7 +54,7 @@ export const LoginSuccessPage = () => {
                         // So we just need to send the message.
                     } else {
                         // Fallback for non-popup (e.g. mobile redirect if popup failed)
-                        if (!user.nickname) {
+                        if (!user.signupCompleted) {
                             navigate('/signup', { state: { isSns: true, provider: user.oauthProvider } });
                         } else {
                             login(token, refreshToken, user);
