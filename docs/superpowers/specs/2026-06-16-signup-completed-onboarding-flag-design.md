@@ -97,13 +97,15 @@ Set `signupCompleted = user.signupCompletedAt != null` at every **real-user** co
 - `AuthController.kt`: **refresh-token rotation response (191)** — builds `UserInfo` manually; must include the field
 - Link-suggestion **stub** sites (`SocialLoginService.kt:245, 271`, `id = 0` empty user): keep default `false` ✅
 
-**`UserResponse`** (`UserResponse.kt`): add `val signupCompleted: Boolean`.
+**`UserResponse`** (`UserResponse.kt`): add `val signupCompleted: Boolean? = null` (nullable).
 - `from()` (the `/api/v1/users/me` self payload the web flow reads): derive as
-  `user.signupCompletedAt != null` — must carry the same boolean meaning as `UserInfo`.
-- `publicFrom()` (other users' public profiles): hard-code `false`. A stranger's onboarding
-  state is not part of the public-profile contract — `publicFrom` already hides `name`,
-  `birthDate`, `phoneNumber`, `goldBalance`; completion state is likewise omitted. The field
-  exists only because the data class is shared; it is never a meaningful value here.
+  `user.signupCompletedAt != null` — a real boolean, same meaning as `UserInfo`.
+- `publicFrom()` (other users' public profiles): set `null`, **not** `false`. A stranger's
+  onboarding state is not part of the public-profile contract (`publicFrom` already hides
+  `name`, `birthDate`, `phoneNumber`, `goldBalance`). `null` honestly signals "not applicable
+  / not exposed" rather than a misleading `false` that reads as a real state to API consumers.
+  The web self-flow only consumes `from()`, where the value is always a concrete boolean, so
+  the nullability never affects completion judgment.
 
 ### 5. Clients — converge on `signupCompleted`
 
@@ -143,8 +145,13 @@ reading `name` (backend continues to populate it) — fully backward compatible.
   return `false`.
 - **Regression:** update existing tests asserting `UserInfo` / `UserResponse` shape.
 
-## Out of scope
+## Out of scope (noted follow-ups)
 
+- **Self/public DTO split.** Long-term, `UserResponse` should be split into a self-profile
+  DTO and a public-profile DTO so self-only fields (`signupCompleted`, `email`, `birthYear`,
+  precise location, `goldBalance`, `name`…) don't live on the shared public contract at all.
+  This change uses the minimal honest stopgap (`Boolean?`, `null` in `publicFrom`) and defers
+  the split as a dedicated refactor.
 - Making `name` an optional field (separate long-term product decision).
 - Migrating the in-review iOS build (backward-compatible by design).
 - `PasswordExpiryPage` / `AutoLogoutPage` backend triggers (unrelated).
