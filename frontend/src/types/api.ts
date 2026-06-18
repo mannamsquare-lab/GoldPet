@@ -38,7 +38,8 @@ export type SignupRequest = Omit<Schemas['SignupRequest'], 'gender'> & {
   gender?: Gender;
 };
 
-export type SnsSignupRequest = Omit<Schemas['SnsSignupRequest'], 'gender'> & {
+export type SnsSignupRequest = Omit<Schemas['SnsSignupRequest'], 'gender' | 'name'> & {
+  name?: string;
   gender?: Gender;
 };
 

@@ -15,6 +15,7 @@ export const SnsSignupPage = () => {
 
   // URL 파라미터나 location state에서 SNS 제공자 정보 가져오기
   const snsProvider = location.state?.provider || 'SNS';
+  const isAppleProvider = snsProvider.toLowerCase() === 'apple';
 
   const [formData, setFormData] = useState({
     nickname: '',
@@ -75,8 +76,7 @@ export const SnsSignupPage = () => {
     if (!formData.nickname || formData.nickname.length < 2 || formData.nickname.length > 10 || isNicknameAvailable !== true) {
       return false;
     }
-    // 이름
-    if (!formData.name) return false;
+    if (!isAppleProvider && !formData.name) return false;
     // 생년월일·성별·휴대폰 번호: 선택 항목 (Apple 5.1.1(v)) — 미입력 허용
 
     return true;
@@ -92,7 +92,7 @@ export const SnsSignupPage = () => {
       } else if (isNicknameAvailable !== true) {
         newErrors.nickname = '닉네임 중복확인을 해주세요.';
       }
-      if (!formData.name) newErrors.name = '이름을 입력해주세요.';
+      if (!isAppleProvider && !formData.name) newErrors.name = '이름을 입력해주세요.';
 
       setErrors(newErrors);
       return;
@@ -103,7 +103,7 @@ export const SnsSignupPage = () => {
       const response = await authService.snsSignup({
         provider: snsProvider,
         nickname: formData.nickname,
-        name: formData.name,
+        ...(isAppleProvider ? {} : { name: formData.name }),
         // 선택 항목 (Apple 5.1.1(v)): 미입력 시 undefined로 정규화
         birthDate: formData.birthDate || undefined,
         gender: formData.gender ? (formData.gender as 'MALE' | 'FEMALE') : undefined,
@@ -167,23 +167,24 @@ export const SnsSignupPage = () => {
             )}
           </div>
 
-          {/* 이름 */}
-          <div className="sns-signup-input-group">
-            <label className="sns-signup-input-label">이름</label>
-            <input
-              type="text"
-              name="name"
-              className={`sns-signup-input sns-signup-input-rounded ${errors.name ? 'error' : ''}`}
-              placeholder="이름을 입력해주세요"
-              value={formData.name}
-              onChange={handleChange}
-              disabled={isLoading}
-              maxLength={20}
-            />
-            {errors.name && (
-              <span className="sns-signup-error-message">{errors.name}</span>
-            )}
-          </div>
+          {!isAppleProvider && (
+            <div className="sns-signup-input-group">
+              <label className="sns-signup-input-label">이름</label>
+              <input
+                type="text"
+                name="name"
+                className={`sns-signup-input sns-signup-input-rounded ${errors.name ? 'error' : ''}`}
+                placeholder="이름을 입력해주세요"
+                value={formData.name}
+                onChange={handleChange}
+                disabled={isLoading}
+                maxLength={20}
+              />
+              {errors.name && (
+                <span className="sns-signup-error-message">{errors.name}</span>
+              )}
+            </div>
+          )}
 
           {/* 생년월일 */}
           <div className="sns-signup-input-group">
@@ -254,4 +255,3 @@ export const SnsSignupPage = () => {
     </div>
   );
 };
-

@@ -29,8 +29,8 @@ export const authService = {
 
   snsSignup: async (data: SnsSignupRequest): Promise<AuthResponse> => {
     try {
-      const response = await typedClient.post("/api/v1/auth/sns-signup", data);
-      return response.data as AuthResponse;
+      const response = await apiClient.post<AuthResponse>("/auth/sns-signup", data);
+      return response.data;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       throw new Error(

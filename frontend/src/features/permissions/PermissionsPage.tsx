@@ -27,11 +27,6 @@ export const PermissionsPage = () => {
     }
   };
 
-  const handleSkip = () => {
-    localStorage.setItem('hasSeenPermissions', 'true');
-    navigate('/benefits', { replace: true });
-  };
-
   return (
     <div className="permissions-page">
       {/* Title Section */}
@@ -85,20 +80,13 @@ export const PermissionsPage = () => {
 
       <div className="permissions-footer">
         <button
-          className="permissions-button secondary"
-          onClick={handleSkip}
-        >
-          나중에 설정할게요
-        </button>
-        <button
           className="permissions-button primary"
           onClick={handleRequestPermissions}
           disabled={isLoading}
         >
-          {isLoading ? '요청 중...' : '권한 허용하기'}
+          {isLoading ? '요청 중...' : '다음'}
         </button>
       </div>
     </div>
   );
 };
-
