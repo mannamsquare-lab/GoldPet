@@ -14,7 +14,7 @@ class GoogleImagenApiClient(
     private val restTemplate: RestTemplate,
     private val objectMapper: ObjectMapper,
     @Value("\${google.ai.api-key:}") private val apiKey: String,
-    @Value("\${google.ai.model:gemini-3.1-flash-image-preview}") private val model: String
+    @Value("\${google.ai.model:gemini-3.1-flash-image}") private val model: String
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val baseUrl = "https://generativelanguage.googleapis.com/v1beta"
