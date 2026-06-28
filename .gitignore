@@ -180,3 +180,12 @@ refer/
 frontend/.env.local
 .env.local
 .env.*.local
+
+# Sensitive legal docs (사업자등록증 등 — git 커밋 금지)
+/*.pdf
+
+# Code-review 하네스 산출물 & 임시 출력
+_workspace/
+code-review-report.md
+*.xcscheme.backup
+gold_pet_figma.txt

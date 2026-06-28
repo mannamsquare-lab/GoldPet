@@ -61,6 +61,8 @@ flutter build apk                    # Android release
 flutter build ios                    # iOS release
 ```
 
+> **릴리스 빌드(Play Console/App Store):** Android는 반드시 `flutter build appbundle --build-number=N` 사용 (`N` = `pubspec.yaml` 빌드번호). `flutter build` 경로가 `android/local.properties`의 `flutter.versionCode`를 pubspec 기준으로 재생성한다. `cd app/android && ./gradlew bundleRelease` 같은 직접 Gradle 경로는 stale한 `local.properties`(gitignore·로컬 전용)의 versionCode로 패키징될 수 있어 Play Console 업로드 거부 위험 — 직접 Gradle 호출 금지.
+
 ## Architecture
 
 ### Hybrid App Pattern
@@ -198,3 +200,17 @@ deploy-dev/                      # 개발 서버 (mannamsquare.com)
     ├── deploy-frontend.sh
     └── deploy-admin.sh
 ```
+
+## 하네스: 종합 코드 리뷰
+
+**목표:** 변경(diff/PR/경로)을 아키텍처·보안·성능·코드스타일 4개 차원으로 병렬 감사하고, 외부 독립 AI(codex/gemini) 리뷰를 더해 하나의 리포트로 통합한다.
+
+**트리거:** 코드 리뷰·종합 리뷰·아키텍처/보안/성능/스타일 점검·PR 리뷰·변경 감사 요청 시 `code-review-team` 스킬을 사용하라. 기본 대상은 현재 브랜치 diff(vs main), 인자로 경로/PR/커밋범위 override. 단순 질문은 직접 응답 가능.
+
+**듀얼 런타임:** Codex는 레포 루트 `AGENTS.md` 포인터 + `.codex/agents/*.toml` + `.agents/skills/`(→`.claude/skills` 심링크) 사용. 한쪽만 갱신하면 drift — 수정 시 양쪽 동기화.
+
+**변경 이력:**
+| 날짜 | 변경 내용 | 대상 | 사유 |
+|------|----------|------|------|
+| 2026-06-19 | 초기 구성 (팬아웃/팬인 팀 5에이전트 + 외부리뷰 + 종합) | 전체 | - |
+| 2026-06-19 | 외부리뷰 실행기 번들 스크립트화 + 우아한 저하 | skills/external-review (run-external-review.sh) | 실행 중 gemini free-tier 미지원(IneligibleTierError) + timeout 깨진 심링크 실패 → timeout 실행검증·도구 헬스체크·codex 단독 저하 모드 내장 |
