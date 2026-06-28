@@ -60,13 +60,13 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to take pictures.</string>
+	<string>GoldPet uses the camera to take pet profile photos and record walk photos, such as adding a photo spot during a walk.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to location when open.</string>
+	<string>GoldPet uses your location while the app is open to show your current position on the walk map and record your walking path.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>산책 중 화면이 꺼져도 경로를 정확하게 기록하기 위해 위치 정보가 필요합니다.</string>
+	<string>GoldPet uses background location during an active walk to keep recording your route when the screen is locked or the app is in the background.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs photo library access to upload pictures.</string>
+	<string>GoldPet uses your photo library so you can select and upload pet profile photos or walk photos from your album.</string>
 	<key>NidAppName</key>
 	<string>GoldPet</string>
 	<key>NidClientID</key>
