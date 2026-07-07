@@ -26,8 +26,11 @@ export function initGA4(): void {
   document.head.appendChild(script);
 
   window.dataLayer = window.dataLayer || [];
-  const gtag = (...args: unknown[]) => {
-    window.dataLayer!.push(args);
+  // gtag.js는 dataLayer에 arguments 객체가 push돼야 GA4 명령으로 인식한다.
+  // 배열을 push하면(화살표+rest) config는 처리돼도 이벤트가 전송되지 않으므로 반드시 arguments를 사용한다.
+  const gtag: (...args: unknown[]) => void = function () {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments);
   };
   window.gtag = gtag;
   gtag('js', new Date());
