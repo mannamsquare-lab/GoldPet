@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { userService } from '../../services/userService';
 import { useAlert } from '../../contexts/AlertContext';
 import { useToast } from '../../contexts/ToastContext';
 import { SubPageLayout } from '../../components/layout/SubPageLayout';
@@ -17,7 +18,7 @@ const ChevronRight = () => (
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const { showConfirm } = useAlert();
   const { showToast } = useToast();
 
@@ -51,6 +52,8 @@ const SettingsPage: React.FC = () => {
       }
     };
     loadSettings();
+    // 로그인 응답(UserInfo)엔 oauthProvider가 없어 '연동 계정'이 비므로, /users/me로 보완해 스토어 갱신
+    userService.getMe().then(updateUser).catch(() => { /* 실패 시 기존 user 유지 */ });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only effect; showToast from context is stable but effect is intentionally run once on mount
   }, []);
 
