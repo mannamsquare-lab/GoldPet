@@ -76,6 +76,17 @@
   border-radius: 16px;
 }
 
+/* iOS 웹뷰에서 input[type=date]가 네이티브 고유 폭 때문에 컨테이너를 넘치는 문제 방지 */
+input[type="date"].sns-signup-input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"].sns-signup-input::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
 .sns-signup-input-username {
   flex: 1;
   border-radius: 16px;
