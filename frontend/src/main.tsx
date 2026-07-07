@@ -10,6 +10,7 @@ import './assets/css/common.css';
 import './styles/styleguide.css';
 import './styles/page-layout.css';
 import { installGlobalErrorReporter } from './lib/clientErrorReporter';
+import { initGA4 } from './lib/analytics';
 
 // Sentry 초기화 — VITE_SENTRY_DSN이 주입된 경우에만 활성화 (빈값/미설정 시 no-op)
 if (import.meta.env.VITE_SENTRY_DSN) {
@@ -23,6 +24,11 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 }
 
 installGlobalErrorReporter();
+
+// GA4 초기화 — VITE_GA_ID가 주입된 경우에만 활성화 (빈값/미설정 시 no-op)
+if (import.meta.env.VITE_GA_ID) {
+  initGA4();
+}
 
 // 새 배포 후 기존 WebView 세션이 가진 구버전 chunk 해시를 참조하다가
 // Vite의 동적 import가 404로 실패할 때 자동으로 최신 index.html 재요청 → 새 chunk 로드.
