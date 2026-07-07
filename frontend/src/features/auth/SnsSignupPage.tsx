@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 import { useAuthStore } from '../../stores/authStore';
 import './SnsSignupPage.css';
 import { useAlert } from '../../contexts/AlertContext';
@@ -28,6 +29,26 @@ export const SnsSignupPage = () => {
   const [isCheckingNickname, setIsCheckingNickname] = useState(false);
   const [isNicknameAvailable, setIsNicknameAvailable] = useState<boolean | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // SNS(네이버 등)가 제공한 이름을 '이름' 필드 기본값으로 채움. 사용자가 수정 가능하며, 조회 실패 시 빈 폼 유지.
+  useEffect(() => {
+    let cancelled = false;
+    userService
+      .getMe()
+      .then((user) => {
+        if (cancelled) return;
+        const providedName = user.name || user.nickname || '';
+        if (providedName) {
+          setFormData((prev) => (prev.name ? prev : { ...prev, name: providedName }));
+        }
+      })
+      .catch(() => {
+        // 프리필은 부가 기능 — 토큰 없음/조회 실패 시 빈 폼 유지
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
