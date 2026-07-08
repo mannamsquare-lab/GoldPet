@@ -1,6 +1,7 @@
 package com.goldpet.domain.user.repository
 
 import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.entity.UserStatus
 import jakarta.persistence.LockModeType
 import java.time.LocalDateTime
 import java.util.Optional
@@ -28,6 +29,11 @@ interface UserRepository : JpaRepository<User, Long> {
 
     // Admin methods
     fun findByNicknameContainingIgnoreCase(nickname: String, pageable: Pageable): Page<User>
+    // 회원 목록: 상태 필터가 없으면 탈퇴(WITHDRAWN) 회원은 기본 제외, 명시 선택 시에만 조회
+    fun findByStatus(status: UserStatus, pageable: Pageable): Page<User>
+    fun findByStatusNot(status: UserStatus, pageable: Pageable): Page<User>
+    fun findByNicknameContainingIgnoreCaseAndStatus(nickname: String, status: UserStatus, pageable: Pageable): Page<User>
+    fun findByNicknameContainingIgnoreCaseAndStatusNot(nickname: String, status: UserStatus, pageable: Pageable): Page<User>
     fun countByCreatedAtAfter(date: LocalDateTime): Long
 
     @Query(

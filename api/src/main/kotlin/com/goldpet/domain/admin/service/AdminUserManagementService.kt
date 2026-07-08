@@ -28,9 +28,19 @@ class AdminUserManagementService(
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
     fun getUsers(pageable: Pageable, search: String?, status: String?): Page<UserListItemResponse> {
+        val statusEnum = status?.takeIf { it.isNotBlank() }
+            ?.let { runCatching { UserStatus.valueOf(it) }.getOrNull() }
+
+        // 상태 필터를 명시하지 않으면 탈퇴(WITHDRAWN) 회원은 기본 목록에서 제외한다.
         val usersPage = when {
-            !search.isNullOrBlank() -> userRepository.findByNicknameContainingIgnoreCase(search, pageable)
-            else -> userRepository.findAll(pageable)
+            !search.isNullOrBlank() && statusEnum != null ->
+                userRepository.findByNicknameContainingIgnoreCaseAndStatus(search, statusEnum, pageable)
+            !search.isNullOrBlank() ->
+                userRepository.findByNicknameContainingIgnoreCaseAndStatusNot(search, UserStatus.WITHDRAWN, pageable)
+            statusEnum != null ->
+                userRepository.findByStatus(statusEnum, pageable)
+            else ->
+                userRepository.findByStatusNot(UserStatus.WITHDRAWN, pageable)
         }
 
         return usersPage.map { user -> toUserListItem(user) }
