@@ -155,6 +155,47 @@ class FriendServiceTest {
     }
 
     @Test
+    fun `distance null with reco v2 ON and sort popular honors sort with unlimited radius, bypasses reco`() {
+        val pageable = PageRequest.of(0, 10)
+        val unsortedPageable = PageRequest.of(0, 10)
+
+        whenever(systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)).thenReturn(true)
+        whenever(
+            friendRepository.findFriendsNearbyByPopular(1L, 37.0, 127.0, FriendService.UNLIMITED_RADIUS_METERS, unsortedPageable)
+        ).thenReturn(PageImpl(emptyList<User>(), pageable, 0))
+
+        friendService.getFriends(1L, 37.0, 127.0, null, "popular", null, null, pageable)
+
+        verify(friendRepository).findFriendsNearbyByPopular(1L, 37.0, 127.0, FriendService.UNLIMITED_RADIUS_METERS, unsortedPageable)
+        verify(friendRepository, never()).findRecommendations(anyLong(), anyDouble(), anyDouble(), any(), anyBoolean(), any())
+    }
+
+    @Test
+    fun `distance null with reco v2 ON and sort compatible honors sort with unlimited radius, bypasses reco`() {
+        val pageable = PageRequest.of(0, 10)
+        val candidatePageable = PageRequest.of(0, FriendService.COMPATIBILITY_CANDIDATE_LIMIT)
+
+        whenever(systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)).thenReturn(true)
+        whenever(systemSettingService.getBoolean("match.compatibility.enabled", false)).thenReturn(true)
+        whenever(systemSettingService.getBoolean("experiment.compatibility.enabled", false)).thenReturn(false)
+        // getCompatibleFriends 는 후보가 비어도 loadCompatibilityWeights()/boost bonus 조회를 먼저 수행한다 —
+        // getString() 은 non-null String 반환 계약이라 unstubbed mock의 null 반환 시 toDoubleOrNull()에서 NPE.
+        whenever(systemSettingService.getString("match.score.w_distance", "0.40")).thenReturn("0.40")
+        whenever(systemSettingService.getString("match.score.w_interest", "0.25")).thenReturn("0.25")
+        whenever(systemSettingService.getString("match.score.w_hobby", "0.20")).thenReturn("0.20")
+        whenever(systemSettingService.getString("match.score.w_temperament", "0.15")).thenReturn("0.15")
+        whenever(systemSettingService.getString("profile.boost.rank_bonus", "0.15")).thenReturn("0.15")
+        whenever(
+            friendRepository.findFriendsNearbyByDistance(1L, 37.0, 127.0, FriendService.UNLIMITED_RADIUS_METERS, candidatePageable)
+        ).thenReturn(PageImpl(emptyList<User>(), candidatePageable, 0))
+
+        friendService.getFriends(1L, 37.0, 127.0, null, "compatible", null, null, pageable)
+
+        verify(friendRepository).findFriendsNearbyByDistance(1L, 37.0, 127.0, FriendService.UNLIMITED_RADIUS_METERS, candidatePageable)
+        verify(friendRepository, never()).findRecommendations(anyLong(), anyDouble(), anyDouble(), any(), anyBoolean(), any())
+    }
+
+    @Test
     fun `specific distance 5km stays on legacy nearby path`() {
         val pageable = PageRequest.of(0, 10)
         whenever(
