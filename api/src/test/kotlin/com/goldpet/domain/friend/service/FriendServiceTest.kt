@@ -21,6 +21,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import java.util.Optional
 
 /**
@@ -193,6 +194,24 @@ class FriendServiceTest {
 
         verify(friendRepository).findFriendsNearbyByDistance(1L, 37.0, 127.0, FriendService.UNLIMITED_RADIUS_METERS, candidatePageable)
         verify(friendRepository, never()).findRecommendations(anyLong(), anyDouble(), anyDouble(), any(), anyBoolean(), any())
+    }
+
+    // 회귀: 컨트롤러가 ?sort=registered 로 만든 Sort 실린 pageable 을 native @Query 에 그대로 넘기면
+    // Hibernate 가 `ORDER BY u.registered`(존재 않는 컬럼)를 덧붙여 SQL 42601(친구찾기 500)이 났다.
+    // findRecommendations 에는 반드시 Sort 를 벗긴 PageRequest.of(0,10) 이 넘어가야 한다.
+    @Test
+    fun `unlimited reco path strips Sort from pageable before native query`() {
+        val sortedPageable = PageRequest.of(0, 10, Sort.by("registered"))
+        val me = user(1L, "MALE", withLocation = true)
+        whenever(systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)).thenReturn(true)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(me))
+        whenever(
+            friendRepository.findRecommendations(1L, 37.0, 127.0, "FEMALE", true, PageRequest.of(0, 10))
+        ).thenReturn(emptyList())
+
+        friendService.getFriends(1L, 37.0, 127.0, null, "registered", null, null, sortedPageable)
+
+        verify(friendRepository).findRecommendations(1L, 37.0, 127.0, "FEMALE", true, PageRequest.of(0, 10))
     }
 
     @Test

@@ -262,13 +262,18 @@ class FriendService(
         }
         val hasMyLocation = me?.mainLocationGeom != null
 
+        // native @Query 에는 Sort 없는 Pageable 을 넘긴다. 컨트롤러가 받은 pageable 에는
+        // 요청 파라미터 ?sort=registered 가 Spring 에 의해 Sort(registered) 로 해석돼 들어있는데,
+        // 이를 native 쿼리에 넘기면 Hibernate 가 `ORDER BY u.registered`(존재하지 않는 컬럼)를 덧붙여
+        // SQL 문법 오류(42601)가 난다. 기존 정렬 경로도 동일 이유로 sort 를 벗긴 pageable 을 쓴다.
+        val unsortedPageable = PageRequest.of(pageable.pageNumber, pageable.pageSize)
         val users = friendRepository.findRecommendations(
             myUserId = myUserId,
             myLat = myLat,
             myLng = myLng,
             oppositeGender = oppositeGender,
             hasMyLocation = hasMyLocation,
-            pageable = pageable
+            pageable = unsortedPageable
         )
 
         // 다음 페이지 유무는 필터 전 원본 크기 기준(LIMIT 가득 차면 다음 페이지 있음).
