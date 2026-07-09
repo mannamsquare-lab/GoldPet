@@ -49,18 +49,24 @@ class AdminEconomyService(
         val transactionType = type?.let {
             try { TransactionType.valueOf(it) } catch (e: Exception) { null }
         }
-        return goldTransactionRepository.findAllForAdmin(transactionType, pageable).map { t ->
-            TransactionAdminResponse(
-                id = t.id,
-                userId = t.user.id,
-                userNickname = t.user.nickname ?: "사용자",
-                type = t.type.name,
-                amount = t.amount,
-                description = t.description ?: "",
-                createdAt = t.createdAt.format(formatter)
-            )
-        }
+        return goldTransactionRepository.findAllForAdmin(transactionType, pageable).map { toTransactionResponse(it) }
     }
+
+    fun getUserTransactions(userId: Long, pageable: Pageable): Page<TransactionAdminResponse> {
+        return goldTransactionRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable)
+            .map { toTransactionResponse(it) }
+    }
+
+    private fun toTransactionResponse(t: GoldTransaction): TransactionAdminResponse =
+        TransactionAdminResponse(
+            id = t.id,
+            userId = t.user.id,
+            userNickname = t.user.nickname ?: "사용자",
+            type = t.type.name,
+            amount = t.amount,
+            description = t.description ?: "",
+            createdAt = t.createdAt.format(formatter)
+        )
 
     @Transactional
     fun adjustGold(request: GoldAdjustRequest) {
