@@ -39,13 +39,13 @@ export const FriendFindPage = () => {
     const [isFilterVisible, setIsFilterVisible] = useState(!hasSaved);
 
     // Filter Selection State (UI only) - initialize from saved
-    const [selectedDistance, setSelectedDistance] = useState<string>(saved?.distance ?? '1km');
+    const [selectedDistance, setSelectedDistance] = useState<string>(saved?.distance ?? '전체');
     const [selectedSortOrder, setSelectedSortOrder] = useState<string>(saved?.sortOrder ?? 'registered');
     const [selectedPetTypes, setSelectedPetTypes] = useState<string[]>(saved?.petTypes ?? []);
     const [selectedGenders, setSelectedGenders] = useState<string[]>(saved?.genders ?? []);
 
     // Applied Filter State (Triggers Query) - initialize from saved
-    const [appliedDistance, setAppliedDistance] = useState<string>(saved?.distance ?? '1km');
+    const [appliedDistance, setAppliedDistance] = useState<string>(saved?.distance ?? '전체');
     const [appliedSortOrder, setAppliedSortOrder] = useState<string>(saved?.sortOrder ?? 'registered');
     const [appliedPetTypes, setAppliedPetTypes] = useState<string[]>(saved?.petTypes ?? []);
     const [appliedGenders, setAppliedGenders] = useState<string[]>(saved?.genders ?? []);
@@ -116,8 +116,8 @@ export const FriendFindPage = () => {
     };
 
     const handleReset = () => {
-        // Reset all filters - uncheck everything
-        setSelectedDistance('');
+        // Reset all filters - 거리는 기본값 '전체'(무제한)로 복귀
+        setSelectedDistance('전체');
         setSelectedSortOrder('');
         setSelectedPetTypes([]);
         setSelectedGenders([]);
@@ -153,7 +153,7 @@ export const FriendFindPage = () => {
             {/* Applied filters bar - shown when filter panel is hidden */}
             {!isFilterVisible && (() => {
                 const items: { key: string; label: string }[] = [];
-                if (appliedDistance) items.push({ key: 'dist', label: `${appliedDistance} 이내` });
+                if (appliedDistance) items.push({ key: 'dist', label: appliedDistance === '전체' ? '전체' : `${appliedDistance} 이내` });
                 if (appliedPetTypes.length >= 2) {
                     items.push({ key: 'pet-all', label: '강아지/고양이' });
                 } else {
@@ -183,7 +183,7 @@ export const FriendFindPage = () => {
                             <button type="button" className="reset_btn" onClick={(e) => {
                                 e.stopPropagation();
                                 handleReset();
-                                setAppliedDistance('');
+                                setAppliedDistance('전체');
                                 setAppliedSortOrder('');
                                 setAppliedPetTypes([]);
                                 setAppliedGenders([]);
@@ -212,6 +212,10 @@ export const FriendFindPage = () => {
                     <li>
                         <p>거리순</p>
                         <div className="filter_list">
+                            <div className="check_wrap" onClick={() => handleDistanceChange('전체')}>
+                                <input type="checkbox" id="for0" checked={selectedDistance === '전체'} readOnly />
+                                <label>전체</label>
+                            </div>
                             <div className="check_wrap" onClick={() => handleDistanceChange('1km')}>
                                 <input type="checkbox" id="for1" checked={selectedDistance === '1km'} readOnly />
                                 <label>1km 이내</label>
