@@ -54,6 +54,16 @@
 	object-fit: cover;
 }
 
+/* 시스템 알림(산책·골드·공지 등): 빈 사람 대신 골드펫 로고 */
+#notificationContainer .notification_profile--system {
+	background-color: #FFF7E6;
+}
+
+#notificationContainer .notification_profile--system img {
+	object-fit: contain;
+	padding: 4px;
+}
+
 #notificationContainer .unread_dot {
 	width: 4px;
 	height: 4px;

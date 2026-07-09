@@ -240,11 +240,14 @@ const NotificationPage = () => {
                                 </div>
                             ) : notifications.length === 0 ? null : (
                                 <ul>
-                                    {notifications.map(item => (
+                                    {notifications.map(item => {
+                                        // senderId가 없으면 시스템 알림(산책·골드·공지 등) — 빈 사람 대신 골드펫 로고 노출
+                                        const isSystem = !item.senderId;
+                                        return (
                                         <li key={item.id} className="notification_item" onClick={() => handleNotificationClick(item)}>
-                                            <div className="notification_profile">
+                                            <div className={`notification_profile${isSystem ? ' notification_profile--system' : ''}`}>
                                                 <img
-                                                    src={item.senderProfileImage || '/assets/images/common/profile_none_img.svg'}
+                                                    src={isSystem ? '/icon-192.png' : (item.senderProfileImage || '/assets/images/common/profile_none_img.svg')}
                                                     alt=""
                                                 />
                                                 {!item.isRead && <span className="unread_dot" />}
@@ -255,7 +258,8 @@ const NotificationPage = () => {
                                                 <span className="notification_time">{formatTime(item.createdAt)}</span>
                                             </div>
                                         </li>
-                                    ))}
+                                        );
+                                    })}
                                 </ul>
                             )}
                         </div>
