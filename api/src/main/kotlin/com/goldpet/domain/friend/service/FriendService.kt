@@ -202,6 +202,30 @@ class FriendService(
     }
 
     /**
+     * 홈 추천 전용 경로(reco v2). 공유 `getFriends` 스위치와 분리 → `/friends`·compatibility 무영향.
+     * `findRecommendations`(반경무제한·이성우선·신규완화·거리순)를 호출해 FriendResponse 로 매핑.
+     * 후처리 petTypes/genders 필터 없음(홈은 필터 미사용 — 페이지네이션 불변식 보존).
+     */
+    fun getRecommendations(
+        myUserId: Long,
+        myLat: Double,
+        myLng: Double,
+        oppositeGender: String?,
+        hasMyLocation: Boolean,
+        limit: Int
+    ): List<FriendResponse> {
+        val users = friendRepository.findRecommendations(
+            myUserId = myUserId,
+            myLat = myLat,
+            myLng = myLng,
+            oppositeGender = oppositeGender,
+            hasMyLocation = hasMyLocation,
+            pageable = PageRequest.of(0, limit)
+        )
+        return buildFriendResponses(users, myLat, myLng)
+    }
+
+    /**
      * W1 Compatibility Scoring (플랜 §2.1).
      * 거리 native SQL 로 radius 내 상위 N=200 후보집합 1차 조회 → 앱-레이어 가중 재정렬.
      * 페이지네이션은 스코어 정렬된 in-memory 집합에 적용(거리 페이징 충돌 회피).

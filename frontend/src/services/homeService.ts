@@ -10,7 +10,8 @@ export interface HomeRecommendation {
   petAge: number;
   petBreed: string;
   description: string;
-  distance: string;
+  /** 위치 없는 후보(원시 거리<=0)는 null — "0 이내" 오표시 방지 가드. */
+  distance: string | null;
   images: string[];
   imagesThumbnail?: string[];
   imagesViewer?: string[];
@@ -95,7 +96,7 @@ export const homeService = {
           petAge: r.petAge,
           petBreed: r.petBreed,
           description: r.description || '',
-          distance: formatDistanceKm(r.distance),
+          distance: r.distance > 0 ? formatDistanceKm(r.distance) : null,
           images: hasImages ? r.images : ['/assets/images/common/pet_none_img02.svg'],
           imagesThumbnail: hasImages ? r.imagesThumbnail : undefined,
           imagesViewer: hasImages ? r.imagesViewer : undefined,

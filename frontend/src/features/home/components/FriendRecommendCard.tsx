@@ -40,9 +40,13 @@ export function FriendRecommendCard({ item, liked, loading, onLike, onOpenGaller
     const genderIcon = gender === 'FEMALE'
         ? '/assets/images/main/woman_icon.svg'
         : '/assets/images/main/man_icon.svg';
+    // 위치 없는 후보(원시 distance<=0)는 homeService에서 이미 null로 처리됨 — "0 이내" 오표시 가드.
+    const distanceText = item.distance ? `${item.distance} 이내` : null;
+    const petBase = item.petBreed;
+    const ownerBase = item.locationText || '위치 미설정';
     const metaText = petMode
-        ? `${item.petBreed} ∙ ${item.distance} 이내`
-        : `${item.locationText || '위치 미설정'} ∙ ${item.distance} 이내`;
+        ? (distanceText ? `${petBase} ∙ ${distanceText}` : petBase)
+        : (distanceText ? `${ownerBase} ∙ ${distanceText}` : ownerBase);
 
     return (
         <div className="friend_card">

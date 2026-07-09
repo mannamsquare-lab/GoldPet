@@ -6,6 +6,7 @@ import com.goldpet.domain.home.dto.HomeRecentWalkResponse
 import com.goldpet.domain.home.dto.HomeResponse
 import com.goldpet.domain.home.dto.HomeTodayWalkResponse
 import com.goldpet.domain.home.dto.NotificationSummary
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.friend.service.FriendService
 import com.goldpet.domain.gold.entity.TransactionType
 import com.goldpet.domain.gold.repository.GoldTransactionRepository
@@ -26,7 +27,8 @@ class HomeService(
     private val notificationService: NotificationService,
     private val userRepository: UserRepository,
     private val petRepository: PetRepository,
-    private val fileAttachmentLookupService: FileAttachmentLookupService
+    private val fileAttachmentLookupService: FileAttachmentLookupService,
+    private val systemSettingService: SystemSettingService
 ) {
     @Transactional(readOnly = true)
     fun getHomeData(userId: Long): HomeResponse {
@@ -36,17 +38,35 @@ class HomeService(
         val lat = user.mainLocationGeom?.y ?: 37.5665
         val lng = user.mainLocationGeom?.x ?: 126.978
 
-        // Get friend recommendations (top 10, sorted by distance)
-        val recommendations = friendService.getFriends(
-            myUserId = userId,
-            myLat = lat,
-            myLng = lng,
-            distanceKm = 10.0, // Home: 10km radius
-            sortBy = "distance",
-            petTypes = null,
-            genders = null,
-            pageable = PageRequest.of(0, 10)
-        ).content
+        // Get friend recommendations (top 10).
+        // reco.recommendation_v2.enabled ON → 반경무제한·이성우선·신규완화·거리순 (신규 전용 경로).
+        // OFF(기본) → 기존 10km 거리순 경로 유지(즉시 롤백 가능).
+        val recommendations = if (systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)) {
+            val oppositeGender = when (user.gender) {
+                "MALE" -> "FEMALE"
+                "FEMALE" -> "MALE"
+                else -> null // gender NULL → 이성 CASE 무효화 → 순수 거리순 자연 폴백
+            }
+            friendService.getRecommendations(
+                myUserId = userId,
+                myLat = lat,
+                myLng = lng,
+                oppositeGender = oppositeGender,
+                hasMyLocation = user.mainLocationGeom != null,
+                limit = 10
+            )
+        } else {
+            friendService.getFriends(
+                myUserId = userId,
+                myLat = lat,
+                myLng = lng,
+                distanceKm = 10.0, // Home: 10km radius
+                sortBy = "distance",
+                petTypes = null,
+                genders = null,
+                pageable = PageRequest.of(0, 10)
+            ).content
+        }
 
         // Get most recent walk (single query, no full list fetch)
         val recentWalk = walkRepository.findFirstByUserIdOrderByStartTimeDesc(userId)?.let { w ->
