@@ -1,6 +1,7 @@
 package com.goldpet.domain.home.service
 
 import com.goldpet.domain.common.service.FileAttachmentLookupService
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.friend.service.FriendService
 import com.goldpet.domain.gold.entity.TransactionType
 import com.goldpet.domain.gold.repository.GoldTransactionRepository
@@ -32,6 +33,7 @@ class HomeServiceTest {
     @Mock private lateinit var userRepository: UserRepository
     @Mock private lateinit var petRepository: PetRepository
     @Mock private lateinit var fileAttachmentLookupService: FileAttachmentLookupService
+    @Mock private lateinit var systemSettingService: SystemSettingService
 
     @InjectMocks
     private lateinit var homeService: HomeService
@@ -48,6 +50,9 @@ class HomeServiceTest {
         )
 
         whenever(userRepository.findById(userId)).thenReturn(Optional.of(user))
+        // reco v2 OFF → 기존 getFriends 거리순 경로 유지
+        whenever(systemSettingService.getBoolean(eq("reco.recommendation_v2.enabled"), any()))
+            .thenReturn(false)
         whenever(friendService.getFriends(
             eq(userId), any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), any()
         )).thenReturn(PageImpl(emptyList()))
