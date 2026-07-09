@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Coins, TrendingUp, DollarSign, Star, ClipboardList } from 'lucide-react';
 import { economyService } from '../../services/economyService';
 import type { TransactionItem, GoldProductAdmin } from '../../services/economyService';
+import { userManagementService } from '../../services/userManagementService';
+import type { UserListItem } from '../../services/userManagementService';
 import { Tabs } from '../../components/common/Tabs';
 import { DataTable } from '../../components/common/DataTable';
 import type { ColumnDef } from '../../components/common/DataTable';
@@ -49,6 +51,9 @@ export default function EconomyPage() {
   const [adjustUserId, setAdjustUserId] = useState('');
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
+  // 회원 검색(숫자 ID 대신 닉네임/이메일로 선택)
+  const [adjustQuery, setAdjustQuery] = useState('');
+  const [adjustSelectedUser, setAdjustSelectedUser] = useState<UserListItem | null>(null);
 
   // Product form state
   const [showProductForm, setShowProductForm] = useState(false);
@@ -105,9 +110,18 @@ export default function EconomyPage() {
       setAdjustUserId('');
       setAdjustAmount('');
       setAdjustReason('');
+      setAdjustQuery('');
+      setAdjustSelectedUser(null);
       toast.success('골드 조정이 완료되었습니다.');
     },
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e?.response?.data?.message || '골드 조정 실패'),
+  });
+
+  // 회원 검색 결과(닉네임/이메일) — 선택 전에만 조회
+  const { data: adjustSearchResults = [], isFetching: adjustSearching } = useQuery({
+    queryKey: ['admin-user-search', adjustQuery],
+    queryFn: () => userManagementService.searchUsers(adjustQuery.trim(), 8),
+    enabled: adjustQuery.trim().length >= 1 && !adjustSelectedUser,
   });
 
   const createProductMutation = useMutation({
@@ -422,14 +436,64 @@ export default function EconomyPage() {
           <p className="text-sm text-gray-500 mb-4">양수: 지급, 음수: 차감. ADMIN_ADJUST 거래로 기록됩니다.</p>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">사용자 ID</label>
-              <input
-                type="number"
-                value={adjustUserId}
-                onChange={(e) => setAdjustUserId(e.target.value)}
-                placeholder="예: 1"
-                className="w-full px-3 py-2 border rounded-lg text-sm"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">회원</label>
+              {adjustSelectedUser ? (
+                <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-gray-50">
+                  <span className="text-sm">
+                    <span className="font-medium">{adjustSelectedUser.nickname}</span>
+                    <span className="text-gray-500 ml-2">
+                      #{adjustSelectedUser.id}{adjustSelectedUser.email ? ` · ${adjustSelectedUser.email}` : ''}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                    onClick={() => { setAdjustSelectedUser(null); setAdjustUserId(''); setAdjustQuery(''); }}
+                  >
+                    변경
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    value={adjustQuery}
+                    onChange={(e) => setAdjustQuery(e.target.value)}
+                    placeholder="닉네임 또는 이메일로 검색"
+                    autoComplete="off"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                  {adjustQuery.trim().length >= 1 && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-sm max-h-60 overflow-auto">
+                      {adjustSearching ? (
+                        <div className="px-3 py-2 text-sm text-gray-400">검색 중…</div>
+                      ) : adjustSearchResults.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-400">검색 결과 없음</div>
+                      ) : (
+                        adjustSearchResults.map((u) => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between"
+                            onClick={() => {
+                              setAdjustSelectedUser(u);
+                              setAdjustUserId(String(u.id));
+                              setAdjustQuery('');
+                            }}
+                          >
+                            <span>
+                              <span className="font-medium">{u.nickname}</span>
+                              <span className="text-gray-500 ml-2">#{u.id}{u.email ? ` · ${u.email}` : ''}</span>
+                            </span>
+                            {u.status !== 'ACTIVE' && (
+                              <span className="text-xs text-gray-400">{u.status}</span>
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">금액</label>
