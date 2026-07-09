@@ -40,8 +40,8 @@ export function FriendRecommendCard({ item, liked, loading, onLike, onOpenGaller
     const genderIcon = gender === 'FEMALE'
         ? '/assets/images/main/woman_icon.svg'
         : '/assets/images/main/man_icon.svg';
-    // 위치 없는 후보(distance<=0)는 "0 이내" 세그먼트를 숨긴다 (위치 NULL→0 치환 표시 버그 가드).
-    const distanceText = item.distance > 0 ? `${item.distance} 이내` : null;
+    // 위치 없는 후보(원시 distance<=0)는 homeService에서 이미 null로 처리됨 — "0 이내" 오표시 가드.
+    const distanceText = item.distance ? `${item.distance} 이내` : null;
     const petBase = item.petBreed;
     const ownerBase = item.locationText || '위치 미설정';
     const metaText = petMode
