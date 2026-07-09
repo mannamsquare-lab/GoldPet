@@ -107,6 +107,8 @@ class FriendService(
     companion object {
         // 거리 native SQL 1차 후보집합 상한 (앱-레이어 재정렬 입력). 플랜 §2.1 N=200.
         const val COMPATIBILITY_CANDIDATE_LIMIT = 200
+        // '전체'(무제한) + 명시 정렬(궁합순/인기순) 시 ST_DWithin에 넘길 사실상 무제한 반경(지구 반둘레 ≈ 20,037km).
+        const val UNLIMITED_RADIUS_METERS = 20_038_000.0
     }
 
     fun getFriends(
@@ -119,16 +121,21 @@ class FriendService(
         genders: List<String>?,
         pageable: Pageable
     ): Page<FriendResponse> {
-        // 친구찾기 '전체'(무제한) 경로: distance 미지정(null) + reco v2 플래그 ON →
-        // 홈과 동일한 findRecommendations(반경 무제한·이성 우선·신규(위치/펫 없어도) 포함·거리순).
+        // 친구찾기 '전체'(무제한) 경로: distance 미지정(null) + reco v2 플래그 ON.
+        //  - 기본 정렬(등록순/미지정) → 홈과 동일한 findRecommendations(반경 무제한·이성 우선·신규(위치/펫 없어도) 포함·거리순).
+        //  - 명시 정렬(궁합순/인기순 등) → 정렬 존중: 초대형 반경(UNLIMITED_RADIUS_METERS)으로 해당 정렬 로직을 그대로 무제한 적용.
         // 특정 거리(1/3/5km) 선택(distanceKm != null) 또는 플래그 OFF → 기존 경로 그대로(롤백 안전).
-        if (distanceKm == null &&
+        val recoV2Unlimited = distanceKm == null &&
             systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)
-        ) {
+        if (recoV2Unlimited && (sortBy == null || sortBy == "registered")) {
             return getUnlimitedRecommendations(myUserId, myLat, myLng, petTypes, genders, pageable)
         }
 
-        val radiusMeters = (distanceKm ?: 5.0) * 1000 // Default 5km
+        val radiusMeters = when {
+            distanceKm != null -> distanceKm * 1000
+            recoV2Unlimited -> UNLIMITED_RADIUS_METERS // '전체' + 궁합순/인기순 → 사실상 무제한
+            else -> 5000.0 // 플래그 OFF + 거리 미지정 → 기존 5km 폴백
+        }
 
         // W1: 신규 compatible 모드. 플래그 ON 일 때만 가중 재정렬 경로.
         // 플래그 OFF → distance-only 로 폴백(롤백 안전 — 기존 3모드 불변).
