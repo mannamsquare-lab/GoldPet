@@ -1,11 +1,13 @@
 package com.goldpet.domain.admin.controller
 
+import com.goldpet.domain.admin.service.AdminEconomyService
 import com.goldpet.domain.admin.service.AdminUserManagementService
 import com.goldpet.domain.user.entity.UserStatus
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -66,7 +68,8 @@ data class UpdateUserStatusRequest(
 @RequestMapping("/api/v1/admin/users")
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminUserManagementController(
-    private val userManagementService: AdminUserManagementService
+    private val userManagementService: AdminUserManagementService,
+    private val adminEconomyService: AdminEconomyService
 ) {
 
     @Operation(summary = "회원 목록 조회")
@@ -88,6 +91,17 @@ class AdminUserManagementController(
     @GetMapping("/{userId}")
     fun getUserDetail(@PathVariable userId: Long): ResponseEntity<UserDetailResponse> {
         return ResponseEntity.ok(userManagementService.getUserDetail(userId))
+    }
+
+    @Operation(summary = "회원별 골드 거래 내역 조회")
+    @GetMapping("/{userId}/gold-transactions")
+    fun getUserGoldTransactions(
+        @PathVariable userId: Long,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<Page<TransactionAdminResponse>> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        return ResponseEntity.ok(adminEconomyService.getUserTransactions(userId, pageable))
     }
 
     @Operation(summary = "회원 상태 변경 (정지/해제)")

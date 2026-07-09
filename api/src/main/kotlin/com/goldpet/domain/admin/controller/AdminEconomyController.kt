@@ -1,5 +1,6 @@
 package com.goldpet.domain.admin.controller
 
+import com.goldpet.domain.admin.audit.CriticalAction
 import com.goldpet.domain.admin.service.AdminEconomyService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -34,6 +35,7 @@ class AdminEconomyController(
     @Operation(summary = "Gold 조정")
     @PostMapping("/adjust")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @CriticalAction(action = "GOLD_ADJUST") // ≤20자 (admin_audit_logs.action VARCHAR(20))
     fun adjustGold(@RequestBody request: GoldAdjustRequest): ResponseEntity<Void> {
         adminEconomyService.adjustGold(request)
         return ResponseEntity.ok().build()

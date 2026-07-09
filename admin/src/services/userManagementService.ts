@@ -4,11 +4,13 @@ import type {
   UserStatus,
   UserListItemResponse,
   UserDetailResponse,
+  TransactionAdminResponse,
 } from '../types/api';
 
 // Generated aliases (Phase 3.11.2).
 export type UserListItem = UserListItemResponse;
 export type UserDetail = UserDetailResponse;
+export type UserGoldTransaction = TransactionAdminResponse;
 
 export const userManagementService = {
   async getUsers(params: {
@@ -54,5 +56,17 @@ export const userManagementService = {
       params: { query, limit },
     });
     return response.data as UserListItem[];
+  },
+
+  async getGoldTransactions(
+    userId: number,
+    params: { page?: number; size?: number } = {},
+  ): Promise<PageResponse<UserGoldTransaction>> {
+    const response = await typedClient.getPath(
+      '/api/v1/admin/users/{userId}/gold-transactions',
+      { userId },
+      { params },
+    );
+    return response.data as unknown as PageResponse<UserGoldTransaction>;
   },
 };

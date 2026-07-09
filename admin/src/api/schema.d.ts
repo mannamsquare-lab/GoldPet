@@ -4233,6 +4233,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users/{userId}/gold-transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 회원별 골드 거래 내역 조회 */
+        get: operations["getUserGoldTransactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users/search": {
         parameters: {
             query?: never;
@@ -6832,9 +6849,9 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
+            unpaged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
-            unpaged?: boolean;
             /** Format: int32 */
             pageSize?: number;
             paged?: boolean;
@@ -7677,6 +7694,36 @@ export interface components {
             /** Format: int32 */
             badgeCount: number;
         };
+        PageTransactionAdminResponse: {
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["TransactionAdminResponse"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            empty?: boolean;
+        };
+        TransactionAdminResponse: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            userId: number;
+            userNickname: string;
+            type: string;
+            /** Format: int32 */
+            amount: number;
+            description: string;
+            createdAt?: string;
+        };
         MatchingConfigResponse: {
             enabled: boolean;
             /** Format: double */
@@ -8006,36 +8053,6 @@ export interface components {
             /** Format: int32 */
             sortOrder: number;
             isActive: boolean;
-        };
-        PageTransactionAdminResponse: {
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            totalPages?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            size?: number;
-            content?: components["schemas"]["TransactionAdminResponse"][];
-            /** Format: int32 */
-            number?: number;
-            sort?: components["schemas"]["SortObject"];
-            empty?: boolean;
-        };
-        TransactionAdminResponse: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int64 */
-            userId: number;
-            userNickname: string;
-            type: string;
-            /** Format: int32 */
-            amount: number;
-            description: string;
-            createdAt?: string;
         };
         EconomyStatsResponse: {
             /** Format: int64 */
@@ -15221,6 +15238,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getUserGoldTransactions: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageTransactionAdminResponse"];
+                };
             };
         };
     };
