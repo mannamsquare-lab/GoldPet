@@ -100,6 +100,61 @@ class FriendServiceTest {
     }
 
     @Test
+    fun `unlimited path with full page of pageSize results has last false`() {
+        val pageable = PageRequest.of(0, 10)
+        val me = user(1L, "MALE", withLocation = true)
+        // pageSize(10)개를 정확히 채워 반환 → 다음 페이지가 있다고 판단해야 함(last=false).
+        val fullPage = (2L..11L).map { user(it, "FEMALE", withLocation = false) }
+
+        whenever(systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)).thenReturn(true)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(me))
+        whenever(
+            friendRepository.findRecommendations(1L, 37.0, 127.0, "FEMALE", true, pageable)
+        ).thenReturn(fullPage)
+
+        val result = friendService.getFriends(1L, 37.0, 127.0, null, "registered", null, null, pageable)
+
+        assertThat(result.content).hasSize(10)
+        assertThat(result.isLast).isFalse()
+    }
+
+    @Test
+    fun `unlimited path with partial page under pageSize has last true`() {
+        val pageable = PageRequest.of(0, 10)
+        val me = user(1L, "MALE", withLocation = true)
+        // pageSize(10) 미만(3개) 반환 → 더 이상 다음 페이지가 없다고 판단해야 함(last=true).
+        val partialPage = (2L..4L).map { user(it, "FEMALE", withLocation = false) }
+
+        whenever(systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)).thenReturn(true)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(me))
+        whenever(
+            friendRepository.findRecommendations(1L, 37.0, 127.0, "FEMALE", true, pageable)
+        ).thenReturn(partialPage)
+
+        val result = friendService.getFriends(1L, 37.0, 127.0, null, "registered", null, null, pageable)
+
+        assertThat(result.content).hasSize(3)
+        assertThat(result.isLast).isTrue()
+    }
+
+    @Test
+    fun `unlimited path with empty page has last true`() {
+        val pageable = PageRequest.of(0, 10)
+        val me = user(1L, "MALE", withLocation = true)
+
+        whenever(systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)).thenReturn(true)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(me))
+        whenever(
+            friendRepository.findRecommendations(1L, 37.0, 127.0, "FEMALE", true, pageable)
+        ).thenReturn(emptyList())
+
+        val result = friendService.getFriends(1L, 37.0, 127.0, null, "registered", null, null, pageable)
+
+        assertThat(result.content).isEmpty()
+        assertThat(result.isLast).isTrue()
+    }
+
+    @Test
     fun `specific distance 5km stays on legacy nearby path`() {
         val pageable = PageRequest.of(0, 10)
         whenever(
