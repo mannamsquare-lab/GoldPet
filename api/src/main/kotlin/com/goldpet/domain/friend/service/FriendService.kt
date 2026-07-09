@@ -379,8 +379,9 @@ class FriendService(
             ownerMbti = user.mbti,
             ownerInterests = user.interests.map { it.name },
             ownerHobbies = user.hobbies.map { it.name },
-            petName = mainPet?.name ?: "Unknown",
-            petBreed = mainPet?.breed?.name ?: mainPet?.species?.name ?: "Unknown",
+            // 펫 미등록 회원(reco v2 신규 완화로 노출됨): 이름=회원 닉네임, 품종="예비 집사 🐾"
+            petName = mainPet?.name ?: user.nickname ?: "예비 집사",
+            petBreed = if (mainPet == null) "예비 집사 🐾" else (mainPet.breed?.name ?: mainPet.species?.name ?: "반려동물"),
             petAge = petAge,
             petGender = mainPet?.gender ?: "UNKNOWN",
             isNeutered = mainPet?.isNeutered ?: false,
