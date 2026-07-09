@@ -1,0 +1,128 @@
+package com.goldpet.domain.friend.service
+
+import com.goldpet.domain.friend.repository.FriendRepository
+import com.goldpet.domain.pet.repository.PetRepository
+import com.goldpet.domain.user.entity.User
+import com.goldpet.domain.user.repository.UserRepository
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryFactory
+import org.mockito.InjectMocks
+import org.mockito.Mock
+import org.mockito.Mockito.anyBoolean
+import org.mockito.Mockito.anyDouble
+import org.mockito.Mockito.anyLong
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
+import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
+import java.util.Optional
+
+/**
+ * 친구찾기 '전체'(무제한) 분기 단위테스트.
+ * distanceKm==null + reco v2 플래그 ON → findRecommendations(무제한·이성우선) 경유,
+ * 특정 거리 또는 플래그 OFF → 기존 5km 경로 유지(회귀 방지).
+ */
+@ExtendWith(MockitoExtension::class)
+class FriendServiceTest {
+
+    @Mock
+    private lateinit var friendRepository: FriendRepository
+
+    @Mock
+    private lateinit var petRepository: PetRepository
+
+    @Mock
+    private lateinit var fileAttachmentLookupService: com.goldpet.domain.common.service.FileAttachmentLookupService
+
+    @Mock
+    private lateinit var userRepository: UserRepository
+
+    @Mock
+    private lateinit var systemSettingService: com.goldpet.domain.common.service.SystemSettingService
+
+    @Mock
+    private lateinit var profileBoostService: com.goldpet.domain.profileboost.service.ProfileBoostService
+
+    @Mock
+    private lateinit var experimentService: com.goldpet.domain.experiment.service.ExperimentService
+
+    @InjectMocks
+    private lateinit var friendService: FriendService
+
+    private fun user(id: Long, gender: String?, withLocation: Boolean): User {
+        val geom = if (withLocation) {
+            GeometryFactory().createPoint(Coordinate(127.0, 37.0))
+        } else null
+        return User(
+            id = id,
+            email = "user$id@example.com",
+            oauthProvider = "GOOGLE",
+            oauthId = "google$id",
+            username = null,
+            password = null,
+            nickname = "User$id",
+            name = null,
+            birthDate = null,
+            phoneNumber = null,
+            gender = gender,
+            birthYear = null,
+            mainLocationText = null,
+            mainLocationGeom = geom,
+            profileImageUrl = null
+        )
+    }
+
+    @Test
+    fun `distance null with reco v2 flag ON routes through findRecommendations with opposite gender`() {
+        val pageable = PageRequest.of(0, 10)
+        val me = user(1L, "MALE", withLocation = true)
+        val candidate = user(2L, "FEMALE", withLocation = false)
+
+        whenever(systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)).thenReturn(true)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(me))
+        whenever(
+            friendRepository.findRecommendations(1L, 37.0, 127.0, "FEMALE", true, pageable)
+        ).thenReturn(listOf(candidate))
+
+        val result = friendService.getFriends(1L, 37.0, 127.0, null, "registered", null, null, pageable)
+
+        verify(friendRepository).findRecommendations(1L, 37.0, 127.0, "FEMALE", true, pageable)
+        verify(friendRepository, never()).findFriendsNearbyByRegistered(anyLong(), anyDouble(), anyDouble(), anyDouble(), any())
+        verify(friendRepository, never()).findFriendsNearbyByDistance(anyLong(), anyDouble(), anyDouble(), anyDouble(), any())
+        assertThat(result.content).hasSize(1)
+        assertThat(result.content[0].id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `specific distance 5km stays on legacy nearby path`() {
+        val pageable = PageRequest.of(0, 10)
+        whenever(
+            friendRepository.findFriendsNearbyByRegistered(1L, 37.0, 127.0, 5000.0, PageRequest.of(0, 10))
+        ).thenReturn(PageImpl(emptyList<User>(), pageable, 0))
+
+        friendService.getFriends(1L, 37.0, 127.0, 5.0, "registered", null, null, pageable)
+
+        verify(friendRepository).findFriendsNearbyByRegistered(1L, 37.0, 127.0, 5000.0, PageRequest.of(0, 10))
+        verify(friendRepository, never()).findRecommendations(anyLong(), anyDouble(), anyDouble(), any(), anyBoolean(), any())
+    }
+
+    @Test
+    fun `distance null with reco v2 flag OFF falls back to 5km legacy path`() {
+        val pageable = PageRequest.of(0, 10)
+        whenever(systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)).thenReturn(false)
+        whenever(
+            friendRepository.findFriendsNearbyByRegistered(1L, 37.0, 127.0, 5000.0, PageRequest.of(0, 10))
+        ).thenReturn(PageImpl(emptyList<User>(), pageable, 0))
+
+        friendService.getFriends(1L, 37.0, 127.0, null, "registered", null, null, pageable)
+
+        verify(friendRepository).findFriendsNearbyByRegistered(1L, 37.0, 127.0, 5000.0, PageRequest.of(0, 10))
+        verify(friendRepository, never()).findRecommendations(anyLong(), anyDouble(), anyDouble(), any(), anyBoolean(), any())
+    }
+}

@@ -119,6 +119,15 @@ class FriendService(
         genders: List<String>?,
         pageable: Pageable
     ): Page<FriendResponse> {
+        // 친구찾기 '전체'(무제한) 경로: distance 미지정(null) + reco v2 플래그 ON →
+        // 홈과 동일한 findRecommendations(반경 무제한·이성 우선·신규(위치/펫 없어도) 포함·거리순).
+        // 특정 거리(1/3/5km) 선택(distanceKm != null) 또는 플래그 OFF → 기존 경로 그대로(롤백 안전).
+        if (distanceKm == null &&
+            systemSettingService.getBoolean("reco.recommendation_v2.enabled", false)
+        ) {
+            return getUnlimitedRecommendations(myUserId, myLat, myLng, petTypes, genders, pageable)
+        }
+
         val radiusMeters = (distanceKm ?: 5.0) * 1000 // Default 5km
 
         // W1: 신규 compatible 모드. 플래그 ON 일 때만 가중 재정렬 경로.
@@ -223,6 +232,62 @@ class FriendService(
             pageable = PageRequest.of(0, limit)
         )
         return buildFriendResponses(users, myLat, myLng)
+    }
+
+    /**
+     * 친구찾기 '전체'(무제한) 경로 — 홈 reco v2 와 동일 로직을 `/friends` 페이지네이션에 얹는다.
+     * findRecommendations(반경 무제한·이성 우선·신규 완화·거리순) 결과에 petTypes/genders 후처리 필터 적용.
+     * sortBy 는 무시(reco 고정 정렬). 페이지네이션 last 는 필터 전 원본 크기로 판단(가득 차면 다음 페이지 有).
+     */
+    private fun getUnlimitedRecommendations(
+        myUserId: Long,
+        myLat: Double,
+        myLng: Double,
+        petTypes: List<String>?,
+        genders: List<String>?,
+        pageable: Pageable
+    ): Page<FriendResponse> {
+        val me = userRepository.findById(myUserId).orElse(null)
+        val oppositeGender = when (me?.gender) {
+            "MALE" -> "FEMALE"
+            "FEMALE" -> "MALE"
+            else -> null
+        }
+        val hasMyLocation = me?.mainLocationGeom != null
+
+        val users = friendRepository.findRecommendations(
+            myUserId = myUserId,
+            myLat = myLat,
+            myLng = myLng,
+            oppositeGender = oppositeGender,
+            hasMyLocation = hasMyLocation,
+            pageable = pageable
+        )
+
+        // 다음 페이지 유무는 필터 전 원본 크기 기준(LIMIT 가득 차면 다음 페이지 있음).
+        // 후처리 필터로 content 가 줄어도 페이지네이션은 멈추지 않는다.
+        val hasNext = users.size >= pageable.pageSize
+
+        // petTypes/genders 후처리 필터 — 기존 getFriends 필터 로직과 동일.
+        val filtered = users.filter { user ->
+            val matchesPetType = petTypes.isNullOrEmpty() ||
+                petRepository.findByOwnerId(user.id).any { pet -> pet.species.code in petTypes }
+            val matchesGender = genders.isNullOrEmpty() ||
+                petRepository.findByOwnerId(user.id).any { pet -> pet.gender in genders }
+            matchesPetType && matchesGender
+        }
+
+        val responses = buildFriendResponses(filtered, myLat, myLng)
+
+        // PageImpl.isLast() 가 hasNext 를 반영하도록 total 을 역산:
+        //   다음 페이지 有 → total 을 현재 페이지 끝 너머로 밀어 isLast=false,
+        //   없음 → 현재 페이지까지만 → isLast=true.
+        val total = if (hasNext) {
+            (pageable.pageNumber.toLong() + 1) * pageable.pageSize + 1
+        } else {
+            pageable.offset + responses.size
+        }
+        return PageImpl(responses, pageable, total)
     }
 
     /**
