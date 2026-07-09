@@ -103,7 +103,7 @@ export const BenefitsPage = () => {
               </div>
               <div className="benefit-text-content">
                 <h3 className="benefit-text-title">
-                  단신과 반려동물의 산책 경로를 기록하고 관리해드립니다.
+                  당신과 반려동물의 산책 경로를 기록하고 관리해드립니다.
                 </h3>
                 <p className="benefit-text-description">
                   그리고 다른이들의 산책 정보도 확인해보세요.
