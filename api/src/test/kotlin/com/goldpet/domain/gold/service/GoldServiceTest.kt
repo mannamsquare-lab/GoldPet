@@ -8,6 +8,7 @@ import com.goldpet.domain.gold.entity.GoldProduct
 import com.goldpet.domain.gold.entity.GoldTransaction
 import com.goldpet.domain.gold.entity.TransactionStatus
 import com.goldpet.domain.gold.entity.TransactionType
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.gold.repository.GoldProductRepository
 import com.goldpet.domain.gold.repository.GoldTransactionRepository
 import com.goldpet.domain.user.entity.User
@@ -36,6 +37,9 @@ class GoldServiceTest {
     @Mock
     private lateinit var productRepository: GoldProductRepository
 
+    @Mock
+    private lateinit var systemSettingService: SystemSettingService
+
     private lateinit var goldService: GoldService
 
     private lateinit var testUser: User
@@ -43,7 +47,7 @@ class GoldServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        goldService = GoldService(transactionRepository, userRepository, productRepository)
+        goldService = GoldService(transactionRepository, userRepository, productRepository, systemSettingService)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
         testUser.goldBalance = 1000

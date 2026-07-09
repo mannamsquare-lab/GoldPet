@@ -8,6 +8,7 @@ import com.goldpet.domain.auth.dto.SignupRequest
 import com.goldpet.domain.auth.dto.SnsSignupRequest
 import java.time.LocalDateTime
 import com.goldpet.domain.common.service.SystemSettingService
+import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.Assertions.*
@@ -33,6 +34,9 @@ class AuthServiceTest {
     @Mock
     private lateinit var systemSettingService: SystemSettingService
 
+    @Mock
+    private lateinit var goldService: GoldService
+
     private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var authService: AuthService
 
@@ -43,7 +47,7 @@ class AuthServiceTest {
         // (단독 실행 시 Spring 컨텍스트가 없어 lateinit 미초기화 방지)
         EncryptionConfig("auth-service-test-key-32-chars!!", "").validate()
         passwordEncoder = BCryptPasswordEncoder()
-        authService = AuthService(userRepository, passwordEncoder, jwtTokenProvider, systemSettingService)
+        authService = AuthService(userRepository, passwordEncoder, jwtTokenProvider, systemSettingService, goldService)
         whenever(systemSettingService.getBoolean("allow_signups", true)).thenReturn(true)
     }
 

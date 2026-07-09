@@ -4,6 +4,7 @@ import com.goldpet.config.crypto.EncryptionConfig
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.domain.auth.dto.SnsSignupRequest
 import com.goldpet.domain.common.service.SystemSettingService
+import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.Assertions.assertNull
@@ -28,6 +29,9 @@ class AuthServiceSnsSignupTest {
     @Mock
     private lateinit var systemSettingService: SystemSettingService
 
+    @Mock
+    private lateinit var goldService: GoldService
+
     private lateinit var authService: AuthService
 
     @BeforeEach
@@ -38,7 +42,8 @@ class AuthServiceSnsSignupTest {
             userRepository,
             BCryptPasswordEncoder(),
             jwtTokenProvider,
-            systemSettingService
+            systemSettingService,
+            goldService
         )
         whenever(systemSettingService.getBoolean("allow_signups", true)).thenReturn(true)
     }

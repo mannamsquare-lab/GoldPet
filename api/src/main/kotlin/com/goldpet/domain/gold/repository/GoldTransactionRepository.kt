@@ -38,5 +38,7 @@ interface GoldTransactionRepository : JpaRepository<GoldTransaction, Long> {
 
     fun existsByOriginalTransactionId(originalTransactionId: Long): Boolean
 
+    fun existsByUserIdAndReferenceType(userId: Long, referenceType: String): Boolean
+
     fun findAllByUserIdAndTypeOrderByCreatedAtDesc(userId: Long, type: TransactionType, pageable: Pageable): Page<GoldTransaction>
 }

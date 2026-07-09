@@ -5,6 +5,7 @@ import com.goldpet.domain.gold.dto.*
 import com.goldpet.domain.gold.entity.GoldTransaction
 import com.goldpet.domain.gold.entity.TransactionStatus
 import com.goldpet.domain.gold.entity.TransactionType
+import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.gold.repository.GoldProductRepository
 import com.goldpet.domain.gold.repository.GoldTransactionRepository
 import com.goldpet.domain.user.repository.UserRepository
@@ -20,8 +21,14 @@ import java.time.LocalDateTime
 class GoldService(
     private val transactionRepository: GoldTransactionRepository,
     private val userRepository: UserRepository,
-    private val productRepository: GoldProductRepository
+    private val productRepository: GoldProductRepository,
+    private val systemSettingService: SystemSettingService
 ) {
+
+    companion object {
+        const val SETTING_WELCOME_GOLD = "signup.welcome.gold"
+        const val REF_TYPE_SIGNUP_WELCOME = "SIGNUP_WELCOME"
+    }
 
     fun getBalance(userId: Long): GoldBalanceResponse {
         val user = userRepository.findById(userId)
@@ -148,6 +155,37 @@ class GoldService(
 
         val saved = transactionRepository.save(transaction)
         return TransactionResponse.from(saved)
+    }
+
+    /**
+     * 회원가입 축하 골드 1회 지급. referenceType=SIGNUP_WELCOME 이력이 있으면 건너뛴다.
+     * 신규 가입(AuthService)과 기존 회원 소급(WelcomeGoldBackfillRunner) 양쪽에서 사용.
+     * 지급액은 signup.welcome.gold 설정, 0 이하면 지급하지 않는다.
+     */
+    @Transactional
+    fun grantWelcomeGoldIfNeeded(userId: Long): TransactionResponse? {
+        val amount = systemSettingService.getInt(SETTING_WELCOME_GOLD, 30)
+        if (amount <= 0) return null
+
+        val user = userRepository.findByIdForUpdate(userId)
+            .orElseThrow { NotFoundException("User not found") }
+        if (transactionRepository.existsByUserIdAndReferenceType(userId, REF_TYPE_SIGNUP_WELCOME)) {
+            return null
+        }
+
+        user.goldBalance += amount
+        userRepository.save(user)
+
+        val transaction = GoldTransaction(
+            user = user,
+            type = TransactionType.REWARD,
+            amount = amount,
+            balanceAfter = user.goldBalance,
+            description = "회원가입 축하 골드",
+            referenceType = REF_TYPE_SIGNUP_WELCOME,
+            status = TransactionStatus.COMPLETED
+        )
+        return TransactionResponse.from(transactionRepository.save(transaction))
     }
 
     /**

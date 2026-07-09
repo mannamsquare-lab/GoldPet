@@ -53,6 +53,11 @@ class DefaultSystemSettingsInitializer(
             "10",
             "AI 프로필 IMAGE 생성 골드 비용 (출시 도달 가능 경로만 설정화)"
         )
+        ensureDefault(
+            "signup.welcome.gold",
+            "30",
+            "회원가입 축하 골드 지급액 (0 이하면 지급 안 함)"
+        )
     }
 
     private fun ensureDefault(key: String, value: String, description: String) {

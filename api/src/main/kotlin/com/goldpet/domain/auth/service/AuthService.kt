@@ -13,6 +13,7 @@ import com.goldpet.domain.auth.dto.SnsSignupRequest
 import com.goldpet.domain.auth.dto.VerifyAccountRequest
 import com.goldpet.domain.auth.exception.AccountStatusException
 import com.goldpet.domain.common.service.SystemSettingService
+import com.goldpet.domain.gold.service.GoldService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.entity.UserStatus
 import com.goldpet.domain.user.repository.UserRepository
@@ -29,7 +30,8 @@ class AuthService(
         private val userRepository: UserRepository,
         private val passwordEncoder: PasswordEncoder,
         private val jwtTokenProvider: JwtTokenProvider,
-        private val systemSettingService: SystemSettingService
+        private val systemSettingService: SystemSettingService,
+        private val goldService: GoldService
 ) {
     @Transactional
     fun signup(request: SignupRequest): AuthResponse {
@@ -94,6 +96,7 @@ class AuthService(
             }
             throw ConflictException(msg)
         }
+        goldService.grantWelcomeGoldIfNeeded(saved.id)
         val userPrincipal = UserPrincipal.create(saved)
         val auth =
                 UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
@@ -172,9 +175,14 @@ class AuthService(
             user.profileLockedAt = LocalDateTime.now()
         }
         // 추가가입(온보딩) 완료. 이미 완료된 사용자의 최초 완료 시각은 보존.
+        val firstCompletion = user.signupCompletedAt == null
         user.signupCompletedAt = user.signupCompletedAt ?: LocalDateTime.now()
 
         userRepository.save(user)
+
+        if (firstCompletion) {
+            goldService.grantWelcomeGoldIfNeeded(user.id)
+        }
 
         val userPrincipal = UserPrincipal.create(user)
         val auth =

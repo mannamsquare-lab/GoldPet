@@ -35,6 +35,8 @@ interface UserRepository : JpaRepository<User, Long> {
     fun findByNicknameContainingIgnoreCaseAndStatus(nickname: String, status: UserStatus, pageable: Pageable): Page<User>
     fun findByNicknameContainingIgnoreCaseAndStatusNot(nickname: String, status: UserStatus, pageable: Pageable): Page<User>
     fun countByCreatedAtAfter(date: LocalDateTime): Long
+    // 회원가입 축하 골드 소급 지급 대상 (가입 완료 + 활성 회원)
+    fun findAllBySignupCompletedAtIsNotNullAndStatus(status: UserStatus): List<User>
 
     @Query(
             value =
