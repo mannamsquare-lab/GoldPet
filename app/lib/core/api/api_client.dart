@@ -38,6 +38,18 @@ class ApiClient {
   /// Set by HybridWebView to show dialog + redirect to login.
   static VoidCallback? onAuthExpired;
 
+  /// Callback invoked right after Flutter rotates the access/refresh token
+  /// on its own initiative — either the 401 interceptor's reactive refresh
+  /// or refreshTokenIfNeeded()'s proactive pre-walk refresh — i.e. any time
+  /// the session is refreshed without React initiating it. Set by
+  /// HybridWebView to push the new tokens to React via the 'tokenSync'
+  /// event, so React's copy never goes stale and later retries a refresh
+  /// with a dead token (server reuse detection → forced logout).
+  /// NOT invoked for setToken() calls originating from the 'syncAuthToken'
+  /// bridge call (React → Flutter) to avoid an echo loop.
+  static void Function(String accessToken, String refreshToken)?
+      onTokenRotatedNatively;
+
   ApiClient._internal() {
     _dio = Dio(
       BaseOptions(
@@ -67,6 +79,10 @@ class ApiClient {
         onError: (error, handler) async {
           if (error.response?.statusCode == 401) {
             final refreshToken = await _storage.read(key: StorageKeys.refreshToken);
+            // Refresh 시도가 401(재사용 감지/유효하지 않은 refresh token)로 거부됐는지 여부.
+            // true인 경우에만 죽은 토큰을 폐기한다 — 네트워크 오류 등 일시적 실패에서는
+            // 세션(저장된 토큰)을 보존해 오프라인 순간에 로그아웃되지 않도록 한다.
+            var refreshRejectedAsInvalid = false;
             if (refreshToken != null && refreshToken.isNotEmpty) {
               try {
                 if (_refreshLock != null) {
@@ -109,6 +125,9 @@ class ApiClient {
                       final newAccessToken = response.data['accessToken'] as String;
                       final newRefreshToken = response.data['refreshToken'] as String;
                       await setToken(newAccessToken, newRefreshToken);
+                      // 네이티브가 자체적으로 회전시킨 토큰을 React에 즉시 역동기화
+                      // (React zustand 사본이 구세대로 남는 것을 방지)
+                      onTokenRotatedNatively?.call(newAccessToken, newRefreshToken);
                       _refreshLock!.complete();
                       _refreshLock = null;
 
@@ -126,12 +145,19 @@ class ApiClient {
                     }
                   } catch (refreshError) {
                     debugPrint('[AuthExpiry] Token refresh failed: $refreshError');
+                    if (refreshError is DioException && refreshError.response?.statusCode == 401) {
+                      // Refresh token 자체가 서버에서 거부됨(재사용 감지/만료) — 죽은 토큰
+                      refreshRejectedAsInvalid = true;
+                    }
                     _refreshLock?.completeError(refreshError);
                     _refreshLock = null;
                   }
                 }
               } catch (refreshError) {
                 debugPrint('[AuthExpiry] Token refresh failed: $refreshError');
+                if (refreshError is DioException && refreshError.response?.statusCode == 401) {
+                  refreshRejectedAsInvalid = true;
+                }
                 _refreshLock?.completeError(refreshError);
                 _refreshLock = null;
               }
@@ -146,7 +172,13 @@ class ApiClient {
               debugPrint('[AuthExpiry] Token refresh failed, showing expiry dialog');
               onAuthExpired?.call();
             }
-            if (!WalkScreen.isOnStack && !CourseWalkScreen.isOnStack) { await clearToken(); }
+            // 세션이 애초에 없었거나(hadSession false, 정리할 잔여 토큰 대상)
+            // refresh token이 명시적으로 거부된 경우에만 토큰을 삭제.
+            // 네트워크 오류 등으로 refresh 자체를 시도하지 못한 경우는 세션 보존.
+            final shouldClearTokens = !hadSession || refreshRejectedAsInvalid;
+            if (shouldClearTokens && !WalkScreen.isOnStack && !CourseWalkScreen.isOnStack) {
+              await clearToken();
+            }
           }
           return handler.next(error);
         },
@@ -313,6 +345,9 @@ class ApiClient {
         final newAccessToken = response.data['accessToken'] as String;
         final newRefreshToken = response.data['refreshToken'] as String;
         await setToken(newAccessToken, newRefreshToken);
+        // 네이티브가 자체적으로 회전시킨 토큰을 React에 즉시 역동기화
+        // (React zustand 사본이 구세대로 남는 것을 방지)
+        onTokenRotatedNatively?.call(newAccessToken, newRefreshToken);
       }
       _refreshLock!.complete();
       _refreshLock = null;

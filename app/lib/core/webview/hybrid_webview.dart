@@ -286,6 +286,17 @@ class _HybridWebViewState extends State<HybridWebView> {
       _showAuthExpiredDialog();
     };
 
+    // 네이티브가 자체적으로 토큰을 회전시킨 직후(401 인터셉터의 반응형 refresh,
+    // refreshTokenIfNeeded()의 산책 전 선제 refresh) React에 역동기화.
+    // React zustand 사본이 구세대로 남아 나중에 구토큰으로 refresh를 시도해
+    // 서버 재사용 감지로 강제 로그아웃되는 것을 방지한다.
+    ApiClient.onTokenRotatedNatively = (accessToken, refreshToken) {
+      _bridge.sendEventToReact('tokenSync', {
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      });
+    };
+
     // 오버레이 색상 제어 콜백 연결
     _bridge.onOverlayColorChange = (color, bottomColor) {
       if (!mounted) return;
