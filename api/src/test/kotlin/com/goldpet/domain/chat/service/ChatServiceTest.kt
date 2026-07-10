@@ -14,7 +14,9 @@ import com.goldpet.domain.friend.repository.UserBlockRepository
 import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import com.goldpet.domain.common.exception.BadRequestException
 import com.goldpet.domain.common.exception.ConflictException
+import com.goldpet.domain.common.exception.ForbiddenException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -329,9 +331,23 @@ class ChatServiceTest {
             .thenReturn(Optional.empty())
 
         // When & Then
-        assertThrows<IllegalStateException> {
+        assertThrows<ForbiddenException> {
             chatService.saveChatMessage(request)
         }
+    }
+
+    @Test
+    fun `getOrCreateDirectRoom should throw BadRequestException when no match exists`() {
+        // Given
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(userRepository.findById(2L)).thenReturn(Optional.of(targetUser))
+        whenever(matchRepository.findByUserIds(1L, 2L)).thenReturn(Optional.empty())
+
+        // When & Then
+        val ex = assertThrows<BadRequestException> {
+            chatService.getOrCreateDirectRoom(1L, 2L)
+        }
+        assertEquals("NO_MATCH", ex.errorCode)
     }
 
     @Test

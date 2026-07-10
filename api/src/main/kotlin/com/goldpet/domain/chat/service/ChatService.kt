@@ -161,7 +161,7 @@ class ChatService(
         // Validate sender is a participant if not a system message
         if (request.messageType != MessageType.SYSTEM) {
             chatRoomParticipantRepository.findByChatRoomIdAndUserId(chatRoom.id, sender.id)
-                .orElseThrow { IllegalStateException("Sender is not a participant of this chat room.") }
+                .orElseThrow { ForbiddenException("채팅방 참여자가 아닙니다", errorCode = "NOT_PARTICIPANT") }
         }
 
         // Block check: verify no block relationship with the other participant in 1:1 chat
@@ -313,7 +313,7 @@ class ChatService(
 
         // Find match between the two users
         val match = matchRepository.findByUserIds(userId, targetUserId)
-            .orElseThrow { IllegalStateException("No match exists between users $userId and $targetUserId") }
+            .orElseThrow { BadRequestException("매칭되지 않은 사용자와는 채팅할 수 없습니다", errorCode = "NO_MATCH") }
 
         // Check if chat room already exists for this match
         val existingRoom = chatRoomRepository.findByMatchId(match.id)
