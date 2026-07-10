@@ -6,10 +6,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    # show-sql 은 System.out 으로 찍혀 api.log(stdout 리다이렉트)에 접두사 없는 SQL 이 섞인다.
+    # 대신 org.hibernate.SQL 로거(debug)로 남겨 타임스탬프·로거명이 붙은 한 줄 로그로 출력.
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
 
   flyway:
     enabled: true
@@ -18,6 +20,11 @@ spring:
     # V68 가 V69/V70 보다 늦게 추가돼 스킵된 환경에서도 back-apply 되도록 허용.
     # V68/V71 모두 IF NOT EXISTS 라 재적용/순서 무관하게 안전. schema_history 정합 + validate 실패 방지.
     out-of-order: true
+
+logging:
+  level:
+    # show-sql 대체 — SQL 을 정식 로그 라인(타임스탬프·로거명 포함)으로 기록. 끌 때는 이 레벨만 info 로.
+    org.hibernate.SQL: debug
 
 # BLOCKER #9 — Sentry. SENTRY_DSN_API 미설정 시 dsn 공백 → SDK no-op (이벤트 미전송).
 sentry:
