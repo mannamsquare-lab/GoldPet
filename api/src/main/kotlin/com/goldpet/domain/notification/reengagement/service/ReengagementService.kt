@@ -39,12 +39,17 @@ class ReengagementService(
     /** 휴면-복귀 넛지 — 18:00 KST. */
     @Scheduled(cron = "0 0 18 * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "reengagementDormancyNudge", lockAtMostFor = "15m", lockAtLeastFor = "1m")
-    fun runDormancyNudge() = runNudge(NudgeType.DORMANCY)
+    fun runDormancyNudge() {
+        // ShedLock은 primitive(Int) 반환 메서드를 잠글 수 없어 Unit 반환으로 고정.
+        runNudge(NudgeType.DORMANCY)
+    }
 
     /** 스트릭-위기 넛지 — 20:00 KST. */
     @Scheduled(cron = "0 0 20 * * *", zone = "Asia/Seoul")
     @SchedulerLock(name = "reengagementStreakAtRiskNudge", lockAtMostFor = "15m", lockAtLeastFor = "1m")
-    fun runStreakAtRiskNudge() = runNudge(NudgeType.STREAK_AT_RISK)
+    fun runStreakAtRiskNudge() {
+        runNudge(NudgeType.STREAK_AT_RISK)
+    }
 
     fun runNudge(type: NudgeType): Int {
         val now = LocalDateTime.now(clock)
