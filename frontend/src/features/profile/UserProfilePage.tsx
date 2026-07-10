@@ -7,6 +7,9 @@ import { ReportModal } from '../../components/common/ReportModal';
 import { BackButton } from '../../components/common/BackButton';
 import { blockService } from '../../services/blockService';
 import { reportService } from '../../services/reportService';
+import { chatService, type ChatServiceError } from '../../services/chatService';
+import { friendService } from '../../services/friendService';
+import { useAlert } from '../../contexts/AlertContext';
 import { useUserPublicProfile } from './useUserPublicProfile';
 import { useUserCommunityPhotos } from './useUserCommunityPhotos';
 import { useUserWalkPhotos } from './useUserWalkPhotos';
@@ -52,9 +55,12 @@ function MoreMenu({ blockedByMe, onChat, onReport, onBlock, onUnblock, onClose }
     <>
       <div className="up-menu-backdrop" onClick={onClose} />
       <div className="up-menu-sheet">
-        <button type="button" className="up-menu-item" onClick={onChat}>
-          채팅하기
-        </button>
+        {/* 차단한 상대는 매칭 여부와 무관하게 채팅 진입점을 사전 억제 — 백엔드가 403(FORBIDDEN)으로 거부하기 전에 UI에서 숨긴다 */}
+        {!blockedByMe && (
+          <button type="button" className="up-menu-item" onClick={onChat}>
+            채팅하기
+          </button>
+        )}
         <button type="button" className="up-menu-item" onClick={onReport}>
           신고하기
         </button>
@@ -83,6 +89,7 @@ export default function UserProfilePage() {
   const userId = Number(userIdParam);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showAlert, showConfirm } = useAlert();
 
   const { data: profile, isLoading: profileLoading, isError, error } = useUserPublicProfile(userId);
 
@@ -192,6 +199,42 @@ export default function UserProfilePage() {
       setMenuOpen(false);
     } finally {
       setIsReporting(false);
+    }
+  };
+
+  /* ── 채팅하기: 비매칭(NO_MATCH) 시 실행형 좋아요 CTA로 전환 ── */
+  const handleSendLikeFromChatCta = async () => {
+    try {
+      const result = await friendService.likeUser(userId, 'profile');
+      if (result.isMutual) {
+        showAlert('서로 좋아요가 되었어요! 이제 채팅할 수 있어요. 💕');
+      } else {
+        showAlert('좋아요를 보냈어요! 상대방도 좋아요를 보내면 채팅할 수 있어요. ❤️');
+      }
+    } catch {
+      showAlert('좋아요를 보내는데 실패했습니다.');
+    }
+  };
+
+  const handleChat = async () => {
+    try {
+      const room = await chatService.getOrCreateDirectRoom(userId);
+      navigate(`/chat/${room.id}`);
+    } catch (error: unknown) {
+      const err = error as ChatServiceError;
+      if (err.code === 'NO_MATCH') {
+        showConfirm(
+          '아직 친구가 아니에요. 좋아요를 보내고 서로 좋아요가 되면 채팅할 수 있어요.',
+          handleSendLikeFromChatCta,
+          undefined,
+          { confirmText: '좋아요 보내기', cancelText: '닫기' },
+        );
+      } else if (err.code === 'FORBIDDEN') {
+        // 방어적 백업 분기 — 정상 경로는 MoreMenu의 blockedByMe 사전 억제로 여기 도달이 희박함.
+        showAlert('차단된 상대와는 채팅할 수 없습니다.');
+      } else {
+        showAlert(err.message || '채팅방을 열 수 없습니다.');
+      }
     }
   };
 
@@ -518,8 +561,7 @@ export default function UserProfilePage() {
           blockedByMe={isBlockedByMe}
           onChat={() => {
             setMenuOpen(false);
-            // Chat navigation — wired in Phase 2; userId is available
-            console.info('[UserProfilePage] chat with userId:', userId);
+            void handleChat();
           }}
           onReport={() => {
             setMenuOpen(false);

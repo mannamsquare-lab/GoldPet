@@ -78,6 +78,14 @@ export interface ChatRequestItem {
   createdAt: string;
 }
 
+// Error thrown by getOrCreateDirectRoom on failure. `code` mirrors the backend's
+// ErrorResponse.errorCode (e.g. 'NO_MATCH', 'FORBIDDEN') so callers can branch without
+// parsing `message`. Both are additive — `message` keeps its historical fixed string.
+export interface ChatServiceError extends Error {
+  code?: string;
+  status?: number;
+}
+
 export const chatService = {
   getChatRooms: async (): Promise<ChatRoom[]> => {
     const response = await typedClient.get('/api/v1/chat/rooms');
@@ -265,11 +273,15 @@ export const chatService = {
       );
       return response.data as unknown as ChatRoom;
     } catch (error: unknown) {
-      const err = error as { response?: { status?: number } };
-      if (err.response?.status === 400) {
-        throw new Error('매칭된 상대가 아닙니다.');
-      }
-      throw new Error('채팅방 생성에 실패했습니다.');
+      const err = error as { response?: { status?: number; data?: { errorCode?: string } } };
+      const status = err.response?.status;
+      const message = status === 400 ? '매칭된 상대가 아닙니다.' : '채팅방 생성에 실패했습니다.';
+      // errorCode(NO_MATCH/FORBIDDEN 등)와 status를 가산적으로 부착 — message 문자열은 그대로 보존해
+      // 기존 소비자(문구 고정 테스트 등)와 후방호환을 유지하면서, 호출자가 케이스별로 분기할 수 있게 한다.
+      throw Object.assign(new Error(message), {
+        code: err.response?.data?.errorCode,
+        status,
+      }) as ChatServiceError;
     }
   },
 

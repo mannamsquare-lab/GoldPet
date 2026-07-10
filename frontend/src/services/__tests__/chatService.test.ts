@@ -191,5 +191,25 @@ describe('chatService', () => {
 
       await expect(chatService.getOrCreateDirectRoom(42)).rejects.toThrow('매칭된 상대가 아닙니다.')
     })
+
+    it('attaches code NO_MATCH and status 400 from errorCode payload', async () => {
+      mockedClient.post.mockRejectedValueOnce({ response: { status: 400, data: { errorCode: 'NO_MATCH' } } })
+
+      await expect(chatService.getOrCreateDirectRoom(42)).rejects.toMatchObject({
+        message: '매칭된 상대가 아닙니다.',
+        code: 'NO_MATCH',
+        status: 400,
+      })
+    })
+
+    it('attaches code FORBIDDEN and status 403 on blocked relationship', async () => {
+      mockedClient.post.mockRejectedValueOnce({ response: { status: 403, data: { errorCode: 'FORBIDDEN' } } })
+
+      await expect(chatService.getOrCreateDirectRoom(42)).rejects.toMatchObject({
+        message: '채팅방 생성에 실패했습니다.',
+        code: 'FORBIDDEN',
+        status: 403,
+      })
+    })
   })
 })
