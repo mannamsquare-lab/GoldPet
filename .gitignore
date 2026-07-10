@@ -131,6 +131,9 @@ test-data/
 # Documentation (internal planning docs)
 docs/기획문서/
 
+# Seed account credentials doc (계정 정보 문서 — git 커밋 금지)
+*시드계정*
+
 # Brain artifacts (local AI assistant artifacts)
 .gemini/
 
