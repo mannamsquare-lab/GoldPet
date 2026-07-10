@@ -18,6 +18,8 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -402,6 +404,80 @@ class AuthServiceTest {
         authService.snsSignup(1L, request)
 
         assertEquals(fixed, user.signupCompletedAt, "최초 완료 시각은 재호출에도 보존돼야 한다")
+    }
+
+    // --- 회원가입 축하 골드: grantWelcomeGoldIfNeeded 호출 검증 ---
+
+    @Test
+    fun `signup should call grantWelcomeGoldIfNeeded for the newly created user`() {
+        // Given
+        val request = SignupRequest(
+            username = "welcomeuser", password = "password123", nickname = "웰컴유저",
+            name = "홍길동", birthDate = "1990-01-01", phoneNumber = "01012345678",
+            email = null, gender = null, birthYear = null, mainLocationText = null
+        )
+        whenever(userRepository.findByUsername("welcomeuser")).thenReturn(Optional.empty())
+        whenever(userRepository.save(any<User>())).thenAnswer { invocation ->
+            val u = invocation.getArgument<User>(0)
+            User(
+                id = 7L, email = u.email, oauthProvider = u.oauthProvider, oauthId = u.oauthId,
+                username = u.username, password = u.password, nickname = u.nickname, name = u.name,
+                birthDate = u.birthDate, phoneNumber = u.phoneNumber, gender = u.gender,
+                birthYear = u.birthYear, mainLocationText = u.mainLocationText,
+                mainLocationGeom = u.mainLocationGeom, profileImageUrl = u.profileImageUrl
+            )
+        }
+        whenever(jwtTokenProvider.generateToken(any())).thenReturn("t")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("r")
+
+        // When
+        authService.signup(request)
+
+        // Then
+        verify(goldService).grantWelcomeGoldIfNeeded(7L)
+    }
+
+    @Test
+    fun `snsSignup should call grantWelcomeGoldIfNeeded on first onboarding completion`() {
+        // Given
+        val user = oauthFirstTouchUser(1L, signupCompletedAt = null)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(user))
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+        whenever(jwtTokenProvider.generateToken(any())).thenReturn("t")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("r")
+
+        val request = SnsSignupRequest(
+            provider = "kakao", nickname = "닉네임", name = "홍길동",
+            birthDate = null, gender = null, phoneNumber = null
+        )
+
+        // When
+        authService.snsSignup(1L, request)
+
+        // Then
+        verify(goldService).grantWelcomeGoldIfNeeded(1L)
+    }
+
+    @Test
+    fun `snsSignup should not call grantWelcomeGoldIfNeeded when already completed`() {
+        // Given: 이미 온보딩 완료된 사용자가 snsSignup을 재호출하는 경우 (AuthService.kt:183 firstCompletion 가드)
+        val fixed = LocalDateTime.of(2025, 1, 1, 0, 0)
+        val user = oauthFirstTouchUser(1L, signupCompletedAt = fixed)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(user))
+        whenever(userRepository.save(any<User>())).thenAnswer { it.getArgument<User>(0) }
+        whenever(jwtTokenProvider.generateToken(any())).thenReturn("t")
+        whenever(jwtTokenProvider.generateRefreshToken(any())).thenReturn("r")
+
+        val request = SnsSignupRequest(
+            provider = "kakao", nickname = "닉네임", name = "홍길동",
+            birthDate = null, gender = null, phoneNumber = null
+        )
+
+        // When
+        authService.snsSignup(1L, request)
+
+        // Then
+        verify(goldService, never()).grantWelcomeGoldIfNeeded(any())
     }
 
     @Test

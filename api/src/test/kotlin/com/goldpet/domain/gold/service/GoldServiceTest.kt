@@ -20,6 +20,8 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -569,5 +571,74 @@ class GoldServiceTest {
         // Then
         assertEquals(120, result.amount) // 100 + 20 bonus
         assertEquals(1120, testUser.goldBalance) // 1000 + 120
+    }
+
+    // === grantWelcomeGoldIfNeeded Tests ===
+
+    @Test
+    fun `grantWelcomeGoldIfNeeded should grant gold and create SIGNUP_WELCOME transaction when none exists`() {
+        // Given
+        whenever(systemSettingService.getInt(GoldService.SETTING_WELCOME_GOLD, 30)).thenReturn(30)
+        whenever(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser))
+        whenever(transactionRepository.existsByUserIdAndReferenceType(1L, GoldService.REF_TYPE_SIGNUP_WELCOME)).thenReturn(false)
+        whenever(userRepository.save(any<User>())).thenReturn(testUser)
+        whenever(transactionRepository.save(any<GoldTransaction>())).thenAnswer { invocation ->
+            val transaction = invocation.getArgument<GoldTransaction>(0)
+            GoldTransaction(
+                id = 1L,
+                user = transaction.user,
+                type = transaction.type,
+                amount = transaction.amount,
+                balanceAfter = transaction.balanceAfter,
+                description = transaction.description,
+                referenceType = transaction.referenceType,
+                status = TransactionStatus.COMPLETED
+            ).apply {
+                createdAt = LocalDateTime.now()
+                updatedAt = LocalDateTime.now()
+            }
+        }
+
+        // When
+        val result = goldService.grantWelcomeGoldIfNeeded(1L)
+
+        // Then
+        assertNotNull(result)
+        assertEquals(30, result!!.amount)
+        assertEquals(TransactionType.REWARD, result.type)
+        assertEquals(1030, testUser.goldBalance) // 1000 + 30
+
+        val captor = org.mockito.ArgumentCaptor.forClass(GoldTransaction::class.java)
+        verify(transactionRepository).save(captor.capture())
+        assertEquals(GoldService.REF_TYPE_SIGNUP_WELCOME, captor.value.referenceType)
+    }
+
+    @Test
+    fun `grantWelcomeGoldIfNeeded should return null and skip grant when SIGNUP_WELCOME already exists`() {
+        // Given
+        whenever(systemSettingService.getInt(GoldService.SETTING_WELCOME_GOLD, 30)).thenReturn(30)
+        whenever(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser))
+        whenever(transactionRepository.existsByUserIdAndReferenceType(1L, GoldService.REF_TYPE_SIGNUP_WELCOME)).thenReturn(true)
+
+        // When
+        val result = goldService.grantWelcomeGoldIfNeeded(1L)
+
+        // Then
+        assertNull(result)
+        assertEquals(1000, testUser.goldBalance) // unchanged
+        verify(transactionRepository, never()).save(any<GoldTransaction>())
+    }
+
+    @Test
+    fun `grantWelcomeGoldIfNeeded should skip grant when signup welcome gold setting is not positive`() {
+        // Given
+        whenever(systemSettingService.getInt(GoldService.SETTING_WELCOME_GOLD, 30)).thenReturn(0)
+
+        // When
+        val result = goldService.grantWelcomeGoldIfNeeded(1L)
+
+        // Then
+        assertNull(result)
+        verify(userRepository, never()).findByIdForUpdate(any())
     }
 }
