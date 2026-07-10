@@ -210,8 +210,9 @@ class ChatRoomController(
         val oldLastReadAt = chatService.markAsRead(roomId, userDetails.id)
 
         // V68 BLOCKER #5 — 사용자 read count 갱신은 visible 메시지만 (hidden/deleted 제외).
-        // 첫 read 시 oldLastReadAt=null → LocalDateTime.MIN 으로 통합 (모든 visible 메시지 fetch).
-        val sinceTimestamp = oldLastReadAt ?: java.time.LocalDateTime.MIN
+        // 첫 read 시 oldLastReadAt=null → epoch(1970-01-01)로 통합 (모든 visible 메시지 fetch).
+        // LocalDateTime.MIN은 pgjdbc 변환 시 오버플로되어 PG "timestamp out of range" 오류 발생.
+        val sinceTimestamp = oldLastReadAt ?: java.time.LocalDateTime.of(1970, 1, 1, 0, 0)
         val newlyReadMessages = chatMessageRepository.findVisibleByChatRoomIdAndCreatedAtAfter(roomId, sinceTimestamp)
 
         if (newlyReadMessages.isEmpty()) {
