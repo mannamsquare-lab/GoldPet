@@ -16,11 +16,15 @@ interface UserRefreshTokenRepository : JpaRepository<UserRefreshToken, Long> {
     fun findByTokenHash(tokenHash: String): Optional<UserRefreshToken>
 
     /**
-     * Child token issued via rotation from a given parent.
-     * Used by grace-window logic: returns the new token that was issued in response to
-     * the parent's previous rotation, so a same-device retry within 5s can return it idempotently.
+     * 주어진 parent 로부터 회전 발급된 모든 자식 token.
+     * 2026-07 dual-client desync 관용 정책(chain-walk)의 핵심 조회 — branch 발급 허용으로
+     * 한 부모가 자식을 2개 이상 가질 수 있으므로(같은 parent 로 여러 번 stale-generation 회전)
+     * 단건(Optional)이 아닌 List 로 반환한다. 단건 반환 시 자식이 2개 이상이면
+     * `IncorrectResultSizeDataAccessException` 이 터져 rotate() 가 500 으로 깨진다 — 절대 Optional/단건으로
+     * 되돌리지 말 것. 호출 측(`RefreshTokenRotationService.rotate` case c)이 살아있는 자식 우선,
+     * 없으면 ROTATED 자식 중 issuedAt 최신을 골라 walk 를 이어간다.
      */
-    fun findByParentTokenHash(parentTokenHash: String): Optional<UserRefreshToken>
+    fun findByParentTokenHash(parentTokenHash: String): List<UserRefreshToken>
 
     /**
      * Active (not revoked, not expired) tokens for a (user, device).
