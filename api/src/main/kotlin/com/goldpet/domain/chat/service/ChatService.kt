@@ -112,7 +112,9 @@ class ChatService(
         }
 
         // Verify requester is an active participant
-        val requesterParticipant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, requesterId)
+        // 라운드3 리뷰 MEDIUM(leftAt): 나간 요청자(leftAt≠null)는 초대 불가 — 접근 인가 검증이므로 필터 적용.
+        // (미필터 시 나간 사용자가 타인 초대 + DIRECT→GROUP 전환으로 OWNER 승격/소유권 탈취 가능했음)
+        val requesterParticipant = chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(roomId, requesterId)
             .orElseThrow { ForbiddenException("User $requesterId is not a participant of chat room $roomId") }
 
         // Convert DIRECT to GROUP if needed
@@ -159,8 +161,9 @@ class ChatService(
         val sender = userRepository.findById(request.senderId).orElseThrow { NotFoundException("Sender user not found with id: ${request.senderId}") }
 
         // Validate sender is a participant if not a system message
+        // 라운드2 리뷰 MEDIUM(leftAt): 나간 참여자(leftAt≠null)는 발신 불가 — 접근 인가 검증.
         if (request.messageType != MessageType.SYSTEM) {
-            chatRoomParticipantRepository.findByChatRoomIdAndUserId(chatRoom.id, sender.id)
+            chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(chatRoom.id, sender.id)
                 .orElseThrow { ForbiddenException("채팅방 참여자가 아닙니다", errorCode = "NOT_PARTICIPANT") }
         }
 
@@ -243,8 +246,15 @@ class ChatService(
     }
 
     @Transactional(readOnly = true)
-    fun getChatHistory(roomId: Long, page: Int, size: Int): List<ChatMessage> {
+    fun getChatHistory(roomId: Long, viewerId: Long, page: Int, size: Int): List<ChatMessage> {
         chatRoomRepository.findById(roomId).orElseThrow { NotFoundException("Chat room not found with id: $roomId") }
+        // EXT-CDX-003 (W1a): IDOR 방어 — 방 참여자만 히스토리 열람.
+        // 컨트롤러 가드가 아니라 서비스 레이어에 착지(ARCH-003/W4 조립 이관 대비 seam 고정).
+        // 독립 리뷰 LOW: 미참여자를 403(Forbidden)으로 구분하면 "방은 존재하지만 내가 참여자가
+        // 아니다"가 노출되어 roomId enumeration 이 가능하다. 방 미존재와 동일한 404 로 통일한다.
+        // 라운드2 리뷰 MEDIUM(leftAt): 나간 참여자는 이력 열람 불가 — 접근 인가 검증이므로 필터 적용.
+        chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(roomId, viewerId)
+            .orElseThrow { NotFoundException("Chat room not found with id: $roomId") }
         val pageable = PageRequest.of(page, size)
         // V68 BLOCKER #5 — 사용자 노출 경로: visible 메서드 (hidden_at/deleted_at IS NULL).
         return chatMessageRepository.findVisibleByChatRoomIdOrderByCreatedAtDesc(roomId, pageable).content.reversed()
@@ -272,7 +282,8 @@ class ChatService(
      */
     @Transactional
     fun markAsRead(roomId: Long, userId: Long): LocalDateTime? {
-        val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserId(roomId, userId)
+        // 라운드2 리뷰 MEDIUM(leftAt): 나간 참여자는 읽음 처리 불가 — 접근 인가 검증이므로 필터 적용.
+        val participant = chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(roomId, userId)
             .orElseThrow { NotFoundException("Participant not found in chat room $roomId for user $userId") }
 
         val oldLastReadAt = participant.lastReadAt

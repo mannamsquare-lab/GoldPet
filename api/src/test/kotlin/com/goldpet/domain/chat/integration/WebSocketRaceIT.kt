@@ -1,6 +1,8 @@
 package com.goldpet.domain.chat.integration
 
 import com.goldpet.IntegrationTestBase
+import com.goldpet.config.jwt.JwtTokenProvider
+import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.chat.dto.ChatMessageRequest
 import com.goldpet.domain.chat.entity.ChatRoom
 import com.goldpet.domain.chat.entity.ChatRoomParticipant
@@ -23,7 +25,9 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter
 import org.springframework.messaging.simp.stomp.StompFrameHandler
 import org.springframework.messaging.simp.stomp.StompHeaders
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.web.socket.WebSocketHttpHeaders
 import org.springframework.web.socket.client.standard.StandardWebSocketClient
 import org.springframework.web.socket.messaging.WebSocketStompClient
 import org.springframework.web.socket.sockjs.client.SockJsClient
@@ -44,7 +48,8 @@ import java.util.concurrent.TimeUnit
  *   4. B가 /topic/chat/{roomId} 에서 1 초 내 2건 모두 수신 확인
  *   5. 수신 ID ASC 순서 보존 검증 (seq 순서 보존)
  *
- * SecurityConfig: /ws 경로 전체 permitAll — JWT 불필요.
+ * EXT-CDX-002(W1a): STOMP CONNECT 는 이제 JWT 인증 필수. 각 클라이언트는 CONNECT 헤더에
+ * `Authorization: Bearer <token>` 를 실어야 하며, 발신자 id 는 payload 가 아닌 Principal 로 결정된다.
  * Testcontainers 미사용 — deploy-local PostGIS 컨테이너(localhost:5433) 사용.
  */
 @Tag("integration")
@@ -58,6 +63,7 @@ class WebSocketRaceIT : IntegrationTestBase() {
     @Autowired private lateinit var chatRoomParticipantRepository: ChatRoomParticipantRepository
     @Autowired private lateinit var chatMessageRepository: ChatMessageRepository
     @Autowired private lateinit var passwordEncoder: PasswordEncoder
+    @Autowired private lateinit var jwtTokenProvider: JwtTokenProvider
 
     // PER_METHOD 라이프사이클: 반복마다 새 인스턴스 → uid 도 매번 새로 생성됨
     private val uid: String = UUID.randomUUID().toString().replace("-", "").take(10)
@@ -118,11 +124,17 @@ class WebSocketRaceIT : IntegrationTestBase() {
         val receivedIds = mutableListOf<Long>()
         val receivedTexts = mutableListOf<String>()
 
+        // EXT-CDX-002(W1a): 각 CONNECT 에 JWT Bearer 토큰 첨부 (인터셉터가 Principal 주입)
+        val headersA = StompHeaders().apply { add("Authorization", "Bearer ${tokenFor(userA)}") }
+        val headersB = StompHeaders().apply { add("Authorization", "Bearer ${tokenFor(userB)}") }
+
         // 두 클라이언트 동시 연결
-        val sessionA = stompClient.connectAsync(wsUrl, object : StompSessionHandlerAdapter() {})
-            .get(5, TimeUnit.SECONDS)
-        val sessionB = stompClient.connectAsync(wsUrl, object : StompSessionHandlerAdapter() {})
-            .get(5, TimeUnit.SECONDS)
+        val sessionA = stompClient.connectAsync(
+            wsUrl, WebSocketHttpHeaders(), headersA, object : StompSessionHandlerAdapter() {}
+        ).get(5, TimeUnit.SECONDS)
+        val sessionB = stompClient.connectAsync(
+            wsUrl, WebSocketHttpHeaders(), headersB, object : StompSessionHandlerAdapter() {}
+        ).get(5, TimeUnit.SECONDS)
 
         // B 가 룸 토픽 구독
         sessionB.subscribe("/topic/chat/${chatRoom.id}", object : StompFrameHandler {
@@ -188,6 +200,11 @@ class WebSocketRaceIT : IntegrationTestBase() {
             stompClient.stop()
         }
     }
+
+    private fun tokenFor(user: User): String =
+        jwtTokenProvider.generateToken(
+            UsernamePasswordAuthenticationToken(UserPrincipal(user, null), null, emptyList())
+        )
 
     private fun makeUser(oauthId: String) = User(
         id = 0,

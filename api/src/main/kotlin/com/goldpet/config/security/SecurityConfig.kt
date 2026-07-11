@@ -6,7 +6,7 @@ import com.goldpet.service.oauth2.CustomOAuth2UserService
 import com.goldpet.service.oauth2.OAuth2AuthenticationFailureHandler
 import com.goldpet.service.oauth2.OAuth2AuthenticationSuccessHandler
 import org.springframework.beans.factory.ObjectProvider
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -21,20 +21,20 @@ import org.springframework.security.web.SecurityFilterChain
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@EnableConfigurationProperties(CorsProperties::class)
 class SecurityConfig(
         private val customOAuth2UserService: CustomOAuth2UserService,
         private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
         private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
         private val jwtAuthenticationFilter: JwtAuthenticationFilter,
         private val adminAuditingAccessDeniedHandler: AdminAuditingAccessDeniedHandler,
+        private val corsProperties: CorsProperties,
         // Optional — bean 은 `app.rate-limit.user-profile.enabled=true` 일 때만 생성됨
         // (codegen/test profile 은 `false` 로 skip 하여 Redis 의존성 제거).
         // Kotlin default-null 은 `@Configuration` CGLIB proxy 의 no-arg ctor 합성 실패를
         //유발하므로 `ObjectProvider` 로 우회. `ifAvailable` 은 bean 부재 시 null 반환.
         private val userProfileRateLimitFilterProvider: ObjectProvider<UserProfileRateLimitFilter>,
 ) {
-
-    @Value("\${app.cors.allowed-origins:*}") private lateinit var corsAllowedOrigins: String
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
@@ -143,7 +143,15 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): org.springframework.web.cors.CorsConfigurationSource {
         val configuration = org.springframework.web.cors.CorsConfiguration()
-        val origins = corsAllowedOrigins.split(",").map { it.trim() }
+        // CORS-DEFAULT (W1a): 미설정 시 fail-fast. 이전의 `:*` 기본값은 dev/prod 의 YAML 리스트
+        // 미바인딩을 은폐해 라이브를 사실상 CORS 무제한으로 두었다. dev/prod/local/test yml 은
+        // 명시적 origin 리스트를, codegen yml 만 `"*"` 를 제공한다.
+        val origins = corsProperties.allowedOrigins.map { it.trim() }.filter { it.isNotEmpty() }
+        check(origins.isNotEmpty()) {
+            "app.cors.allowed-origins 가 설정되지 않았습니다. 활성 프로파일 yml 에 명시적 origin 목록을 지정하세요."
+        }
+        // allowedOriginPatterns 는 credentials 동반 시에도 codegen 의 `*` 패턴을 허용(스펙 위반 예외 없음).
+        // allowedOrigins(=`*`)+allowCredentials 조합만 스펙상 금지되므로 patterns 를 유지한다.
         configuration.allowedOriginPatterns = origins
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
         configuration.allowedHeaders = listOf("*")

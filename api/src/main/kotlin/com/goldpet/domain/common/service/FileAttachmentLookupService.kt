@@ -2,6 +2,7 @@ package com.goldpet.domain.common.service
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.goldpet.domain.chat.repository.ChatMessageRepository
 import com.goldpet.domain.common.entity.FileAttachment
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import org.springframework.stereotype.Service
@@ -28,6 +29,10 @@ import java.time.Duration
 @Service
 class FileAttachmentLookupService(
     private val fileAttachmentRepository: FileAttachmentRepository,
+    // SEC-004 (W1a): resolveMany 접근권 판정(같은 방 참여자 열람 허용)에 사용.
+    // TODO(W4/ARCH-002): common → chat 리포지토리 의존은 계층 역전. 아키텍처 웨이브에서
+    // 도메인 서비스/이벤트 경유로 수렴. 보안 픽스 우선이라 현재는 직접 주입.
+    private val chatMessageRepository: ChatMessageRepository,
 ) {
     private val cache: Cache<String, FileAttachment> = Caffeine.newBuilder()
         .maximumSize(MAX_CACHE_ENTRIES)
@@ -131,20 +136,44 @@ class FileAttachmentLookupService(
      * - 누락 ID (soft-delete / 삭제된 row) 는 반환 Map 에 누락
      *
      * 반환된 Caffeine 캐시에도 `fa.url → fa` 로 warm 해 두어 후속 variant lookup 은 캐시 hit.
+     *
+     * ## 접근 제어 (SEC-004 / W1a)
+     * [viewerUserId] 가 **소유자이거나**(ownerUserId 일치), 참여 중인 채팅방의 메시지가 참조하는
+     * 첨부만 반환한다. 접근권 없는 id 는 결과 Map 에서 누락시켜 열거(enumeration)를 차단한다
+     * (404/403 대신 조용히 제외 — 프론트는 누락 id 를 이미 optional 처리).
      */
-    fun resolveMany(ids: List<Long>): Map<Long, ResolvedAttachment> {
+    fun resolveMany(ids: List<Long>, viewerUserId: Long): Map<Long, ResolvedAttachment> {
         if (ids.isEmpty()) return emptyMap()
         val distinct = ids.distinct()
         require(distinct.size <= MAX_RESOLVE_BATCH) {
             "resolveMany: max $MAX_RESOLVE_BATCH ids per call (got ${distinct.size})"
         }
 
-        val result = LinkedHashMap<Long, ResolvedAttachment>(distinct.size)
+        // 1) id → FileAttachment 배치 조회 (500 chunked)
+        val fetched = LinkedHashMap<Long, FileAttachment>(distinct.size)
         distinct.chunked(CHUNK_SIZE).forEach { chunk ->
-            fileAttachmentRepository.findAllById(chunk).forEach { fa ->
-                cache.put(fa.url, fa) // warm URL-keyed cache for downstream variant resolvers
-                result[fa.id] = ResolvedAttachment.from(fa)
-            }
+            fileAttachmentRepository.findAllById(chunk).forEach { fetched[it.id] = it }
+        }
+        if (fetched.isEmpty()) return emptyMap()
+
+        // 2) 접근권 판정: 소유자 OR 같은 방 참여자. 소유자가 아닌 것만 참여 검사 쿼리로 확인.
+        val nonOwnedIds = fetched.values.asSequence()
+            .filter { it.ownerUserId != viewerUserId }
+            .map { it.id }
+            .toList()
+        val accessibleViaChat: Set<Long> = if (nonOwnedIds.isEmpty()) {
+            emptySet()
+        } else {
+            chatMessageRepository.findAccessibleFileIds(viewerUserId, nonOwnedIds).toSet()
+        }
+
+        // 3) 접근 가능한 첨부만 결과에 담고 캐시 warm
+        val result = LinkedHashMap<Long, ResolvedAttachment>(fetched.size)
+        for ((id, fa) in fetched) {
+            val allowed = fa.ownerUserId == viewerUserId || id in accessibleViaChat
+            if (!allowed) continue
+            cache.put(fa.url, fa) // warm URL-keyed cache for downstream variant resolvers
+            result[id] = ResolvedAttachment.from(fa)
         }
         return result
     }

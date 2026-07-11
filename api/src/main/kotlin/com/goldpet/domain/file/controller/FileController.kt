@@ -165,7 +165,8 @@ class FileController(
         @Valid @RequestBody request: ResolveManyRequest,
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<ResolveManyResponse> {
-        val attachments = fileAttachmentLookupService.resolveMany(request.ids)
+        // SEC-004 (W1a): viewer 소유/참여 필터. 접근권 없는 id 는 응답에서 누락(열거 차단).
+        val attachments = fileAttachmentLookupService.resolveMany(request.ids, principal.id)
         return ResponseEntity.ok(ResolveManyResponse(attachments = attachments))
     }
 }

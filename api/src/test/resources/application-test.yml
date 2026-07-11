@@ -42,6 +42,12 @@ app:
   rate-limit:
     user-profile:
       enabled: false
+  # CORS-DEFAULT (W1a): `@Value` 기본값 `*` 제거로 미설정 시 fail-fast.
+  # test 프로파일도 명시적 origin 목록을 제공해야 컨텍스트가 기동한다.
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:5174
 
 jwt:
   secret: test-secret-key-for-testing-purposes-must-be-at-least-256-bits-long

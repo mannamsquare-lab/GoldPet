@@ -25,6 +25,26 @@ interface ChatMessageRepository : JpaRepository<ChatMessage, Long> {
     @Query("SELECT m FROM ChatMessage m WHERE m.sender.id = :userId")
     fun findAllBySenderId(@Param("userId") userId: Long): List<ChatMessage>
 
+    /**
+     * SEC-004 (W1a) — file resolve IDOR 방어용 참여 검사.
+     * `:fileIds` 중, 조회자([viewerId])가 참여 중인 채팅방의 메시지가 참조하는 fileId 만 반환.
+     * FileAttachmentLookupService.resolveMany 가 소유자 필터로 걸러내지 못한(=타인 소유)
+     * 첨부에 대해 "같은 방 참여자면 열람 허용" 접근권을 판정한다.
+     */
+    @Query("""
+        SELECT DISTINCT m.fileId FROM ChatMessage m
+         WHERE m.fileId IN :fileIds
+           AND EXISTS (
+               SELECT 1 FROM ChatRoomParticipant p
+                WHERE p.chatRoom.id = m.chatRoom.id
+                  AND p.user.id = :viewerId
+           )
+    """)
+    fun findAccessibleFileIds(
+        @Param("viewerId") viewerId: Long,
+        @Param("fileIds") fileIds: Collection<Long>
+    ): List<Long>
+
     @EntityGraph(attributePaths = ["sender"])
     @Query("SELECT m FROM ChatMessage m WHERE m.chatRoom.id = :roomId AND m.createdAt > :since ORDER BY m.createdAt ASC")
     fun findByChatRoomIdAndCreatedAtAfter(

@@ -124,7 +124,7 @@ class FileAttachmentLookupServiceTest : IntegrationTestBase() {
     @Test
     fun `resolveMany 빈 리스트는 쿼리 없이 empty 반환`() {
         val result = withinStatementBudget(max = 0) {
-            lookup.resolveMany(emptyList())
+            lookup.resolveMany(emptyList(), 1L)
         }
         assertTrue(result.isEmpty())
     }
@@ -149,7 +149,7 @@ class FileAttachmentLookupServiceTest : IntegrationTestBase() {
         lookup.invalidateAll()
 
         val result = withinStatementBudget(max = 1) {
-            lookup.resolveMany(ids)
+            lookup.resolveMany(ids, 1L)
         }
 
         assertEquals(ids.size, result.size)
@@ -175,7 +175,7 @@ class FileAttachmentLookupServiceTest : IntegrationTestBase() {
         lookup.invalidateAll()
 
         val result = withinStatementBudget(max = 2) {
-            lookup.resolveMany(ids)
+            lookup.resolveMany(ids, 1L)
         }
         assertEquals(ids.size, result.size)
     }
@@ -184,7 +184,7 @@ class FileAttachmentLookupServiceTest : IntegrationTestBase() {
     fun `resolveMany 1001 ids 는 IllegalArgumentException`() {
         val ids = (1L..1001L).toList()
         assertThrows(IllegalArgumentException::class.java) {
-            lookup.resolveMany(ids)
+            lookup.resolveMany(ids, 1L)
         }
     }
 
@@ -203,7 +203,7 @@ class FileAttachmentLookupServiceTest : IntegrationTestBase() {
         lookup.invalidateAll()
 
         val result = withinStatementBudget(max = 1) {
-            lookup.resolveMany(listOf(saved.id, saved.id, saved.id))
+            lookup.resolveMany(listOf(saved.id, saved.id, saved.id), 1L)
         }
         assertEquals(1, result.size)
     }

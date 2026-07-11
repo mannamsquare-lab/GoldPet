@@ -79,9 +79,11 @@ class ChatRoomController(
     fun getChatMessages(
         @PathVariable roomId: Long,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "50") size: Int
+        @RequestParam(defaultValue = "50") size: Int,
+        @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
     ): ResponseEntity<List<ChatMessageResponse>> {
-        val messages = chatService.getChatHistory(roomId, page, size)
+        // EXT-CDX-003 (W1a): 참여자 검증은 ChatService.getChatHistory 에 위임(seam-aware).
+        val messages = chatService.getChatHistory(roomId, userDetails.id, page, size)
         val participants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
 
         // Fetch all file attachments for messages with fileId

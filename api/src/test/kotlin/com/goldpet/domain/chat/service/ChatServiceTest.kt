@@ -17,6 +17,7 @@ import com.goldpet.domain.user.repository.UserRepository
 import com.goldpet.domain.common.exception.BadRequestException
 import com.goldpet.domain.common.exception.ConflictException
 import com.goldpet.domain.common.exception.ForbiddenException
+import com.goldpet.domain.common.exception.NotFoundException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -269,6 +270,52 @@ class ChatServiceTest {
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 라운드3 리뷰 MEDIUM(leftAt) — inviteParticipant 접근 인가 검증
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `inviteParticipant should invite when requester is an active participant`() {
+        val groupRoom = ChatRoom(id = 2L, roomType = ChatRoomType.GROUP, title = "그룹방", ownerUser = testUser).apply {
+            createdAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now()
+        }
+        val requesterParticipant = ChatRoomParticipant(id = 1L, chatRoom = groupRoom, user = testUser, role = ChatRoomRole.MEMBER)
+
+        whenever(chatRoomRepository.findById(2L)).thenReturn(Optional.of(groupRoom))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(2L, 1L))
+            .thenReturn(Optional.of(requesterParticipant))
+        whenever(userRepository.findById(2L)).thenReturn(Optional.of(targetUser))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(2L, 2L)).thenReturn(Optional.empty())
+        whenever(chatRoomParticipantRepository.save(any<ChatRoomParticipant>())).thenAnswer { it.getArgument(0) }
+
+        val result = chatService.inviteParticipant(2L, 1L, 2L)
+
+        assertEquals(groupRoom.id, result.id)
+    }
+
+    @Test
+    fun `inviteParticipant should deny a requester who left the room even though a stale row exists`() {
+        // 라운드3 리뷰 MEDIUM(leftAt): 나간 요청자는 초대 불가 — 미필터 시 나간 사용자가 타인
+        // 초대 + DIRECT→GROUP 전환으로 OWNER 승격/소유권 탈취가 가능했다.
+        // old(비필터) 메서드는 일부러 present 로 스텁 — 서비스가 실수로 그 메서드를 쓰면
+        // 이 테스트가 통과(초대 성공)해버려 필터 누락을 잡아낸다.
+        val leftParticipant = ChatRoomParticipant(
+            id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER,
+            leftAt = LocalDateTime.now()
+        )
+        whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(leftParticipant))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
+            .thenReturn(Optional.empty())
+
+        assertThrows<ForbiddenException> {
+            chatService.inviteParticipant(1L, 1L, 2L)
+        }
+        verify(chatRoomParticipantRepository, never()).save(any())
+    }
+
     @Test
     fun `saveChatMessage should save text message`() {
         // Given
@@ -288,7 +335,7 @@ class ChatServiceTest {
 
         whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
             .thenReturn(Optional.of(participant))
         whenever(chatMessageRepository.save(any<ChatMessage>())).thenAnswer { invocation ->
             val msg = invocation.getArgument<ChatMessage>(0)
@@ -327,13 +374,43 @@ class ChatServiceTest {
 
         whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
         whenever(userRepository.findById(999L)).thenReturn(Optional.of(nonParticipantUser))
-        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 999L))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 999L))
             .thenReturn(Optional.empty())
 
         // When & Then
         assertThrows<ForbiddenException> {
             chatService.saveChatMessage(request)
         }
+    }
+
+    @Test
+    fun `saveChatMessage should deny a sender who left the room even though a stale row exists`() {
+        // 라운드2 리뷰 MEDIUM(leftAt): 나간 참여자는 발신 불가.
+        // old(비필터) 메서드는 일부러 present 로 스텁 — 서비스가 실수로 그 메서드를 쓰면
+        // 이 테스트가 통과(발신 성공)해버려 필터 누락을 잡아낸다.
+        val request = ChatMessageRequest(
+            roomId = 1L,
+            senderId = 1L,
+            messageType = MessageType.TEXT,
+            textContent = "나간 사람이 보낸 메시지"
+        )
+        val leftParticipant = ChatRoomParticipant(
+            id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER,
+            leftAt = LocalDateTime.now()
+        )
+
+        whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(leftParticipant))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
+            .thenReturn(Optional.empty())
+
+        val ex = assertThrows<ForbiddenException> {
+            chatService.saveChatMessage(request)
+        }
+        assertEquals("NOT_PARTICIPANT", ex.errorCode)
+        verify(chatMessageRepository, never()).save(any())
     }
 
     @Test
@@ -375,16 +452,176 @@ class ChatServiceTest {
         }
 
         whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        // EXT-CDX-003: viewer(1L)는 방 참여자
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
+            .thenReturn(Optional.of(ChatRoomParticipant(id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER)))
         whenever(chatMessageRepository.findVisibleByChatRoomIdOrderByCreatedAtDesc(1L, PageRequest.of(0, 50)))
             .thenReturn(PageImpl(listOf(message2, message1)))
 
         // When
-        val result = chatService.getChatHistory(1L, 0, 50)
+        val result = chatService.getChatHistory(1L, 1L, 0, 50)
 
         // Then — DESC 결과를 reversed()하여 ASC 순서로 반환
         assertEquals(2, result.size)
         assertEquals("첫 번째 메시지", result[0].textContent)
         assertEquals("두 번째 메시지", result[1].textContent)
+    }
+
+    @Test
+    fun `getChatHistory should throw NotFoundException when viewer is not a participant`() {
+        // EXT-CDX-003 (W1a) IDOR: 미참여자가 타 방 히스토리를 요청하면 거부돼야 한다.
+        // 독립 리뷰 LOW: 403 이 아니라 404 로 통일 — 방 미존재와 구분 불가하게 해 roomId
+        // enumeration(방은 있는데 내가 참여자가 아니다 라는 정보 노출)을 막는다.
+        // Given — 방은 존재하나 viewer(999L)는 참여자가 아님
+        whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 999L))
+            .thenReturn(Optional.empty())
+
+        // When & Then
+        val ex = assertThrows<NotFoundException> {
+            chatService.getChatHistory(1L, 999L, 0, 50)
+        }
+        assertEquals("NOT_FOUND", ex.errorCode)
+        // 메시지 조회 쿼리는 실행되지 않아야 한다
+        verify(chatMessageRepository, never()).findVisibleByChatRoomIdOrderByCreatedAtDesc(any(), any())
+    }
+
+    @Test
+    fun `getChatHistory 방 미존재와 미참여자는 동일한 404 메시지를 반환한다 (enumeration 방지)`() {
+        // 독립 리뷰 LOW: 두 실패 케이스의 응답이 구분되지 않아야 roomId enumeration 이 불가하다.
+        whenever(chatRoomRepository.findById(404L)).thenReturn(Optional.empty())
+        val roomMissingEx = assertThrows<NotFoundException> {
+            chatService.getChatHistory(404L, 1L, 0, 50)
+        }
+
+        whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 999L))
+            .thenReturn(Optional.empty())
+        val notParticipantEx = assertThrows<NotFoundException> {
+            chatService.getChatHistory(1L, 999L, 0, 50)
+        }
+
+        assertEquals(roomMissingEx.errorCode, notParticipantEx.errorCode)
+        // 메시지 문자열의 "존재하지 않음" 프레이밍이 두 케이스 모두 동일해야 참여 여부를 추론할 수 없다.
+        assertTrue(notParticipantEx.message?.contains("not found") == true)
+    }
+
+    @Test
+    fun `getChatHistory should deny a viewer who left the room even though a stale row exists`() {
+        // 라운드2 리뷰 MEDIUM(leftAt): 나간 참여자는 이력 열람 불가.
+        // old(비필터) 메서드는 일부러 present 로 스텁 — 서비스가 실수로 그 메서드를 쓰면
+        // 이 테스트가 통과(열람 성공)해버려 필터 누락을 잡아낸다.
+        val leftParticipant = ChatRoomParticipant(
+            id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER,
+            leftAt = LocalDateTime.now()
+        )
+        whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(leftParticipant))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
+            .thenReturn(Optional.empty())
+
+        assertThrows<NotFoundException> {
+            chatService.getChatHistory(1L, 1L, 0, 50)
+        }
+        verify(chatMessageRepository, never()).findVisibleByChatRoomIdOrderByCreatedAtDesc(any(), any())
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 라운드2 리뷰 MEDIUM(leftAt) — markAsRead 접근 인가 검증
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `markAsRead should update lastReadAt for an active participant`() {
+        val participant = ChatRoomParticipant(
+            id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER
+        )
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
+            .thenReturn(Optional.of(participant))
+        whenever(chatRoomParticipantRepository.save(any<ChatRoomParticipant>())).thenAnswer { it.getArgument(0) }
+
+        val oldLastReadAt = chatService.markAsRead(1L, 1L)
+
+        assertEquals(null, oldLastReadAt) // 첫 read — 이전 lastReadAt 없음
+        assertNotNull(participant.lastReadAt) // 갱신됨
+    }
+
+    @Test
+    fun `markAsRead should throw NotFoundException when participant is not found`() {
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 999L))
+            .thenReturn(Optional.empty())
+
+        assertThrows<NotFoundException> {
+            chatService.markAsRead(1L, 999L)
+        }
+    }
+
+    @Test
+    fun `markAsRead should deny a participant who left the room even though a stale row exists`() {
+        // old(비필터) 메서드는 일부러 present 로 스텁 — 서비스가 실수로 그 메서드를 쓰면
+        // 이 테스트가 통과(읽음처리 성공)해버려 필터 누락을 잡아낸다.
+        val leftParticipant = ChatRoomParticipant(
+            id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER,
+            leftAt = LocalDateTime.now()
+        )
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(leftParticipant))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
+            .thenReturn(Optional.empty())
+
+        assertThrows<NotFoundException> {
+            chatService.markAsRead(1L, 1L)
+        }
+        verify(chatRoomParticipantRepository, never()).save(any())
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 라운드2 리뷰 — leaveRoom·재입장(rejoin) 정상 경로 회귀 (leftAt 필터 미적용 유지 확인)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `leaveRoom should mark participant as left using the unfiltered lookup`() {
+        // leaveRoom 자체는 leftAt 필터를 걸면 안 된다(row 를 찾아 leftAt 을 세팅하는 경로).
+        val participant = ChatRoomParticipant(
+            id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER
+        )
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(participant))
+        whenever(chatRoomParticipantRepository.save(any<ChatRoomParticipant>())).thenAnswer { it.getArgument(0) }
+
+        chatService.leaveRoom(1L, 1L)
+
+        assertNotNull(participant.leftAt)
+        assertEquals(participant.leftAt, participant.lastReadAt)
+        // leaveRoom 은 필터 메서드를 쓰지 않는다 — 회귀 확인.
+        verify(chatRoomParticipantRepository, never()).findByChatRoomIdAndUserIdAndLeftAtIsNull(any(), any())
+    }
+
+    @Test
+    fun `getOrCreateDirectRoom should reactivate a participant who previously left (rejoin)`() {
+        // 재입장(rejoin) 로직도 leftAt 필터를 걸면 안 된다 — leftAt≠null row 를 직접 찾아 null 로
+        // 되돌려야 하므로, 필터 걸면 애초에 그 row 를 못 찾아 재활성화가 불가능해진다.
+        val leftParticipant = ChatRoomParticipant(
+            id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER,
+            leftAt = LocalDateTime.now()
+        )
+
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(userRepository.findById(2L)).thenReturn(Optional.of(targetUser))
+        whenever(matchRepository.findByUserIds(1L, 2L)).thenReturn(Optional.of(testMatch))
+        whenever(chatRoomRepository.findByMatchId(1L)).thenReturn(Optional.of(testChatRoom))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+            .thenReturn(Optional.of(leftParticipant))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 2L))
+            .thenReturn(Optional.empty())
+        whenever(chatRoomParticipantRepository.save(any<ChatRoomParticipant>())).thenAnswer { it.getArgument(0) }
+
+        val room = chatService.getOrCreateDirectRoom(1L, 2L)
+
+        assertEquals(testChatRoom.id, room.id)
+        assertEquals(null, leftParticipant.leftAt) // 재활성화됨
+        // rejoin 경로는 필터 메서드를 쓰지 않는다 — 회귀 확인.
+        verify(chatRoomParticipantRepository, never()).findByChatRoomIdAndUserIdAndLeftAtIsNull(any(), any())
     }
 
     @Test
@@ -435,7 +672,7 @@ class ChatServiceTest {
         )
         whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
             .thenReturn(Optional.of(senderParticipant))
         whenever(chatMessageRepository.save(any<ChatMessage>())).thenAnswer { invocation ->
             (invocation.getArgument<ChatMessage>(0)).apply {
@@ -470,7 +707,7 @@ class ChatServiceTest {
         )
         whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
             .thenReturn(Optional.of(senderParticipant))
         whenever(chatMessageRepository.save(any<ChatMessage>())).thenAnswer { invocation ->
             (invocation.getArgument<ChatMessage>(0)).apply {
@@ -512,7 +749,7 @@ class ChatServiceTest {
         )
         whenever(chatRoomRepository.findById(1L)).thenReturn(Optional.of(testChatRoom))
         whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
-        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
+        whenever(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
             .thenReturn(Optional.of(senderParticipant))
         whenever(chatMessageRepository.save(any<ChatMessage>())).thenAnswer { invocation ->
             (invocation.getArgument<ChatMessage>(0)).apply {
