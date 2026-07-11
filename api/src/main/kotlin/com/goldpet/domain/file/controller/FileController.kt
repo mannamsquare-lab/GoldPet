@@ -126,9 +126,10 @@ class FileController(
         @PathVariable fileKey: String,
         @AuthenticationPrincipal principal: UserPrincipal?
     ): ResponseEntity<Map<String, String>> {
-        // principal 이 null 일 수 있음 (role 불일치 / 어드민 토큰 등) — NPE 방지해 410 응답 보장
+        // SEC-006/EXT-CDX-010: user_id 를 메트릭 태그(무한 카디널리티 + PII)로 넣지 않는다.
+        // 개별 사용자 식별이 필요하면 로그로만 남기고 메트릭은 태그 없이 집계.
+        meterRegistry.counter("file_proxy_stream_total").increment()
         val userTag = principal?.id?.toString() ?: "unknown"
-        meterRegistry.counter("file_proxy_stream_total", "user_id", userTag).increment()
         log.warn(
             "legacy /files/{}/content proxy hit after 410 transition (user_id={}). Stale bundle suspected.",
             fileKey, userTag
@@ -148,6 +149,11 @@ class FileController(
         @RequestParam("expirationMinutes", required = false, defaultValue = "60") expirationMinutes: Long,
         @AuthenticationPrincipal principal: UserPrincipal
     ): ResponseEntity<PresignedUrlResponse> {
+        // SEC-005 (+EXT-CDX-004): fileKey 만으로 서명하지 않는다. 소유자이거나 참여 중인 채팅방이
+        // 참조하는 첨부일 때만 발급. 접근권 없으면 404(존재 은폐 — fileKey 는 UUID 라 열거 어려움).
+        fileAttachmentLookupService.authorizeKeyAccess(fileKey, principal.id)
+            ?: throw com.goldpet.domain.common.exception.NotFoundException("파일을 찾을 수 없습니다.")
+        // 만료 상한은 FileService.getPresignedUrl 에서 서버측으로 clamp.
         val url = fileService.getPresignedUrl(fileKey, expirationMinutes)
         return ResponseEntity.ok(PresignedUrlResponse(url = url))
     }

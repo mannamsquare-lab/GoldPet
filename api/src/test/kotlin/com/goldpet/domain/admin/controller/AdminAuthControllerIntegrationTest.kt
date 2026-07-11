@@ -182,7 +182,7 @@ class AdminAuthControllerIntegrationTest : IntegrationTestBase() {
         val verify2faEmail = "verify2fa_${System.currentTimeMillis()}@goldpet.com"
         testEmails.add(verify2faEmail)
 
-        val userWith2FA = adminUserRepository.save(
+        adminUserRepository.save(
             AdminUser(
                 email = verify2faEmail,
                 passwordHash = passwordEncoder.encode("testPassword123"),
@@ -193,10 +193,32 @@ class AdminAuthControllerIntegrationTest : IntegrationTestBase() {
             )
         )
 
-        val request = Verify2faRequest(
-            userId = userWith2FA.id,
-            code = 0
+        // EXT-CDX-005: verify-2fa 는 login 이 발급한 challengeId 에 바인딩된다.
+        val loginResult = mockMvc.perform(
+            post("/api/v1/admin/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(AdminLoginRequest(verify2faEmail, "testPassword123")))
         )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.twoFactorChallengeId").isNotEmpty)
+            .andReturn()
+        val challengeId = objectMapper.readTree(loginResult.response.contentAsString)
+            .get("twoFactorChallengeId").asText()
+
+        val request = Verify2faRequest(challengeId = challengeId, code = 0)
+
+        mockMvc.perform(
+            post("/api/v1/admin/auth/verify-2fa")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `verify2fa should reject direct call without a challenge`() {
+        // EXT-CDX-005: challenge 없이 임의 challengeId 로 직접 호출 → 401(우회 차단).
+        val request = Verify2faRequest(challengeId = "no-such-challenge", code = 123456)
 
         mockMvc.perform(
             post("/api/v1/admin/auth/verify-2fa")

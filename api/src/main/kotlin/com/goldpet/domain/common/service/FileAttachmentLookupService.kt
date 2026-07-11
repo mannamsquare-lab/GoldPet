@@ -178,6 +178,21 @@ class FileAttachmentLookupService(
         return result
     }
 
+    /**
+     * SEC-005 — presigned URL 발급 전 소유권/접근권 판정.
+     *
+     * [fileKey] 로 FileAttachment 를 찾아(원본/variant key 모두 대조) viewer 가 소유자이거나
+     * 참여 중인 채팅방 메시지가 참조하는 첨부일 때만 해당 첨부를 반환한다. 그 외(미존재 포함)는
+     * null 을 반환해 호출부가 403/404 로 거부하도록 한다.
+     */
+    fun authorizeKeyAccess(fileKey: String, viewerUserId: Long): FileAttachment? {
+        if (fileKey.isBlank()) return null
+        val fa = fileAttachmentRepository.findByAnyKey(fileKey).firstOrNull() ?: return null
+        if (fa.ownerUserId == viewerUserId) return fa
+        val accessible = chatMessageRepository.findAccessibleFileIds(viewerUserId, listOf(fa.id))
+        return if (fa.id in accessible) fa else null
+    }
+
     private fun resolve(url: String): FileAttachment? {
         val cached = cache.getIfPresent(url)
         if (cached != null) return cached

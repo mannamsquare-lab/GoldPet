@@ -72,14 +72,15 @@ class AdminAuthServiceTest {
             .thenReturn("test-jwt-token")
 
         // When
-        val (token, adminUser) = adminAuthService.login("admin@goldpet.com", "admin123")
+        val result = adminAuthService.login("admin@goldpet.com", "admin123")
 
         // Then
-        assertNotNull(token)
-        assertEquals("test-jwt-token", token)
-        assertEquals("admin@goldpet.com", adminUser.email)
-        assertEquals("테스트관리자", adminUser.name)
-        assertEquals(AdminUserRole.SUPER_ADMIN, adminUser.role)
+        assertNotNull(result.token)
+        assertEquals("test-jwt-token", result.token)
+        assertNull(result.challengeId)
+        assertEquals("admin@goldpet.com", result.adminUser.email)
+        assertEquals("테스트관리자", result.adminUser.name)
+        assertEquals(AdminUserRole.SUPER_ADMIN, result.adminUser.role)
     }
 
     @Test
@@ -152,12 +153,20 @@ class AdminAuthServiceTest {
             .thenReturn(Optional.of(userWith2FA))
 
         // When
-        val (token, adminUser) = adminAuthService.login("admin@goldpet.com", "admin123")
+        val result = adminAuthService.login("admin@goldpet.com", "admin123")
 
         // Then
-        assertNull(token)
-        assertEquals("admin@goldpet.com", adminUser.email)
-        assertNotNull(adminUser.otpSecret)
+        assertNull(result.token)
+        assertNotNull(result.challengeId) // EXT-CDX-005: 2FA 필요 시 challengeId 발급
+        assertEquals("admin@goldpet.com", result.adminUser.email)
+        assertNotNull(result.adminUser.otpSecret)
+    }
+
+    // EXT-CDX-005 — password 인증 성공(login)으로 challengeId 를 발급받는 헬퍼.
+    private fun issueChallenge(user: AdminUser): String {
+        whenever(adminUserRepository.findByEmailHash(any())).thenReturn(Optional.of(user))
+        return adminAuthService.login(user.email, "admin123").challengeId
+            ?: error("challengeId expected for 2FA user")
     }
 
     @Test
@@ -181,14 +190,25 @@ class AdminAuthServiceTest {
             .thenReturn(true)
         whenever(jwtTokenProvider.generateToken(any()))
             .thenReturn("test-jwt-token")
+        val challengeId = issueChallenge(userWith2FA)
 
         // When
-        val (token, adminUser) = adminAuthService.verify2fa(1L, 123456)
+        val (token, adminUser) = adminAuthService.verify2fa(challengeId, 123456)
 
         // Then
         assertNotNull(token)
         assertEquals("test-jwt-token", token)
         assertEquals("admin@goldpet.com", adminUser.email)
+    }
+
+    @Test
+    fun `verify2fa should reject when no challenge was issued`() {
+        // challenge 없이 임의 challengeId 로 직접 호출 → 거부(공개 endpoint 우회 차단).
+        val exception = assertThrows<BadCredentialsException> {
+            adminAuthService.verify2fa("bogus-challenge-id", 123456)
+        }
+        assertTrue(exception.message!!.contains("challenge"))
+        verify(jwtTokenProvider, never()).generateToken(any())
     }
 
     @Test
@@ -210,12 +230,42 @@ class AdminAuthServiceTest {
             .thenReturn(Optional.of(userWith2FA))
         whenever(adminTotpService.validateCode("JBSWY3DPEHPK3PXP", 0))
             .thenReturn(false)
+        val challengeId = issueChallenge(userWith2FA)
 
         // When & Then
         val exception = assertThrows<BadCredentialsException> {
-            adminAuthService.verify2fa(1L, 0)
+            adminAuthService.verify2fa(challengeId, 0)
         }
         assertEquals("Invalid 2FA Code", exception.message)
+    }
+
+    @Test
+    fun `verify2fa should lock out after too many failed attempts`() {
+        // Given — 유효 challenge 하나로 계속 틀린 코드를 넣으면 임계값 후 lockout.
+        val userWith2FA = AdminUser(
+            id = 1L,
+            email = "admin@goldpet.com",
+            passwordHash = passwordEncoder.encode("admin123"),
+            name = "테스트관리자",
+            role = AdminUserRole.SUPER_ADMIN,
+            otpSecret = "JBSWY3DPEHPK3PXP",
+            isActive = true
+        ).apply {
+            createdAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now()
+        }
+        whenever(adminUserRepository.findById(1L)).thenReturn(Optional.of(userWith2FA))
+        whenever(adminTotpService.validateCode("JBSWY3DPEHPK3PXP", 0)).thenReturn(false)
+        val challengeId = issueChallenge(userWith2FA)
+
+        // 임계값(5)만큼 틀림 → "Invalid 2FA Code"
+        repeat(AdminAuthService.MAX_2FA_ATTEMPTS) {
+            val ex = assertThrows<BadCredentialsException> { adminAuthService.verify2fa(challengeId, 0) }
+            assertEquals("Invalid 2FA Code", ex.message)
+        }
+        // 그 다음 시도는 lockout 으로 거부(코드 검증 이전에 차단).
+        val locked = assertThrows<BadCredentialsException> { adminAuthService.verify2fa(challengeId, 0) }
+        assertTrue(locked.message!!.contains("Too many"))
     }
 
     @Test
@@ -262,10 +312,11 @@ class AdminAuthServiceTest {
         val userWith2FA = adminWith2fa(lastOtpUsedAt = LocalDateTime.now().minusSeconds(10))
         whenever(adminUserRepository.findById(1L)).thenReturn(Optional.of(userWith2FA))
         whenever(adminTotpService.validateCode("JBSWY3DPEHPK3PXP", 123456)).thenReturn(true)
+        val challengeId = issueChallenge(userWith2FA)
 
         // When & Then — TOTP 검증은 통과해도 replay window 분기에서 거부되어야 한다.
         val exception = assertThrows<BadCredentialsException> {
-            adminAuthService.verify2fa(1L, 123456)
+            adminAuthService.verify2fa(challengeId, 123456)
         }
         assertTrue(
             exception.message!!.contains("already used"),
@@ -282,9 +333,10 @@ class AdminAuthServiceTest {
         whenever(adminUserRepository.findById(1L)).thenReturn(Optional.of(userWith2FA))
         whenever(adminTotpService.validateCode("JBSWY3DPEHPK3PXP", 654321)).thenReturn(true)
         whenever(jwtTokenProvider.generateToken(any())).thenReturn("verified-jwt")
+        val challengeId = issueChallenge(userWith2FA)
 
         // When
-        val (token, _) = adminAuthService.verify2fa(1L, 654321)
+        val (token, _) = adminAuthService.verify2fa(challengeId, 654321)
 
         // Then — 토큰 발급 + lastOtpUsedAt 갱신(이전 값보다 최신).
         assertEquals("verified-jwt", token)

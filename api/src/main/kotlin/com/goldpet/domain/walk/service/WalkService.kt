@@ -55,6 +55,15 @@ class WalkService(
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
 
+    companion object {
+        // W-1 (EXT-CDX-008) — durationSeconds 가 wall-clock(endTime-startTime)을 초과할 때
+        // 허용할 반올림/초단위 truncation 오차. 정책적 유예가 아니라 계산 오차 보정이므로 작게 유지.
+        private const val DEFAULT_WALLCLOCK_TOLERANCE_SECONDS = 10
+        // W-1 — 1회 산책 현실적 상한(런타임 설정 가능, walk.max.speed.kmh 패턴 재사용).
+        private const val DEFAULT_MAX_DISTANCE_KM = 50
+        private const val DEFAULT_MAX_DURATION_SECONDS = 21_600 // 6h
+    }
+
     // Counters for presigned URL emission (feed path)
     private val presignedServedCounter: Counter by lazy {
         Counter.builder("walk_photo_presigned_served_total")
@@ -90,14 +99,69 @@ class WalkService(
 
     @Transactional
     fun createWalk(userId: Long, request: CreateWalkRequest): WalkResponse {
-        // 산책 최소 저장 조건 검증
+        // EXT-CDX-008: 거리는 클라이언트 값(request.distanceKm)을 신뢰하지 않고 저장된 path(GPS 좌표열)
+        // 로 서버가 재계산한다. 보상·랭킹의 단일 진실은 서버 산출 거리.
+        val serverDistanceKm = haversineDistanceKm(request.path)
+
+        // W-1 (EXT-CDX-008 적대적 리뷰) — durationSeconds(클라 값)가 startTime~endTime 실제 경과
+        // (wall-clock)를 초과하면 물리적으로 불가능(활동시간 > 총경과시간)하므로 거부한다.
+        // 근거: 클라이언트(app/lib/.../walk_tracking_mixin.dart:676-677,847-848)의 실제 계산식은
+        //   durationSeconds = (endTime - startTime - totalPauseDuration).inSeconds
+        // pauseDuration >= 0 이므로 정상 클라이언트는 durationSeconds <= wallClockSeconds 를 항상
+        // 만족한다. 즉 "멈춤 구간"은 durationSeconds 를 wall-clock보다 작게 만드는 방향으로만
+        // 작용 — 그 방향은 절대 거부하지 않는다(장시간+멈춤 포함 산책 회귀 없음). 초과하는
+        // 경우만 durationSeconds 를 인위적으로 부풀려 평균속도(아래 속도상한 검증)를 낮춰
+        // 보이게 하는 조작으로 간주해 차단한다. 상수 여유(rounding-safety)는 초 단위 truncation
+        // 차이만 흡수하도록 작게 유지 — 정책적 유예가 아니라 반올림 오차 보정이다.
+        val wallClockSeconds = java.time.Duration.between(request.startTime, request.endTime).seconds
+        val toleranceSeconds = systemSettingService.getInt(
+            "walk.duration.wallclock.tolerance.seconds", DEFAULT_WALLCLOCK_TOLERANCE_SECONDS
+        )
+        if (request.durationSeconds > wallClockSeconds + toleranceSeconds) {
+            throw BadRequestException(
+                "durationSeconds(${request.durationSeconds}초)가 산책 시작~종료 경과시간" +
+                "(${wallClockSeconds}초)을 초과할 수 없습니다."
+            )
+        }
+        // 속도 계산은 wall-clock 을 넘지 않도록 clamp 된 duration 사용(위 검증의 허용오차
+        // 구간에서도 속도 계산이 유리하게 부풀지 않도록).
+        val validatedDurationSeconds =
+            if (wallClockSeconds > 0) minOf(request.durationSeconds, wallClockSeconds) else request.durationSeconds
+
+        // W-1 — 1회 산책의 현실적 상한(거리/시간). 매우 큰 값으로 보상/랭킹을 위조하는 것을
+        // wall-clock 정합성과 무관하게(둘 다 일관되게 부풀린 경우까지) 차단하는 방어선.
+        val maxDistanceKm = systemSettingService.getInt("walk.max.distance.km", DEFAULT_MAX_DISTANCE_KM)
+        val maxDurationSeconds = systemSettingService.getInt("walk.max.duration.seconds", DEFAULT_MAX_DURATION_SECONDS)
+        if (serverDistanceKm > maxDistanceKm) {
+            throw BadRequestException(
+                "1회 산책 거리 상한(${maxDistanceKm}km)을 초과했습니다 " +
+                "(서버 산출: ${String.format("%.1f", serverDistanceKm)}km)"
+            )
+        }
+        if (request.durationSeconds > maxDurationSeconds) {
+            throw BadRequestException("1회 산책 시간 상한(${maxDurationSeconds}초)을 초과했습니다.")
+        }
+
+        // 산책 최소 저장 조건 검증 (서버 산출 거리 기준)
         val minDuration = systemSettingService.getInt("WALK_MIN_DURATION_SECONDS", 30)
         val minDistance = systemSettingService.getInt("WALK_MIN_DISTANCE_METERS", 10)
-        val distanceMeters = (request.distanceKm * 1000).toInt()
+        val distanceMeters = (serverDistanceKm * 1000).toInt()
         if (request.durationSeconds < minDuration || distanceMeters < minDistance) {
             throw BadRequestException(
                 "산책 저장 조건 미충족: ${minDuration}초 이상, ${minDistance}m 이상 필요 " +
                 "(현재: ${request.durationSeconds}초, ${distanceMeters}m)"
+            )
+        }
+
+        // 비현실적 이동 속도 거부: 서버 거리 / 교차검증된(wall-clock 초과 불가) 시간으로 평균
+        // 속도를 구해 상한 초과 시 조작으로 간주.
+        // (path 조작으로 짧은 시간에 먼 거리를 위조하는 보상/랭킹 어뷰징 차단.)
+        val maxSpeedKmh = systemSettingService.getInt("walk.max.speed.kmh", 30)
+        val hours = validatedDurationSeconds / 3600.0
+        if (hours > 0 && serverDistanceKm / hours > maxSpeedKmh) {
+            throw BadRequestException(
+                "비정상적인 이동 속도가 감지되었습니다 " +
+                "(${String.format("%.1f", serverDistanceKm / hours)}km/h, 상한 ${maxSpeedKmh}km/h)"
             )
         }
 
@@ -107,7 +171,7 @@ class WalkService(
             user = user,
             startTime = request.startTime,
             endTime = request.endTime,
-            distanceKm = request.distanceKm,
+            distanceKm = serverDistanceKm,
             durationSeconds = request.durationSeconds,
             path = request.toLineString(),
             caloriesBurned = request.caloriesBurned,
@@ -522,6 +586,31 @@ class WalkService(
         val month = parts[1].toInt()
         val startOfMonth = java.time.LocalDateTime.of(year, month, 1, 0, 0, 0)
         return Pair(startOfMonth, startOfMonth.plusMonths(1))
+    }
+
+    /**
+     * EXT-CDX-008 — path(GPS [위도, 경도] 좌표열)로 서버가 이동 거리를 재계산(Haversine 합산).
+     * 좌표가 2개 미만이면 0km. 클라이언트가 보낸 distanceKm 는 사용하지 않는다.
+     */
+    private fun haversineDistanceKm(path: List<List<Double>>): Double {
+        if (path.size < 2) return 0.0
+        val earthRadiusKm = 6371.0088
+        var total = 0.0
+        for (i in 1 until path.size) {
+            val prev = path[i - 1]
+            val curr = path[i]
+            if (prev.size < 2 || curr.size < 2) continue
+            val lat1 = Math.toRadians(prev[0])
+            val lon1 = Math.toRadians(prev[1])
+            val lat2 = Math.toRadians(curr[0])
+            val lon2 = Math.toRadians(curr[1])
+            val dLat = lat2 - lat1
+            val dLon = lon2 - lon1
+            val a = Math.sin(dLat / 2).let { it * it } +
+                Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2).let { it * it }
+            total += 2 * earthRadiusKm * Math.asin(Math.min(1.0, Math.sqrt(a)))
+        }
+        return total
     }
 
     private fun calculateWalkReward(distanceKm: Double): Int {

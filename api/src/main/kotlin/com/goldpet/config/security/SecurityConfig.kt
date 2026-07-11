@@ -51,9 +51,11 @@ class SecurityConfig(
                             .permitAll() // Allow signup & login
                             .requestMatchers("/")
                             .permitAll() // Allow root endpoint (Health check)
-                            .requestMatchers("/actuator/**")
-                            .permitAll() // Allow actuator endpoints (health, metrics for
-                            // monitoring)
+                            // SEC-006/EXT-CDX-010: actuator 노출 축소. health/info 만 공개하고
+                            // prometheus 등 나머지는 인증 뒤로(anyRequest authenticated). 외부는
+                            // nginx 가 이미 차단(OPS-004) — 이건 심층방어.
+                            .requestMatchers("/actuator/health", "/actuator/info")
+                            .permitAll()
                             .requestMatchers(
                                     "/api/v1/admin/auth/login",
                                     "/api/v1/admin/auth/verify-2fa"

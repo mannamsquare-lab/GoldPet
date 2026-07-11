@@ -537,6 +537,9 @@ class FileService(
     companion object {
         const val RETRY_ENABLED_KEY = "image.backfill.retry_enabled"
         private const val RETRY_COOLDOWN_DAYS = 7L
+
+        /** SEC-005 — presigned URL 최대 유효시간(분). viewer 재시청(6h) 경로 상한과 일치. */
+        const val MAX_PRESIGN_MINUTES = 360L
     }
 
     /**
@@ -754,7 +757,10 @@ class FileService(
     }
 
     fun getPresignedUrl(fileKey: String, expirationMinutes: Long = 60): String {
-        val expiration = Date(System.currentTimeMillis() + expirationMinutes * 60 * 1000)
+        // SEC-005: 만료 상한 서버 강제. 클라이언트가 임의로 긴 TTL 을 요청해 장기 유효 URL 을
+        // 만들지 못하게 [1, MAX_PRESIGN_MINUTES] 로 clamp.
+        val cappedMinutes = expirationMinutes.coerceIn(1L, MAX_PRESIGN_MINUTES)
+        val expiration = Date(System.currentTimeMillis() + cappedMinutes * 60 * 1000)
         val request = GeneratePresignedUrlRequest(privateBucketName, fileKey)
             .withMethod(HttpMethod.GET)
             .withExpiration(expiration)

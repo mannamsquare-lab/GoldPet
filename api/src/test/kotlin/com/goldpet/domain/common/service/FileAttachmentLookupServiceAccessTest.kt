@@ -70,4 +70,41 @@ class FileAttachmentLookupServiceAccessTest {
 
         assertTrue(result.containsKey(10L))
     }
+
+    // ── SEC-005: presigned URL 소유권 검증(authorizeKeyAccess) ──────────────────
+
+    @Test
+    fun `authorizeKeyAccess 는 소유자에게 첨부를 반환한다`() {
+        whenever(fileRepo.findByAnyKey("k.jpg")).thenReturn(listOf(attachment(10L, owner = 1L)))
+
+        val fa = lookup.authorizeKeyAccess("k.jpg", viewerUserId = 1L)
+
+        assertTrue(fa != null && fa.id == 10L)
+        verify(chatMessageRepository, never()).findAccessibleFileIds(any(), any())
+    }
+
+    @Test
+    fun `authorizeKeyAccess 는 소유자도 참여자도 아니면 null 을 반환한다`() {
+        whenever(fileRepo.findByAnyKey("k.jpg")).thenReturn(listOf(attachment(10L, owner = 2L)))
+        whenever(chatMessageRepository.findAccessibleFileIds(eq(1L), any())).thenReturn(emptyList())
+
+        assertFalse(lookup.authorizeKeyAccess("k.jpg", viewerUserId = 1L) != null)
+    }
+
+    @Test
+    fun `authorizeKeyAccess 는 같은 방 참여자에게 타인 첨부를 반환한다`() {
+        whenever(fileRepo.findByAnyKey("k.jpg")).thenReturn(listOf(attachment(10L, owner = 2L)))
+        whenever(chatMessageRepository.findAccessibleFileIds(eq(1L), any())).thenReturn(listOf(10L))
+
+        val fa = lookup.authorizeKeyAccess("k.jpg", viewerUserId = 1L)
+
+        assertTrue(fa != null && fa.id == 10L)
+    }
+
+    @Test
+    fun `authorizeKeyAccess 는 존재하지 않는 key 에 null 을 반환한다`() {
+        whenever(fileRepo.findByAnyKey("missing")).thenReturn(emptyList())
+
+        assertFalse(lookup.authorizeKeyAccess("missing", viewerUserId = 1L) != null)
+    }
 }

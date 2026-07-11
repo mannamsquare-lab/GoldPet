@@ -14,7 +14,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
-  const [tempUserId, setTempUserId] = useState<string | number | null>(null);
+  // EXT-CDX-005: verify-2fa 는 userId 가 아니라 login 이 발급한 challengeId 에 바인딩된다.
+  const [tempChallengeId, setTempChallengeId] = useState<string | null>(null);
   const [tempMustChange, setTempMustChange] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,8 +29,8 @@ export default function LoginPage() {
 
     try {
       const response = await authService.login(email, password);
-      if (response.requiresTwoFactor && response.user) {
-        setTempUserId(response.user.id);
+      if (response.requiresTwoFactor && response.twoFactorChallengeId) {
+        setTempChallengeId(response.twoFactorChallengeId);
         setTempMustChange(response.mustChangePassword ?? false);
         setStep('otp');
       } else if (response.user && response.token) {
@@ -49,10 +50,10 @@ export default function LoginPage() {
     setError('');
 
     try {
-      if (!tempUserId) {
-         throw new Error('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+      if (!tempChallengeId) {
+         throw new Error('인증 세션이 만료되었습니다. 다시 로그인해주세요.');
       }
-      const { token, user } = await authService.verifyOtp(tempUserId, otp);
+      const { token, user } = await authService.verifyOtp(tempChallengeId, otp);
       login(token, user, tempMustChange);
       navigate(tempMustChange ? '/change-password' : from, { replace: true });
     } catch {

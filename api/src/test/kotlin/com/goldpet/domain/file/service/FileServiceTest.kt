@@ -75,6 +75,24 @@ class FileServiceTest {
         )
     }
 
+    // SEC-005 — presigned 만료 상한(MAX_PRESIGN_MINUTES=360)을 서버가 강제하는지 검증.
+    @Test
+    fun `getPresignedUrl 은 과도한 expirationMinutes 를 상한으로 clamp 한다`() {
+        val captor = org.mockito.kotlin.argumentCaptor<com.amazonaws.services.s3.model.GeneratePresignedUrlRequest>()
+        whenever(amazonS3.generatePresignedUrl(captor.capture()))
+            .thenReturn(java.net.URL("http://s3.test/$privateBucket/key.jpg?sig=x"))
+
+        val before = System.currentTimeMillis()
+        fileService.getPresignedUrl("key.jpg", expirationMinutes = 100_000L)
+
+        val requestedExpiry = captor.firstValue.expiration.time
+        val maxAllowed = before + FileService.MAX_PRESIGN_MINUTES * 60 * 1000 + 5_000
+        assertTrue(
+            requestedExpiry <= maxAllowed,
+            "요청 만료($requestedExpiry)는 상한($maxAllowed) 이내여야 한다",
+        )
+    }
+
     private fun solidImage(width: Int, height: Int): BufferedImage {
         val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         val g = img.createGraphics()

@@ -37,6 +37,9 @@ class AdminUser(
     @Column(nullable = false)
     var role: AdminUserRole = AdminUserRole.OPERATOR,
 
+    // EXT-CDX-005 — TOTP secret 을 평문이 아닌 AES-GCM 으로 저장. EncryptionConverter 는 읽기 시
+    // 평문 fallback 을 제공하므로 기존 평문 행도 계속 읽힌다(마이그레이션은 AdminOtpSecretEncryptionBackfillRunner).
+    @Convert(converter = EncryptionConverter::class)
     var otpSecret: String? = null,
 
     /** V69 — TOTP replay 보호. 동일 30s window 코드 재사용 차단. */

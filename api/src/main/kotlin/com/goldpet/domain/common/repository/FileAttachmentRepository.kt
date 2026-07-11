@@ -14,6 +14,18 @@ interface FileAttachmentRepository : JpaRepository<FileAttachment, Long> {
     fun findAllByUrlIn(urls: List<String>): List<FileAttachment>
     fun findByUrl(url: String): FileAttachment?
 
+    /**
+     * SEC-005 — presigned URL 소유권 검증용. presigned 대상 fileKey 는 원본 key(url) 뿐 아니라
+     * variant/webp key(thumbnail/medium/viewer)일 수도 있으므로 모든 key 컬럼을 대조한다.
+     * key 는 UUID 라 사실상 유일 → 최대 1건.
+     */
+    @Query(
+        "SELECT f FROM FileAttachment f WHERE " +
+            "f.url = :key OR f.thumbnailUrl = :key OR f.mediumUrl = :key OR f.viewerUrl = :key OR " +
+            "f.thumbnailUrlWebp = :key OR f.mediumUrlWebp = :key OR f.viewerUrlWebp = :key"
+    )
+    fun findByAnyKey(@Param("key") key: String): List<FileAttachment>
+
     @Query("SELECT f FROM FileAttachment f WHERE f.fileType = 'IMAGE' AND f.thumbnailUrl IS NULL AND f.mimeType <> 'image/gif'")
     fun findImagesWithoutVariants(pageable: Pageable): Page<FileAttachment>
 

@@ -33,12 +33,26 @@ class NCloudSmsSender(
     private val log = LoggerFactory.getLogger(javaClass)
     private val http: HttpClient = HttpClient.newHttpClient()
 
+    companion object {
+        /**
+         * SEC-008 — 로그에 남길 수신 전화번호 마스킹. 앞 3자리 + 뒤 4자리만 남기고
+         * 가운데는 `*` 로 가린다(예: 01012345678 → 010****5678). 7자리 이하는 전부 마스킹.
+         */
+        fun maskPhoneNumber(digits: String): String {
+            if (digits.length <= 7) return "*".repeat(digits.length)
+            val prefix = digits.take(3)
+            val suffix = digits.takeLast(4)
+            return prefix + "*".repeat(digits.length - 7) + suffix
+        }
+    }
+
     override fun send(phoneNumber: String, message: String) {
         require(accessKey.isNotBlank() && secretKey.isNotBlank() && serviceId.isNotBlank() && from.isNotBlank()) {
             "NCloud SMS 설정이 비어 있습니다. NCLOUD_SMS_* 환경변수를 확인하세요."
         }
 
         val to = phoneNumber.filter { it.isDigit() }
+        val maskedTo = maskPhoneNumber(to)
         val timestamp = System.currentTimeMillis().toString()
         val urlPath = "/sms/v2/services/$serviceId/messages"
         val signature = makeSignature("POST", urlPath, timestamp)
@@ -68,11 +82,11 @@ class NCloudSmsSender(
 
         val res: HttpResponse<String> = http.send(request, HttpResponse.BodyHandlers.ofString())
         if (res.statusCode() != 202) {
-            // 본문에 코드가 들어있으니 수신번호만 로그(코드 평문 노출 방지)
-            log.error("[SENS] SMS 발송 실패 status={} body={} to={}", res.statusCode(), res.body(), to)
+            // SEC-008: 수신번호(PII)는 마스킹해서 로그. body 는 NCloud API 응답(진단용).
+            log.error("[SENS] SMS 발송 실패 status={} body={} to={}", res.statusCode(), res.body(), maskedTo)
             throw IllegalStateException("SMS 발송 실패 (status=${res.statusCode()})")
         }
-        log.info("[SENS] SMS 접수 성공 to={}", to)
+        log.info("[SENS] SMS 접수 성공 to={}", maskedTo)
     }
 
     /** NCloud APIGW 서명 v2: "{method} {url}\n{timestamp}\n{accessKey}" 의 HMAC-SHA256 (Base64) */

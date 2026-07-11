@@ -11,6 +11,8 @@ export type { Setup2faResponse };
 export interface LoginResponse {
   requiresTwoFactor: boolean;
   token?: string;
+  // EXT-CDX-005: 2FA 필요 시 서버가 발급하는 challenge ID. verify-2fa 에 그대로 전달.
+  twoFactorChallengeId?: string;
   user?: User;
   mustChangePassword?: boolean;
 }
@@ -34,10 +36,11 @@ export const authService = {
     }
   },
 
-  async verifyOtp(userId: string | number, code: string): Promise<{ token: string; user: User }> {
+  async verifyOtp(challengeId: string, code: string): Promise<{ token: string; user: User }> {
     try {
+      // EXT-CDX-005: userId 가 아니라 login 이 발급한 challengeId 로 검증한다.
       const response = await axios.post<LoginResponse>(`${API_URL}/verify-2fa`, {
-        userId,
+        challengeId,
         code
       });
       

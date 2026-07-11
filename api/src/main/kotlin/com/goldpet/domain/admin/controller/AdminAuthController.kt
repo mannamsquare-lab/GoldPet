@@ -17,6 +17,8 @@ data class AdminLoginRequest(
 data class AdminLoginResponse(
     val requiresTwoFactor: Boolean = false,
     val token: String? = null,
+    /** EXT-CDX-005 — 2FA 필요 시 서버측 challenge ID. verify-2fa 에 그대로 전달. */
+    val twoFactorChallengeId: String? = null,
     val user: AdminUserDto? = null,
     val mustChangePassword: Boolean = false
 )
@@ -27,7 +29,8 @@ data class ChangePasswordRequest(
 )
 
 data class Verify2faRequest(
-    val userId: Long,
+    /** EXT-CDX-005 — login 이 발급한 challengeId (userId 직접 지정 불가). */
+    val challengeId: String,
     val code: Int
 )
 
@@ -59,13 +62,16 @@ class AdminAuthController(
     @Operation(summary = "관리자 로그인", description = "이메일/비밀번호로 로그인합니다. 2FA 설정된 경우 token은 null이고 requiresTwoFactor=true 입니다.")
     @PostMapping("/login")
     fun login(@RequestBody request: AdminLoginRequest): ResponseEntity<AdminLoginResponse> {
-        val (token, adminUser) = adminAuthService.login(request.email, request.password)
-        
+        val result = adminAuthService.login(request.email, request.password)
+        val token = result.token
+        val adminUser = result.adminUser
+
         val requiresTwoFactor = token == null && !adminUser.otpSecret.isNullOrBlank()
 
         return ResponseEntity.ok(AdminLoginResponse(
             requiresTwoFactor = requiresTwoFactor,
             token = token, // Will be null if 2FA is required
+            twoFactorChallengeId = result.challengeId, // EXT-CDX-005: 2FA 필요 시에만 non-null
             user = AdminUserDto(
                 id = adminUser.id,
                 email = adminUser.email,
@@ -80,7 +86,7 @@ class AdminAuthController(
     @Operation(summary = "2FA 인증 확인", description = "로그인 후 2FA 코드를 검증하여 토큰을 발급받습니다.")
     @PostMapping("/verify-2fa")
     fun verify2fa(@RequestBody request: Verify2faRequest): ResponseEntity<AdminLoginResponse> {
-        val (token, adminUser) = adminAuthService.verify2fa(request.userId, request.code)
+        val (token, adminUser) = adminAuthService.verify2fa(request.challengeId, request.code)
 
         return ResponseEntity.ok(AdminLoginResponse(
             requiresTwoFactor = false,

@@ -1,6 +1,7 @@
 package com.goldpet.domain.gold.controller
 
 import com.goldpet.config.security.UserPrincipal
+import com.goldpet.domain.common.exception.BadRequestException
 import com.goldpet.domain.common.exception.ForbiddenException
 import com.goldpet.domain.common.service.SystemSettingService
 import com.goldpet.domain.gold.dto.*
@@ -96,6 +97,11 @@ class GoldController(
         @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?,
         @RequestBody request: SpendRequest,
     ): ResponseEntity<TransactionResponse> {
+        // EXT-CDX-011: 클라이언트가 referenceType/referenceId 로 원장(내부 reference)을 오염시키지
+        // 못하게 거부. 내부 도메인 흐름(ProfileBoost/AIProfile 등)은 서비스 계층을 직접 호출한다.
+        if (request.referenceType != null || request.referenceId != null) {
+            throw BadRequestException("referenceType/referenceId 는 클라이언트가 지정할 수 없습니다.")
+        }
         if (idempotencyKey.isNullOrBlank()) {
             return ResponseEntity.ok(goldService.spendGold(principal.id, request))
         }

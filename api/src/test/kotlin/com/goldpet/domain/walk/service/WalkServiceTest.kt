@@ -93,8 +93,26 @@ class WalkServiceTest {
         whenever(geocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
         // ADR-001 보상 +20% 배수(walk.reward.multiplier). 보상 단언은 배수 적용 후 값 기준.
         whenever(systemSettingService.getString(eq("walk.reward.multiplier"), any())).thenReturn("1.2")
+        // EXT-CDX-008 — Mockito 는 unstubbed getInt(...) 호출 시 0 을 반환한다(인자의 default 값이
+        // 아니라 mock 자체의 기본값). 상한류 키를 스텁하지 않으면 모든 walk 가 "상한 0 초과"로
+        // 거부되므로, 프로덕션 기본값과 동일하게 명시 스텁한다.
+        whenever(systemSettingService.getInt(eq("walk.max.speed.kmh"), any())).thenReturn(30)
+        whenever(systemSettingService.getInt(eq("walk.duration.wallclock.tolerance.seconds"), any())).thenReturn(10)
+        whenever(systemSettingService.getInt(eq("walk.max.distance.km"), any())).thenReturn(50)
+        whenever(systemSettingService.getInt(eq("walk.max.duration.seconds"), any())).thenReturn(21_600)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
+    }
+
+    // EXT-CDX-008 — 목표 거리(km)에 맞는 자오선(경도 고정) path 를 생성. 서버 Haversine 재계산이
+    // 이 거리와 근사해야 한다. 6371.0088km * π/180 ≈ 111.1949 km/deg.
+    private fun pathForKm(km: Double, points: Int = 2): List<List<Double>> {
+        val baseLat = 37.5
+        val lon = 127.0
+        val totalDeltaLat = km / 111.1949
+        return (0 until points).map { i ->
+            listOf(baseLat + totalDeltaLat * i / (points - 1), lon)
+        }
     }
 
     private fun createTestUser(id: Long, oauthId: String, nickname: String): User {
@@ -135,7 +153,8 @@ class WalkServiceTest {
             endTime = LocalDateTime.now(),
             distanceKm = distanceKm,
             durationSeconds = 3600,
-            path = listOf(listOf(37.5665, 126.9780), listOf(37.5670, 126.9785)),
+            // EXT-CDX-008 — path 가 실제 거리 진실이므로 목표 거리에 맞춰 생성.
+            path = pathForKm(distanceKm),
             caloriesBurned = null,
             notes = null
         )
@@ -171,11 +190,8 @@ class WalkServiceTest {
             endTime = endTime,
             distanceKm = 2.5,
             durationSeconds = 3600,
-            path = listOf(
-                listOf(37.5665, 126.9780),
-                listOf(37.5670, 126.9785),
-                listOf(37.5675, 126.9790)
-            ),
+            // EXT-CDX-008 — 서버 재계산이 ~2.5km 가 되도록 3점 자오선 path 구성.
+            path = pathForKm(2.5, points = 3),
             spots = listOf(
                 WalkSpotDto(
                     latitude = 37.5668,
@@ -200,7 +216,8 @@ class WalkServiceTest {
         assertNotNull(result)
         assertEquals(1L, result.id)
         assertEquals(1L, result.userId)
-        assertEquals(2.5, result.distanceKm)
+        // EXT-CDX-008 — distanceKm 은 클라이언트 값(2.5)이 아니라 서버 path 재계산값(≈2.5).
+        assertEquals(2.5, result.distanceKm, 0.05)
         assertEquals(3600, result.durationSeconds)
         assertEquals(150.0, result.caloriesBurned)
         assertEquals("오늘 산책 좋았음", result.notes)
@@ -378,6 +395,148 @@ class WalkServiceTest {
         walkService.createWalk(1L, request)
 
         verify(goldService).grantReward(eq(1L), eq(1), any())
+    }
+
+    @Test
+    fun `createWalk ignores inflated client distanceKm and rewards from server path distance`() {
+        // 클라이언트가 distanceKm=100 으로 부풀려도 path 는 ~1.5km → 보상/거리 모두 서버 path 기준.
+        val request = CreateWalkRequest(
+            startTime = LocalDateTime.now().minusHours(1),
+            endTime = LocalDateTime.now(),
+            distanceKm = 100.0, // 조작된 클라이언트 값
+            durationSeconds = 3600,
+            path = pathForKm(1.5),
+            caloriesBurned = null,
+            notes = null
+        )
+
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        mockWalkSave()
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(4))
+        whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
+
+        val result = walkService.createWalk(1L, request)
+
+        // 보상은 1.5km 기준(base 3 × 1.2 = 4)이지 100km 기준이 아니다.
+        verify(goldService).grantReward(eq(1L), eq(4), any())
+        assertEquals(1.5, result.distanceKm, 0.05, "저장 거리는 서버 path 재계산값이어야 한다")
+    }
+
+    @Test
+    fun `createWalk rejects implausible speed (path fabrication)`() {
+        // 60초에 ~50km → 3000km/h. 상한(30km/h) 초과로 거부.
+        val request = CreateWalkRequest(
+            startTime = LocalDateTime.now().minusMinutes(1),
+            endTime = LocalDateTime.now(),
+            distanceKm = 50.0,
+            durationSeconds = 60,
+            path = pathForKm(50.0),
+            caloriesBurned = null,
+            notes = null
+        )
+
+        assertThrows<BadRequestException> { walkService.createWalk(1L, request) }
+        verify(goldService, never()).grantReward(any(), any(), any())
+    }
+
+    // === W-1 (EXT-CDX-008 적대적 리뷰): durationSeconds wall-clock 우회 방어 ===
+    //
+    // 근거(app/lib/features/walk/mixins/walk_tracking_mixin.dart:676-677, 847-848):
+    //   durationSeconds = (endTime - startTime - totalPauseDuration).inSeconds
+    // pauseDuration >= 0 이므로 정상 클라이언트는 durationSeconds <= wallClockSeconds(=endTime-startTime)
+    // 를 항상 만족한다 — "멈춤"은 durationSeconds 를 wall-clock보다 작게 만드는 방향으로만 작용한다.
+    // 아래 D 케이스가 바로 그 정상 경로(멈춤 포함 장시간 산책)이며 거부되면 안 된다.
+
+    @Test
+    fun `createWalk rejects forged duration that inflates wall-clock to slip under the speed cap`() {
+        // 위조: 실제 제출 구간(wall-clock)은 60초뿐인데 durationSeconds 만 12000초(≈3.33h)로 부풀려
+        // 100km/12000s ≈ 30km/h(상한 이내)로 보이게 만드는 공격. wall-clock 교차검증이 먼저 차단해야 한다.
+        val request = CreateWalkRequest(
+            startTime = LocalDateTime.now().minusSeconds(60),
+            endTime = LocalDateTime.now(),
+            distanceKm = 100.0,
+            durationSeconds = 12000,
+            path = pathForKm(100.0),
+            caloriesBurned = null,
+            notes = null
+        )
+
+        val exception = assertThrows<BadRequestException> { walkService.createWalk(1L, request) }
+        assertTrue(
+            exception.message!!.contains("경과시간"),
+            "wall-clock 교차검증 실패로 거부되어야 한다 (실제: ${exception.message})",
+        )
+        verify(goldService, never()).grantReward(any(), any(), any())
+    }
+
+    @Test
+    fun `createWalk rejects distance exceeding the per-walk hard cap even with internally consistent duration`() {
+        // durationSeconds 가 wall-clock 과 정확히 일치하고(교차검증 통과) 평균속도(27km/h)도
+        // 상한(30km/h) 이내라도, 거리(60km) 자체가 1회 산책 현실적 상한(50km)을 넘으면 거부한다.
+        val request = CreateWalkRequest(
+            startTime = LocalDateTime.now().minusSeconds(8000),
+            endTime = LocalDateTime.now(),
+            distanceKm = 60.0,
+            durationSeconds = 8000,
+            path = pathForKm(60.0),
+            caloriesBurned = null,
+            notes = null
+        )
+
+        val exception = assertThrows<BadRequestException> { walkService.createWalk(1L, request) }
+        assertTrue(
+            exception.message!!.contains("거리 상한"),
+            "거리 상한 초과로 거부되어야 한다 (실제: ${exception.message})",
+        )
+        verify(goldService, never()).grantReward(any(), any(), any())
+    }
+
+    @Test
+    fun `createWalk rejects duration exceeding the per-walk hard cap even with low speed`() {
+        // 거리(10km)·평균속도(1.44km/h) 모두 낮고 wall-clock 과도 정합되지만, 산책 시간(25000초
+        // ≈6.9h) 자체가 1회 상한(21600초=6h)을 넘으면 거부한다.
+        val request = CreateWalkRequest(
+            startTime = LocalDateTime.now().minusSeconds(25_000),
+            endTime = LocalDateTime.now(),
+            distanceKm = 10.0,
+            durationSeconds = 25_000,
+            path = pathForKm(10.0),
+            caloriesBurned = null,
+            notes = null
+        )
+
+        val exception = assertThrows<BadRequestException> { walkService.createWalk(1L, request) }
+        assertTrue(
+            exception.message!!.contains("시간 상한"),
+            "시간 상한 초과로 거부되어야 한다 (실제: ${exception.message})",
+        )
+        verify(goldService, never()).grantReward(any(), any(), any())
+    }
+
+    @Test
+    fun `createWalk accepts a realistic walk with a pause where durationSeconds is well under wall-clock`() {
+        // 정상 회귀: wall-clock 2시간(7200초) 중 40분(2400초) 멈춤 → durationSeconds=4800초(80분).
+        // durationSeconds(4800) < wallClockSeconds(7200) 방향이므로 거부되면 안 된다(클라 공식과 일치).
+        val request = CreateWalkRequest(
+            startTime = LocalDateTime.now().minusSeconds(7200),
+            endTime = LocalDateTime.now(),
+            distanceKm = 4.0,
+            durationSeconds = 4800,
+            path = pathForKm(4.0),
+            caloriesBurned = null,
+            notes = null
+        )
+
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        mockWalkSave()
+        whenever(goldService.grantReward(any(), any(), any())).thenReturn(mockTransactionResponse(6))
+        whenever(badgeAwardService.checkAndAwardBadges(any(), any())).thenReturn(emptyList())
+
+        val result = walkService.createWalk(1L, request)
+
+        assertEquals(4.0, result.distanceKm, 0.05, "멈춤 포함 정상 산책은 거부되지 않고 서버 거리로 저장되어야 한다")
+        // 3km~5km 구간 base 5 × 1.2 배수 = 6골드(정상 보상 지급 확인 — 안전한 방향의 duration 은 페널티 없음).
+        verify(goldService).grantReward(eq(1L), eq(6), any())
     }
 
     @Test
