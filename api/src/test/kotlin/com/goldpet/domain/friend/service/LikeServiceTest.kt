@@ -6,9 +6,10 @@ import com.goldpet.domain.friend.entity.Match
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
+import com.goldpet.domain.friend.event.LikeNotificationEvent
 import com.goldpet.domain.metrics.entity.LikeEventAction
 import com.goldpet.domain.metrics.service.LikeEventRecorder
-import com.goldpet.domain.notification.service.NotificationService
+import com.goldpet.domain.notification.entity.NotificationType
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
 import org.junit.jupiter.api.Assertions.*
@@ -17,8 +18,10 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.context.ApplicationEventPublisher
 import com.goldpet.domain.common.exception.*
 import java.time.LocalDateTime
 import java.util.*
@@ -35,7 +38,7 @@ class LikeServiceTest {
     private lateinit var userRepository: UserRepository
 
     @Mock
-    private lateinit var notificationService: NotificationService
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     @Mock
     private lateinit var userBlockRepository: UserBlockRepository
@@ -51,7 +54,7 @@ class LikeServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        likeService = LikeService(likeRepository, matchRepository, userRepository, notificationService, userBlockRepository, likeEventRecorder)
+        likeService = LikeService(likeRepository, matchRepository, userRepository, eventPublisher, userBlockRepository, likeEventRecorder)
 
         testUser = createTestUser(1L, "testuser", "테스트유저")
         targetUser = createTestUser(2L, "targetuser", "대상유저")
@@ -96,22 +99,6 @@ class LikeServiceTest {
                 updatedAt = LocalDateTime.now()
             }
         }
-        whenever(notificationService.createNotification(any())).thenAnswer {
-            com.goldpet.domain.notification.dto.NotificationResponse(
-                id = 1L,
-                type = com.goldpet.domain.notification.entity.NotificationType.LIKE,
-                title = "Test",
-                message = "Test message",
-                targetId = null,
-                targetType = null,
-                isRead = false,
-                senderId = null,
-                senderNickname = null,
-                senderProfileImage = null,
-                createdAt = null
-            )
-        }
-
         // When
         val result = likeService.likeUser(1L, 2L)
 
@@ -121,6 +108,14 @@ class LikeServiceTest {
         assertFalse(result.isMutual)
         // like_events (W1(2)): one LIKE row, is_match=false (not mutual)
         verify(likeEventRecorder).record(1L, 2L, LikeEventAction.LIKE, false, null)
+        // PERF-006: 알림은 동기 createNotification 대신 커밋 후 비동기 이벤트로 발행된다.
+        //  非상호 → LIKE 타입, 수신자=대상, 발신자=나. (내용 불변, 타이밍만 분리)
+        val captor = argumentCaptor<LikeNotificationEvent>()
+        verify(eventPublisher).publishEvent(captor.capture())
+        val req = captor.firstValue.request
+        assertEquals(NotificationType.LIKE, req.type)
+        assertEquals(2L, req.userId)
+        assertEquals(1L, req.senderId)
     }
 
     @Test
@@ -144,22 +139,6 @@ class LikeServiceTest {
                 updatedAt = LocalDateTime.now()
             }
         }
-        whenever(notificationService.createNotification(any())).thenAnswer {
-            com.goldpet.domain.notification.dto.NotificationResponse(
-                id = 1L,
-                type = com.goldpet.domain.notification.entity.NotificationType.LIKE,
-                title = "Test",
-                message = "Test message",
-                targetId = null,
-                targetType = null,
-                isRead = false,
-                senderId = null,
-                senderNickname = null,
-                senderProfileImage = null,
-                createdAt = null
-            )
-        }
-
         // When
         val result = likeService.likeUser(1L, 2L)
 
@@ -167,6 +146,10 @@ class LikeServiceTest {
         assertTrue(result.isMutual)
         // like_events (W1(2)): one LIKE row, is_match=true (this like produced a match now)
         verify(likeEventRecorder).record(1L, 2L, LikeEventAction.LIKE, true, null)
+        // PERF-006: 상호 좋아요 → MATCH 타입 알림 이벤트 발행(커밋 후 비동기).
+        val captor = argumentCaptor<LikeNotificationEvent>()
+        verify(eventPublisher).publishEvent(captor.capture())
+        assertEquals(NotificationType.MATCH, captor.firstValue.request.type)
     }
 
     @Test
@@ -186,21 +169,6 @@ class LikeServiceTest {
         whenever(userRepository.findById(2L)).thenReturn(Optional.of(targetUser))
         whenever(likeRepository.findByFromUserAndToUser(testUser, targetUser)).thenReturn(Optional.of(canceledLike))
         whenever(likeRepository.existsByFromUserIdAndToUserIdAndStatus(2L, 1L, LikeStatus.ACTIVE)).thenReturn(false)
-        whenever(notificationService.createNotification(any())).thenAnswer {
-            com.goldpet.domain.notification.dto.NotificationResponse(
-                id = 1L,
-                type = com.goldpet.domain.notification.entity.NotificationType.LIKE,
-                title = "Test",
-                message = "Test message",
-                targetId = null,
-                targetType = null,
-                isRead = false,
-                senderId = null,
-                senderNickname = null,
-                senderProfileImage = null,
-                createdAt = null
-            )
-        }
 
         // When
         val result = likeService.likeUser(1L, 2L)

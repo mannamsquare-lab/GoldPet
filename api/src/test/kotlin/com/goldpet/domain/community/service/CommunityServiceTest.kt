@@ -20,6 +20,9 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -407,5 +410,59 @@ class CommunityServiceTest {
 
         // Then
         assertEquals(1, result.content.size)
+    }
+
+    /**
+     * PERF-004 회귀 테스트 — 피드가 게시글마다 좋아요/댓글 쿼리 3회(N*3) 대신
+     * postIds IN 집계 3회(고정)로 동작함을 상호작용으로 실증한다.
+     * 픽스 전 코드(existsByPostAndUser/existsByPostIdAndUserId/countByPostId per-post)에서는
+     * never() 검증이 실패한다. 매핑 값(commentCount/isLiked/isCommented)도 배치 결과와 일치해야 한다.
+     */
+    @Test
+    fun `getPosts batches like-comment aggregates instead of per-post queries (PERF-004)`() {
+        // Given: 3개 게시글
+        val pageable = PageRequest.of(0, 10)
+        fun post(id: Long) = CommunityPost(
+            id = id,
+            user = testUser,
+            category = testCategory,
+            title = "글$id",
+            content = "내용$id",
+            visibility = CommunityPost.Visibility.PUBLIC,
+            postType = CommunityPost.PostType.GENERAL
+        ).apply { createdAt = LocalDateTime.now(); updatedAt = LocalDateTime.now() }
+        val posts = listOf(post(1L), post(2L), post(3L))
+        val page = PageImpl(posts, pageable, 3)
+
+        whenever(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory))
+        whenever(postRepository.findAllByCategoryAndIsHiddenFalse(testCategory, pageable)).thenReturn(page)
+        whenever(userRepository.findById(1L)).thenReturn(Optional.of(testUser))
+        whenever(systemSettingService.getInt(any(), any())).thenReturn(100)
+        // 배치 집계 스텁: post1→댓글2, post2→댓글5(post3 부재=0); 좋아요=post1; 내댓글=post2
+        whenever(commentRepository.countByPostIdIn(any()))
+            .thenReturn(listOf(arrayOf<Any>(1L, 2L), arrayOf<Any>(2L, 5L)))
+        whenever(likeRepository.findLikedPostIds(any(), eq(1L))).thenReturn(listOf(1L))
+        whenever(commentRepository.findCommentedPostIds(any(), eq(1L))).thenReturn(listOf(2L))
+
+        // When
+        val result = communityService.getPosts(1L, pageable, 1L)
+
+        // Then: 매핑 값이 배치 결과와 일치
+        val byId = result.content.associateBy { it.id }
+        assertEquals(2L, byId[1L]!!.commentCount)
+        assertTrue(byId[1L]!!.isLiked)
+        assertFalse(byId[1L]!!.isCommentedByMe)
+        assertEquals(5L, byId[2L]!!.commentCount)
+        assertFalse(byId[2L]!!.isLiked)
+        assertTrue(byId[2L]!!.isCommentedByMe)
+        assertEquals(0L, byId[3L]!!.commentCount)
+
+        // And: 배치 메서드는 각 1회, per-post N+1 메서드는 호출되지 않음
+        verify(commentRepository).countByPostIdIn(any())
+        verify(likeRepository).findLikedPostIds(any(), eq(1L))
+        verify(commentRepository).findCommentedPostIds(any(), eq(1L))
+        verify(commentRepository, never()).countByPostId(any())
+        verify(likeRepository, never()).existsByPostAndUser(any(), any())
+        verify(commentRepository, never()).existsByPostIdAndUserId(any(), any())
     }
 }

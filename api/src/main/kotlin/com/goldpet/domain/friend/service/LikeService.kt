@@ -5,6 +5,7 @@ import com.goldpet.domain.friend.dto.LikeResponse
 import com.goldpet.domain.friend.entity.Like
 import com.goldpet.domain.friend.entity.LikeStatus
 import com.goldpet.domain.friend.entity.Match
+import com.goldpet.domain.friend.event.LikeNotificationEvent
 import com.goldpet.domain.friend.repository.LikeRepository
 import com.goldpet.domain.friend.repository.MatchRepository
 import com.goldpet.domain.friend.repository.UserBlockRepository
@@ -12,9 +13,9 @@ import com.goldpet.domain.metrics.entity.LikeEventAction
 import com.goldpet.domain.metrics.service.LikeEventRecorder
 import com.goldpet.domain.notification.dto.CreateNotificationRequest
 import com.goldpet.domain.notification.entity.NotificationType
-import com.goldpet.domain.notification.service.NotificationService
 import com.goldpet.domain.user.entity.User
 import com.goldpet.domain.user.repository.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,7 +25,7 @@ class LikeService(
     private val likeRepository: LikeRepository,
     private val matchRepository: MatchRepository,
     private val userRepository: UserRepository,
-    private val notificationService: NotificationService,
+    private val eventPublisher: ApplicationEventPublisher,
     private val userBlockRepository: UserBlockRepository,
     private val likeEventRecorder: LikeEventRecorder
 ) {
@@ -77,7 +78,9 @@ class LikeService(
             "${fromUser.nickname ?: "누군가"}님이 좋아요를 눌렀어요! ❤️"
         }
         
-        notificationService.createNotification(CreateNotificationRequest(
+        // PERF-006: FCM 발송을 트랜잭션 커밋 후 비동기로 분리(LikeNotificationEventListener).
+        // 메시지 문구는 여기서 완성(발신자 닉네임 이미 로드) → 타이밍만 바뀌고 내용 불변.
+        eventPublisher.publishEvent(LikeNotificationEvent(CreateNotificationRequest(
             userId = toUserId,
             type = if (isMutual) NotificationType.MATCH else NotificationType.LIKE,
             title = if (isMutual) "새로운 매칭" else "새로운 좋아요",
@@ -85,7 +88,7 @@ class LikeService(
             targetId = fromUserId,
             targetType = "USER",
             senderId = fromUserId
-        ))
+        )))
 
         // like_events append (W1(2), V80): point-in-time 퍼널 사실. is_match = THIS 좋아요가 지금 매치를 만들었는지(=isMutual).
         // cohort 는 recorder 가 experiment_assignment 에서 read(재계산 금지). ACTIVE seam.

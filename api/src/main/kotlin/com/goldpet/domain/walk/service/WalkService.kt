@@ -31,9 +31,11 @@ import com.goldpet.infra.GeocodingService
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.concurrent.Executor
 
 @Service
 @Transactional(readOnly = true)
@@ -51,7 +53,10 @@ class WalkService(
     private val userBlockRepository: UserBlockRepository,
     private val photoUrlSigner: PhotoUrlSigner,
     private val meterRegistry: MeterRegistry,
-    private val fileAttachmentRepository: FileAttachmentRepository
+    private val fileAttachmentRepository: FileAttachmentRepository,
+    // PERF-007 (적대적 리뷰 MEDIUM) — 종료점 지오코딩 async 를 JVM 공용 commonPool 대신 전용 bounded
+    // 풀에서 실행(AsyncConfig.geocodingExecutor). commonPool 기아 방지.
+    @Qualifier("geocodingExecutor") private val geocodingExecutor: Executor
 ) {
     private val log = LoggerFactory.getLogger(WalkService::class.java)
 
@@ -212,6 +217,23 @@ class WalkService(
         // Derive start/end locations from path (server-side, not from client)
         val startCoord = request.path.firstOrNull()
         val endCoord = request.path.lastOrNull()
+
+        // PERF-007: 시작/종료 리버스 지오코딩(각 blocking HTTP, connect/read 3초)을 순차 대신 병렬 실행해
+        // 쓰기 트랜잭션의 커넥션 점유 시간을 최악 ~6초 → ~3초로 단축. 종료점 호출을 async 로 띄우고
+        // 시작점 호출을 현재 스레드에서 수행해 겹친다. 각 호출은 기존과 동일하게 non-fatal(실패=주소 null 유지).
+        // 지오코딩은 순수 HTTP(무 DB)라 async 스레드에 트랜잭션 전파가 필요 없다.
+        // 적대적 리뷰 MEDIUM 후속: executor 미지정 시 JVM 공용 commonPool 을 타 블로킹 I/O 로 점유해
+        // parallel stream 등 전역에 영향을 줄 수 있어 전용 `geocodingExecutor`(AsyncConfig)를 명시.
+        val endAddressFuture: java.util.concurrent.CompletableFuture<String?>? = endCoord?.let { c ->
+            java.util.concurrent.CompletableFuture.supplyAsync({
+                try {
+                    geocodingService.reverseGeocode(c[0], c[1])
+                } catch (e: Exception) {
+                    log.warn("Reverse geocoding failed for walk end: {}", e.message)
+                    null
+                }
+            }, geocodingExecutor)
+        }
         if (startCoord != null) {
             walk.startLocation = geometryFactory.createPoint(Coordinate(startCoord[1], startCoord[0])) // [lon, lat]
             try {
@@ -225,11 +247,7 @@ class WalkService(
         }
         if (endCoord != null) {
             walk.endLocation = geometryFactory.createPoint(Coordinate(endCoord[1], endCoord[0])) // [lon, lat]
-            try {
-                walk.endAddress = geocodingService.reverseGeocode(endCoord[0], endCoord[1])
-            } catch (e: Exception) {
-                log.warn("Reverse geocoding failed for walk end: {}", e.message)
-            }
+            walk.endAddress = endAddressFuture?.join()
         }
 
         // Resolve pet ownership and create WalkPet associations
@@ -304,11 +322,14 @@ class WalkService(
     }
 
     fun findWalksInArea(request: BoundingBoxRequest): List<WalkResponse> {
+        // PERF-011: bbox 검색 결과 상한(runtime 설정). 밀집지역 줌아웃 시 대량 반환 + N+1 재노출 방어.
+        val maxResults = systemSettingService.getInt("walk.search.bbox.max_results", 500)
         val walks = walkRepository.findWalksWithinBoundingBox(
             request.minLat,
             request.minLon,
             request.maxLat,
-            request.maxLon
+            request.maxLon,
+            maxResults
         )
         return walks.map { WalkResponse.from(it, photoUrlSigner) }
     }

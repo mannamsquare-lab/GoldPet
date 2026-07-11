@@ -86,6 +86,32 @@ class CommunityService(
         val urls = comments.mapNotNull { it.user.profileImageUrl.toHttps() }
         if (urls.isNotEmpty()) fileAttachmentLookupService.batchLookup(urls)
     }
+
+    // PERF-004: 리스트 경로 좋아요/댓글 집계 배치. 게시글마다 exists/count 3쿼리(N*3)를
+    // postIds IN 집계 3쿼리(고정)로 대체. currentUserId 가 null 이면 좋아요/댓글여부는 빈 Set.
+    private data class PostInteractionAggregates(
+        val commentCountByPost: Map<Long, Long>,
+        val likedPostIds: Set<Long>,
+        val commentedPostIds: Set<Long>,
+    ) {
+        fun commentCount(postId: Long): Long = commentCountByPost[postId] ?: 0L
+        fun isLiked(postId: Long): Boolean = postId in likedPostIds
+        fun isCommented(postId: Long): Boolean = postId in commentedPostIds
+    }
+
+    private fun aggregatePostInteractions(posts: List<CommunityPost>, currentUserId: Long?): PostInteractionAggregates {
+        val postIds = posts.map { it.id }
+        if (postIds.isEmpty()) {
+            return PostInteractionAggregates(emptyMap(), emptySet(), emptySet())
+        }
+        val commentCountByPost = commentRepository.countByPostIdIn(postIds)
+            .associate { (it[0] as Number).toLong() to (it[1] as Number).toLong() }
+        val likedPostIds = currentUserId
+            ?.let { likeRepository.findLikedPostIds(postIds, it).toSet() } ?: emptySet()
+        val commentedPostIds = currentUserId
+            ?.let { commentRepository.findCommentedPostIds(postIds, it).toSet() } ?: emptySet()
+        return PostInteractionAggregates(commentCountByPost, likedPostIds, commentedPostIds)
+    }
     // Assuming UserRepository needs to be injected or used to fetch currentUser
     fun getPosts(categoryId: Long?, pageable: Pageable, currentUserId: Long?): Page<CommunityPostResponse> {
         val blockedUserIds = currentUserId?.let { userBlockRepository.findBlockedUserIds(it) } ?: emptyList()
@@ -135,15 +161,21 @@ class CommunityService(
     }
 
     private fun toResponsePage(posts: Page<CommunityPost>, currentUserId: Long?): Page<CommunityPostResponse> {
-        val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
+        // 적대적 리뷰 LOW 후속: isLiked/isCommented/commentCount 는 PERF-004 로 agg 배치 집계로
+        // 이전되어 currentUser 엔티티 조회가 isMine 비교에만 남아 있었다(피드 페이지마다 불필요 SELECT).
+        // isMine 은 ID 동치 비교라 엔티티 fetch 없이 currentUserId 로 직접 비교 가능 — post.user.id 는
+        // FK 로 항상 존재하는 유저를 가리키고 PK 는 재사용되지 않으므로, currentUserId 가 가리키는
+        // row 가 존재하지 않으면(탈퇴 등) 어떤 post.user.id 와도 결코 같을 수 없어 기존
+        // `currentUser?.id == post.user.id`(존재X 유저 → null → false) 와 동치.
         val previewLength = systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100)
 
         warmAuthorAndImages(posts.content) // T1-1.3 N+1 방지: author + image variant batch prefetch
+        val agg = aggregatePostInteractions(posts.content, currentUserId) // PERF-004: 좋아요/댓글 배치 집계
 
         return posts.map { post ->
-            val isLiked = currentUser?.let { likeRepository.existsByPostAndUser(post, it) } ?: false
-            val isCommented = currentUserId?.let { commentRepository.existsByPostIdAndUserId(post.id, it) } ?: false
-            val commentCount = commentRepository.countByPostId(post.id)
+            val isLiked = agg.isLiked(post.id)
+            val isCommented = agg.isCommented(post.id)
+            val commentCount = agg.commentCount(post.id)
 
             val contentPreview = if (post.content.length > previewLength) {
                 post.content.substring(0, previewLength) + "..."
@@ -176,7 +208,7 @@ class CommunityService(
                 imageUrlsMedium = img.mediums,
                 imageUrlsViewer = img.viewers,
                 imageUrlsThumbnailWebp = img.thumbnailWebps,
-                isMine = currentUser?.id == post.user.id
+                isMine = currentUserId != null && currentUserId == post.user.id
             )
         }
     }
@@ -549,9 +581,14 @@ class CommunityService(
         val previewLength = systemSettingService.getInt("COMMUNITY_POST_PREVIEW_LENGTH", 100)
 
         warmAuthorAndImages(posts.content) // T1-1.3 batch prefetch
+        // PERF-004: 댓글수 배치 집계 (게시글마다 countByPostId 대신 postIds IN 1회).
+        val postIds = posts.content.map { it.id }
+        val commentCountByPost = if (postIds.isEmpty()) emptyMap() else
+            commentRepository.countByPostIdIn(postIds)
+                .associate { (it[0] as Number).toLong() to (it[1] as Number).toLong() }
 
         return posts.map { post ->
-            val commentCount = commentRepository.countByPostId(post.id)
+            val commentCount = commentCountByPost[post.id] ?: 0L
             val contentPreview = if (post.content.length > previewLength) {
                 post.content.substring(0, previewLength) + "..."
             } else {
@@ -619,9 +656,13 @@ class CommunityService(
         val currentUser = currentUserId?.let { userRepository.findById(it).orElse(null) }
 
         warmAuthorAndImages(posts.content) // T1-1.3 batch prefetch
+        // PERF-004: 내 좋아요여부 배치 집계 (게시글마다 existsByPostAndUser 대신 postIds IN 1회).
+        val searchPostIds = posts.content.map { it.id }
+        val likedPostIds = if (currentUser == null || searchPostIds.isEmpty()) emptySet()
+            else likeRepository.findLikedPostIds(searchPostIds, currentUser.id).toSet()
 
         return posts.map { post ->
-            val isLiked = currentUser?.let { likeRepository.existsByPostAndUser(post, it) } ?: false
+            val isLiked = post.id in likedPostIds
             CommunityPostResponse(
                 id = post.id,
                 authorId = post.user.id,

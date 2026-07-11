@@ -52,12 +52,15 @@ interface WalkRepository : JpaRepository<Walk, Long> {
         pageable: org.springframework.data.domain.Pageable
     ): org.springframework.data.domain.Page<Walk>
 
-    @Query(value = "SELECT * FROM walks w WHERE ST_Intersects(w.path, ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326)) AND w.is_public = true", nativeQuery = true)
+    // PERF-011: bbox 검색 결과 상한(LIMIT). 줌아웃으로 밀집지역을 덮으면 대량 반환 + spots/walkPets N+1
+    // 재노출 → 최근 산책 우선(start_time DESC)으로 캡. 응답 형태(List)는 불변이라 OpenAPI 재생성 불필요.
+    @Query(value = "SELECT * FROM walks w WHERE ST_Intersects(w.path, ST_MakeEnvelope(:minLon, :minLat, :maxLon, :maxLat, 4326)) AND w.is_public = true ORDER BY w.start_time DESC LIMIT :limit", nativeQuery = true)
     fun findWalksWithinBoundingBox(
         @Param("minLat") minLat: Double,
         @Param("minLon") minLon: Double,
         @Param("maxLat") maxLat: Double,
-        @Param("maxLon") maxLon: Double
+        @Param("maxLon") maxLon: Double,
+        @Param("limit") limit: Int
     ): List<Walk>
 
     @Query("""

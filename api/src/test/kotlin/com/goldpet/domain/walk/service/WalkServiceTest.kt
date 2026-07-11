@@ -89,7 +89,9 @@ class WalkServiceTest {
     @BeforeEach
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        walkService = WalkService(walkRepository, walkSpotRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, geocodingService, applicationEventPublisher, systemSettingService, userBlockRepository, photoUrlSigner, meterRegistry, fileAttachmentRepository)
+        // PERF-007: geocodingExecutor 는 테스트 결정성을 위해 호출 스레드에서 동기 실행하는 direct executor 사용.
+        val geocodingExecutor = java.util.concurrent.Executor { it.run() }
+        walkService = WalkService(walkRepository, walkSpotRepository, bestWalkCoupleRepository, userRepository, petRepository, goldService, badgeAwardService, geocodingService, applicationEventPublisher, systemSettingService, userBlockRepository, photoUrlSigner, meterRegistry, fileAttachmentRepository, geocodingExecutor)
         whenever(geocodingService.reverseGeocode(any(), any())).thenReturn("서울특별시 강남구")
         // ADR-001 보상 +20% 배수(walk.reward.multiplier). 보상 단언은 배수 적용 후 값 기준.
         whenever(systemSettingService.getString(eq("walk.reward.multiplier"), any())).thenReturn("1.2")

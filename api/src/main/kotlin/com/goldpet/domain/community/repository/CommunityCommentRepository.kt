@@ -22,6 +22,14 @@ interface CommunityCommentRepository : JpaRepository<CommunityComment, Long> {
     fun existsByPostIdAndUserId(postId: Long, userId: Long): Boolean
     fun existsByParentCommentIdAndUserId(parentCommentId: Long, userId: Long): Boolean
     fun countByPostId(postId: Long): Long
+
+    // PERF-004: 피드 배치 집계 — 게시글별 댓글수/내 댓글여부를 postIds IN 1회로.
+    @Query("SELECT c.post.id, COUNT(c) FROM CommunityComment c WHERE c.post.id IN :postIds GROUP BY c.post.id")
+    fun countByPostIdIn(@Param("postIds") postIds: Collection<Long>): List<Array<Any>>
+
+    @Query("SELECT DISTINCT c.post.id FROM CommunityComment c WHERE c.post.id IN :postIds AND c.user.id = :userId")
+    fun findCommentedPostIds(@Param("postIds") postIds: Collection<Long>, @Param("userId") userId: Long): List<Long>
+
     fun countByUserId(userId: Long): Long
     fun findAllByUserId(userId: Long): List<CommunityComment>
     fun findAllByParentComment(parentComment: CommunityComment): List<CommunityComment>

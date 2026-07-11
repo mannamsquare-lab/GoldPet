@@ -111,6 +111,18 @@ class FriendService(
         const val UNLIMITED_RADIUS_METERS = 20_038_000.0
     }
 
+    /**
+     * PERF-003: userIds 의 pet 을 1회 IN 쿼리로 조회해 ownerId 별로 그룹핑한다.
+     * 기존 per-user `petRepository.findByOwnerId(user.id)` (URL 워밍·petTypes/genders 필터·변환에서 각각
+     * 재호출, 요청당 최대 ~800 쿼리)를 단일 배치로 대체. groupBy 는 쿼리 결과 순서를 보존하므로
+     * `firstOrNull()`(main pet) 시맨틱은 기존 무순서 findByOwnerId 와 동일하다.
+     */
+    private fun petsByOwner(userIds: Collection<Long>): Map<Long, List<com.goldpet.domain.pet.entity.Pet>> {
+        val distinct = userIds.distinct()
+        if (distinct.isEmpty()) return emptyMap()
+        return petRepository.findByOwnerIdIn(distinct).groupBy { it.owner.id }
+    }
+
     fun getFriends(
         myUserId: Long,
         myLat: Double,
@@ -186,11 +198,14 @@ class FriendService(
             )
         }
 
+        // PERF-003: 페이지 유저의 pet 을 1회 배치 조회해 URL 워밍·필터·변환에서 재사용.
+        val petsByOwner = petsByOwner(usersPage.content.map { it.id })
+
         // T1-1.4b batch prefetch: owner 프로필 이미지 + pet 이미지 URL 을 한 번의 IN 쿼리로 warm.
         val allUrls = usersPage.content.flatMap { user ->
             val ownerUrls = user.profileImages.map { it.imageUrl } +
                 listOfNotNull(user.profileImageUrl)
-            val petUrls = petRepository.findByOwnerId(user.id).flatMap { pet ->
+            val petUrls = (petsByOwner[user.id] ?: emptyList()).flatMap { pet ->
                 pet.profileImages.map { it.imageUrl } + listOfNotNull(pet.profileImageUrl)
             }
             ownerUrls + petUrls
@@ -199,19 +214,15 @@ class FriendService(
 
         // Convert to FriendResponse and filter by petTypes/genders if needed
         val friendResponses = usersPage.content.mapNotNull { user ->
-            val response = convertToFriendResponse(user, myLat, myLng)
-            
+            val pets = petsByOwner[user.id] ?: emptyList()
+
             // Filter by petTypes and genders if provided
-            val matchesPetType = petTypes.isNullOrEmpty() || 
-                petRepository.findByOwnerId(user.id).any { pet -> 
-                    pet.species.code in petTypes 
-                }
-            val matchesGender = genders.isNullOrEmpty() || 
-                petRepository.findByOwnerId(user.id).any { pet -> 
-                    pet.gender in genders 
-                }
-            
-            if (matchesPetType && matchesGender) response else null
+            val matchesPetType = petTypes.isNullOrEmpty() ||
+                pets.any { pet -> pet.species.code in petTypes }
+            val matchesGender = genders.isNullOrEmpty() ||
+                pets.any { pet -> pet.gender in genders }
+
+            if (matchesPetType && matchesGender) convertToFriendResponse(user, myLat, myLng, pets) else null
         }
 
         return PageImpl(friendResponses, pageable, usersPage.totalElements)
@@ -281,11 +292,14 @@ class FriendService(
         val hasNext = users.size >= pageable.pageSize
 
         // petTypes/genders 후처리 필터 — 기존 getFriends 필터 로직과 동일.
+        // PERF-003: 후보 pet 을 1회 배치 조회해 per-user findByOwnerId N+1 제거.
+        val petsByOwner = petsByOwner(users.map { it.id })
         val filtered = users.filter { user ->
+            val pets = petsByOwner[user.id] ?: emptyList()
             val matchesPetType = petTypes.isNullOrEmpty() ||
-                petRepository.findByOwnerId(user.id).any { pet -> pet.species.code in petTypes }
+                pets.any { pet -> pet.species.code in petTypes }
             val matchesGender = genders.isNullOrEmpty() ||
-                petRepository.findByOwnerId(user.id).any { pet -> pet.gender in genders }
+                pets.any { pet -> pet.gender in genders }
             matchesPetType && matchesGender
         }
 
@@ -318,17 +332,23 @@ class FriendService(
     ): Page<FriendResponse> {
         // 1차 후보집합: 거리순 상위 N (기존 distance 모드 native SQL 재사용, 불변).
         val candidatePageable = PageRequest.of(0, COMPATIBILITY_CANDIDATE_LIMIT)
-        val candidates = friendRepository.findFriendsNearbyByDistance(
+        val candidateUsers = friendRepository.findFriendsNearbyByDistance(
             myUserId = myUserId,
             myLat = myLat,
             myLng = myLng,
             radiusMeters = radiusMeters,
             pageable = candidatePageable
-        ).content.filter { user ->
+        ).content
+
+        // PERF-003: 후보 + 나 자신의 pet 을 1회 배치 조회해 필터·스코어링·temperament 에서 재사용.
+        val petsByOwner = petsByOwner(candidateUsers.map { it.id } + myUserId)
+
+        val candidates = candidateUsers.filter { user ->
+            val pets = petsByOwner[user.id] ?: emptyList()
             val matchesPetType = petTypes.isNullOrEmpty() ||
-                petRepository.findByOwnerId(user.id).any { pet -> pet.species.code in petTypes }
+                pets.any { pet -> pet.species.code in petTypes }
             val matchesGender = genders.isNullOrEmpty() ||
-                petRepository.findByOwnerId(user.id).any { pet -> pet.gender in genders }
+                pets.any { pet -> pet.gender in genders }
             matchesPetType && matchesGender
         }
 
@@ -337,7 +357,7 @@ class FriendService(
         val myInterests = me?.interests?.map { it.name }?.toSet() ?: emptySet()
         val myHobbies = me?.hobbies?.map { it.name }?.toSet() ?: emptySet()
         val myTemperament = parseTemperamentTags(
-            petRepository.findByOwnerId(myUserId).firstOrNull()?.temperamentTags
+            (petsByOwner[myUserId] ?: emptyList()).firstOrNull()?.temperamentTags
         ).tags
 
         val weights = loadCompatibilityWeights()
@@ -351,7 +371,7 @@ class FriendService(
             val theirInterests = user.interests.map { it.name }.toSet()
             val theirHobbies = user.hobbies.map { it.name }.toSet()
             val theirTemperament = parseTemperamentTags(
-                petRepository.findByOwnerId(user.id).firstOrNull()?.temperamentTags
+                (petsByOwner[user.id] ?: emptyList()).firstOrNull()?.temperamentTags
             ).tags
             val distance = GeoUtils.calculateDistanceInMeters(
                 myLat, myLng, user.mainLocationGeom?.y, user.mainLocationGeom?.x
@@ -396,21 +416,28 @@ class FriendService(
     fun buildFriendResponses(users: List<User>, myLat: Double, myLng: Double): List<FriendResponse> {
         if (users.isEmpty()) return emptyList()
 
+        // PERF-003: pet 을 1회 배치 조회해 URL 워밍·변환에서 재사용 (per-user findByOwnerId 제거).
+        val petsByOwner = petsByOwner(users.map { it.id })
+
         val allUrls = users.flatMap { user ->
             val ownerUrls = user.profileImages.map { it.imageUrl } +
                 listOfNotNull(user.profileImageUrl)
-            val petUrls = petRepository.findByOwnerId(user.id).flatMap { pet ->
+            val petUrls = (petsByOwner[user.id] ?: emptyList()).flatMap { pet ->
                 pet.profileImages.map { it.imageUrl } + listOfNotNull(pet.profileImageUrl)
             }
             ownerUrls + petUrls
         }
         if (allUrls.isNotEmpty()) fileAttachmentLookupService.batchLookup(allUrls)
 
-        return users.map { convertToFriendResponse(it, myLat, myLng) }
+        return users.map { convertToFriendResponse(it, myLat, myLng, petsByOwner[it.id] ?: emptyList()) }
     }
 
-    private fun convertToFriendResponse(user: User, myLat: Double, myLng: Double): FriendResponse {
-        val pets = petRepository.findByOwnerId(user.id)
+    private fun convertToFriendResponse(
+        user: User,
+        myLat: Double,
+        myLng: Double,
+        pets: List<com.goldpet.domain.pet.entity.Pet>
+    ): FriendResponse {
         val mainPet = pets.firstOrNull()
         
         // Calculate age
