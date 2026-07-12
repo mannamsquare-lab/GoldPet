@@ -36,6 +36,10 @@ class User(
         @Enumerated(EnumType.STRING)
         @Column(nullable = false)
         var status: UserStatus = UserStatus.ACTIVE,
+        /** 휴면 전환 판정 기준. 로그인 성공 때마다 갱신된다(V89). */
+        @Column(name = "last_login_at") var lastLoginAt: LocalDateTime? = null,
+        /** DORMANT 로 전환된 시각. 해제 시 null 로 되돌린다(V89). */
+        @Column(name = "dormant_at") var dormantAt: LocalDateTime? = null,
         var mbti: String? = null,
         @Column(columnDefinition = "TEXT") var intro: String? = null,
         @Column(name = "has_pet", nullable = false) var hasPet: Boolean = false,

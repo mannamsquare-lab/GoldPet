@@ -5,6 +5,17 @@
 import axios from 'axios';
 import { useAuthStore } from '../../stores/authStore';
 
+/** 휴면 안내 화면이 쓰는 서버 제공 정보 (STYLE-001). */
+export interface DormantDetails {
+  /** 로그인 시 자격증명이 검증된 직후 발급되는 단기 해제 토큰. */
+  activationToken: string;
+  lastLoginAt?: string;
+  dormantAt?: string;
+}
+
+export const DORMANT_DETAILS_KEY = 'goldpet.dormant.details';
+
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 export const apiClient = axios.create({
@@ -99,6 +110,12 @@ apiClient.interceptors.response.use(
     } else if (error.response?.status === 403) {
       const errorCode = error.response?.data?.errorCode;
       if (errorCode === 'DORMANT_ACCOUNT') {
+        // STYLE-001: 서버가 details 로 해제 토큰과 실제 날짜(마지막 접속·휴면 전환)를 내려준다.
+        // 예전에는 이걸 버리고 화면이 'OOO' 와 가짜 날짜를 하드코딩하고 있었다.
+        const details = error.response?.data?.details as DormantDetails | undefined;
+        if (details?.activationToken) {
+          sessionStorage.setItem(DORMANT_DETAILS_KEY, JSON.stringify(details));
+        }
         useAuthStore.getState().logout();
         window.location.href = '/account/dormant';
       } else if (errorCode === 'WITHDRAWN_ACCOUNT') {

@@ -36,6 +36,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 @RequestMapping("/api/v1/auth")
 class AuthController(
     private val authService: AuthService,
+    // STYLE-001: 휴면 해제
+    private val dormancyService: com.goldpet.domain.user.service.DormancyService,
     private val socialLoginService: SocialLoginService,
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenRotationService: RefreshTokenRotationService,
@@ -187,4 +189,25 @@ class AuthController(
             )
         )
     }
+
+    /**
+     * 휴면 계정 해제 (STYLE-001).
+     *
+     * 휴면 사용자는 로그인이 차단돼 access token 이 없다. 대신 로그인 시도에서 자격증명이
+     * 검증된 직후 발급된 단기 activationToken 으로 본인을 증명한다.
+     * 해제 후에는 평소대로 다시 로그인하면 된다.
+     */
+    @Operation(summary = "휴면 계정 해제")
+    @PostMapping("/dormant/activate")
+    fun activateDormantAccount(
+        @Valid @RequestBody request: DormantActivateRequest
+    ): ResponseEntity<Map<String, Boolean>> {
+        dormancyService.activate(request.activationToken)
+        return ResponseEntity.ok(mapOf("activated" to true))
+    }
 }
+
+data class DormantActivateRequest(
+    @field:jakarta.validation.constraints.NotBlank(message = "activationToken 은 필수입니다")
+    val activationToken: String
+)

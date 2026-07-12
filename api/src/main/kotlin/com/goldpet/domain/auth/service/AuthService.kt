@@ -28,6 +28,8 @@ import java.time.LocalDateTime
 @Service
 class AuthService(
         private val userRepository: UserRepository,
+        // STYLE-001: 계정 상태 검사를 공용 가드로 통일(휴면 해제 정보 동봉).
+        private val accountStatusGuard: AccountStatusGuard,
         private val passwordEncoder: PasswordEncoder,
         private val jwtTokenProvider: JwtTokenProvider,
         private val systemSettingService: SystemSettingService,
@@ -118,14 +120,17 @@ class AuthService(
         )
     }
 
-    @Transactional(readOnly = true)
+    // STYLE-001: lastLoginAt 을 갱신해야 하므로 더 이상 readOnly 가 아니다(휴면 전환 기준값).
+    @Transactional
     fun login(request: LoginRequest): AuthResponse {
         val userOpt = userRepository.findByUsername(request.username)
         val user = userOpt.orElseThrow { UnauthorizedException("Invalid credentials") }
         if (!passwordEncoder.matches(request.password, user.password)) {
             throw UnauthorizedException("Invalid credentials")
         }
-        checkAccountStatus(user.status)
+        accountStatusGuard.check(user)
+        user.lastLoginAt = java.time.LocalDateTime.now()
+        userRepository.save(user)
         val userPrincipal = UserPrincipal.create(user)
         val auth =
                 UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
@@ -208,14 +213,6 @@ class AuthService(
         )
     }
 
-    private fun checkAccountStatus(status: UserStatus) {
-        when (status) {
-            UserStatus.ACTIVE -> return
-            UserStatus.DORMANT -> throw AccountStatusException(status, "DORMANT_ACCOUNT")
-            UserStatus.WITHDRAWN -> throw AccountStatusException(status, "WITHDRAWN_ACCOUNT")
-            UserStatus.SUSPENDED -> throw AccountStatusException(status, "SUSPENDED_ACCOUNT")
-        }
-    }
 
     @Transactional(readOnly = true)
     fun findUsername(request: FindUsernameRequest): FindUsernameResponse {

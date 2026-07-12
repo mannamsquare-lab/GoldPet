@@ -93,7 +93,14 @@ class GlobalExceptionHandler {
     @ExceptionHandler(AccountStatusException::class)
     fun handleAccountStatusException(ex: AccountStatusException): ResponseEntity<ErrorResponse> {
         log.warn("Account status error: {} (code: {})", ex.message, ex.errorCode)
-        return buildResponse(HttpStatus.FORBIDDEN, ex.errorCode, ex.message ?: "Account access denied")
+        // STYLE-001: 휴면이면 해제 토큰·날짜가 details 로 실려 온다. 클라이언트가 휴면 안내 화면을
+        // 실데이터로 렌더하고 해제 API 를 호출하는 데 쓴다.
+        return buildResponse(
+            HttpStatus.FORBIDDEN,
+            ex.errorCode,
+            ex.message ?: "Account access denied",
+            details = ex.details
+        )
     }
 
     @ExceptionHandler(ResponseStatusException::class)

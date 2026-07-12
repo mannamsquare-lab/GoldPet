@@ -38,6 +38,7 @@ class SocialLoginServiceTest {
         MockitoAnnotations.openMocks(this)
         EncryptionConfig("social-login-test-key-32-chars!!", "").validate()
         service = SocialLoginService(
+            com.goldpet.domain.auth.service.AccountStatusGuard(jwtTokenProvider),
             userRepository, jwtTokenProvider, userAuthProviderRepository,
             systemSettingService, oauthNonceService,
             "test-jwt-secret-that-is-long-enough-for-hmac-sha-256"

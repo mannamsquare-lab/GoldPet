@@ -195,4 +195,13 @@ export const authService = {
       throw new Error("세션이 만료되었습니다. 다시 로그인해주세요.");
     }
   },
+
+  /**
+   * 휴면 계정 해제 (STYLE-001).
+   * 휴면 사용자는 access token 이 없으므로, 로그인 시도에서 자격증명이 검증된 직후 서버가
+   * 내려준 단기 activationToken 으로 본인을 증명한다.
+   */
+  activateDormantAccount: async (activationToken: string): Promise<void> => {
+    await apiClient.post('/api/v1/auth/dormant/activate', { activationToken });
+  },
 };

@@ -40,6 +40,7 @@ class AuthServiceSnsSignupTest {
         EncryptionConfig("auth-sns-signup-test-key-32!!", "").validate()
         authService = AuthService(
             userRepository,
+            AccountStatusGuard(jwtTokenProvider),
             BCryptPasswordEncoder(),
             jwtTokenProvider,
             systemSettingService,

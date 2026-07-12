@@ -75,4 +75,22 @@ interface UserRepository : JpaRepository<User, Long> {
             "UPDATE User u SET u.fcmToken = null WHERE u.fcmToken IS NOT NULL AND u.updatedAt < :cutoffDate"
     )
     fun clearFcmTokensForInactiveUsers(@Param("cutoffDate") cutoffDate: LocalDateTime): Int
+
+    /**
+     * 휴면 전환 후보: ACTIVE 이면서 [cutoff] 이전에 마지막으로 접속한 사용자.
+     * lastLoginAt 이 NULL 이면 판정 기준이 없으므로 제외한다(STYLE-001).
+     */
+    @Query(
+        """
+        SELECT u FROM User u
+         WHERE u.status = com.goldpet.domain.user.entity.UserStatus.ACTIVE
+           AND u.lastLoginAt IS NOT NULL
+           AND u.lastLoginAt < :cutoff
+         ORDER BY u.lastLoginAt ASC
+        """
+    )
+    fun findDormancyCandidates(
+        @Param("cutoff") cutoff: java.time.LocalDateTime,
+        pageable: org.springframework.data.domain.Pageable
+    ): List<User>
 }

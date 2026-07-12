@@ -49,7 +49,14 @@ class AuthServiceTest {
         // (단독 실행 시 Spring 컨텍스트가 없어 lateinit 미초기화 방지)
         EncryptionConfig("auth-service-test-key-32-chars!!", "").validate()
         passwordEncoder = BCryptPasswordEncoder()
-        authService = AuthService(userRepository, passwordEncoder, jwtTokenProvider, systemSettingService, goldService)
+        authService = AuthService(
+            userRepository,
+            AccountStatusGuard(jwtTokenProvider),
+            passwordEncoder,
+            jwtTokenProvider,
+            systemSettingService,
+            goldService,
+        )
         whenever(systemSettingService.getBoolean("allow_signups", true)).thenReturn(true)
     }
 

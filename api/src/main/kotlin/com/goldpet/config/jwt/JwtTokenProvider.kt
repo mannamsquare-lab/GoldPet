@@ -157,4 +157,41 @@ class JwtTokenProvider(
             false
         }
     }
+
+    /**
+     * 휴면 해제 전용 단기 토큰 (STYLE-001).
+     *
+     * 휴면 사용자는 로그인이 차단되므로 access token 을 받을 수 없다. 다만 로그인 시도 자체가
+     * 자격증명(비밀번호/SNS)을 이미 검증했으므로, 그 시점에만 이 토큰을 발급해 "본인이 맞다"를
+     * 짧게 증명한다. 다른 API 에는 쓸 수 없다(type 이 다르므로 인증 필터가 거른다).
+     */
+    fun generateDormantActivationToken(userId: Long): String {
+        val now = Date()
+        return Jwts.builder()
+            .subject(userId.toString())
+            .claim("type", DORMANT_ACTIVATION_TYPE)
+            .id(UUID.randomUUID().toString())
+            .issuedAt(now)
+            .expiration(Date(now.time + DORMANT_ACTIVATION_EXPIRATION_MS))
+            .signWith(key)
+            .compact()
+    }
+
+    /** 휴면 해제 토큰 검증 — 유효하면 userId, 아니면 null. */
+    fun parseDormantActivationUserId(token: String): Long? = try {
+        val claims = Jwts.parser()
+            .verifyWith(key)
+            .build()
+            .parseSignedClaims(token)
+            .payload
+        if (claims["type"] == DORMANT_ACTIVATION_TYPE) claims.subject.toLong() else null
+    } catch (ex: Exception) {
+        null
+    }
+
+    companion object {
+        const val DORMANT_ACTIVATION_TYPE = "DORMANT_ACTIVATION"
+        /** 10분. 해제 절차를 마치기엔 충분하고, 유출돼도 창이 짧다. */
+        const val DORMANT_ACTIVATION_EXPIRATION_MS = 10 * 60 * 1000L
+    }
 }

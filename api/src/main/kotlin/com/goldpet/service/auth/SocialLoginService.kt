@@ -39,6 +39,8 @@ import javax.crypto.SecretKey
 
 @Service
 class SocialLoginService(
+    // STYLE-001: 계정 상태 검사를 공용 가드로 통일(휴면 해제 정보 동봉).
+    private val accountStatusGuard: com.goldpet.domain.auth.service.AccountStatusGuard,
     private val userRepository: UserRepository,
     private val jwtTokenProvider: JwtTokenProvider,
     private val userAuthProviderRepository: UserAuthProviderRepository,
@@ -235,7 +237,8 @@ class SocialLoginService(
         val existingProvider = userAuthProviderRepository.findByProviderAndProviderId(provider, oauthId).orElse(null)
         if (existingProvider != null) {
             val user = existingProvider.user
-            checkAccountStatus(user.status)
+            accountStatusGuard.check(user)
+            user.lastLoginAt = java.time.LocalDateTime.now()
             // Also sync legacy users table fields
             syncUserFields(user, provider, oauthId, email, nickname, profileImage)
             val token = generateJwt(user, attributes)
@@ -318,7 +321,8 @@ class SocialLoginService(
             )
         )
 
-        checkAccountStatus(user.status)
+        accountStatusGuard.check(user)
+            user.lastLoginAt = java.time.LocalDateTime.now()
         val token = generateJwt(user, attributes)
         val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
 
@@ -377,7 +381,8 @@ class SocialLoginService(
             syncUserFields(user, provider, oauthId, email, nickname, profileImage)
         }
 
-        checkAccountStatus(user.status)
+        accountStatusGuard.check(user)
+            user.lastLoginAt = java.time.LocalDateTime.now()
         val token = generateJwt(user, attributes)
         val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
 
@@ -454,7 +459,8 @@ class SocialLoginService(
             )
         }
 
-        checkAccountStatus(user.status)
+        accountStatusGuard.check(user)
+            user.lastLoginAt = java.time.LocalDateTime.now()
         val attributes = mapOf<String, Any>()
         val token = generateJwt(user, attributes)
         val refreshToken = jwtTokenProvider.generateRefreshToken(user.id)
@@ -476,14 +482,6 @@ class SocialLoginService(
 
     // --- Helpers ---
 
-    private fun checkAccountStatus(status: UserStatus) {
-        when (status) {
-            UserStatus.ACTIVE -> return
-            UserStatus.DORMANT -> throw AccountStatusException(status, "DORMANT_ACCOUNT")
-            UserStatus.WITHDRAWN -> throw AccountStatusException(status, "WITHDRAWN_ACCOUNT")
-            UserStatus.SUSPENDED -> throw AccountStatusException(status, "SUSPENDED_ACCOUNT")
-        }
-    }
 
     private fun generateJwt(user: User, attributes: Map<String, Any>): String {
         val userPrincipal = UserPrincipal.create(user, attributes)

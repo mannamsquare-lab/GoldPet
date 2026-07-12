@@ -81,3 +81,11 @@
 .dormant-account-button:active {
   transform: scale(0.98);
 }
+
+/* 휴면 해제 실패 안내 */
+.dormant-account-error {
+  margin-top: 16px;
+  color: #e5484d;
+  font-size: 14px;
+  text-align: center;
+}
