@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_theme.dart';
+import '../utils/course_geometry.dart';
 import '../../../core/webview/hybrid_webview.dart';
 import '../../../core/widgets/goldpet_alert_dialog.dart';
 import '../mixins/walk_tracking_mixin.dart';
@@ -83,6 +84,8 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
 
   // Course path as LatLng for map overlay
   late final List<LatLng> _coursePathLatLng;
+  /// PERF-010: 세그먼트 길이·누적 길이를 1회만 계산해 GPS tick 마다의 불변량 재계산을 없앤다.
+  late final CourseGeometry _geometry;
 
   // Design colors
   static const Color _panelBg = Color(0xFFEFE1C4);
@@ -170,6 +173,7 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
     _coursePathLatLng = widget.coursePath
         .map((p) => LatLng(p[0], p[1]))
         .toList();
+    _geometry = CourseGeometry(_coursePathLatLng);
 
     initTracking(isPublic: true);
   }
@@ -295,22 +299,14 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
   // --- Deviation detection ---
 
   void _checkDeviation(Position position) {
-    if (_coursePathLatLng.length < 2) return;
+    if (!_geometry.isUsable) return;
 
-    // Find minimum distance from current position to any course segment
-    double minDist = double.infinity;
-
-    for (var i = 0; i < _coursePathLatLng.length - 1; i++) {
-      final dist = _distanceToSegment(
-        position.latitude, position.longitude,
-        _coursePathLatLng[i].latitude, _coursePathLatLng[i].longitude,
-        _coursePathLatLng[i + 1].latitude, _coursePathLatLng[i + 1].longitude,
-      );
-      if (dist < minDist) {
-        minDist = dist;
-      }
-    }
-
+    // PERF-010: 전역 최소 거리(기존 동작 그대로). 세그먼트 길이는 캐시돼 있고, 꼭짓점까지의
+    // 거리는 이 호출에서 한 번만 계산해 바로 뒤의 _updateProgress 가 재사용한다.
+    final minDist = _geometry.deviationDistance(
+      position.latitude,
+      position.longitude,
+    );
     _deviationDistance = minDist;
 
     // Dynamic threshold: max(50m, accuracy * 2.5)
@@ -326,34 +322,10 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
     if (mounted) setState(() {});
   }
 
-  /// Distance from point (px,py) to line segment (ax,ay)-(bx,by) in meters.
-  double _distanceToSegment(
-    double px, double py,
-    double ax, double ay,
-    double bx, double by,
-  ) {
-    final segLen = Geolocator.distanceBetween(ax, ay, bx, by);
-    if (segLen < 0.001) return Geolocator.distanceBetween(px, py, ax, ay);
-
-    // Project point onto segment
-    final dpa = Geolocator.distanceBetween(px, py, ax, ay);
-    final dpb = Geolocator.distanceBetween(px, py, bx, by);
-
-    // Use the triangle approach: if either angle is obtuse, nearest point is the vertex
-    final dab = segLen;
-    if (dpa * dpa > dpb * dpb + dab * dab) return dpb; // angle at B is obtuse
-    if (dpb * dpb > dpa * dpa + dab * dab) return dpa; // angle at A is obtuse
-
-    // Otherwise, compute perpendicular distance using Heron's formula
-    final s = (dpa + dpb + dab) / 2;
-    final area = math.sqrt(math.max(0, s * (s - dpa) * (s - dpb) * (s - dab)));
-    return 2 * area / dab;
-  }
-
   // --- Progress tracking (segment projection) ---
 
   void _updateProgress(LatLng latLng) {
-    if (_coursePathLatLng.length < 2) return;
+    if (!_geometry.isUsable) return;
 
     // Don't update progress when significantly off course (>200m)
     if (_deviationDistance > 200) {
@@ -361,65 +333,18 @@ class _CourseWalkScreenState extends ConsumerState<CourseWalkScreen>
       return;
     }
 
-    final totalSegments = _coursePathLatLng.length - 1;
-
-    // Windowed search: look back a few and forward a limited amount.
-    // This prevents loop/circular courses from matching end segments
-    // when the user is near the start (since start ≈ end physically).
-    final searchStart = math.max(0, _progressWaypointIndex - 2);
-    final maxLookahead = math.max(5, totalSegments ~/ 3);
-    final searchEnd = math.min(_progressWaypointIndex + maxLookahead, totalSegments);
-    double minDist = double.infinity;
-    int nearestIdx = _progressWaypointIndex;
-
-    for (var i = searchStart; i < searchEnd; i++) {
-      final dist = _distanceToSegment(
-        latLng.latitude, latLng.longitude,
-        _coursePathLatLng[i].latitude, _coursePathLatLng[i].longitude,
-        _coursePathLatLng[i + 1].latitude, _coursePathLatLng[i + 1].longitude,
-      );
-      if (dist < minDist) {
-        minDist = dist;
-        nearestIdx = i;
-      }
-    }
-
-    // Only allow forward progress (prevent backward jumps)
-    nearestIdx = math.max(nearestIdx, _progressWaypointIndex);
-    _progressWaypointIndex = nearestIdx;
-
-    // Calculate progress: sum of completed segments + fraction within current segment
-    double totalLength = 0;
-    double progressLength = 0;
-
-    for (var i = 0; i < _coursePathLatLng.length - 1; i++) {
-      final segLen = Geolocator.distanceBetween(
-        _coursePathLatLng[i].latitude, _coursePathLatLng[i].longitude,
-        _coursePathLatLng[i + 1].latitude, _coursePathLatLng[i + 1].longitude,
-      );
-      totalLength += segLen;
-      if (i < nearestIdx) {
-        progressLength += segLen;
-      } else if (i == nearestIdx) {
-        // Project position onto this segment for fractional progress
-        final dToA = Geolocator.distanceBetween(
-          latLng.latitude, latLng.longitude,
-          _coursePathLatLng[i].latitude, _coursePathLatLng[i].longitude,
-        );
-        final dToB = Geolocator.distanceBetween(
-          latLng.latitude, latLng.longitude,
-          _coursePathLatLng[i + 1].latitude, _coursePathLatLng[i + 1].longitude,
-        );
-        // Project position onto segment using law of cosines for accurate fraction
-        final fraction = segLen > 0.001
-            ? ((dToA * dToA + segLen * segLen - dToB * dToB) / (2 * segLen * segLen)).clamp(0.0, 1.0)
-            : 0.0;
-        progressLength += segLen * fraction;
-      }
-    }
-
-    final newProgress = totalLength > 0 ? (progressLength / totalLength).clamp(0.0, 1.0) : 0.0;
-    _courseProgress = math.max(_courseProgress, newProgress);
+    // PERF-010: 윈도우 검색 범위·후퇴 금지·비율 계산은 기존과 동일하다. 달라진 것은 매 tick
+    // 코스 전체를 돌며 총 길이를 다시 합산하지 않는다는 점뿐이다(누적 길이 캐시).
+    // _checkDeviation 이 방금 같은 좌표로 채운 꼭짓점 거리 버퍼를 재사용한다.
+    final result = _geometry.updateProgress(
+      latLng.latitude,
+      latLng.longitude,
+      currentWaypointIndex: _progressWaypointIndex,
+      currentProgress: _courseProgress,
+      reuseVertexDistances: true,
+    );
+    _progressWaypointIndex = result.waypointIndex;
+    _courseProgress = result.progress;
 
     // Check completion: within 100m of course end point
     final distToEnd = Geolocator.distanceBetween(
