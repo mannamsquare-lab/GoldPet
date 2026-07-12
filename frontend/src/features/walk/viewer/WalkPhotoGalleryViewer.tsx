@@ -150,20 +150,19 @@ export function WalkPhotoGalleryViewer({
   const [zoomedIndex, setZoomedIndex] = useState<number | null>(null);
   const hasHydratedRef = useRef(false);
 
-  // 1회 hydration: photos 배열이 [photoFromState] → 전체 feed로 바뀌는 시점에
-  // Swiper를 초기 클릭 사진 위치로 이동 (이후 페이지 prefetch로 photos 증가해도 재이동 X)
+  // 1회 hydration: photos 가 [photoFromState](1장) → 전체 feed 로 바뀌는 시점에 React 의 activeIndex 를
+  // 클릭한 사진의 피드 내 위치로 맞춘다.
+  //
+  // Swiper 위치는 아래 <Swiper> 의 `key` 가 이 시점에 한 번 바뀌며 remount → `initialSlide={feedInitialIndex}`
+  // 로 정확히 초기화되어 맞춰진다(useDeepLinkPhoto 가 문서화한 "initialSlide + key remount" 계약).
+  // 이전에는 slideTo() 로 맞추려 했는데, React 가 슬라이드를 추가한 직후 Swiper 내부 갱신 전에 호출되는
+  // 레이스가 있어 Swiper 내부 index(0)와 React activeIndex(=피드 위치)가 어긋났다. 그러면 윈도우
+  // (|idx-activeIndex|<=1) 밖인 실제 표시 슬라이드가 placeholder 로 렌더되어 **검정 화면**이 됐다.
+  // 갤러리를 아래로 스크롤해 오래된 사진(피드 끝, feedInitialIndex 큼)을 열수록 어긋남이 커져 재현됐다.
   useEffect(() => {
     if (hasHydratedRef.current) return;
     if (photos.length <= 1) return;
-    if (feedInitialIndex <= 0) {
-      // 0번 슬라이드라면 이동 불필요, 다만 hydrated로 고정하여 이후 재이동 방지
-      hasHydratedRef.current = true;
-      return;
-    }
     hasHydratedRef.current = true;
-    try {
-      swiperRef.current?.slideTo(feedInitialIndex, 0, false);
-    } catch { /* ignore */ }
     setActiveIndex(feedInitialIndex);
   }, [photos.length, feedInitialIndex]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -566,6 +565,12 @@ export function WalkPhotoGalleryViewer({
 
       {/* Swiper */}
       <Swiper
+        // 피드 하이드레이션(1장 → 전체 feed) 시 딱 한 번 바뀌어 Swiper 를 remount 시킨다.
+        // Swiper 의 initialSlide 는 최초 1회만 적용되므로, remount 없이는 하이드레이션 후에도 내부
+        // index 가 0 에 머물러 React activeIndex(=feedInitialIndex)와 어긋나고, 윈도우 밖 슬라이드가
+        // placeholder(검정)로 렌더된다. 하이드레이션 이후에는 페이지네이션으로 photos 가 늘어도
+        // key 가 'feed' 로 고정이라 remount 되지 않아 스와이프 위치가 보존된다.
+        key={photos.length > 1 ? 'feed' : 'single'}
         initialSlide={feedInitialIndex}
         className="wpv_swiper"
         modules={modules}

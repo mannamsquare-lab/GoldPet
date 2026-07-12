@@ -11,15 +11,28 @@ vi.mock('swiper/css', () => ({}));
 vi.mock('swiper/css/navigation', () => ({}));
 vi.mock('swiper/css/zoom', () => ({}));
 
-// Swiper — render children directly; no DOM API requirements in jsdom
-vi.mock('swiper/react', () => ({
-  Swiper: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="swiper">{children}</div>
-  ),
-  SwiperSlide: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="swiper-slide">{children}</div>
-  ),
-}));
+// Swiper — render children directly; no DOM API requirements in jsdom.
+// initialSlide 를 노출하고 마운트 횟수를 세어, 피드 하이드레이션 시 key 변경으로 remount 되며
+// 올바른 initialSlide 가 적용되는지(검정화면 회귀) 검증할 수 있게 한다.
+const { swiperMounts } = vi.hoisted(() => ({ swiperMounts: { count: 0 } }));
+vi.mock('swiper/react', async () => {
+  const React = await import('react');
+  return {
+    Swiper: ({ children, initialSlide }: { children: React.ReactNode; initialSlide?: number }) => {
+      React.useEffect(() => {
+        swiperMounts.count += 1;
+      }, []);
+      return (
+        <div data-testid="swiper" data-initial-slide={String(initialSlide ?? 0)}>
+          {children}
+        </div>
+      );
+    },
+    SwiperSlide: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="swiper-slide">{children}</div>
+    ),
+  };
+});
 vi.mock('swiper/modules', () => ({ Navigation: {}, Keyboard: {}, Zoom: {} }));
 
 // useDeepLinkPhoto — vi.hoisted so the mock fn is available in the factory
@@ -80,6 +93,67 @@ describe('WalkPhotoGalleryViewer', () => {
       loading: false,
       fetchNextPage: vi.fn(),
       hasNextPage: false,
+    });
+  });
+
+  // 회귀(검정화면): 갤러리를 아래로 스크롤해 오래된 사진(피드 끝)을 열면, 뷰어는 처음 1장
+  // ([photoFromState]) 로 마운트됐다가 피드가 하이드레이션되며 photos 가 전체로 바뀐다.
+  // Swiper 의 initialSlide 는 최초 1회만 적용되므로 remount 없이는 내부 index 가 0 에 머물러
+  // React activeIndex(=피드 위치)와 어긋나고, 실제 표시 슬라이드가 윈도우 밖이라 placeholder
+  // (검정)로 렌더됐다. key 를 하이드레이션 시점에 한 번 바꿔 remount 시키는 것으로 고쳤다.
+  it('remounts Swiper with the deep initialSlide when the feed hydrates (black-screen regression)', async () => {
+    const photos = makePhotosWithVariants(50);
+    const deepIndex = 49; // 갤러리 맨 아래(가장 오래된) 사진
+
+    // 1) 하이드레이션 전: 클릭한 사진 1장만
+    mockUseDeepLinkPhoto.mockReturnValue({
+      initialPhoto: photos[deepIndex],
+      photos: [photos[deepIndex]],
+      initialIndex: 0,
+      allowSwipe: true,
+      empty: false,
+      loading: false,
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+    });
+    swiperMounts.count = 0;
+    const { rerender, container } = render(
+      <MemoryRouter>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <WalkPhotoGalleryViewer variant="page" mode="owned" walkId={1} initialSpotId={photos[deepIndex].id} />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+    expect(container.querySelector('[data-testid="swiper"]')?.getAttribute('data-initial-slide')).toBe('0');
+    const mountsBefore = swiperMounts.count;
+
+    // 2) 하이드레이션: 전체 피드 + 클릭한 사진은 맨 끝(49)
+    mockUseDeepLinkPhoto.mockReturnValue({
+      initialPhoto: photos[deepIndex],
+      photos,
+      initialIndex: deepIndex,
+      allowSwipe: true,
+      empty: false,
+      loading: false,
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+    });
+    rerender(
+      <MemoryRouter>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <WalkPhotoGalleryViewer variant="page" mode="owned" walkId={1} initialSpotId={photos[deepIndex].id} />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      // key 변경 → Swiper remount, 그리고 initialSlide 가 피드 내 실제 위치(49)로 적용돼야 한다.
+      expect(swiperMounts.count).toBeGreaterThan(mountsBefore);
+      expect(
+        container.querySelector('[data-testid="swiper"]')?.getAttribute('data-initial-slide'),
+      ).toBe(String(deepIndex));
+      // 표시 슬라이드가 윈도우 안이어야 하므로 img 가 렌더된다(placeholder=검정 아님).
+      expect(container.querySelectorAll('img.wpv_slide_img').length).toBeGreaterThan(0);
     });
   });
 
