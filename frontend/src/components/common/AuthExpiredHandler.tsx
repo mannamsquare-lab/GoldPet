@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import { useEffect } from 'react';
 import { nativeBridge } from '../../bridge/nativeBridge';
 import { useAuthStore } from '../../stores/authStore';
@@ -23,7 +24,7 @@ export function AuthExpiredHandler() {
       const currentToken = useAuthStore.getState().token;
       // 이미 동일한 토큰이면 무시 (불필요한 상태 업데이트 방지)
       if (currentToken === accessToken) return;
-      console.log('[TokenSync] Received token sync from Flutter, updating auth store');
+      logger.debug('[TokenSync] Received token sync from Flutter, updating auth store');
       useAuthStore.getState().setTokens(accessToken, refreshToken);
     });
 

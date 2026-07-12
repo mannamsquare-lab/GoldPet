@@ -6,6 +6,7 @@
  * - 전송 실패 시 silent (에러 throw 금지)
  */
 
+import { logger } from './logger';
 import apiClient from '../services/api/client';
 
 // Allowed metric names
@@ -29,9 +30,9 @@ const IS_DEV_OR_LOCAL =
 async function send(payload: ChatMetricPayload): Promise<void> {
   // console.group is always on
   console.group(`[chatMetrics] ${payload.metric}`);
-  console.log('clientMsgId :', payload.clientMsgId);
-  console.log('durationMs  :', payload.durationMs);
-  console.log('roomId      :', payload.roomId);
+  logger.debug('clientMsgId :', payload.clientMsgId);
+  logger.debug('durationMs  :', payload.durationMs);
+  logger.debug('roomId      :', payload.roomId);
   console.groupEnd();
 
   if (!METRICS_ENABLED || !IS_DEV_OR_LOCAL) return;

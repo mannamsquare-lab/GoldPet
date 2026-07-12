@@ -237,37 +237,6 @@ export default function AIProfileSimplePage() {
                 onChange={(e) => handleFileChange(0, e.target.files?.[0])}
               />
             </div>
-            {/* TODO: 추후 다중 사진 필요 시 아래 주석 해제
-            {uploadedImages.slice(1).map((img, idx) => {
-              const index = idx + 1;
-              return (
-                <div key={index} className="ai-photo-slot"
-                  onClick={() => !uploading[index] && handleSlotClick(index)}>
-                  {img ? (
-                    <>
-                      <img src={img} alt={`사진 ${index + 1}`} />
-                      <button type="button" className="ai-photo-delete"
-                        onClick={(e) => handleRemoveImage(e, index)}>✕</button>
-                    </>
-                  ) : (
-                    <div className="ai-photo-slot-icon">
-                      {uploading[index] ? '⏳' : index < 3 ? (
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="5.33333" y="7.99935" width="21.3333" height="16" rx="2.66667" stroke="#614108" strokeWidth="2.66667"/>
-                          <rect x="16" y="5.33301" width="8" height="4" rx="2" fill="#614108"/>
-                          <circle cx="15.9998" cy="15.9993" r="4" stroke="#614108" strokeWidth="2.66667"/>
-                          <circle cx="9.33333" cy="11.9993" r="1.33333" fill="#614108"/>
-                        </svg>
-                      ) : '+'}
-                    </div>
-                  )}
-                  <input ref={(el) => { fileInputRefs.current[index] = el; }}
-                    type="file" accept="image/*" style={{ display: 'none' }}
-                    onChange={(e) => handleFileChange(index, e.target.files?.[0])} />
-                </div>
-              );
-            })}
-            */}
           </div>
         </div>
 

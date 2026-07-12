@@ -2,6 +2,7 @@
  * WebSocket service for real-time chat messaging using STOMP over SockJS
  */
 
+import { logger } from '../../utils/logger';
 import { Client } from '@stomp/stompjs';
 import type { IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
@@ -51,14 +52,14 @@ class ChatWebSocketService {
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
         onConnect: () => {
-          console.log('[WebSocket] Connected');
+          logger.debug('[WebSocket] Connected');
           this.isConnected = true;
           this.reconnectAttempts = 0;
           this.connectPromise = null;
           resolve();
         },
         onDisconnect: () => {
-          console.log('[WebSocket] Disconnected');
+          logger.debug('[WebSocket] Disconnected');
           this.isConnected = false;
         },
         onStompError: (frame) => {

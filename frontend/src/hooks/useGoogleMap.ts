@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useRef, useEffect, useState } from 'react';
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { nativeBridge } from '../bridge/nativeBridge';
@@ -80,12 +81,12 @@ export function useGoogleMap(options: UseGoogleMapOptions = {}): UseGoogleMapRes
             const el = mapRef.current;
             // WebView에서 DOM이 완전히 레이아웃되었는지 확인 (zero-size retry)
             if (el.clientWidth === 0 || el.clientHeight === 0) {
-                console.log('[useGoogleMap] Container has zero size, retrying in 300ms...');
+                logger.debug('[useGoogleMap] Container has zero size, retrying in 300ms...');
                 setTimeout(() => { if (!cancelled) initMap(lat, lng); }, 300);
                 return;
             }
             try {
-                console.log('[useGoogleMap] Creating map:', el.clientWidth, 'x', el.clientHeight);
+                logger.debug('[useGoogleMap] Creating map:', el.clientWidth, 'x', el.clientHeight);
                 const center = new google.maps.LatLng(lat, lng);
                 mapInstanceRef.current = new google.maps.Map(el, {
                     center,
@@ -105,7 +106,7 @@ export function useGoogleMap(options: UseGoogleMapOptions = {}): UseGoogleMapRes
                         map: mapInstanceRef.current,
                     });
                 }
-                console.log('[useGoogleMap] Map created successfully');
+                logger.debug('[useGoogleMap] Map created successfully');
             } catch (e) {
                 console.error('[useGoogleMap] Map creation error:', e);
                 setMapLoadFailed(true);

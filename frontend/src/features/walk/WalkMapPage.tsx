@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadMapsApi } from '../../hooks/useGoogleMap';
@@ -34,11 +35,11 @@ export const WalkMapPage = () => {
                 const el = mapRef.current;
                 // WebView에서 DOM이 완전히 레이아웃되었는지 확인
                 if (el.clientWidth === 0 || el.clientHeight === 0) {
-                    console.log('[WalkMap] Container has zero size, retrying in 300ms...');
+                    logger.debug('[WalkMap] Container has zero size, retrying in 300ms...');
                     setTimeout(() => { if (!cancelled) initMap(lat, lng); }, 300);
                     return;
                 }
-                console.log('[WalkMap] Creating map in container:', el.clientWidth, 'x', el.clientHeight);
+                logger.debug('[WalkMap] Creating map in container:', el.clientWidth, 'x', el.clientHeight);
                 const center = new google.maps.LatLng(lat, lng);
                 mapInstanceRef.current = new google.maps.Map(el, {
                     center,
@@ -56,7 +57,7 @@ export const WalkMapPage = () => {
                     position: center,
                     map: mapInstanceRef.current,
                 });
-                console.log('[WalkMap] Map created successfully');
+                logger.debug('[WalkMap] Map created successfully');
             } catch (e) {
                 console.error('[WalkMap] Map creation error:', e);
                 setMapLoadFailed(true);
@@ -95,7 +96,7 @@ export const WalkMapPage = () => {
 
         loadMapsApi()
             .then(() => {
-                console.log('[WalkMap] Google Maps API ready, initializing with delay for WebView...');
+                logger.debug('[WalkMap] Google Maps API ready, initializing with delay for WebView...');
                 // WebView에서 DOM 레이아웃이 완료될 시간을 줌
                 setTimeout(() => { if (!cancelled) setupMap(); }, 100);
             })

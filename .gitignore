@@ -171,7 +171,10 @@ PRIVACY_AUDIT_REPORT.md
 
 # Temp scripts & tools
 get.py
-scripts/
+# NOTE: 이름이 'scripts' 인 **모든 디렉터리**를 제외하던 과잉 규칙이었다. 그 탓에 스킬이 실제로
+# 참조하는 .claude/skills/*/scripts/ 와 admin/scripts/ 가 버전관리 밖으로 빠져 있었다
+# (클론하면 스킬이 깨진다). 루트의 임시 스크립트만 제외한다.
+/scripts/
 
 # Root-level node (puppeteer/playwright)
 /node_modules/

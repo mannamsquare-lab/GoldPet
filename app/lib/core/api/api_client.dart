@@ -203,22 +203,21 @@ class ApiClient {
           return false;
         }
 
-        // TODO: Add actual certificate fingerprints for production domains.
-        // Once fingerprints are added, change release mode to return false (fail-closed).
-        // Requires: extract SHA-256 fingerprints from api.goldpet.com and api.mannamsquare.com.
-        // Generate with:
-        // openssl s_client -connect api.goldpet.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
-        const allowedFingerprints = <String>[
-          // Primary certificate pin (current)
-          // 'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
-          // Backup certificate pin (next rotation)
-          // 'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
-        ];
+        // 인증서 피닝(선택): 핀이 채워져 있으면 그 핀과 일치할 때만 허용한다.
+        //
+        // STYLE-009 회귀: 예전에는 핀이 비어 있으면 여기서 `return true` 를 했다.
+        // 이 콜백은 **정상 검증에 실패한 인증서**일 때만 호출되므로, 그건 곧 우리 호스트로 오는
+        // 잘못된 인증서(자체 서명·만료·MITM)를 무조건 신뢰한다는 뜻이었다. fail-open 취약점이다.
+        // 이제 핀이 없으면 거부한다(fail-closed). 정상 인증서는 애초에 이 콜백을 타지 않으므로
+        // 정상 트래픽에는 영향이 없다.
+        //
+        // 핀 추가 방법:
+        //   openssl s_client -connect api.mannamsquare.com:443 | openssl x509 -pubkey -noout \
+        //     | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+        const allowedFingerprints = <String>[];
 
-        // If no fingerprints are configured yet, allow the connection in release mode.
-        // TODO: Once fingerprints are populated, change this to return false (fail-closed).
         if (allowedFingerprints.isEmpty) {
-          return true;
+          return false;
         }
 
         // Reject by default once fingerprints are configured.

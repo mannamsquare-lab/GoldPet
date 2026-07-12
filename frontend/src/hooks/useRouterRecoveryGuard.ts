@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,7 +39,7 @@ export function useRouterRecoveryGuard({
     // Direct entry: no previous page in the WebView history stack.
     // history.length === 1 means there is no page to go back to.
     if (history.length <= 1) {
-      console.log('[router.recovery.triggered] direct entry detected — patching history stack', {
+      logger.debug('[router.recovery.triggered] direct entry detected — patching history stack', {
         currentPath: window.location.pathname,
         fallbackPath,
         historyLength: history.length,

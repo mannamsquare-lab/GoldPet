@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { nativeBridge } from '../../bridge/nativeBridge';
@@ -12,9 +13,9 @@ export const PermissionsPage = () => {
     setIsLoading(true);
     try {
       // 모든 권한을 한 번에 요청 (Flutter PermissionService가 내부적으로 순차 처리)
-      console.log('모든 권한 일괄 요청 중...');
+      logger.debug('모든 권한 일괄 요청 중...');
       const results = await nativeBridge.callMethod('requestAllPermissions');
-      console.log('모든 권한 요청 완료:', results);
+      logger.debug('모든 권한 요청 완료:', results);
       localStorage.setItem('hasSeenPermissions', 'true');
       navigate('/benefits', { replace: true });
     } catch (error) {

@@ -3,6 +3,7 @@
  * Flutter WebView와 통신하는 JavaScript Bridge 구현
  */
 
+import { logger } from '../utils/logger';
 import type { BridgeMessage, BridgeResponse, NativeEventType, NativeMethod } from './bridgeTypes';
 
 interface PendingRequest {
@@ -64,7 +65,7 @@ class NativeBridge {
     });
 
     this.isInitialized = true;
-    console.log('NativeBridge initialized');
+    logger.debug('NativeBridge initialized');
   }
 
   /**
