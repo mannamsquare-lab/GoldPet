@@ -55,6 +55,11 @@ class _HybridWebViewState extends State<HybridWebView> {
   Color? _bottomOverlayColor;
   DateTime? _lastBackPressTime;
 
+  // 렌더러 강제종료 복구용 — 마지막으로 로드된 URL 과 최근 종료 횟수.
+  String? _lastUrl;
+  int _rendererKillCount = 0;
+  DateTime? _lastRendererKillAt;
+
   @override
   void initState() {
     super.initState();
@@ -81,6 +86,7 @@ class _HybridWebViewState extends State<HybridWebView> {
         NavigationDelegate(
           onPageStarted: (String url) {
             debugPrint('Page started loading: $url');
+            _lastUrl = url;
           },
           onPageFinished: (String url) {
             debugPrint('Page finished loading: $url');
@@ -99,6 +105,12 @@ class _HybridWebViewState extends State<HybridWebView> {
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint('WebView error: ${error.description}');
+            // iOS: WebContent(렌더러) 프로세스가 강제종료되면 WKWebView 는 검은 화면인 채로 영구히
+            // 멈춘다 — 터치도 안 먹고 스스로 되살아나지 않는다. 유일한 복구 수단이 재로드다.
+            if (error.errorType ==
+                WebResourceErrorType.webContentProcessTerminated) {
+              _recoverFromRendererTermination();
+            }
           },
           onNavigationRequest: (NavigationRequest request) async {
             final url = request.url;
@@ -382,6 +394,28 @@ class _HybridWebViewState extends State<HybridWebView> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  /// iOS WebContent(렌더러) 프로세스 강제종료에서 복구한다.
+  ///
+  /// WKWebView 는 렌더러가 죽어도 아무것도 하지 않는다 — 검은 화면인 채로 남고 터치도 안 먹는다.
+  /// 재로드가 유일한 복구 수단이다. 죽던 페이지를 그대로 다시 열면 또 죽을 수 있으므로,
+  /// 1분 안에 재발하면 초기 화면으로 빠져나가 무한 재크래시 루프를 끊는다.
+  void _recoverFromRendererTermination() {
+    final now = DateTime.now();
+    if (_lastRendererKillAt == null ||
+        now.difference(_lastRendererKillAt!) > const Duration(minutes: 1)) {
+      _rendererKillCount = 0;
+    }
+    _lastRendererKillAt = now;
+    _rendererKillCount++;
+
+    final repeated = _rendererKillCount > 1;
+    final target = repeated ? widget.initialUrl : (_lastUrl ?? widget.initialUrl);
+    debugPrint(
+      'WKWebView renderer terminated (count=$_rendererKillCount) → reload $target',
+    );
+    _controller.loadRequest(Uri.parse(target));
   }
 
   /// 인증 만료 다이얼로그 표시 + 모든 Flutter 화면 pop + React에 이벤트 전송
