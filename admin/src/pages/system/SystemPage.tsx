@@ -14,6 +14,7 @@ import { Button as UIButton } from '@/components/ui/button';
 import AdminFormDialog from './AdminFormDialog';
 import MatchingConfigCard from './MatchingConfigCard';
 import ExperimentConfigCard from './ExperimentConfigCard';
+import { DevLoginIpCard } from './DevLoginIpCard';
 
 export default function SystemPage() {
   const queryClient = useQueryClient();
@@ -384,6 +385,8 @@ export default function SystemPage() {
       <MatchingConfigCard />
 
       <ExperimentConfigCard />
+
+      <DevLoginIpCard />
 
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <h2 className="font-semibold mb-4">앱 설정</h2>

@@ -33,7 +33,8 @@ import org.springframework.stereotype.Component
 @Component
 class DevLoginAccessPolicy(
     private val systemSettingService: SystemSettingService,
-    private val trustedClientIpResolver: TrustedClientIpResolver
+    private val trustedClientIpResolver: TrustedClientIpResolver,
+    private val ipAllowlistService: DevLoginIpAllowlistService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -78,8 +79,14 @@ class DevLoginAccessPolicy(
     fun enabled(): Boolean =
         systemSettingService.getString(KEY_ENABLED, "false").equals("true", ignoreCase = true)
 
-    /** CIDR 또는 단일 IP. 예: `115.79.198.72,211.207.145.74/32,127.0.0.1,::1` */
-    fun allowedIpPatterns(): List<String> = csv(KEY_ALLOWED_IPS)
+    /**
+     * 허용 IP/CIDR. 어드민이 관리하는 `dev_login_ip_allowlist` 테이블에서 매번 읽는다.
+     *
+     * 일부러 캐시하지 않는다 — 어드민에서 IP 를 고치면 **즉시** 반영돼야 한다.
+     * (SystemSetting 은 Redis 24h TTL 이라, 잠겼을 때 값을 고쳐도 최대 24시간 안 먹는다.
+     *  잠김 복구가 필요한 바로 그 순간에 안 듣는 통제는 없느니만 못하다.)
+     */
+    fun allowedIpPatterns(): List<String> = ipAllowlistService.activePatterns()
 
     fun allowedEmails(): List<String> = csv(KEY_ALLOWED_EMAILS)
 
@@ -91,7 +98,6 @@ class DevLoginAccessPolicy(
 
     companion object {
         const val KEY_ENABLED = "devlogin.enabled"
-        const val KEY_ALLOWED_IPS = "devlogin.allowed.ips"
         const val KEY_ALLOWED_EMAILS = "devlogin.allowed.emails"
     }
 }

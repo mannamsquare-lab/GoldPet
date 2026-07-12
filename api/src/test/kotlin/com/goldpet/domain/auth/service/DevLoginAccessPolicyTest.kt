@@ -18,6 +18,7 @@ import org.springframework.mock.web.MockHttpServletRequest
 class DevLoginAccessPolicyTest {
 
     private lateinit var systemSettingService: SystemSettingService
+    private lateinit var ipAllowlistService: DevLoginIpAllowlistService
     private lateinit var policy: DevLoginAccessPolicy
 
     private val allowedIp = "115.79.198.72"
@@ -26,7 +27,8 @@ class DevLoginAccessPolicyTest {
     @BeforeEach
     fun setUp() {
         systemSettingService = mock()
-        policy = DevLoginAccessPolicy(systemSettingService, TrustedClientIpResolver())
+        ipAllowlistService = mock()
+        policy = DevLoginAccessPolicy(systemSettingService, TrustedClientIpResolver(), ipAllowlistService)
 
         settings(
             enabled = "true",
@@ -37,8 +39,10 @@ class DevLoginAccessPolicyTest {
 
     private fun settings(enabled: String, ips: String, emails: String) {
         whenever(systemSettingService.getString(eq(DevLoginAccessPolicy.KEY_ENABLED), any())).thenReturn(enabled)
-        whenever(systemSettingService.getString(eq(DevLoginAccessPolicy.KEY_ALLOWED_IPS), any())).thenReturn(ips)
         whenever(systemSettingService.getString(eq(DevLoginAccessPolicy.KEY_ALLOWED_EMAILS), any())).thenReturn(emails)
+        // 허용 IP 는 어드민이 관리하는 테이블에서 온다(캐시 없음).
+        whenever(ipAllowlistService.activePatterns())
+            .thenReturn(ips.split(',').map { it.trim() }.filter { it.isNotEmpty() })
     }
 
     /** nginx 를 거친 정상 요청을 흉내낸다(X-Real-IP 가 채워져 있다). */
