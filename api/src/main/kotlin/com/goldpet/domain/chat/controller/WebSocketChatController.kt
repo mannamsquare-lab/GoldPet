@@ -1,12 +1,7 @@
 package com.goldpet.domain.chat.controller
 
 import com.goldpet.domain.chat.dto.ChatMessageRequest
-import com.goldpet.domain.chat.dto.ChatMessageResponse
-import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.service.ChatService
-import com.goldpet.domain.common.repository.FileAttachmentRepository
-import com.goldpet.domain.common.service.FileAttachmentLookupService
-import com.goldpet.domain.emoticon.service.EmoticonService
 import com.goldpet.domain.metrics.ChatLatencyMetrics
 import com.goldpet.config.openapi.OpenApiInternal
 import com.goldpet.config.security.UserPrincipal
@@ -29,10 +24,6 @@ data class TypingEvent(
 class WebSocketChatController(
     private val simpMessageSendingOperations: SimpMessageSendingOperations,
     private val chatService: ChatService,
-    private val emoticonService: EmoticonService,
-    private val fileAttachmentRepository: FileAttachmentRepository,
-    private val chatRoomParticipantRepository: ChatRoomParticipantRepository,
-    private val fileAttachmentLookupService: FileAttachmentLookupService,
     private val chatLatencyMetrics: ChatLatencyMetrics
 ) {
 
@@ -44,21 +35,11 @@ class WebSocketChatController(
         val senderId = resolveUserId(principal)
         val authorizedRequest = chatMessageRequest.copy(senderId = senderId)
         chatLatencyMetrics.recordServerLatency(ChatLatencyMetrics.Phase.PRE_ASYNC) {
-            val savedMessage = chatService.saveChatMessage(authorizedRequest)
-            val emoticon = savedMessage.emoticonId?.let { emoticonService.getById(it) }
-            val replyToFileAttachment = savedMessage.replyTo?.fileId?.let { fileAttachmentRepository.findById(it).orElse(null) }
-            val replyToEmoticon = savedMessage.replyTo?.emoticonId?.let { emoticonService.getById(it) }
-            val allParticipants = chatRoomParticipantRepository.findAllByChatRoomId(authorizedRequest.roomId)
-            val chatMessageResponse = ChatMessageResponse.from(
-                savedMessage,
-                allParticipants,
-                emoticon = emoticon,
-                replyToFileAttachment = replyToFileAttachment,
-                replyToEmoticon = replyToEmoticon,
-                variantResolver = fileAttachmentLookupService,
-                clientMsgId = authorizedRequest.clientMsgId
-            )
-            simpMessageSendingOperations.convertAndSend("/topic/chat/${authorizedRequest.roomId}", chatMessageResponse)
+            // ARCH-003: 이 핸들러도 REST 경로와 똑같은 조립을 손으로 하고 있었다(리포지토리 직접 주입).
+            // ChatService.sendMessage 로 수렴 — 두 경로가 같은 규칙으로 조립된다.
+            // 브로드캐스트 범위는 기존과 동일하게 /topic/chat/{roomId} 만 유지한다(동작 변경 없음).
+            val sent = chatService.sendMessage(authorizedRequest)
+            simpMessageSendingOperations.convertAndSend("/topic/chat/${authorizedRequest.roomId}", sent.response)
         }
     }
 
@@ -75,8 +56,10 @@ class WebSocketChatController(
         // 미참여자가 임의 방에 위조 이벤트를 발행하지 못하도록 별도로 참여자 검증한다.
         val userId = resolveUserId(principal)
         // 라운드2 리뷰 MEDIUM(leftAt): 나간 참여자는 typing 발행 불가 — 접근 인가 검증이므로 필터 적용.
-        chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(typingEvent.roomId, userId)
-            .orElseThrow { MessageDeliveryException("채팅방 참여자가 아닙니다") }
+        // ARCH-005: 리포지토리 직접 조회 → 서비스 계약(isActiveParticipant)으로 전환.
+        if (!chatService.isActiveParticipant(typingEvent.roomId, userId)) {
+            throw MessageDeliveryException("채팅방 참여자가 아닙니다")
+        }
         val authorizedEvent = typingEvent.copy(userId = userId)
         // Broadcast typing status to all subscribers of the room
         simpMessageSendingOperations.convertAndSend(

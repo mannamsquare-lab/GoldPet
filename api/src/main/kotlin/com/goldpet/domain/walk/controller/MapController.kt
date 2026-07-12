@@ -1,7 +1,7 @@
 package com.goldpet.domain.walk.controller
 
 import com.goldpet.config.security.UserPrincipal
-import com.goldpet.domain.walk.repository.WalkRepository
+import com.goldpet.domain.walk.service.WalkService
 import com.goldpet.infra.GeocodingService
 import com.goldpet.infra.StaticMapService
 import io.swagger.v3.oas.annotations.Operation
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
 class MapController(
     private val geocodingService: GeocodingService,
     private val staticMapService: StaticMapService,
-    private val walkRepository: WalkRepository
+    private val walkService: WalkService
 ) {
     @Operation(summary = "역지오코딩 (좌표 → 주소)")
     @GetMapping("/reverse-geocode")
@@ -52,15 +52,12 @@ class MapController(
             return ResponseEntity.status(401).build()
         }
 
-        val walk = walkRepository.findById(walkId).orElse(null)
-            ?: return ResponseEntity.notFound().build()
-
-        // Allow public walk maps for any authenticated user; private walks owner-only
-        if (walk.user.id != userDetails.id && !walk.isPublic) {
-            return ResponseEntity.status(403).build()
+        // ARCH-005: 조회+인가는 서비스가 판단하고, HTTP 상태 매핑만 여기서 한다.
+        val coordinates = when (val result = walkService.getMapPath(walkId, userDetails.id)) {
+            is WalkService.MapPath.NotFound -> return ResponseEntity.notFound().build()
+            is WalkService.MapPath.Forbidden -> return ResponseEntity.status(403).build()
+            is WalkService.MapPath.Ok -> result.coordinates
         }
-
-        val coordinates = walk.path.coordinates
         if (coordinates.size < 2) {
             return ResponseEntity.noContent().build()
         }

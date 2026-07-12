@@ -460,4 +460,17 @@ class UserService(
         val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
         return bytes.joinToString("") { "%02x".format(it) }
     }
+
+    /**
+     * 저장된 메인 위치 좌표(lat, lng). 사용자가 없거나 위치 미설정이면 (0.0, 0.0).
+     *
+     * ARCH-005: FriendController/LikeController 가 이 단건 조회 때문에 UserRepository 를
+     * 직접 주입받고 있었다. 호출부는 (0,0)을 "위치 없음"으로 보고 각자 기본값으로 대체한다.
+     */
+    @Transactional(readOnly = true)
+    fun getMainCoordinates(userId: Long): Pair<Double, Double> {
+        val geom = userRepository.findById(userId).orElse(null)?.mainLocationGeom
+            ?: return 0.0 to 0.0
+        return geom.y to geom.x
+    }
 }

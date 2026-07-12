@@ -655,4 +655,24 @@ class WalkService(
         val multiplier = systemSettingService.getString("walk.reward.multiplier", "1.2").toDoubleOrNull() ?: 1.2
         return Math.round(base * multiplier).toInt()
     }
+
+    /**
+     * 정적 지도 렌더용 경로 좌표. 조회와 인가 판단을 서비스가 소유하고, HTTP 상태 매핑은 호출부가 한다.
+     *
+     * ARCH-005: MapController 가 WalkRepository 를 직접 주입해 조회+공개여부 검사를 하고 있었다.
+     * 404/403 을 구분해야 해서 결과를 타입으로 돌려준다.
+     */
+    sealed class MapPath {
+        object NotFound : MapPath()
+        object Forbidden : MapPath()
+        class Ok(val coordinates: Array<org.locationtech.jts.geom.Coordinate>) : MapPath()
+    }
+
+    @Transactional(readOnly = true)
+    fun getMapPath(walkId: Long, viewerId: Long): MapPath {
+        val walk = walkRepository.findById(walkId).orElse(null) ?: return MapPath.NotFound
+        // 공개 산책은 인증된 누구나, 비공개는 소유자만.
+        if (walk.user.id != viewerId && !walk.isPublic) return MapPath.Forbidden
+        return MapPath.Ok(walk.path.coordinates)
+    }
 }

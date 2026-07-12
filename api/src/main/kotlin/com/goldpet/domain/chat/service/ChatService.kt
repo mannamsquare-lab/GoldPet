@@ -274,6 +274,17 @@ class ChatService(
     }
 
     /**
+     * 방의 활성 참여자(나가지 않은)인지 확인한다. 아니면 false.
+     *
+     * ARCH-005: WS typing 핸들러가 이 검증을 위해 chatRoomParticipantRepository 를 직접
+     * 주입받고 있었다. 인가 판단은 서비스 계약으로 노출한다(예외 타입은 호출 계층이 정한다 —
+     * WS 는 MessageDeliveryException, REST 는 404).
+     */
+    @Transactional(readOnly = true)
+    fun isActiveParticipant(roomId: Long, userId: Long): Boolean =
+        chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(roomId, userId).isPresent
+
+    /**
      * ARCH-003: 히스토리 조회 + 응답 조립을 서비스에서 완결한다.
      * 이전에는 컨트롤러가 참여자·첨부·이모티콘 리포지토리를 직접 주입해 조립까지 수행했다.
      */

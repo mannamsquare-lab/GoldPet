@@ -3,7 +3,6 @@ package com.goldpet.domain.friend.controller
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.friend.dto.FriendResponse
 import com.goldpet.domain.friend.service.FriendService
-import com.goldpet.domain.user.repository.UserRepository
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -19,7 +18,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/friends")
 class FriendController(
     private val friendService: FriendService,
-    private val userRepository: UserRepository
+    private val userService: com.goldpet.domain.user.service.UserService
 ) {
     @Operation(summary = "친구 찾기", description = "주변의 친구를 검색합니다.")
     @GetMapping
@@ -41,12 +40,10 @@ class FriendController(
         var userLng = lng ?: 0.0
 
         if (userLat == 0.0 && userLng == 0.0) {
-            // Lookup user's saved main location
-            val user = userRepository.findById(principal.id).orElse(null)
-            user?.mainLocationGeom?.let { geom ->
-                userLat = geom.y // latitude
-                userLng = geom.x // longitude
-            }
+            // ARCH-005: 리포지토리 직접 조회 → 서비스 계약 (저장된 메인 위치)
+            val (lat0, lng0) = userService.getMainCoordinates(principal.id)
+            userLat = lat0
+            userLng = lng0
         }
 
         // If still no location, default to Seoul center (same as HomeService)

@@ -30,9 +30,6 @@ class WebSocketChatControllerTest {
 
     private lateinit var simpMessageSendingOperations: SimpMessageSendingOperations
     private lateinit var chatService: ChatService
-    private lateinit var emoticonService: EmoticonService
-    private lateinit var fileAttachmentRepository: FileAttachmentRepository
-    private lateinit var chatRoomParticipantRepository: ChatRoomParticipantRepository
     private lateinit var webSocketChatController: WebSocketChatController
 
     private lateinit var testUser: User
@@ -46,12 +43,9 @@ class WebSocketChatControllerTest {
     fun setUp() {
         simpMessageSendingOperations = mock(SimpMessageSendingOperations::class.java)
         chatService = mock(ChatService::class.java)
-        emoticonService = mock(EmoticonService::class.java)
-        fileAttachmentRepository = mock(FileAttachmentRepository::class.java)
-        chatRoomParticipantRepository = mock(ChatRoomParticipantRepository::class.java)
-        val fileAttachmentLookupService = mock(com.goldpet.domain.common.service.FileAttachmentLookupService::class.java)
         val chatLatencyMetrics = ChatLatencyMetrics(SimpleMeterRegistry())
-        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, emoticonService, fileAttachmentRepository, chatRoomParticipantRepository, fileAttachmentLookupService, chatLatencyMetrics)
+        // ARCH-003/005: 컨트롤러는 이제 ChatService 계약만 쓴다(리포지토리 주입 없음).
+        webSocketChatController = WebSocketChatController(simpMessageSendingOperations, chatService, chatLatencyMetrics)
 
         testUser = User(
             id = 1L,
@@ -105,13 +99,13 @@ class WebSocketChatControllerTest {
             updatedAt = LocalDateTime.now()
         }
 
-        `when`(chatService.saveChatMessage(request)).thenReturn(savedMessage)
+        `when`(chatService.sendMessage(request)).thenReturn(sentOf(savedMessage))
 
         // When
         webSocketChatController.sendMessage(request, principal)
 
         // Then
-        verify(chatService, times(1)).saveChatMessage(request)
+        verify(chatService, times(1)).sendMessage(request)
         verify(simpMessageSendingOperations, times(1)).convertAndSend(
             eq("/topic/chat/1"),
             any(ChatMessageResponse::class.java)
@@ -137,7 +131,9 @@ class WebSocketChatControllerTest {
             createdAt = LocalDateTime.now()
             updatedAt = LocalDateTime.now()
         }
-        `when`(chatService.saveChatMessage(request)).thenReturn(savedMessage)
+        // 조립(clientMsgId 에코 포함)은 ChatService 소관이므로, 서비스가 실어 보낸 응답을
+        // 컨트롤러가 그대로 브로드캐스트하는지만 여기서 검증한다.
+        `when`(chatService.sendMessage(request)).thenReturn(sentOf(savedMessage, clientMsgId = "abc123"))
 
         webSocketChatController.sendMessage(request, principal)
 
@@ -165,15 +161,15 @@ class WebSocketChatControllerTest {
             createdAt = LocalDateTime.now()
             updatedAt = LocalDateTime.now()
         }
-        // 컨트롤러는 payload senderId 를 Principal(id=1L)로 덮어써 saveChatMessage 를 호출한다.
+        // 컨트롤러는 payload senderId 를 Principal(id=1L)로 덮어써 sendMessage 를 호출한다.
         // data class 동등성으로 senderId=1L 로 정정된 요청과만 매칭됨을 검증한다(위조 999L 무시).
         val expectedRequest = spoofedRequest.copy(senderId = 1L)
-        `when`(chatService.saveChatMessage(expectedRequest)).thenReturn(savedMessage)
+        `when`(chatService.sendMessage(expectedRequest)).thenReturn(sentOf(savedMessage))
 
         webSocketChatController.sendMessage(spoofedRequest, principal)
 
-        verify(chatService, times(1)).saveChatMessage(expectedRequest)
-        verify(chatService, never()).saveChatMessage(spoofedRequest)
+        verify(chatService, times(1)).sendMessage(expectedRequest)
+        verify(chatService, never()).sendMessage(spoofedRequest)
     }
 
     @Test
@@ -202,7 +198,7 @@ class WebSocketChatControllerTest {
             updatedAt = LocalDateTime.now()
         }
 
-        `when`(chatService.saveChatMessage(request)).thenReturn(savedMessage)
+        `when`(chatService.sendMessage(request)).thenReturn(sentOf(savedMessage))
 
         // When
         webSocketChatController.sendMessage(request, principal)
@@ -217,8 +213,7 @@ class WebSocketChatControllerTest {
     @Test
     fun `typing should ignore spoofed payload userId and use authenticated principal`() {
         // 독립 리뷰 MEDIUM: payload 의 userId(999L 위조)를 무시하고 Principal(id=1L)을 사용해야 한다.
-        `when`(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
-            .thenReturn(Optional.of(ChatRoomParticipant(id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER)))
+        `when`(chatService.isActiveParticipant(1L, 1L)).thenReturn(true)
 
         val spoofedEvent = TypingEvent(roomId = 1L, userId = 999L, isTyping = true)
 
@@ -232,8 +227,7 @@ class WebSocketChatControllerTest {
     @Test
     fun `typing should reject non-participant and not broadcast`() {
         // 독립 리뷰 MEDIUM: 미참여자가 임의 방에 typing 이벤트를 발행하려 하면 거부돼야 한다.
-        `when`(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
-            .thenReturn(Optional.empty())
+        `when`(chatService.isActiveParticipant(1L, 1L)).thenReturn(false)
 
         val event = TypingEvent(roomId = 1L, userId = 1L, isTyping = true)
 
@@ -243,20 +237,14 @@ class WebSocketChatControllerTest {
         verify(simpMessageSendingOperations, never()).convertAndSend(anyString(), any(Any::class.java))
     }
 
-    @Test
-    fun `typing should reject a participant who left the room even though a stale row exists`() {
-        // 라운드2 리뷰 MEDIUM(leftAt): old(비필터) 메서드는 일부러 present 로 스텁 — 컨트롤러가
-        // 실수로 그 메서드를 쓰면 이 테스트가 통과(발행 성공)해버려 필터 누락을 잡아낸다.
-        `when`(chatRoomParticipantRepository.findByChatRoomIdAndUserId(1L, 1L))
-            .thenReturn(Optional.of(ChatRoomParticipant(id = 1L, chatRoom = testChatRoom, user = testUser, role = ChatRoomRole.MEMBER)))
-        `when`(chatRoomParticipantRepository.findByChatRoomIdAndUserIdAndLeftAtIsNull(1L, 1L))
-            .thenReturn(Optional.empty())
+    // 라운드2 리뷰 MEDIUM(leftAt) — 나간 참여자 배제는 이제 ChatService.isActiveParticipant 가
+    // leftAt 필터 쿼리로 보장한다. 리포지토리 레벨 회귀 검증은
+    // ChatServiceParticipantAuthzTest 로 이관됐다(커버리지 유실 없음).
 
-        val event = TypingEvent(roomId = 1L, userId = 1L, isTyping = true)
-
-        org.junit.jupiter.api.Assertions.assertThrows(MessageDeliveryException::class.java) {
-            webSocketChatController.typing(event, principal)
-        }
-        verify(simpMessageSendingOperations, never()).convertAndSend(anyString(), any(Any::class.java))
-    }
+    /** 컨트롤러는 조립 결과만 브로드캐스트하므로 응답 DTO 내용은 여기서 검증하지 않는다. */
+    private fun sentOf(message: ChatMessage, clientMsgId: String? = null): ChatService.SentMessage =
+        ChatService.SentMessage(
+            response = ChatMessageResponse.from(message).copy(clientMsgId = clientMsgId),
+            participantUserIds = listOf(1L)
+        )
 }

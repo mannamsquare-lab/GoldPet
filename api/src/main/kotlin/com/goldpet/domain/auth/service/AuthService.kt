@@ -286,4 +286,71 @@ class AuthService(
                         )
         )
     }
+
+    /**
+     * ARCH-005: AuthController 가 중복확인을 위해 UserRepository 를 직접 주입받고 있었다.
+     * 조회 규칙(블라인드 인덱스 해시, 본인 닉네임 예외)은 도메인 지식이므로 서비스가 소유한다.
+     */
+    @Transactional(readOnly = true)
+    fun isUsernameAvailable(username: String): Boolean =
+        userRepository.findByUsername(username).isEmpty
+
+    /** 인증된 사용자의 본인 닉네임은 중복으로 보지 않는다(currentUserId 전달 시). */
+    @Transactional(readOnly = true)
+    fun isNicknameAvailable(nickname: String, currentUserId: Long?): Boolean {
+        val existing = userRepository.findByNickname(nickname).orElse(null) ?: return true
+        return currentUserId != null && existing.id == currentUserId
+    }
+
+    /** 사용 중이면 가입 경로(provider)를 함께 돌려준다 — 소셜/로컬 중복 가입 안내용. */
+    @Transactional(readOnly = true)
+    fun findEmailProvider(email: String): String? {
+        val emailHash = com.goldpet.config.crypto.BlindIndexUtil.hash(email)!!
+        val existing = userRepository.findByEmailHash(emailHash).orElse(null) ?: return null
+        return existing.oauthProvider?.uppercase() ?: "LOCAL"
+    }
+
+    /**
+     * ARCH-005: refresh 토큰 회전 후 새 access 토큰을 만들려면 사용자 조회가 필요했는데,
+     * 컨트롤러가 UserRepository 를 직접 주입받고 있었다. 조회+검증을 서비스가 소유한다.
+     */
+    @Transactional(readOnly = true)
+    fun getUserForRefresh(userId: Long): com.goldpet.domain.user.entity.User =
+        userRepository.findById(userId)
+            .orElseThrow {
+                com.goldpet.domain.common.exception.UnauthorizedException("User not found for rotated refresh token")
+            }
+
+    /**
+     * ARCH-005: DevAuthController 가 dev 계정 조회/생성을 위해 UserRepository 를 직접 주입받고
+     * 있었다. local/dev 프로파일 전용이지만 계층 규칙은 동일하게 적용한다.
+     */
+    @Transactional
+    fun getOrCreateDevUser(email: String, nickname: String): com.goldpet.domain.user.entity.User {
+        val oauthId = "dev-user-${email.hashCode()}"
+        val emailHash = com.goldpet.config.crypto.BlindIndexUtil.hash(email)
+        val existing = userRepository.findByOauthProviderAndOauthId("dev", oauthId).orElse(null)
+            ?: emailHash?.let { userRepository.findByEmailHash(it).orElse(null) }
+        if (existing != null) return existing
+
+        return userRepository.save(
+            com.goldpet.domain.user.entity.User(
+                oauthProvider = "dev",
+                oauthId = oauthId,
+                nickname = nickname,
+                email = email,
+                emailHash = emailHash,
+                gender = null,
+                birthYear = null,
+                mainLocationText = null,
+                mainLocationGeom = null,
+                profileImageUrl = null,
+                username = null,
+                password = null,
+                name = null,
+                birthDate = null,
+                phoneNumber = null
+            )
+        )
+    }
 }

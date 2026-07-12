@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 class LikeController(
     private val likeService: LikeService,
     private val friendService: FriendService,
-    private val userRepository: com.goldpet.domain.user.repository.UserRepository
+    private val userService: com.goldpet.domain.user.service.UserService
 ) {
     @Operation(summary = "좋아요", description = "친구에게 좋아요를 보냅니다.")
     @PostMapping("/{targetUserId}/like")
@@ -91,10 +91,7 @@ class LikeController(
         return ResponseEntity.ok(mapOf("hasLiked" to hasLiked))
     }
 
-    private fun myCoordinates(userId: Long): Pair<Double, Double> {
-        val me = userRepository.findById(userId).orElseThrow()
-        val lat = me.mainLocationGeom?.y ?: 0.0
-        val lng = me.mainLocationGeom?.x ?: 0.0
-        return lat to lng
-    }
+    // ARCH-005: 리포지토리 직접 조회 → 서비스 계약
+    private fun myCoordinates(userId: Long): Pair<Double, Double> =
+        userService.getMainCoordinates(userId)
 }

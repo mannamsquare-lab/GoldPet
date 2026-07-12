@@ -9,7 +9,6 @@ import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import com.goldpet.domain.auth.dto.AvailabilityResponse
-import com.goldpet.domain.user.repository.UserRepository
 
 import com.goldpet.domain.auth.dto.ConfirmLinkRequest
 import com.goldpet.domain.auth.dto.CheckUsernameRequest
@@ -37,7 +36,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 @RequestMapping("/api/v1/auth")
 class AuthController(
     private val authService: AuthService,
-    private val userRepository: UserRepository,
     private val socialLoginService: SocialLoginService,
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenRotationService: RefreshTokenRotationService,
@@ -70,9 +68,8 @@ class AuthController(
     @Operation(summary = "아이디 중복 확인")
     @PostMapping("/check-username")
     fun checkUsername(@Valid @RequestBody request: CheckUsernameRequest): ResponseEntity<AvailabilityResponse> {
-        val username = request.username
-        val exists = userRepository.findByUsername(username).isPresent
-        return ResponseEntity.ok(AvailabilityResponse(!exists))
+        // ARCH-005: 리포지토리 직접 조회 → 서비스 계약
+        return ResponseEntity.ok(AvailabilityResponse(authService.isUsernameAvailable(request.username)))
     }
 
     @Operation(summary = "닉네임 중복 확인")
@@ -81,29 +78,21 @@ class AuthController(
         @org.springframework.security.core.annotation.AuthenticationPrincipal principal: org.springframework.security.core.userdetails.UserDetails?,
         @Valid @RequestBody request: CheckNicknameRequest
     ): ResponseEntity<AvailabilityResponse> {
-        val nickname = request.nickname
-        val existingUser = userRepository.findByNickname(nickname).orElse(null)
-        val available = if (existingUser == null) {
-            true
-        } else if (principal != null) {
-            // 인증된 사용자면 본인 닉네임은 중복이 아닌 것으로 처리
-            val currentUserId = (principal as com.goldpet.config.security.UserPrincipal).id
-            existingUser.id == currentUserId
-        } else {
-            false
-        }
+        // ARCH-005: 리포지토리 직접 조회 → 서비스 계약 (본인 닉네임 예외 규칙도 서비스가 소유)
+        val currentUserId = (principal as? com.goldpet.config.security.UserPrincipal)?.id
+        val available = authService.isNicknameAvailable(request.nickname, currentUserId)
         return ResponseEntity.ok(AvailabilityResponse(available))
     }
 
     @Operation(summary = "이메일 중복 확인")
     @PostMapping("/check-email")
     fun checkEmail(@Valid @RequestBody request: CheckEmailRequest): ResponseEntity<EmailAvailabilityResponse> {
-        val emailHash = BlindIndexUtil.hash(request.email)!!
-        val existing = userRepository.findByEmailHash(emailHash).orElse(null)
-        return if (existing == null) {
+        // ARCH-005: 리포지토리 직접 조회 → 서비스 계약
+        val provider = authService.findEmailProvider(request.email)
+        return if (provider == null) {
             ResponseEntity.ok(EmailAvailabilityResponse(available = true, provider = null))
         } else {
-            ResponseEntity.ok(EmailAvailabilityResponse(available = false, provider = existing.oauthProvider?.uppercase() ?: "LOCAL"))
+            ResponseEntity.ok(EmailAvailabilityResponse(available = false, provider = provider))
         }
     }
 
@@ -177,9 +166,8 @@ class AuthController(
             userAgent = httpRequest.getHeader("User-Agent"),
             ipAddress = httpRequest.remoteAddr,
         )
-        val user = userRepository.findById(rotation.userId)
-            .orElseThrow { UnauthorizedException("User not found for rotated refresh token") }
-
+        // ARCH-005: 리포지토리 직접 조회 → 서비스 계약
+        val user = authService.getUserForRefresh(rotation.userId)
         val userPrincipal = UserPrincipal.create(user)
         val auth = UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
         val newAccessToken = jwtTokenProvider.generateToken(auth)
