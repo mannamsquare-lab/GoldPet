@@ -56,21 +56,28 @@ function buildPath(mode: 'owned' | 'shared', walkId: number, spotId: number): st
 type SlideProps = {
   photo: WalkPhotoItem;
   active?: boolean;  // 활성 ±N 윈도우 안에 있을 때만 true — 그 외는 blob 리졸브 skip하여 iOS WKWebView 메모리 보호
+  zoomed?: boolean;  // 이 슬라이드가 줌인(scale>1) 상태일 때만 true — 그 순간에만 1600px viewer로 스왑
   /** presigned URL 만료(4xx) 감지 시 호출 — 상위에서 React Query 무효화 처리 */
   onPresignedUrlExpired?: () => void;
 };
 
-function WalkPhotoViewerSlide({ photo, active = true, onPresignedUrlExpired }: SlideProps) {
+export function WalkPhotoViewerSlide({ photo, active = true, zoomed = false, onPresignedUrlExpired }: SlideProps) {
   // 윈도우 밖 슬라이드(active=false)는 placeholder만 렌더 — <img> 미마운트로 iOS 메모리 보호.
   // 백엔드 Option A 이후 photo.imageUrl은 HTTPS presigned URL; WKWebView 네이티브 이미지 캐시가
   // 디코딩·메모리를 직접 관리한다 (blob URL 불필요).
   if (!active || !photo.imageUrl) {
     return <div className="swiper-zoom-container"><div className="wpv_slide_placeholder" /></div>;
   }
+  // iOS WKWebView 메모리 누적 방어: 스와이프 표시는 600px medium 을 기본으로 로드해 장당 디코딩
+  // 메모리를 ~86% 낮춘다. 줌인된 active 슬라이드에서만 1600px viewer 로 스왑해 선명도를 확보하고,
+  // 줌아웃 시 medium 으로 복귀 → 동시에 메모리에 올라가는 고해상 이미지를 최대 1장으로 제한.
+  const displaySrc = zoomed
+    ? (photo.imageUrlViewer ?? photo.imageUrlMedium ?? photo.imageUrl)
+    : (photo.imageUrlMedium ?? photo.imageUrlViewer ?? photo.imageUrl);
   return (
     <div className="swiper-zoom-container">
       <img
-        src={photo.imageUrlViewer ?? photo.imageUrl}
+        src={displaySrc}
         alt=""
         className="wpv_slide_img"
         crossOrigin="anonymous"
@@ -124,6 +131,8 @@ export function WalkPhotoGalleryViewer({
   });
 
   const [activeIndex, setActiveIndex] = useState(feedInitialIndex);
+  // 줌인된 슬라이드 인덱스(null=줌 없음). 해당 active 슬라이드만 1600px viewer 로 스왑한다.
+  const [zoomedIndex, setZoomedIndex] = useState<number | null>(null);
   const hasHydratedRef = useRef(false);
 
   // 1회 hydration: photos 배열이 [photoFromState] → 전체 feed로 바뀌는 시점에
@@ -155,28 +164,25 @@ export function WalkPhotoGalleryViewer({
     return resolvedInitial;
   }, [photos, activeIndex, resolvedInitial]);
 
-  // Prefetch ±2 (window 밖 1칸) 슬라이드의 viewer URL로 HTTP 캐시 예열.
-  // `<img>` 로 DOM에 마운트하지 않고 `new Image()` 로 네이티브 디코더 바이패스 →
-  // WKWebView가 response만 저장. 실제 swipe 시 `<img src>` 마운트 → 즉시 hit.
-  // WINDOW_HALF=1 이라 현재 마운트된 ±1 너머의 ±2만 예열 대상.
+  // Prefetch(완화 D): 다음 진입 슬라이드(+1)만 medium URL로 HTTP 캐시 예열.
+  // 스와이프 표시가 medium(600px)으로 바뀌었으므로 예열도 medium을 사용해 예열 이미지의
+  // 디코딩 메모리를 ~86% 낮춘다. 예열 범위도 ±2 양방향에서 진행 방향인 +1 한 장으로 축소해
+  // WKWebView 누적을 추가로 완화(뒤로 스와이프는 대개 방금 본 medium이 캐시에 남아 있음).
+  // `<img>`로 DOM 마운트하지 않고 `new Image()`로 네이티브 디코더 바이패스 → WKWebView가 response만 저장.
   useEffect(() => {
     if (photos.length <= 1) return;
-    const prefetchIndices = [activeIndex + 2, activeIndex - 2];
-    const imgs: HTMLImageElement[] = [];
-    for (const idx of prefetchIndices) {
-      if (idx < 0 || idx >= photos.length) continue;
-      const p = photos[idx];
-      const url = p.imageUrlViewer ?? p.imageUrl;
-      if (!url) continue;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.decoding = 'async';
-      img.src = url;
-      imgs.push(img);
-    }
+    const idx = activeIndex + 1;
+    if (idx < 0 || idx >= photos.length) return;
+    const p = photos[idx];
+    const url = p.imageUrlMedium ?? p.imageUrlViewer ?? p.imageUrl;
+    if (!url) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+    img.src = url;
     return () => {
       // href 해제로 GC를 돕되, WKWebView의 HTTP response cache는 src unset 해도 유지됨.
-      for (const img of imgs) img.src = '';
+      img.src = '';
     };
   }, [activeIndex, photos]);
 
@@ -571,8 +577,17 @@ export function WalkPhotoGalleryViewer({
             if (s.zoom && s.zoom.scale > 1) s.zoom.out();
           } catch { /* ignore */ }
         }}
+        onZoomChange={(s, scale) => {
+          // 줌 스케일 변화에 따라 active 슬라이드 src 를 medium↔viewer 스왑.
+          // scale>1 → 해당 슬라이드만 1600px viewer 로드, 복귀 시 medium.
+          try {
+            setZoomedIndex(scale > 1 ? s.activeIndex : null);
+          } catch { /* ignore */ }
+        }}
         onSlideChange={(s) => {
           setActiveIndex(s.activeIndex);
+          // 슬라이드 이동 시 이전 슬라이드의 viewer 스왑 상태 해제(고해상 이미지 누적 방지).
+          setZoomedIndex(null);
         }}
         onSlideChangeTransitionEnd={(s) => {
           const next = displayPhotos[s.activeIndex];
@@ -599,6 +614,7 @@ export function WalkPhotoGalleryViewer({
                 <WalkPhotoViewerSlide
                   photo={photo}
                   active={true}
+                  zoomed={zoomedIndex === idx}
                   onPresignedUrlExpired={handlePresignedUrlExpired}
                 />
               ) : (

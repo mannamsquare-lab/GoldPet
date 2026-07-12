@@ -45,6 +45,8 @@ data class WalkSpotDto(
     val imageUrl: String?,
     val imageKey: String? = null,
     val imageUrlViewer: String? = null,
+    // iOS WKWebView 메모리 누적 완화 — 딥링크 콜드오픈 진입사진도 600px medium 우선 사용하도록 노출.
+    val imageUrlMedium: String? = null,
     val imageUrlThumb: String? = null,
     val imageKeyViewer: String? = null,
     val imageKeyThumb: String? = null,
@@ -57,6 +59,8 @@ data class WalkPhotoResponse(
     val imageUrl: String?,
     val imageKey: String?,
     val imageUrlViewer: String? = null,
+    // 600px medium 변형 서명 URL — 스와이프 표시 기본값(iOS WKWebView 메모리 누적 완화)
+    val imageUrlMedium: String? = null,
     val imageUrlThumb: String? = null,
     val imageKeyViewer: String? = null,
     val imageKeyThumb: String? = null,
@@ -74,6 +78,8 @@ data class PhotoMintResponse(
     val imageUrl: String?,
     val imageKey: String?,
     val imageUrlViewer: String? = null,
+    // 600px medium 변형 서명 URL — 스와이프 표시 기본값(iOS WKWebView 메모리 누적 완화)
+    val imageUrlMedium: String? = null,
     val imageUrlThumb: String? = null,
     val imageKeyViewer: String? = null,
     val imageKeyThumb: String? = null,
@@ -136,6 +142,7 @@ data class WalkResponse(
                         imageUrl = signedOriginal,
                         imageKey = rawKey,
                         imageUrlViewer = photoUrlSigner?.signedViewerUrlOrNull(spot.imageKeyViewer),
+                        imageUrlMedium = photoUrlSigner?.signedMediumUrlOrNull(spot.imageKeyViewer?.replace("_viewer", "_medium")),
                         imageUrlThumb = photoUrlSigner?.signedThumbUrlOrNull(spot.imageKeyThumb),
                         imageKeyViewer = spot.imageKeyViewer,
                         imageKeyThumb = spot.imageKeyThumb,
@@ -185,6 +192,7 @@ data class WalkResponse(
                             imageUrl = signedOriginal,
                             imageKey = rawKey,
                             imageUrlViewer = photoUrlSigner?.signedViewerUrlOrNull(spot.imageKeyViewer),
+                            imageUrlMedium = photoUrlSigner?.signedMediumUrlOrNull(spot.imageKeyViewer?.replace("_viewer", "_medium")),
                             imageUrlThumb = photoUrlSigner?.signedThumbUrlOrNull(spot.imageKeyThumb),
                             imageKeyViewer = spot.imageKeyViewer,
                             imageKeyThumb = spot.imageKeyThumb,

@@ -48,6 +48,58 @@ class PhotoUrlSignerTest {
             .thenReturn("false")
     }
 
+    private fun enableVariantFlags() {
+        whenever(systemSettingService.getString(eq(PhotoUrlSigner.FLAG_KEY), any()))
+            .thenReturn("true")
+        whenever(systemSettingService.getString(eq(PhotoUrlSigner.FLAG_VARIANTS_KEY), any()))
+            .thenReturn("true")
+    }
+
+    @Test
+    fun `medium variant key returns presigned url when variants flag enabled`() {
+        enableVariantFlags()
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789_medium.jpg"
+        val expectedUrl = "https://minio.example.com/goldpet-private/$key?X-Amz-Signature=abc"
+        whenever(fileService.getPresignedUrl(eq(key), eq(PhotoUrlSigner.PRESIGN_TTL_MINUTES)))
+            .thenReturn(expectedUrl)
+
+        val result = signer.signedMediumUrlOrNull(key)
+
+        assertNotNull(result)
+        assertTrue(result!!.contains("X-Amz-Signature="), "presigned URL must carry X-Amz-Signature")
+        verify(fileService).getPresignedUrl(eq(key), eq(30L))
+    }
+
+    @Test
+    fun `medium variant key returns null when variants flag disabled`() {
+        whenever(systemSettingService.getString(eq(PhotoUrlSigner.FLAG_KEY), any()))
+            .thenReturn("true")
+        whenever(systemSettingService.getString(eq(PhotoUrlSigner.FLAG_VARIANTS_KEY), any()))
+            .thenReturn("false")
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789_medium.jpg"
+
+        val result = signer.signedMediumUrlOrNull(key)
+
+        assertNull(result)
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
+    }
+
+    @Test
+    fun `medium null key returns null`() {
+        enableVariantFlags()
+        val result = signer.signedMediumUrlOrNull(null)
+        assertNull(result)
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
+    }
+
+    @Test
+    fun `non-variant key returns null for medium signer`() {
+        enableVariantFlags()
+        val result = signer.signedMediumUrlOrNull("../../etc/passwd")
+        assertNull(result)
+        verify(fileService, never()).getPresignedUrl(any<String>(), any<Long>())
+    }
+
     @Test
     fun `uuid key with extension returns presigned url when flag enabled`() {
         enableFlag()

@@ -482,12 +482,19 @@ class WalkService(
             imageUrl = signed,
             imageKey = rawKey,
             imageUrlViewer = photoUrlSigner.signedViewerUrlOrNull(spot.imageKeyViewer),
+            imageUrlMedium = photoUrlSigner.signedMediumUrlOrNull(deriveMediumKey(spot.imageKeyViewer)),
             imageUrlThumb = photoUrlSigner.signedThumbUrlOrNull(spot.imageKeyThumb),
             imageKeyViewer = spot.imageKeyViewer,
             imageKeyThumb = spot.imageKeyThumb,
             expiresAt = java.time.LocalDateTime.now().plusMinutes(PhotoUrlSigner.PRESIGN_TTL_MINUTES)
         )
     }
+
+    // WalkSpot 은 viewer 키만 저장하고 medium 키는 저장하지 않는다. 두 변형 모두 동일 UUID 접두사에
+    // `_viewer.jpg`/`_medium.jpg` 접미사만 다르므로 viewer 키에서 파생한다(FileService IMAGE_VARIANTS 가
+    // 두 객체를 함께 생성하므로 medium 객체는 이미 S3 에 존재). viewer 키가 null 이면 medium 도 null.
+    private fun deriveMediumKey(viewerKey: String?): String? =
+        viewerKey?.replace("_viewer", "_medium")
 
     private fun toWalkPhotoResponse(
         spot: com.goldpet.domain.walk.entity.WalkSpot,
@@ -503,12 +510,14 @@ class WalkService(
             if (spot.hiddenFromPublic) hiddenPresignedServedCounter.increment()
         }
         val viewerUrl = if (suppressUrl) null else photoUrlSigner.signedViewerUrlOrNull(spot.imageKeyViewer)
+        val mediumUrl = if (suppressUrl) null else photoUrlSigner.signedMediumUrlOrNull(deriveMediumKey(spot.imageKeyViewer))
         val thumbUrl = if (suppressUrl) null else photoUrlSigner.signedThumbUrlOrNull(spot.imageKeyThumb)
         return WalkPhotoResponse(
             id = spot.id,
             imageUrl = resolvedUrl,
             imageKey = rawKey,
             imageUrlViewer = viewerUrl,
+            imageUrlMedium = mediumUrl,
             imageUrlThumb = thumbUrl,
             imageKeyViewer = spot.imageKeyViewer,
             imageKeyThumb = spot.imageKeyThumb,

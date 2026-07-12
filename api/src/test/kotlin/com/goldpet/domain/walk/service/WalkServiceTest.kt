@@ -561,7 +561,11 @@ class WalkServiceTest {
 
     // === Presigned URL wiring ===
 
-    private fun buildPhotoSpot(imageKey: String, hiddenFromPublic: Boolean): WalkSpot {
+    private fun buildPhotoSpot(
+        imageKey: String,
+        hiddenFromPublic: Boolean,
+        imageKeyViewer: String? = null
+    ): WalkSpot {
         val walk = Walk(
             id = 10L,
             user = testUser,
@@ -585,8 +589,44 @@ class WalkServiceTest {
             timestamp = LocalDateTime.now(),
             imageUrl = imageKey,
             note = null,
-            hiddenFromPublic = hiddenFromPublic
+            hiddenFromPublic = hiddenFromPublic,
+            imageKeyViewer = imageKeyViewer
         )
+    }
+
+    @Test
+    fun `getMyPhotos derives medium key from viewer key and signs it into imageUrlMedium`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val viewerKey = "a1b2c3d4-e5f6-7890-abcd-ef0123456789_viewer.jpg"
+        val mediumKey = "a1b2c3d4-e5f6-7890-abcd-ef0123456789_medium.jpg"
+        val signedMedium = "https://minio.example.com/goldpet-private/$mediumKey?X-Amz-Signature=med"
+        val spot = buildPhotoSpot(key, hiddenFromPublic = false, imageKeyViewer = viewerKey)
+
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(null)
+        whenever(photoUrlSigner.signedMediumUrlOrNull(mediumKey)).thenReturn(signedMedium)
+        whenever(walkSpotRepository.findPhotoSpotsByUserId(eq(1L), any()))
+            .thenReturn(PageImpl(listOf(spot)))
+
+        val result = walkService.getMyPhotos(1L, null, PageRequest.of(0, 20))
+
+        val photo = result.content.first()
+        assertEquals(signedMedium, photo.imageUrlMedium, "medium URL derived from viewer key must be signed")
+        verify(photoUrlSigner).signedMediumUrlOrNull(mediumKey)
+    }
+
+    @Test
+    fun `getMyPhotos leaves imageUrlMedium null when viewer key absent`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val spot = buildPhotoSpot(key, hiddenFromPublic = false, imageKeyViewer = null)
+
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(null)
+        whenever(photoUrlSigner.signedMediumUrlOrNull(null)).thenReturn(null)
+        whenever(walkSpotRepository.findPhotoSpotsByUserId(eq(1L), any()))
+            .thenReturn(PageImpl(listOf(spot)))
+
+        val result = walkService.getMyPhotos(1L, null, PageRequest.of(0, 20))
+
+        assertNull(result.content.first().imageUrlMedium, "no viewer key → no derived medium key → null")
     }
 
     @Test

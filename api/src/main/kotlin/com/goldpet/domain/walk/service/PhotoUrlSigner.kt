@@ -53,6 +53,10 @@ class PhotoUrlSigner(
 
     fun signedThumbUrlOrNull(thumbKey: String?): String? = signVariantOrNull(thumbKey)
 
+    // iOS WKWebView 메모리 누적 완화용 600px medium 변형 서명. VARIANT_KEY_REGEX 가 `_medium` 도
+    // 매치하므로 viewer/thumb 와 동일 경로(presigned + variants 플래그 게이트)로 서명한다.
+    fun signedMediumUrlOrNull(mediumKey: String?): String? = signVariantOrNull(mediumKey)
+
     private fun signVariantOrNull(key: String?): String? {
         if (key.isNullOrBlank()) return null
         if (key.startsWith("http", ignoreCase = true)) return null

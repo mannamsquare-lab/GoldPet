@@ -13819,6 +13819,9 @@
           "imageUrlViewer": {
             "type": "string"
           },
+          "imageUrlMedium": {
+            "type": "string"
+          },
           "imageUrlThumb": {
             "type": "string"
           },
@@ -16867,6 +16870,9 @@
           "imageUrlViewer": {
             "type": "string"
           },
+          "imageUrlMedium": {
+            "type": "string"
+          },
           "imageUrlThumb": {
             "type": "string"
           },
@@ -17358,6 +17364,9 @@
             "type": "string"
           },
           "imageUrlViewer": {
+            "type": "string"
+          },
+          "imageUrlMedium": {
             "type": "string"
           },
           "imageUrlThumb": {

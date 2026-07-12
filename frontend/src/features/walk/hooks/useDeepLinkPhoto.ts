@@ -39,6 +39,7 @@ function toPhotoItem(walk: WalkSession, spot: WalkSpot): WalkPhotoItem {
     id: spot.id ?? 0,
     imageUrl: spot.imageUrl,
     imageUrlViewer: spot.imageUrlViewer,
+    imageUrlMedium: spot.imageUrlMedium,
     imageUrlThumb: spot.imageUrlThumb,
     note: spot.note,
     walkDate: walk.startTime,

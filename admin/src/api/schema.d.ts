@@ -5785,6 +5785,7 @@ export interface components {
             imageUrl?: string;
             imageKey?: string;
             imageUrlViewer?: string;
+            imageUrlMedium?: string;
             imageUrlThumb?: string;
             imageKeyViewer?: string;
             imageKeyThumb?: string;
@@ -6724,6 +6725,7 @@ export interface components {
             imageUrl?: string;
             imageKey?: string;
             imageUrlViewer?: string;
+            imageUrlMedium?: string;
             imageUrlThumb?: string;
             imageKeyViewer?: string;
             imageKeyThumb?: string;
@@ -6888,6 +6890,7 @@ export interface components {
             imageUrl?: string;
             imageKey?: string;
             imageUrlViewer?: string;
+            imageUrlMedium?: string;
             imageUrlThumb?: string;
             imageKeyViewer?: string;
             imageKeyThumb?: string;
