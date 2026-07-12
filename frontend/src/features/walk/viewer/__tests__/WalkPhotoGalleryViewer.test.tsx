@@ -18,22 +18,42 @@ const { swiperMounts } = vi.hoisted(() => ({ swiperMounts: { count: 0 } }));
 vi.mock('swiper/react', async () => {
   const React = await import('react');
   return {
-    Swiper: ({ children, initialSlide }: { children: React.ReactNode; initialSlide?: number }) => {
+    Swiper: ({
+      children,
+      initialSlide,
+      virtual,
+    }: {
+      children: React.ReactNode;
+      initialSlide?: number;
+      virtual?: { enabled?: boolean };
+    }) => {
       React.useEffect(() => {
         swiperMounts.count += 1;
       }, []);
       return (
-        <div data-testid="swiper" data-initial-slide={String(initialSlide ?? 0)}>
+        <div
+          data-testid="swiper"
+          data-initial-slide={String(initialSlide ?? 0)}
+          data-virtual={String(virtual?.enabled === true)}
+        >
           {children}
         </div>
       );
     },
-    SwiperSlide: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="swiper-slide">{children}</div>
+    SwiperSlide: ({
+      children,
+      virtualIndex,
+    }: {
+      children: React.ReactNode;
+      virtualIndex?: number;
+    }) => (
+      <div data-testid="swiper-slide" data-virtual-index={String(virtualIndex ?? '')}>
+        {children}
+      </div>
     ),
   };
 });
-vi.mock('swiper/modules', () => ({ Navigation: {}, Keyboard: {}, Zoom: {} }));
+vi.mock('swiper/modules', () => ({ Navigation: {}, Keyboard: {}, Zoom: {}, Virtual: {} }));
 
 // useDeepLinkPhoto — vi.hoisted so the mock fn is available in the factory
 const { mockUseDeepLinkPhoto } = vi.hoisted(() => ({
@@ -154,6 +174,23 @@ describe('WalkPhotoGalleryViewer', () => {
       ).toBe(String(deepIndex));
       // 표시 슬라이드가 윈도우 안이어야 하므로 img 가 렌더된다(placeholder=검정 아님).
       expect(container.querySelectorAll('img.wpv_slide_img').length).toBeGreaterThan(0);
+    });
+  });
+
+  // 회귀(iOS 렌더러 강제종료): 사진 수만큼 SwiperSlide 를 전부 DOM 에 만들면, Swiper 가
+  // translate3d 를 거는 .swiper-wrapper 폭이 슬라이드 수에 정비례해 커진다(74장 ≈ CSS 3만px).
+  // 실기기 계측에서 이 지점을 넘는 순간 WKWebView 의 WebContent 렌더러가 죽으며 화면이 통째로
+  // 검게 멈췄다(이미지 디코딩 메모리는 11MB로 평평 → 메모리 부족이 아니라 거대 합성 레이어).
+  // Virtual Slides 가 DOM 슬라이드를 활성 주변 몇 장으로 묶어주므로, 이 계약이 깨지면 안 된다.
+  it('enables Swiper virtual slides and tags every slide with its virtualIndex', async () => {
+    const { container } = renderViewer();
+    await waitFor(() => {
+      expect(container.querySelector('[data-testid="swiper"]')?.getAttribute('data-virtual')).toBe('true');
+    });
+    const slides = container.querySelectorAll('[data-testid="swiper-slide"]');
+    expect(slides.length).toBeGreaterThan(0);
+    slides.forEach((slide, idx) => {
+      expect(slide.getAttribute('data-virtual-index')).toBe(String(idx));
     });
   });
 

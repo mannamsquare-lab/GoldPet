@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Keyboard, Navigation, Zoom } from 'swiper/modules';
+import { Keyboard, Navigation, Virtual, Zoom } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -216,7 +216,7 @@ export function WalkPhotoGalleryViewer({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const modules = useMemo(() => [Navigation, Keyboard, Zoom], []);
+  const modules = useMemo(() => [Navigation, Keyboard, Zoom, Virtual], []);
 
   const photosRef = useRef(photos);
   useEffect(() => {
@@ -577,6 +577,15 @@ export function WalkPhotoGalleryViewer({
         initialSlide={feedInitialIndex}
         className="wpv_swiper"
         modules={modules}
+        // Virtual Slides — DOM 슬라이드를 활성 슬라이드 주변 몇 장으로만 유지한다.
+        //
+        // 이게 없으면 사진 수만큼 SwiperSlide 를 전부 만들고, Swiper 가 translate3d 를 거는
+        // .swiper-wrapper 의 폭이 슬라이드 수에 정비례해 커진다(74장 ≈ CSS 폭 3만px). 실기기
+        // 계측 결과 이 슬라이드 수가 임계점을 넘는 순간 iOS WKWebView 의 WebContent 렌더러가
+        // 강제종료되며 화면이 통째로 검게 죽었다(이미지 디코딩 메모리는 11MB로 평평했으므로
+        // 메모리 부족이 아니라 거대 합성 레이어가 원인). 사진이 늘수록 악화되는 구조라 가상화가
+        // 유일하게 확장 가능한 해법이다.
+        virtual={{ enabled: true, addSlidesBefore: 1, addSlidesAfter: 1 }}
         slidesPerView={1}
         spaceBetween={0}
         zoom={{ maxRatio: 3, toggle: true }}
@@ -632,7 +641,7 @@ export function WalkPhotoGalleryViewer({
           // 윈도우 밖 슬라이드는 placeholder only (DOM은 유지되지만 이미지/zoom 리소스 X)
           const inWindow = Math.abs(idx - activeIndex) <= WINDOW_HALF;
           return (
-            <SwiperSlide key={`${photo.walkId}-${photo.id}`}>
+            <SwiperSlide key={`${photo.walkId}-${photo.id}`} virtualIndex={idx}>
               {inWindow ? (
                 <WalkPhotoViewerSlide
                   photo={photo}
