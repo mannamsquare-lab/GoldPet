@@ -30,6 +30,7 @@ class AuthService(
         private val userRepository: UserRepository,
         // STYLE-001: 계정 상태 검사를 공용 가드로 통일(휴면 해제 정보 동봉).
         private val accountStatusGuard: AccountStatusGuard,
+        private val devLoginAccessPolicy: DevLoginAccessPolicy,
         private val passwordEncoder: PasswordEncoder,
         private val jwtTokenProvider: JwtTokenProvider,
         private val systemSettingService: SystemSettingService,
@@ -262,6 +263,11 @@ class AuthService(
 
     @Transactional
     fun devLogin(user: User): AuthResponse {
+        // 일반 login() 은 계정 상태를 검사하는데 dev-login 은 하지 않아, 정지(SUSPENDED)/탈퇴(WITHDRAWN)/
+        // 휴면(DORMANT) 계정도 토큰을 받을 수 있었다(정지 회피 경로). 동일 가드를 적용한다.
+        accountStatusGuard.check(user)
+        user.lastLoginAt = java.time.LocalDateTime.now()
+
         val userPrincipal = UserPrincipal.create(user)
         val auth =
                 UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
@@ -320,10 +326,24 @@ class AuthService(
 
     /**
      * ARCH-005: DevAuthController 가 dev 계정 조회/생성을 위해 UserRepository 를 직접 주입받고
-     * 있었다. local/dev 프로파일 전용이지만 계층 규칙은 동일하게 적용한다.
+     * 있었다. 계층 규칙은 동일하게 적용한다.
+     *
+     * **보안(dev-login 인증우회 차단):** 이메일 허용목록 검사를 **모든 조회보다 먼저** 한다.
+     *  - 예전에는 `findByEmailHash` 폴백이 oauthProvider 를 안 가려, 카카오/네이버/구글 실사용자의
+     *    이메일만 알면 그 계정의 토큰이 발급됐다(계정탈취).
+     *  - 1차 조회 키인 `dev-user-<email.hashCode()>` 도 32비트 비암호학적 해시라 충돌을 구성할 수
+     *    있다. 검사를 조회 뒤에 두면 이 경로로 우회된다. 그래서 **최상단**이다.
+     *  - 미등재 이메일에 대해 예전에는 dev 계정을 새로 만들어 토큰을 줬는데, 그 토큰이 sns-signup 을
+     *    통과해 **무한 계정 + 계정당 웰컴골드 30G** faucet 이 됐다. 이제 만들지 않고 거부한다.
      */
     @Transactional
     fun getOrCreateDevUser(email: String, nickname: String): com.goldpet.domain.user.entity.User {
+        if (!devLoginAccessPolicy.isEmailAllowed(email)) {
+            throw com.goldpet.domain.common.exception.ForbiddenException(
+                "dev-login 이 허용되지 않은 계정입니다."
+            )
+        }
+
         val oauthId = "dev-user-${email.hashCode()}"
         val emailHash = com.goldpet.config.crypto.BlindIndexUtil.hash(email)
         val existing = userRepository.findByOauthProviderAndOauthId("dev", oauthId).orElse(null)

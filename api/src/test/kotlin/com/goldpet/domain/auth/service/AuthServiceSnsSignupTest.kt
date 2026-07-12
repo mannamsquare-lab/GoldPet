@@ -41,6 +41,7 @@ class AuthServiceSnsSignupTest {
         authService = AuthService(
             userRepository,
             AccountStatusGuard(jwtTokenProvider),
+            org.mockito.kotlin.mock<DevLoginAccessPolicy>(),
             BCryptPasswordEncoder(),
             jwtTokenProvider,
             systemSettingService,

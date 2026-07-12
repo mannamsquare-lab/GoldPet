@@ -52,6 +52,7 @@ class AuthServiceTest {
         authService = AuthService(
             userRepository,
             AccountStatusGuard(jwtTokenProvider),
+            org.mockito.kotlin.mock<DevLoginAccessPolicy>(),
             passwordEncoder,
             jwtTokenProvider,
             systemSettingService,

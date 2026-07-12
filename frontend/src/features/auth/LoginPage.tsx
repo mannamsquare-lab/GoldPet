@@ -18,6 +18,9 @@ export const LoginPage = () => {
   const updateUser = useAuthStore((state) => state.updateUser);
   const { showAlert } = useAlert();
 
+  // 개발자 패널 노출 여부는 **서버가 IP 로 판정**한다. 예전에는 빌드 모드로 판정해
+  // 라이브 번들(vite build --mode dev)에 패널이 그대로 실려 모든 사용자에게 보였다.
+  const [devLoginAvailable, setDevLoginAvailable] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +30,16 @@ export const LoginPage = () => {
   const [linkProvider, setLinkProvider] = useState<string>('');
   const isAndroid = /Android/i.test(navigator.userAgent);
   const [lastSnsProvider, setLastSnsProvider] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 앱 WebView 에서는 아예 묻지 않는다(패널은 브라우저 전용).
+    if (nativeBridge.isAvailable()) return;
+    let cancelled = false;
+    void authService.isDevLoginAvailable().then((ok) => {
+      if (!cancelled) setDevLoginAvailable(ok);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('lastSnsProvider');
@@ -414,7 +427,7 @@ export const LoginPage = () => {
           </div>
         </div>
         {/* Test Login Section - local/dev 웹 브라우저에서만 표시 */}
-        {!nativeBridge.isAvailable() && (import.meta.env.DEV || import.meta.env.MODE === 'dev') && (
+        {!nativeBridge.isAvailable() && devLoginAvailable && (
         <div className="mt-8 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-400 text-center mb-2 font-mono">---------- DEVELOPER ONLY ----------</p>
             <form

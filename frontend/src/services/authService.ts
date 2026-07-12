@@ -82,6 +82,23 @@ export const authService = {
     }
   },
 
+  /**
+   * 이 IP 에서 dev-login 이 가능한지 서버에 묻는다.
+   *
+   * 예전에는 로그인 화면의 개발자 패널이 `import.meta.env.MODE === 'dev'` 로 렌더됐는데,
+   * 라이브 프론트가 `vite build --mode dev` 로 빌드되므로 **모든 사용자에게 그 입력칸이 보였다**.
+   * 거기에 남의 이메일을 넣으면 그 계정으로 로그인되던 상태였다(계정탈취). 이제 서버가
+   * IP 허용목록으로 판정한 결과에만 의존한다 — 허용 IP 가 아니면 패널 자체가 렌더되지 않는다.
+   */
+  isDevLoginAvailable: async (): Promise<boolean> => {
+    try {
+      const res = await apiClient.get('/auth/dev-login/available');
+      return res.data?.available === true;
+    } catch {
+      return false;   // 판정 불가 = 노출하지 않는다
+    }
+  },
+
   openLoginPopup: (provider: string, email?: string): Promise<AuthResponse> => {
     return new Promise((resolve, reject) => {
       // If email is provided, forcibly use test login (Dev Login).
