@@ -1,6 +1,7 @@
 package com.goldpet.domain.admin.controller
 
 import com.goldpet.config.security.AdminUserPrincipal
+import com.goldpet.domain.file.service.FileBackfillService
 import com.goldpet.domain.file.service.FileService
 import com.goldpet.domain.file.service.WebPBackfillService
 import io.swagger.v3.oas.annotations.Operation
@@ -27,6 +28,8 @@ data class AdminFileUploadResponse(
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR', 'VIEWER')")
 class AdminFileController(
     private val fileService: FileService,
+    // ARCH-004: 백필 배치는 FileBackfillService 로 분리됨 (업로드/스토리지 핵심과 관심사 분리)
+    private val fileBackfillService: FileBackfillService,
     private val webPBackfillService: WebPBackfillService
 ) {
     @Operation(summary = "어드민 파일 업로드")
@@ -54,10 +57,10 @@ class AdminFileController(
     fun backfillVariants(
         @RequestParam(defaultValue = "100") batchSize: Int,
         @AuthenticationPrincipal principal: AdminUserPrincipal?
-    ): ResponseEntity<FileService.BackfillResult> {
+    ): ResponseEntity<FileBackfillService.BackfillResult> {
         principal ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         val effectiveBatchSize = batchSize.coerceIn(1, 500)
-        val result = fileService.backfillVariants(effectiveBatchSize)
+        val result = fileBackfillService.backfillVariants(effectiveBatchSize)
         return ResponseEntity.ok(result)
     }
 
@@ -65,14 +68,14 @@ class AdminFileController(
     @PostMapping("/backfill")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     fun backfillScoped(
-        @RequestParam scope: FileService.BackfillScope,
+        @RequestParam scope: FileBackfillService.BackfillScope,
         @RequestParam(defaultValue = "200") batchSize: Int,
         @RequestParam(defaultValue = "false") dryRun: Boolean,
         @AuthenticationPrincipal principal: AdminUserPrincipal?
-    ): ResponseEntity<FileService.BackfillResult> {
+    ): ResponseEntity<FileBackfillService.BackfillResult> {
         principal ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         val effectiveBatchSize = batchSize.coerceIn(1, 500)
-        val result = fileService.backfillVariants(scope, effectiveBatchSize, dryRun)
+        val result = fileBackfillService.backfillVariants(scope, effectiveBatchSize, dryRun)
         return ResponseEntity.ok(result)
     }
 
@@ -83,8 +86,8 @@ class AdminFileController(
         @AuthenticationPrincipal principal: AdminUserPrincipal?
     ): ResponseEntity<Map<String, String>> {
         principal ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        fileService.stopBackfillRetry()
-        return ResponseEntity.ok(mapOf("status" to "stopped", "flag" to FileService.RETRY_ENABLED_KEY))
+        fileBackfillService.stopBackfillRetry()
+        return ResponseEntity.ok(mapOf("status" to "stopped", "flag" to FileBackfillService.RETRY_ENABLED_KEY))
     }
 
     @Operation(

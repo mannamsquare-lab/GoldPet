@@ -68,8 +68,6 @@ class FileServiceTest {
             fileAttachmentRepository = fileAttachmentRepository,
             variantExecutor = variantExecutor,
             meterRegistry = meterRegistry,
-            walkSpotBackfillWorker = walkSpotBackfillWorker,
-            fileAttachmentRetryWorker = fileAttachmentRetryWorker,
             systemSettingService = systemSettingService,
             environment = MockEnvironment()
         )

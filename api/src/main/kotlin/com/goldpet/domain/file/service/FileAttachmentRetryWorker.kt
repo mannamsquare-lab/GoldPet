@@ -5,7 +5,6 @@ import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.goldpet.domain.common.repository.FileAttachmentRepository
 import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -25,7 +24,9 @@ import javax.imageio.ImageIO
 class FileAttachmentRetryWorker(
     private val amazonS3: AmazonS3,
     private val fileAttachmentRepository: FileAttachmentRepository,
-    @Lazy private val fileService: FileService,
+    // ARCH-004: FileService 가 백필을 들고 있던 시절엔 서로를 참조해 @Lazy 로 순환을 우회해야 했다.
+    // 백필이 FileBackfillService 로 빠지면서 의존이 한 방향이 됐으므로 @Lazy 가 필요 없다.
+    private val fileService: FileService,
     private val meterRegistry: MeterRegistry
 ) {
     private val log = LoggerFactory.getLogger(javaClass)

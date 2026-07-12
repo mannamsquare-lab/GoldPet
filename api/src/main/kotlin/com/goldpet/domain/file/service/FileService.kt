@@ -13,7 +13,6 @@ import io.micrometer.core.instrument.Timer
 import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Lazy
 import org.springframework.core.env.Environment
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.stereotype.Service
@@ -67,8 +66,6 @@ class FileService(
     @org.springframework.beans.factory.annotation.Qualifier("variantExecutor")
     private val variantExecutor: ThreadPoolTaskExecutor,
     private val meterRegistry: MeterRegistry,
-    @Lazy private val walkSpotBackfillWorker: com.goldpet.domain.walk.service.WalkSpotBackfillWorker,
-    @Lazy private val fileAttachmentRetryWorker: FileAttachmentRetryWorker,
     private val systemSettingService: com.goldpet.domain.common.service.SystemSettingService,
     private val environment: Environment
 ) {
@@ -251,7 +248,7 @@ class FileService(
      * Generate thumbnail and medium WebP variants from a pre-decoded BufferedImage.
      * Skips GIFs (animated). Skips variants where the image is already smaller than the threshold.
      */
-    private fun generateVariants(
+    fun generateVariants(
         image: BufferedImage,
         baseFilename: String,
         mimeType: String,
@@ -524,209 +521,9 @@ class FileService(
         }
     }
 
-    data class BackfillResult(
-        val total: Long,
-        val processed: Int,
-        val skipped: Int,
-        val failed: Int,
-        val durationMs: Long
-    )
-
-    enum class BackfillScope { ALL, FILE_ATTACHMENTS, FILE_ATTACHMENTS_RETRY, WALK_SPOTS }
-
     companion object {
-        const val RETRY_ENABLED_KEY = "image.backfill.retry_enabled"
-        private const val RETRY_COOLDOWN_DAYS = 7L
-
         /** SEC-005 — presigned URL 최대 유효시간(분). viewer 재시청(6h) 경로 상한과 일치. */
         const val MAX_PRESIGN_MINUTES = 360L
-    }
-
-    /**
-     * Scoped backfill. Per-row work executes through `WalkSpotBackfillWorker` (REQUIRES_NEW)
-     * so pod restarts mid-batch leave committed rows intact.
-     * NO @Transactional on this outer method — the worker beans own their own tx.
-     */
-    fun backfillVariants(scope: BackfillScope, batchSize: Int, dryRun: Boolean = false): BackfillResult {
-        return when (scope) {
-            BackfillScope.FILE_ATTACHMENTS -> backfillFileAttachments(batchSize, dryRun)
-            BackfillScope.FILE_ATTACHMENTS_RETRY -> backfillFileAttachmentsRetry(batchSize, dryRun)
-            BackfillScope.WALK_SPOTS -> backfillWalkSpots(batchSize, dryRun)
-            BackfillScope.ALL -> {
-                val a = backfillFileAttachments(batchSize, dryRun)
-                val b = backfillWalkSpots(batchSize, dryRun)
-                BackfillResult(
-                    total = a.total + b.total,
-                    processed = a.processed + b.processed,
-                    skipped = a.skipped + b.skipped,
-                    failed = a.failed + b.failed,
-                    durationMs = a.durationMs + b.durationMs
-                )
-            }
-        }
-    }
-
-    /**
-     * T0-6 retry sweep. Only runs when `image.backfill.retry_enabled` system setting is true
-     * (default true; admin /stop endpoint flips it to false). Targets rows where original
-     * backfill skip-marked (thumb=url / medium=url / viewer NULL w/ thumb set), cooled off
-     * by 7 days so permanent failures don't loop.
-     */
-    fun backfillFileAttachmentsRetry(batchSize: Int, dryRun: Boolean): BackfillResult {
-        val startMs = System.currentTimeMillis()
-        val enabled = systemSettingService.getBoolean(RETRY_ENABLED_KEY, true)
-        if (!enabled) {
-            log.info("backfillFileAttachmentsRetry skipped: {}=false", RETRY_ENABLED_KEY)
-            return BackfillResult(total = 0, processed = 0, skipped = 0, failed = 0, durationMs = 0)
-        }
-        val cutoff = java.time.LocalDateTime.now().minusDays(RETRY_COOLDOWN_DAYS)
-        val pageable = org.springframework.data.domain.PageRequest.of(0, batchSize)
-        val page = fileAttachmentRepository.findImagesForRetry(cutoff, pageable)
-        val total = page.totalElements
-        var processed = 0
-        var skipped = 0
-        var failed = 0
-        for (fa in page.content) {
-            when (fileAttachmentRetryWorker.processRow(fa.id, dryRun)) {
-                FileAttachmentRetryWorker.Outcome.PROCESSED -> processed++
-                FileAttachmentRetryWorker.Outcome.SKIPPED,
-                FileAttachmentRetryWorker.Outcome.NOT_FOUND -> skipped++
-                FileAttachmentRetryWorker.Outcome.FAILED -> failed++
-            }
-        }
-        return BackfillResult(
-            total = total,
-            processed = processed,
-            skipped = skipped,
-            failed = failed,
-            durationMs = System.currentTimeMillis() - startMs
-        )
-    }
-
-    /**
-     * Admin kill switch: flips the retry feature flag off. Next sweep tick will short-circuit.
-     */
-    fun stopBackfillRetry() {
-        systemSettingService.setValue(
-            RETRY_ENABLED_KEY,
-            "false",
-            description = "T0-6 retry sweep kill switch (set to true to resume)"
-        )
-    }
-
-    private fun backfillWalkSpots(batchSize: Int, dryRun: Boolean): BackfillResult {
-        val startMs = System.currentTimeMillis()
-        val result = walkSpotBackfillWorker.backfillBatch(batchSize, dryRun)
-        return BackfillResult(
-            total = result.total,
-            processed = result.processed,
-            skipped = result.skipped,
-            failed = result.failed,
-            durationMs = System.currentTimeMillis() - startMs
-        )
-    }
-
-    @org.springframework.transaction.annotation.Transactional
-    fun backfillVariants(batchSize: Int): BackfillResult = backfillFileAttachments(batchSize)
-
-    @org.springframework.transaction.annotation.Transactional
-    private fun backfillFileAttachments(batchSize: Int, dryRun: Boolean = false): BackfillResult {
-        val startMs = System.currentTimeMillis()
-        val pageable = org.springframework.data.domain.PageRequest.of(0, batchSize)
-        val page = fileAttachmentRepository.findImagesWithoutVariants(pageable)
-        val total = page.totalElements
-        var processed = 0
-        var skipped = 0
-        var failed = 0
-
-        if (dryRun) {
-            return BackfillResult(
-                total = total,
-                processed = 0,
-                skipped = page.content.size,
-                failed = 0,
-                durationMs = System.currentTimeMillis() - startMs
-            )
-        }
-
-        for (fileAttachment in page.content) {
-            try {
-                val uri = java.net.URI(fileAttachment.url)
-                val pathParts = uri.path.removePrefix("/").split("/", limit = 2)
-                if (pathParts.size < 2) {
-                    // URL 파싱 실패 → 원본 URL로 채워서 재조회 방지 (viewer 포함 3종 모두)
-                    fileAttachmentRepository.updateAllVariantUrls(
-                        id = fileAttachment.id,
-                        thumbUrl = fileAttachment.url,
-                        medUrl = fileAttachment.url,
-                        viewerUrl = fileAttachment.url,
-                        width = fileAttachment.width ?: 0,
-                        height = fileAttachment.height ?: 0
-                    )
-                    skipped++; continue
-                }
-                val bucket = pathParts[0]
-                val key = pathParts[1]
-
-                val s3Object = amazonS3.getObject(bucket, key)
-                val image = ImageIO.read(s3Object.objectContent)
-                if (image == null) {
-                    // 디코딩 실패 → 원본 URL로 채워서 재조회 방지
-                    fileAttachmentRepository.updateAllVariantUrls(
-                        id = fileAttachment.id,
-                        thumbUrl = fileAttachment.url,
-                        medUrl = fileAttachment.url,
-                        viewerUrl = fileAttachment.url,
-                        width = fileAttachment.width ?: 0,
-                        height = fileAttachment.height ?: 0
-                    )
-                    skipped++; continue
-                }
-
-                val variantUrls = generateVariants(
-                    image = image,
-                    baseFilename = key.substringBeforeLast("."),
-                    mimeType = fileAttachment.mimeType,
-                    bucket = bucket
-                )
-
-                val thumbUrl = variantUrls["thumb"] ?: fileAttachment.url
-                val medUrl = variantUrls["medium"] ?: fileAttachment.url
-                val viewerUrl = variantUrls["viewer"] ?: fileAttachment.url
-
-                fileAttachmentRepository.updateAllVariantUrls(
-                    id = fileAttachment.id,
-                    thumbUrl = thumbUrl,
-                    medUrl = medUrl,
-                    viewerUrl = viewerUrl,
-                    width = fileAttachment.width ?: image.width,
-                    height = fileAttachment.height ?: image.height
-                )
-                if (variantUrls.isEmpty()) skipped++ else processed++
-            } catch (e: Exception) {
-                log.warn("Backfill failed for FileAttachment id={}: {}", fileAttachment.id, e.message)
-                // 실패해도 원본 URL로 채워서 무한 반복 방지 (viewer 포함)
-                try {
-                    fileAttachmentRepository.updateAllVariantUrls(
-                        id = fileAttachment.id,
-                        thumbUrl = fileAttachment.url,
-                        medUrl = fileAttachment.url,
-                        viewerUrl = fileAttachment.url,
-                        width = fileAttachment.width ?: 0,
-                        height = fileAttachment.height ?: 0
-                    )
-                } catch (_: Exception) { }
-                failed++
-            }
-        }
-
-        return BackfillResult(
-            total = total,
-            processed = processed,
-            skipped = skipped,
-            failed = failed,
-            durationMs = System.currentTimeMillis() - startMs
-        )
     }
 
     /**
@@ -776,68 +573,4 @@ class FileService(
         return presignedUrl.replace(internalHost, publicHost)
     }
 
-    /**
-     * T-chat-latency-v2 — GIF 이미지의 first-frame 기반 static variant 1회성 백필.
-     *
-     * `generateVariants` 는 기본적으로 GIF 를 skip 하지만, 채팅 이모티콘 picker 가
-     * 원본 GIF(수백KB~3MB) 를 그대로 로드하면 첫 오픈 시 1~3초 hang. picker grid 는
-     * 정적 프레임으로 충분하므로 `ImageIO.read()` 로 첫 프레임 `BufferedImage` 를 추출하고
-     * 기존 `generateVariants(..., mimeType="image/jpeg", ...)` 경로로 thumb/medium/viewer
-     * JPEG 를 생성해 `file_attachments.thumbnail_url/medium_url/viewer_url` 에 기록한다.
-     *
-     * 원본 GIF URL 은 `file_attachments.url` (및 해당 `emoticons.image_url`) 에 그대로 남아
-     * 이모티콘 선택 시 메시지로는 계속 원본 GIF 가 전송된다 — 움직임은 보존된다.
-     *
-     * 1회성이므로 admin endpoint 로만 노출하고 `@EventListener(ApplicationReadyEvent)` 는
-     * 걸지 않는다 (매 기동마다 S3 다운로드 반복 위험).
-     */
-    @org.springframework.transaction.annotation.Transactional
-    fun backfillGifImageVariants(): GifBackfillResult {
-        val targets = fileAttachmentRepository.findGifImagesWithoutVariants()
-        var updated = 0
-        var failed = 0
-        val publicPrefix = "$publicEndpoint/$publicBucketName/"
-        for (fa in targets) {
-            try {
-                val url = fa.url
-                if (!url.startsWith(publicPrefix)) {
-                    log.warn("GIF backfill skip: url not in public bucket: faId={}, url={}", fa.id, url)
-                    failed++
-                    continue
-                }
-                val key = url.substring(publicPrefix.length)
-                val bytes = amazonS3.getObject(publicBucketName, key).use { obj ->
-                    obj.objectContent.use { it.readBytes() }
-                }
-                val firstFrame = ImageIO.read(ByteArrayInputStream(bytes))
-                if (firstFrame == null) {
-                    log.warn("GIF backfill skip: decode failed: faId={}, url={}", fa.id, url)
-                    failed++
-                    continue
-                }
-                val baseFilename = key.substringBeforeLast(".")
-                // mimeType 을 image/jpeg 으로 넘겨 generateVariants 의 GIF skip 분기를 우회.
-                val urls = generateVariants(firstFrame, baseFilename, "image/jpeg", publicBucketName, metricCategory = "gif-backfill")
-                if (urls.isEmpty()) {
-                    log.warn("GIF backfill: generateVariants returned empty: faId={}", fa.id)
-                    failed++
-                    continue
-                }
-                fileAttachmentRepository.updateAllVariantUrls(
-                    id = fa.id,
-                    thumbUrl = urls["thumb"],
-                    medUrl = urls["medium"],
-                    viewerUrl = urls["viewer"],
-                    width = firstFrame.width,
-                    height = firstFrame.height
-                )
-                updated++
-                log.info("GIF variant backfilled: faId={}, url={}, thumb={}", fa.id, url, urls["thumb"])
-            } catch (e: Exception) {
-                log.warn("GIF variant backfill failed: faId={}, url={}: {}", fa.id, fa.url, e.message, e)
-                failed++
-            }
-        }
-        return GifBackfillResult(total = targets.size, updated = updated, failed = failed)
-    }
 }

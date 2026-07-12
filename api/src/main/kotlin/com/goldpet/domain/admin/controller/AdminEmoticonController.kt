@@ -6,7 +6,7 @@ import com.goldpet.domain.admin.service.UpdateEmoticonRequest
 import com.goldpet.domain.emoticon.dto.EmoticonPackResponse
 import com.goldpet.domain.emoticon.dto.EmoticonResponse
 import com.goldpet.domain.emoticon.service.EmoticonSeedS3MigrationService
-import com.goldpet.domain.file.service.FileService
+import com.goldpet.domain.file.service.FileBackfillService
 import com.goldpet.domain.file.service.GifBackfillResult
 import org.springframework.cache.annotation.CacheEvict
 import io.swagger.v3.oas.annotations.Operation
@@ -23,7 +23,8 @@ import org.springframework.web.bind.annotation.*
 class AdminEmoticonController(
     private val adminEmoticonService: AdminEmoticonService,
     private val emoticonSeedS3MigrationService: EmoticonSeedS3MigrationService,
-    private val fileService: FileService
+    // ARCH-004: GIF 변형 백필은 FileBackfillService 소관
+    private val fileBackfillService: FileBackfillService
 ) {
     @Operation(summary = "전체 이모티콘 목록 조회")
     @GetMapping
@@ -103,6 +104,6 @@ class AdminEmoticonController(
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OPERATOR')")
     @CacheEvict(value = ["emoticons"], allEntries = true)
     fun backfillGifVariants(): ResponseEntity<GifBackfillResult> {
-        return ResponseEntity.ok(fileService.backfillGifImageVariants())
+        return ResponseEntity.ok(fileBackfillService.backfillGifImageVariants())
     }
 }
