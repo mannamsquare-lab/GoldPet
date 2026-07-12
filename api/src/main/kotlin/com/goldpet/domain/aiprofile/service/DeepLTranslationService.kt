@@ -1,5 +1,8 @@
 package com.goldpet.domain.aiprofile.service
 
+import com.goldpet.domain.common.util.ExternalJson
+import com.goldpet.domain.common.util.ExternalJson.objectListAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.stringAtOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
@@ -47,9 +50,10 @@ class DeepLTranslationService(
                 Map::class.java
             )
 
-            @Suppress("UNCHECKED_CAST")
-            val translations = (response.body?.get("translations") as? List<Map<String, Any>>)
-            val translated = translations?.firstOrNull()?.get("text") as? String
+            // STYLE-002: 언체크드 캐스트 대신 안전 파서.
+            val translations = ExternalJson.objectOrNull(response.body)
+                ?.objectListAtOrNull("translations")
+            val translated = translations?.firstOrNull()?.stringAtOrNull("text")
 
             if (translated != null) {
                 log.info("DeepL translated: '{}' -> '{}'", text, translated)

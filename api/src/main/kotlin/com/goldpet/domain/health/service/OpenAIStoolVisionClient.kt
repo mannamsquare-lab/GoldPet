@@ -1,5 +1,11 @@
 package com.goldpet.domain.health.service
 
+import com.goldpet.domain.common.util.ExternalJson
+import com.goldpet.domain.common.util.ExternalJson.intAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.objectAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.objectListAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.stringAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.stringListAtOrNull
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.goldpet.domain.health.dto.PetContextDto
 import com.goldpet.domain.health.dto.StoolAnalysisResult
@@ -86,13 +92,13 @@ class OpenAIStoolVisionClient(
             Map::class.java
         ) ?: throw IllegalStateException("Empty response from OpenAI")
 
-        @Suppress("UNCHECKED_CAST")
-        val choices = response["choices"] as? List<Map<String, Any>>
+        // STYLE-002: 언체크드 캐스트 대신 안전 파서.
+        val body = ExternalJson.asObject(response, "openai")
+        val choices = body.objectListAtOrNull("choices")
             ?: throw IllegalStateException("No choices in OpenAI response")
-        @Suppress("UNCHECKED_CAST")
-        val message = choices.firstOrNull()?.get("message") as? Map<String, Any>
+        val message = choices.firstOrNull()?.objectAtOrNull("message")
             ?: throw IllegalStateException("No message in OpenAI response")
-        val content = message["content"] as? String
+        val content = message.stringAtOrNull("content")
             ?: throw IllegalStateException("No content in OpenAI response")
 
         log.debug("OpenAI raw response: {}", content)
@@ -102,24 +108,21 @@ class OpenAIStoolVisionClient(
 
     private fun parseResult(content: String): StoolAnalysisResult {
         val jsonContent = extractJson(content)
-        @Suppress("UNCHECKED_CAST")
-        val parsed = objectMapper.readValue(jsonContent, Map::class.java) as Map<String, Any>
+        val parsed = ExternalJson.asObject(objectMapper.readValue(jsonContent, Map::class.java), "openai")
 
-        val colorScore = (parsed["color_score"] as? Number)?.toInt() ?: 0
-        val consistencyScore = (parsed["consistency_score"] as? Number)?.toInt() ?: 0
-        val coatingScore = (parsed["coating_score"] as? Number)?.toInt() ?: 0
-        val contentsScore = (parsed["contents_score"] as? Number)?.toInt() ?: 0
-        val overallScore = (parsed["overall_score"] as? Number)?.toInt() ?: 0
+        val colorScore = parsed.intAtOrNull("color_score") ?: 0
+        val consistencyScore = parsed.intAtOrNull("consistency_score") ?: 0
+        val coatingScore = parsed.intAtOrNull("coating_score") ?: 0
+        val contentsScore = parsed.intAtOrNull("contents_score") ?: 0
+        val overallScore = parsed.intAtOrNull("overall_score") ?: 0
 
         // Validate scores are in range 0-5
         listOf(colorScore, consistencyScore, coatingScore, contentsScore, overallScore).forEach { score ->
             if (score !in 0..5) throw IllegalStateException("Score out of range: $score")
         }
 
-        @Suppress("UNCHECKED_CAST")
-        val healthTips = (parsed["health_tips"] as? List<String>) ?: emptyList()
-        @Suppress("UNCHECKED_CAST")
-        val warnings = (parsed["warnings"] as? List<String>) ?: emptyList()
+        val healthTips = parsed.stringListAtOrNull("health_tips") ?: emptyList()
+        val warnings = parsed.stringListAtOrNull("warnings") ?: emptyList()
 
         return StoolAnalysisResult(
             colorScore = colorScore,

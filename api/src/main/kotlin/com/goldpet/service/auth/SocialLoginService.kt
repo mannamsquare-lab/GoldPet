@@ -1,5 +1,12 @@
 package com.goldpet.service.auth
 
+import com.goldpet.domain.common.util.ExternalJson
+import com.goldpet.domain.common.util.ExternalJson.objectListAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.idAt
+import com.goldpet.domain.common.util.ExternalJson.objectAt
+import com.goldpet.domain.common.util.ExternalJson.objectAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.stringAt
+import com.goldpet.domain.common.util.ExternalJson.stringAtOrNull
 import com.goldpet.config.jwt.JwtTokenProvider
 import com.goldpet.config.security.UserPrincipal
 import com.goldpet.domain.auth.dto.AuthResponse
@@ -71,20 +78,20 @@ class SocialLoginService(
             Map::class.java
         )
 
-        @Suppress("UNCHECKED_CAST")
-        val attributes = response.body as Map<String, Any>
-        val kakaoId = attributes["id"].toString()
+        // STYLE-002: 언체크드 캐스트 대신 안전 파서. 응답 형태가 바뀌면 원인이 담긴 예외가 난다.
+        val attributes = ExternalJson.asObject(response.body, "kakao")
+        val kakaoId = attributes.idAt("id", "kakao")
 
-        val account = attributes["kakao_account"] as? Map<*, *>
-        val profile = account?.get("profile") as? Map<*, *>
-        val props = attributes["properties"] as? Map<*, *>
+        val account = attributes.objectAtOrNull("kakao_account")
+        val profile = account?.objectAtOrNull("profile")
+        val props = attributes.objectAtOrNull("properties")
 
-        val email = account?.get("email")?.toString()
-        val nickname = profile?.get("nickname")?.toString()
-            ?: props?.get("nickname")?.toString()
-        val profileImage = (profile?.get("profile_image_url")?.toString()
-            ?: props?.get("profile_image")?.toString()
-            ?: account?.get("profile_image_url")?.toString()).toHttps()
+        val email = account?.stringAtOrNull("email")
+        val nickname = profile?.stringAtOrNull("nickname")
+            ?: props?.stringAtOrNull("nickname")
+        val profileImage = (profile?.stringAtOrNull("profile_image_url")
+            ?: props?.stringAtOrNull("profile_image")
+            ?: account?.stringAtOrNull("profile_image_url")).toHttps()
 
         return handleOAuthLogin(
             provider = "kakao",
@@ -112,15 +119,13 @@ class SocialLoginService(
             Map::class.java
         )
 
-        @Suppress("UNCHECKED_CAST")
-        val attributes = response.body as Map<String, Any>
-        @Suppress("UNCHECKED_CAST")
-        val resp = attributes["response"] as Map<String, Any>
+        val attributes = ExternalJson.asObject(response.body, "naver")
+        val resp = attributes.objectAt("response", "naver")
 
-        val naverId = resp["id"].toString()
-        val email = resp["email"]?.toString()
-        val nickname = resp["name"]?.toString()
-        val profileImage = resp["profile_image"]?.toString().toHttps()
+        val naverId = resp.idAt("id", "naver")
+        val email = resp.stringAtOrNull("email")
+        val nickname = resp.stringAtOrNull("name")
+        val profileImage = resp.stringAtOrNull("profile_image").toHttps()
 
         return handleOAuthLogin(
             provider = "naver",
@@ -139,13 +144,12 @@ class SocialLoginService(
     fun loginWithGoogle(accessToken: String): AuthResponse {
         val url = "https://oauth2.googleapis.com/tokeninfo?id_token=$accessToken"
         val response = restTemplate.getForObject(url, Map::class.java)
-        @Suppress("UNCHECKED_CAST")
-        val attributes = response as Map<String, Any>
+        val attributes = ExternalJson.asObject(response, "google")
 
-        val googleId = attributes["sub"].toString()
-        val email = attributes["email"]?.toString()
-        val nickname = attributes["name"]?.toString()
-        val profileImage = attributes["picture"]?.toString().toHttps()
+        val googleId = attributes.idAt("sub", "google")
+        val email = attributes.stringAtOrNull("email")
+        val nickname = attributes.stringAtOrNull("name")
+        val profileImage = attributes.stringAtOrNull("picture").toHttps()
 
         return handleOAuthLogin(
             provider = "google",
@@ -166,17 +170,15 @@ class SocialLoginService(
             "https://appleid.apple.com/auth/keys",
             Map::class.java
         )
-        @Suppress("UNCHECKED_CAST")
-        val keys = appleKeysResponse?.get("keys") as? List<Map<String, Any>>
+        val keys = ExternalJson.asObject(appleKeysResponse, "apple").objectListAtOrNull("keys")
             ?: throw BadRequestException("Failed to get Apple public keys")
 
         val parts = identityToken.split(".")
         if (parts.size < 2) throw BadRequestException("Invalid Identity Token format")
 
         val headerJson = String(Decoders.BASE64URL.decode(parts[0]))
-        @Suppress("UNCHECKED_CAST")
-        val header = ObjectMapper().readValue(headerJson, Map::class.java) as Map<String, Any>
-        val kid = header["kid"] as String
+        val header = ExternalJson.asObject(ObjectMapper().readValue(headerJson, Map::class.java), "apple")
+        val kid = header.stringAt("kid", "apple")
 
         val keyMap = keys.find { it["kid"] == kid }
             ?: throw BadRequestException("Invalid key identifier")
@@ -223,7 +225,7 @@ class SocialLoginService(
         email: String?,
         nickname: String?,
         profileImage: String?,
-        attributes: Map<String, Any>,
+        attributes: Map<String, Any?>,
         skipEmailMatch: Boolean
     ): AuthResponse {
         val linkSuggestionEnabled = systemSettingService.getBoolean("auth.link_suggestion.enabled", false)
@@ -348,7 +350,7 @@ class SocialLoginService(
         email: String?,
         nickname: String?,
         profileImage: String?,
-        attributes: Map<String, Any>
+        attributes: Map<String, Any?>
     ): AuthResponse {
         var user = userRepository.findByOauthProviderAndOauthId(provider, oauthId).orElse(null)
         if (user == null && !email.isNullOrBlank()) {
@@ -483,8 +485,12 @@ class SocialLoginService(
     // --- Helpers ---
 
 
-    private fun generateJwt(user: User, attributes: Map<String, Any>): String {
-        val userPrincipal = UserPrincipal.create(user, attributes)
+    private fun generateJwt(user: User, attributes: Map<String, Any?>): String {
+        // UserPrincipal 은 값이 null 이 아닌 속성만 받는다(OAuth2User 계약).
+        val userPrincipal = UserPrincipal.create(
+            user,
+            attributes.filterValues { it != null }.mapValues { it.value!! }
+        )
         val authentication = UsernamePasswordAuthenticationToken(
             userPrincipal,
             null,

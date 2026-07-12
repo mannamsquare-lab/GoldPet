@@ -1,5 +1,9 @@
 package com.goldpet.domain.aiprofile.service
 
+import com.goldpet.domain.common.util.ExternalJson
+import com.goldpet.domain.common.util.ExternalJson.objectAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.objectListAtOrNull
+import com.goldpet.domain.common.util.ExternalJson.stringAtOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
@@ -43,11 +47,10 @@ class LeonardoApiClient(
             Map::class.java
         )
 
-        @Suppress("UNCHECKED_CAST")
-        val responseBody = response.body as? Map<String, Any>
+        // STYLE-002: 언체크드 캐스트 대신 안전 파서.
+        val responseBody = ExternalJson.objectOrNull(response.body)
             ?: throw IllegalStateException("Empty response from Leonardo init-image")
-        @Suppress("UNCHECKED_CAST")
-        val uploadInitImage = responseBody["uploadInitImage"] as? Map<String, Any>
+        val uploadInitImage = responseBody.objectAtOrNull("uploadInitImage")
             ?: throw IllegalStateException("Missing uploadInitImage in response: $responseBody")
 
         return uploadInitImage["id"] as? String
@@ -89,11 +92,9 @@ class LeonardoApiClient(
             Map::class.java
         )
 
-        @Suppress("UNCHECKED_CAST")
-        val responseBody = response.body as? Map<String, Any>
+        val responseBody = ExternalJson.objectOrNull(response.body)
             ?: throw IllegalStateException("Empty response from Leonardo generations")
-        @Suppress("UNCHECKED_CAST")
-        val sdGenerationJob = responseBody["sdGenerationJob"] as? Map<String, Any>
+        val sdGenerationJob = responseBody.objectAtOrNull("sdGenerationJob")
             ?: throw IllegalStateException("Missing sdGenerationJob in response: $responseBody")
 
         return sdGenerationJob["generationId"] as? String
@@ -115,19 +116,17 @@ class LeonardoApiClient(
             Map::class.java
         )
 
-        @Suppress("UNCHECKED_CAST")
-        val body = response.body as? Map<String, Any>
+        val body = ExternalJson.objectOrNull(response.body)
             ?: throw IllegalStateException("Empty response from Leonardo get generation")
-        @Suppress("UNCHECKED_CAST")
-        val generation = body["generations_by_pk"] as? Map<String, Any>
+        val generation = body.objectAtOrNull("generations_by_pk")
             ?: throw IllegalStateException("Missing generations_by_pk in response: $body")
 
-        val status = generation["status"] as? String ?: "UNKNOWN"
+        val status = generation.stringAtOrNull("status") ?: "UNKNOWN"
 
         val imageUrl = if (status == "COMPLETE") {
-            @Suppress("UNCHECKED_CAST")
-            val images = generation["generated_images"] as? List<Map<String, Any>>
-            images?.firstOrNull()?.get("url") as? String
+            generation.objectListAtOrNull("generated_images")
+                ?.firstOrNull()
+                ?.stringAtOrNull("url")
         } else null
 
         return GenerationResult(
