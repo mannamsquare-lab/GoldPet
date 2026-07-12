@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component
  *  - WALK_PHOTO_PRESIGNED_URL_ENABLED — master switch for presigned URLs
  *  - WALK_PHOTO_VARIANTS_ENABLED — gates the variant (viewer/thumb) paths; requires presigned flag too
  *  - WALK_PHOTO_SIGNER_CACHE_ENABLED — opt-in per-request Caffeine cache
+ *  - WALK_PHOTO_SHARED_SIGNER_CACHE_ENABLED — 키당 URL 을 창 동안 고정하는 공유 캐시(기본 ON, kill-switch)
  *
  * Rejects and returns null for: null/blank input, inputs already prefixed with `http`,
  * and any input that does not match the UUID/variant filename pattern.
@@ -25,7 +26,8 @@ class PhotoUrlSigner(
     private val fileService: FileService,
     private val systemSettingService: SystemSettingService,
     private val meterRegistry: MeterRegistry,
-    private val signerCacheProvider: ObjectProvider<PerRequestSignerCache>
+    private val signerCacheProvider: ObjectProvider<PerRequestSignerCache>,
+    private val signedUrlCache: SignedUrlCache
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -75,10 +77,19 @@ class PhotoUrlSigner(
     private fun signerCacheEnabled(): Boolean =
         systemSettingService.getString(FLAG_SIGNER_CACHE_KEY, "false").equals("true", ignoreCase = true)
 
+    private fun sharedSignerCacheEnabled(): Boolean =
+        systemSettingService.getString(FLAG_SHARED_SIGNER_CACHE_KEY, FLAG_SHARED_SIGNER_CACHE_DEFAULT)
+            .equals("true", ignoreCase = true)
+
     private fun signWithCache(key: String): String {
-        if (!signerCacheEnabled()) return fileService.getPresignedUrl(key, PRESIGN_TTL_MINUTES)
-        val cache = signerCacheProvider.ifAvailable ?: return fileService.getPresignedUrl(key, PRESIGN_TTL_MINUTES)
-        return cache.cachedSign(key) { fileService.getPresignedUrl(key, PRESIGN_TTL_MINUTES) }
+        val sign = { fileService.getPresignedUrl(key, PRESIGN_TTL_MINUTES) }
+        // 공유 캐시(기본 ON): 같은 키는 창 동안 같은 URL → <img src> 가 응답마다 바뀌지 않아
+        // 브라우저 이미지 캐시가 적중하고, 같은 사진이 메모리에 여러 벌 디코딩되지 않는다.
+        // per-request 캐시는 이 캐시의 부분집합이므로 공유 캐시가 켜져 있으면 거치지 않는다.
+        if (sharedSignerCacheEnabled()) return signedUrlCache.cachedSign(key, sign)
+        if (!signerCacheEnabled()) return sign()
+        val cache = signerCacheProvider.ifAvailable ?: return sign()
+        return cache.cachedSign(key, sign)
     }
 
     companion object {
@@ -87,6 +98,8 @@ class PhotoUrlSigner(
         const val FLAG_VARIANTS_KEY = "WALK_PHOTO_VARIANTS_ENABLED"
         const val FLAG_VARIANTS_DEFAULT = "false"
         const val FLAG_SIGNER_CACHE_KEY = "WALK_PHOTO_SIGNER_CACHE_ENABLED"
+        const val FLAG_SHARED_SIGNER_CACHE_KEY = "WALK_PHOTO_SHARED_SIGNER_CACHE_ENABLED"
+        const val FLAG_SHARED_SIGNER_CACHE_DEFAULT = "true"
         const val PRESIGN_TTL_MINUTES = 30L
         const val GAUGE_FLAG_STATE = "walk_photo_presigned_feature_flag_state"
 

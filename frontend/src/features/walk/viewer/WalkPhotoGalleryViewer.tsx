@@ -231,7 +231,10 @@ export function WalkPhotoGalleryViewer({
     const now = Date.now();
     if (now - lastPresignedInvalidateMs < PRESIGNED_INVALIDATE_DEBOUNCE_MS) return;
     lastPresignedInvalidateMs = now;
-    void queryClient.invalidateQueries({ queryKey: ['walk', mode, 'photos'] });
+    // mode 는 'owned'|'shared' 인데 실제 피드 queryKey 는 ['walk','my'|'public','photos'] 다.
+    // mode 를 그대로 끼워 넣던 탓에 매칭되는 쿼리가 없어 만료 복구가 한 번도 동작하지 않았다.
+    const feedKey = mode === 'owned' ? 'my' : 'public';
+    void queryClient.invalidateQueries({ queryKey: ['walk', feedKey, 'photos'] });
   }, [queryClient, mode]);
 
   const handleShare = useCallback(async () => {

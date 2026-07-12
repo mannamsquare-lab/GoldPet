@@ -5,6 +5,7 @@ import { BottomNav } from '../../components/common/BottomNav';
 import { walkService } from '../../services/walkService';
 import type { WalkPhotoItem } from '../../services/walkService';
 import { WalkPhotoGalleryModal } from './viewer/WalkPhotoGalleryModal';
+import { FEED_STALE_MS } from './hooks/useWalkPhotoFeed';
 import './WalkPhotoGallery.css';
 
 type ViewMode = 'month' | 'day' | 'year';
@@ -37,6 +38,11 @@ export default function WalkPhotoGalleryPage() {
     queryFn: ({ pageParam = 0 }) => walkService.getMyPhotos({ page: pageParam as number, size: 20 }),
     getNextPageParam: (lastPage) => lastPage.last ? undefined : lastPage.number + 1,
     initialPageParam: 0,
+    // 뷰어(useWalkPhotoFeed)와 같은 queryKey 를 공유하므로 옵션도 같이 맞춘다. staleTime 이 0 이면
+    // 사진 모달을 열 때마다 전 페이지가 refetch 되고, presigned URL 이 새로 서명돼 모든 썸네일이
+    // 재다운로드·재디코딩된다(iOS WKWebView 메모리 급증).
+    staleTime: FEED_STALE_MS,
+    refetchOnWindowFocus: false,
   });
 
   const photos = useMemo<WalkPhotoItem[]>(
