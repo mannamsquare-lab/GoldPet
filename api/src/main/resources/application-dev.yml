@@ -95,3 +95,10 @@ goldpet:
   chat:
     async:
       enabled: true
+
+# OPS-003: API 를 전체 인터페이스(*:8081)에 바인딩하고 있었다. ufw 가 외부를 막고 있지만
+# 심층방어로 루프백만 바인딩한다 — nginx 가 http://localhost:8081 로 프록시하므로 영향 없다.
+# (방화벽 규칙 하나가 잘못 열리는 순간 API 가 그대로 노출되던 구조를 없앤다.)
+# 필요 시 SERVER_ADDRESS 로 덮어쓸 수 있다.
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}

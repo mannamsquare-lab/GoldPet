@@ -188,7 +188,9 @@ frontend/.env.local
 /*.pdf
 
 # Code-review 하네스 산출물 & 임시 출력
+# PROC-003: 코드리뷰 팀 산출물. 타임스탬프 백업본(_workspace_YYYYMMDD_HHMMSS/)까지 포함해 제외.
 _workspace/
+_workspace_*/
 code-review-report.md
 *.xcscheme.backup
 gold_pet_figma.txt
