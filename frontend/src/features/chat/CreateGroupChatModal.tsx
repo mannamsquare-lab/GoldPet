@@ -5,6 +5,7 @@ import { friendService, type Friend } from '../../services/friendService';
 import { chatService } from '../../services/chatService';
 import { useAlert } from '../../contexts/AlertContext';
 import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
+import { CACHE_TIME } from '../../config/queryConfig';
 
 interface CreateGroupChatModalProps {
     isOpen: boolean;
@@ -22,6 +23,8 @@ const CreateGroupChatModal = ({ isOpen, onClose }: CreateGroupChatModalProps) =>
         queryKey: ['mutualLikes'],
         queryFn: friendService.getMutualLikes,
         enabled: isOpen,
+        // PERF-021: staleTime 기본 0 → 모달을 열 때마다 서로 좋아요 목록을 다시 받아왔다.
+        ...CACHE_TIME.DYNAMIC,
     });
 
     const createMutation = useMutation({

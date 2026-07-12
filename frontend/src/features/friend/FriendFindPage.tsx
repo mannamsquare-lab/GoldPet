@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { FriendCard } from './FriendCard';
@@ -133,12 +133,22 @@ export const FriendFindPage = () => {
 
     const [hiddenFriendIds, setHiddenFriendIds] = useState<number[]>([]);
 
-    const flattenedFriends = (friendsData?.pages.flatMap(page => page.content) || [])
-        .filter(friend => !hiddenFriendIds.includes(friend.id));
+    // PERF-009: 매 렌더 새 배열이면 아래 FriendCard 들의 data prop 참조가 통째로 바뀐다.
+    const flattenedFriends = useMemo(
+        () => (friendsData?.pages.flatMap(page => page.content) || [])
+            .filter(friend => !hiddenFriendIds.includes(friend.id)),
+        [friendsData, hiddenFriendIds],
+    );
 
-    const handleLikeStateChange = (friendId: number) => {
+    // PERF-009: 인라인 콜백을 카드마다 새로 만들면 memo(FriendCard) 가 매번 깨진다.
+    // FriendCard 가 friendId 를 넘겨주므로 안정된 콜백 하나를 모든 카드가 공유한다.
+    const handleLikeStateChange = useCallback((friendId: number) => {
         setHiddenFriendIds(prev => [...prev, friendId]);
-    };
+    }, []);
+
+    const handleOpenGallery = useCallback((images: string[], index: number) => {
+        setGalleryState({ open: true, images, index });
+    }, []);
 
     if (isLoading) return <Loading description="친구를 찾고 있어요..." />;
 
@@ -295,8 +305,8 @@ export const FriendFindPage = () => {
                     <FriendCard
                         key={friend.id}
                         data={friend}
-                        onLikeStateChange={() => handleLikeStateChange(friend.id)}
-                        onOpenGallery={(images, index) => setGalleryState({ open: true, images, index })}
+                        onLikeStateChange={handleLikeStateChange}
+                        onOpenGallery={handleOpenGallery}
                         source={appliedSortOrder}
                     />
                 ))}

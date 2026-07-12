@@ -33,7 +33,8 @@ const ChatListPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
-    const { user } = useAuthStore();
+    // PERF-014: 스토어 전체 구독 → 셀렉터로 전환 (token/deviceId 변경 시 불필요한 리렌더 제거)
+    const user = useAuthStore((s) => s.user);
     const currentUserId = user?.id;
     const locationActiveTab = (location.state && 'activeTab' in location.state)
         ? location.state.activeTab as string

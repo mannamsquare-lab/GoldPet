@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { CACHE_TIME } from '../../config/queryConfig';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { walkService, getTodayStats } from '../../services/walkService';
 import { courseService } from '../../services/courseService';
@@ -52,6 +53,8 @@ function CoursesTabContent({ initialRegion }: { initialRegion: string | undefine
             }),
         getNextPageParam: (lastPage) => (lastPage.last ? undefined : lastPage.number + 1),
         initialPageParam: 0,
+        // PERF-013: staleTime 기본값 0 이면 탭을 오갈 때마다 전 페이지를 다시 받아온다.
+        ...CACHE_TIME.DYNAMIC,
     });
 
     const courses = data?.pages.flatMap((p) => p.content) ?? [];
@@ -157,6 +160,8 @@ export const WalkPage = () => {
         queryKey: ['walk', 'monthlyRanking', yearMonth, rankingSize, rankingProvince],
         queryFn: () => walkService.getMonthlyRanking(yearMonth, rankingSize, rankingProvince),
         enabled: activeTab === 'ranking',
+        // PERF-013: 탭 토글마다 재요청되던 것을 막는다.
+        ...CACHE_TIME.DYNAMIC,
     });
 
     function prevMonth() {
@@ -180,6 +185,8 @@ export const WalkPage = () => {
         queryKey: ['walk', 'public', 'paged', yearMonth, recordsProvince, 'preview'],
         queryFn: () => walkService.getPublicWalksPaged(0, RECORDS_PREVIEW_SIZE, yearMonth, recordsProvince),
         enabled: activeTab === 'records',
+        // PERF-013: 탭 토글마다 재요청되던 것을 막는다.
+        ...CACHE_TIME.DYNAMIC,
     });
 
     const walkRecords = recordsPage?.content ?? [];

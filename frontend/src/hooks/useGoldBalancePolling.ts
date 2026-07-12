@@ -26,6 +26,10 @@ export function useGoldBalancePolling(intervalMs = GOLD_BALANCE_POLL_INTERVAL_MS
 
   useEffect(() => {
     const poll = async () => {
+      // PERF-022: 백그라운드(탭 전환·앱 최소화)에서도 10초마다 계속 때리던 것을 막는다.
+      // 화면이 안 보이는 동안의 변경은 복귀 시 다음 tick 이 ETag 로 바로 잡아준다.
+      // (WalkMapPage 도 같은 가드를 쓴다 — 일관성)
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const result = await goldService.getBalanceWithETag(etagRef.current);
 

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FriendCard } from './FriendCard';
@@ -49,11 +49,16 @@ export const FriendsListPage = () => {
 
     const [galleryState, setGalleryState] = useState<{ open: boolean; images: string[]; index: number }>({ open: false, images: [], index: 0 });
 
-    const handleLikeStateChange = () => {
+    // PERF-009: memo(FriendCard) 가 유지되도록 콜백을 안정화한다.
+    const handleLikeStateChange = useCallback(() => {
         refetchMutual();
         refetchMy();
         refetchLikesMe();
-    };
+    }, [refetchMutual, refetchMy, refetchLikesMe]);
+
+    const handleOpenGallery = useCallback((images: string[], index: number) => {
+        setGalleryState({ open: true, images, index });
+    }, []);
 
     if (isLoading) return <Loading description="친구 목록을 불러오고 있어요..." />;
 
@@ -142,7 +147,7 @@ export const FriendsListPage = () => {
                             key={friend.id}
                             data={friend}
                             onLikeStateChange={handleLikeStateChange}
-                            onOpenGallery={(images, index) => setGalleryState({ open: true, images, index })}
+                            onOpenGallery={handleOpenGallery}
                             viewMode={
                                 activeSubTab === 'mutual' ? 'mutual' :
                                 activeSubTab === 'i_like' ? 'sent_like' :

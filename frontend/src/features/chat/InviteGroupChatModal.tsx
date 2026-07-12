@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { friendService, type Friend } from '../../services/friendService';
 import { chatService } from '../../services/chatService';
 import { useAlert } from '../../contexts/AlertContext';
+import { CACHE_TIME } from '../../config/queryConfig';
 
 interface InviteGroupChatModalProps {
     isOpen: boolean;
@@ -21,6 +22,8 @@ const InviteGroupChatModal = ({ isOpen, onClose, roomId, existingParticipantIds,
         queryKey: ['mutualLikes'],
         queryFn: friendService.getMutualLikes,
         enabled: isOpen,
+        // PERF-021: staleTime 기본 0 → 모달을 열 때마다 서로 좋아요 목록을 다시 받아왔다.
+        ...CACHE_TIME.DYNAMIC,
     });
 
     // Exclude friends already in the room

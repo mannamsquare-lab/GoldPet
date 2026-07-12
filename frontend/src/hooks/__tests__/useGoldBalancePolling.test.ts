@@ -112,4 +112,35 @@ describe('useGoldBalancePolling', () => {
     await vi.advanceTimersByTimeAsync(5_000);
     expect(mockGetBalanceWithETag).toHaveBeenCalledTimes(1);
   });
+
+  // PERF-022: 화면이 안 보이는 동안(탭 전환·앱 최소화)에도 10초마다 계속 요청하고 있었다.
+  describe('(e) document.hidden 가드', () => {
+    afterEach(() => {
+      vi.spyOn(document, 'hidden', 'get').mockRestore();
+    });
+
+    it('백그라운드에서는 폴링 요청을 보내지 않는다', async () => {
+      vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+      mockGetBalanceWithETag.mockResolvedValue({ status: 304, data: null, etag: null });
+
+      renderHook(() => useGoldBalancePolling());
+
+      await vi.advanceTimersByTimeAsync(GOLD_BALANCE_POLL_INTERVAL_MS * 3);
+      expect(mockGetBalanceWithETag).not.toHaveBeenCalled();
+    });
+
+    it('포그라운드로 돌아오면 다음 tick 에서 폴링을 재개한다', async () => {
+      const hiddenSpy = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+      mockGetBalanceWithETag.mockResolvedValue({ status: 304, data: null, etag: null });
+
+      renderHook(() => useGoldBalancePolling());
+
+      await vi.advanceTimersByTimeAsync(GOLD_BALANCE_POLL_INTERVAL_MS);
+      expect(mockGetBalanceWithETag).not.toHaveBeenCalled();
+
+      hiddenSpy.mockReturnValue(false);
+      await vi.advanceTimersByTimeAsync(GOLD_BALANCE_POLL_INTERVAL_MS);
+      expect(mockGetBalanceWithETag).toHaveBeenCalledTimes(1);
+    });
+  });
 });

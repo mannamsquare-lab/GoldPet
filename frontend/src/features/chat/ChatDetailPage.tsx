@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { useKeyboardDismiss } from '../../hooks/useKeyboardDismiss';
@@ -185,6 +185,8 @@ const ChatMessageItem = React.memo(function ChatMessageItem({ msg, isMine, isGro
                                 : (chatUser.profileImg || '/assets/images/temp/temp_dog_profile.png')
                         }
                         alt={isGroupChat ? 'User' : chatUser.name}
+                        loading="lazy"
+                        decoding="async"
                     />
                 </div>
             )}
@@ -300,8 +302,9 @@ const ChatDetailPage = () => {
     const [reportTargetMessageId, setReportTargetMessageId] = useState<number | null>(null);
     const [isReportSubmitting, setIsReportSubmitting] = useState(false);
 
-    // Get current user ID from auth store (needed for WebSocket)
-    const { user } = useAuthStore();
+    // PERF-014: 스토어 전체를 구독하면 token/deviceId 같은 무관한 필드가 바뀌어도 리렌더된다.
+    // 다른 10곳처럼 셀렉터로 필요한 조각만 구독한다.
+    const user = useAuthStore((s) => s.user);
     const currentUserId = user?.id || 0;
 
     // Listen for file download completion from native bridge
@@ -459,7 +462,9 @@ const ChatDetailPage = () => {
     // Get other participant info (for 1:1 chat, filter out current user)
     const otherParticipant = currentRoom?.participants?.find(p => p.id !== currentUserId);
 
-    const chatUser = isGroupChat ? {
+    // PERF-008: 매 렌더 새 객체 리터럴이면 React.memo(ChatMessageItem) 의 얕은 비교가 항상 실패해
+    // 입력창 타이핑·WS typing·메뉴 토글 같은 로컬 state 변경마다 메시지 목록 전체가 리렌더된다.
+    const chatUser = useMemo(() => (isGroupChat ? {
         id: chatId || '1',
         name: currentRoom?.name || '그룹 채팅',
         profileImgs: currentRoom?.participants?.slice(0, 4).map(p =>
@@ -469,7 +474,16 @@ const ChatDetailPage = () => {
         id: chatId || '1',
         name: otherParticipant?.nickname || currentRoom?.name || '상대방',
         profileImg: otherParticipant?.profileImageUrl || '/assets/images/temp/temp_dog_profile.png',
-    };
+    }), [isGroupChat, chatId, currentRoom, otherParticipant]);
+
+    // 메시지 아이템에 넘기는 축약 형태도 메모이즈한다. 여기서 다시 새 객체로 래핑하면
+    // chatUser 를 메모이즈한 의미가 사라진다.
+    const messageChatUser = useMemo(
+        () => ('profileImg' in chatUser
+            ? chatUser
+            : { name: chatUser.name, profileImgs: chatUser.profileImgs }),
+        [chatUser],
+    );
 
     const quickReplies = [
         '안녕하세요. 반가워요',
@@ -1159,7 +1173,7 @@ const ChatDetailPage = () => {
                             isMine={isMine}
                             isGroupChat={isGroupChat}
                             currentRoom={currentRoom}
-                            chatUser={'profileImg' in chatUser ? chatUser : { name: chatUser.name, profileImgs: chatUser.profileImgs }}
+                            chatUser={messageChatUser}
                             onLongPress={handleContextMenuOpen}
                             renderMessageContent={renderMessageContent}
                         />

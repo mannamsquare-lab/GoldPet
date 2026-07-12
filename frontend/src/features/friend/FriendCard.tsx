@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { memo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useOverlayColor } from '../../hooks/useOverlayColor';
 import { m, AnimatePresence } from 'motion/react';
@@ -18,7 +18,12 @@ import { truncateLocation, formatAgeGroup, formatDistanceKm } from '../../utils/
 
 interface FriendCardProps {
     data: Friend;
-    onLikeStateChange?: () => void;
+    /**
+     * 좋아요/차단 등으로 카드 상태가 바뀌었음을 부모에 알린다.
+     * PERF-009: friendId 를 인자로 넘겨야 부모가 `() => handler(friend.id)` 같은 per-item
+     * 클로저를 만들지 않고 안정된 콜백 하나를 재사용할 수 있다(memo 유지).
+     */
+    onLikeStateChange?: (friendId: number) => void;
     viewMode?: 'default' | 'sent_like' | 'received_like' | 'mutual';
     onOpenGallery?: (images: string[], startIndex: number) => void;
     /** Originating sort/list for like_events analytics (compatible|distance|popular|received …). */
@@ -28,7 +33,10 @@ interface FriendCardProps {
 const OWNER_FALLBACK = "/assets/images/common/profile_none_img.svg";
 const PET_FALLBACK = "/assets/images/main/main_slide_img01.png";
 
-export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOpenGallery, source }: FriendCardProps) => {
+// PERF-009: 카드 하나가 Swiper + AnimatePresence 를 품고 있어 리렌더 비용이 크다. 목록 부모의
+// 로컬 state(갤러리 열림, 필터, 좋아요 갱신)가 바뀔 때마다 전체 카드가 다시 그려지던 것을 막는다.
+// 부모가 콜백을 안정적으로 넘겨야(useCallback) 이 memo 가 실제로 효과를 낸다.
+export const FriendCard = memo(function FriendCard({ data, onLikeStateChange, viewMode = 'default', onOpenGallery, source }: FriendCardProps) {
     const navigate = useNavigate();
     const { showAlert, showConfirm } = useAlert();
     const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +84,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
                 showAlert(`${data.petName}에게 좋아요를 보냈어요! ❤️`);
             }
 
-            onLikeStateChange?.();
+            onLikeStateChange?.(data.id);
         } catch {
             showAlert('좋아요를 보내는데 실패했습니다.');
         } finally {
@@ -104,7 +112,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
             }
             setIsLiked(false);
             setIsMutual(false);
-            onLikeStateChange?.();
+            onLikeStateChange?.(data.id);
         } catch {
             showAlert('작업에 실패했습니다.');
         } finally {
@@ -118,7 +126,7 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
             try {
                 await blockService.blockUser(data.id);
                 showAlert('사용자를 차단했습니다.');
-                onLikeStateChange?.();
+                onLikeStateChange?.(data.id);
             } catch {
                 showAlert('차단에 실패했습니다.');
             }
@@ -377,4 +385,4 @@ export const FriendCard = ({ data, onLikeStateChange, viewMode = 'default', onOp
             />
         </div>
     );
-};
+});
