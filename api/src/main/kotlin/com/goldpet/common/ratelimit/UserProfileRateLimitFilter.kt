@@ -1,6 +1,7 @@
 package com.goldpet.common.ratelimit
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.goldpet.common.net.TrustedClientIpResolver
 import com.goldpet.config.security.UserPrincipal
 import io.github.bucket4j.Bandwidth
 import io.github.bucket4j.BucketConfiguration
@@ -48,6 +49,7 @@ class UserProfileRateLimitFilter(
     private val proxyManager: ProxyManager<ByteArray>,
     private val properties: UserProfileRateLimitProperties,
     private val objectMapper: ObjectMapper,
+    private val trustedClientIpResolver: TrustedClientIpResolver,
 ) : OncePerRequestFilter() {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -140,13 +142,18 @@ class UserProfileRateLimitFilter(
         return (principal as? UserPrincipal)?.id
     }
 
-    private fun resolveClientIp(request: HttpServletRequest): String {
-        val forwarded = request.getHeader("X-Forwarded-For")
-        if (!forwarded.isNullOrBlank()) {
-            return forwarded.substringBefore(',').trim()
-        }
-        return request.remoteAddr ?: "unknown"
-    }
+    /**
+     * X-Forwarded-For 맨 앞 값은 **클라이언트가 주입할 수 있다**(nginx 가 append 하므로).
+     * 그 값을 버킷 키로 쓰면 매 요청 헤더만 바꿔 새 버킷을 얻는다 → IP 제한이 사실상 무제한이 된다.
+     * `server.forward-headers-strategy: framework` 때문에 `remoteAddr` 도 XFF 로 덮여 같은 문제를 갖는다.
+     * 따라서 nginx 가 덮어쓰는 X-Real-IP 만 신뢰한다([TrustedClientIpResolver]).
+     *
+     * 판정 불가는 **거부가 아니라 공용 버킷**이다. dev-login 은 fail-closed 지만 레이트리밋은 가용성이
+     * 우선이고, 실사용 트래픽은 전부 nginx 를 거쳐 X-Real-IP 가 채워진다. 헤더를 지울 수 없는 이상
+     * 공용 버킷으로 떨어뜨리는 것만으로 우회는 막힌다.
+     */
+    private fun resolveClientIp(request: HttpServletRequest): String =
+        trustedClientIpResolver.resolveOrNull(request) ?: UNTRUSTED_IP_BUCKET
 
     private fun viewerBucketKey(viewerId: Long): ByteArray =
         "rl:userprof:viewer:$viewerId".toByteArray(StandardCharsets.UTF_8)
@@ -155,6 +162,9 @@ class UserProfileRateLimitFilter(
         "rl:userprof:ip:$ip".toByteArray(StandardCharsets.UTF_8)
 
     companion object {
+        /** X-Real-IP 로 실IP 를 판정할 수 없는 요청이 함께 쓰는 버킷(개별 우회 불가). */
+        const val UNTRUSTED_IP_BUCKET = "untrusted"
+
         private val PROTECTED_PATTERNS = listOf(
             "/api/v1/users/*/public-profile",
             "/api/v1/users/*/community/posts",
