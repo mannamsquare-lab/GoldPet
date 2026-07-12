@@ -65,6 +65,9 @@ class ChatServiceTest {
     @Mock
     private lateinit var applicationEventPublisher: ApplicationEventPublisher
 
+    @Mock
+    private lateinit var chatMessageAssembler: ChatMessageAssembler
+
     private lateinit var chatService: ChatService
 
     private lateinit var testUser: User
@@ -85,6 +88,7 @@ class ChatServiceTest {
             userBlockRepository,
             chatRequestRepository,
             applicationEventPublisher,
+            chatMessageAssembler,
             // T-chat-latency-v2 Step 2: false 유지 — unit test 는 동기 fallback 경로로 기존 notification mock 검증.
             asyncNotificationEnabled = false,
         )
@@ -657,6 +661,7 @@ class ChatServiceTest {
             userRepository, matchRepository, notificationService,
             userBlockRepository, chatRequestRepository,
             applicationEventPublisher,
+            chatMessageAssembler,
             asyncNotificationEnabled = true,
         )
 
@@ -732,6 +737,7 @@ class ChatServiceTest {
             userRepository, matchRepository, notificationService,
             userBlockRepository, chatRequestRepository,
             applicationEventPublisher,
+            chatMessageAssembler,
             asyncNotificationEnabled = true,
         )
         val clientMsgId = "test-client-uuid-1234"

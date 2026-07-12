@@ -5,13 +5,7 @@ import com.goldpet.domain.chat.dto.ChatRoomResponse
 import com.goldpet.domain.chat.dto.ChatMessageResponse
 import com.goldpet.domain.chat.dto.ChatRequestResponse
 import com.goldpet.domain.chat.dto.SendMessageRequest
-import com.goldpet.domain.chat.repository.ChatMessageRepository
-import com.goldpet.domain.chat.repository.ChatRoomParticipantRepository
 import com.goldpet.domain.chat.service.ChatService
-import com.goldpet.domain.common.repository.FileAttachmentRepository
-import com.goldpet.domain.common.service.FileAttachmentLookupService
-import com.goldpet.domain.emoticon.service.EmoticonService
-import com.goldpet.domain.file.service.FileService
 import com.goldpet.domain.metrics.ChatLatencyMetrics
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -27,18 +21,9 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/chat/rooms")
 class ChatRoomController(
     private val chatService: ChatService,
-    private val fileAttachmentRepository: FileAttachmentRepository,
-    private val emoticonService: EmoticonService,
     private val simpMessageSendingOperations: SimpMessageSendingOperations,
-    private val fileService: FileService,
-    private val chatRoomParticipantRepository: ChatRoomParticipantRepository,
-    private val chatMessageRepository: ChatMessageRepository,
-    private val fileAttachmentLookupService: FileAttachmentLookupService,
     private val chatLatencyMetrics: ChatLatencyMetrics
 ) {
-    private fun resolveFileUrl(url: String): String =
-        if (url.startsWith("http")) url else fileService.getPresignedUrl(url)
-
     @Operation(summary = "채팅방 생성")
     @PostMapping
     fun createChatRoom(
@@ -82,56 +67,9 @@ class ChatRoomController(
         @RequestParam(defaultValue = "50") size: Int,
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
     ): ResponseEntity<List<ChatMessageResponse>> {
-        // EXT-CDX-003 (W1a): 참여자 검증은 ChatService.getChatHistory 에 위임(seam-aware).
-        val messages = chatService.getChatHistory(roomId, userDetails.id, page, size)
-        val participants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
-
-        // Fetch all file attachments for messages with fileId
-        val fileIds = messages.mapNotNull { it.fileId }
-        val fileAttachments = if (fileIds.isNotEmpty()) {
-            fileAttachmentRepository.findAllById(fileIds).associateBy { it.id }
-        } else {
-            emptyMap()
-        }
-
-        // Batch-fetch emoticons for messages with emoticonId
-        val emoticonIds = messages.mapNotNull { it.emoticonId }
-        val emoticons = emoticonService.getByIds(emoticonIds)
-
-        // Batch-fetch replyTo file attachments and emoticons for reply previews
-        val replyToFileIds = messages.mapNotNull { it.replyTo?.fileId }
-        val replyToFileAttachments = if (replyToFileIds.isNotEmpty()) {
-            fileAttachmentRepository.findAllById(replyToFileIds).associateBy { it.id }
-        } else {
-            emptyMap()
-        }
-        val replyToEmoticonIds = messages.mapNotNull { it.replyTo?.emoticonId }
-        val replyToEmoticons = if (replyToEmoticonIds.isNotEmpty()) {
-            emoticonService.getByIds(replyToEmoticonIds)
-        } else {
-            emptyMap()
-        }
-
-        // T1-1.4 batch prefetch: emoticon image URL → FileAttachment variant lookup warm.
-        // T1-9 에서 seed emoticon 도 S3 FileAttachment 경유로 전환됐으므로 이 lookup 이 hit.
-        val emoticonUrls = (emoticons.values.map { it.imageUrl } + replyToEmoticons.values.map { it.imageUrl }).distinct()
-        if (emoticonUrls.isNotEmpty()) fileAttachmentLookupService.batchLookup(emoticonUrls)
-
-        return ResponseEntity.ok(messages.map { msg ->
-            val resolvedUrl = msg.fileId?.let { fileAttachments[it] }?.url?.let { resolveFileUrl(it) }
-            val resolvedReplyUrl = msg.replyTo?.fileId?.let { replyToFileAttachments[it] }?.url?.let { resolveFileUrl(it) }
-            ChatMessageResponse.from(
-                msg,
-                participants,
-                msg.fileId?.let { fileAttachments[it] },
-                msg.emoticonId?.let { emoticons[it] },
-                msg.replyTo?.fileId?.let { replyToFileAttachments[it] },
-                msg.replyTo?.emoticonId?.let { replyToEmoticons[it] },
-                resolvedFileUrl = resolvedUrl,
-                resolvedReplyToFileUrl = resolvedReplyUrl,
-                variantResolver = fileAttachmentLookupService
-            )
-        })
+        // EXT-CDX-003 (W1a): 참여자 검증은 ChatService 에 위임(seam-aware).
+        // ARCH-003 (W4): 첨부/이모티콘 배치 조회와 응답 조립도 서비스로 이관 — 컨트롤러는 HTTP 만.
+        return ResponseEntity.ok(chatService.getChatHistoryResponses(roomId, userDetails.id, page, size))
     }
 
     @Operation(summary = "메시지 전송")
@@ -151,41 +89,22 @@ class ChatRoomController(
             replyToId = request.replyToId,
             clientMsgId = request.clientMsgId
         )
-        val message = chatService.saveChatMessage(messageRequest)
-
-        // Fetch file attachment if present
-        val fileAttachment = request.fileId?.let { fileAttachmentRepository.findById(it).orElse(null) }
-
-        // Fetch emoticon if present
-        val emoticon = request.emoticonId?.let { emoticonService.getById(it) }
-
-        // Fetch replyTo's file/emoticon for reply preview
-        val replyToFileAttachment = message.replyTo?.fileId?.let { fileAttachmentRepository.findById(it).orElse(null) }
-        val replyToEmoticon = message.replyTo?.emoticonId?.let { emoticonService.getById(it) }
-
-        val resolvedUrl = fileAttachment?.url?.let { resolveFileUrl(it) }
-        val resolvedReplyUrl = replyToFileAttachment?.url?.let { resolveFileUrl(it) }
-        val allParticipants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
-        val chatMessageResponse = ChatMessageResponse.from(
-            message, allParticipants, fileAttachment, emoticon, replyToFileAttachment, replyToEmoticon,
-            resolvedFileUrl = resolvedUrl,
-            resolvedReplyToFileUrl = resolvedReplyUrl,
-            variantResolver = fileAttachmentLookupService,
-            clientMsgId = request.clientMsgId
-        )
+        // ARCH-003: 저장 + 응답 조립은 서비스가 한 트랜잭션에서 끝낸다.
+        // 브로드캐스트는 커밋 이후여야 하므로 여기(컨트롤러)에 남긴다.
+        val sent = chatService.sendMessage(messageRequest)
 
         // Broadcast to WebSocket subscribers for real-time updates (chat detail page)
-        simpMessageSendingOperations.convertAndSend("/topic/chat/$roomId", chatMessageResponse)
+        simpMessageSendingOperations.convertAndSend("/topic/chat/$roomId", sent.response)
 
         // Broadcast to user-specific topics for chat list updates
-        allParticipants.forEach { participant ->
+        sent.participantUserIds.forEach { participantUserId ->
             simpMessageSendingOperations.convertAndSend(
-                "/topic/user/${participant.user.id}/chats",
+                "/topic/user/$participantUserId/chats",
                 mapOf("roomId" to roomId, "type" to "NEW_MESSAGE")
             )
         }
 
-        ResponseEntity.status(HttpStatus.CREATED).body(chatMessageResponse)
+        ResponseEntity.status(HttpStatus.CREATED).body(sent.response)
     }
 
     @Operation(summary = "메시지 삭제")
@@ -209,27 +128,10 @@ class ChatRoomController(
         @PathVariable roomId: Long,
         @AuthenticationPrincipal userDetails: com.goldpet.config.security.UserPrincipal
     ): ResponseEntity<Void> {
-        val oldLastReadAt = chatService.markAsRead(roomId, userDetails.id)
-
-        // V68 BLOCKER #5 — 사용자 read count 갱신은 visible 메시지만 (hidden/deleted 제외).
-        // 첫 read 시 oldLastReadAt=null → epoch(1970-01-01)로 통합 (모든 visible 메시지 fetch).
-        // LocalDateTime.MIN은 pgjdbc 변환 시 오버플로되어 PG "timestamp out of range" 오류 발생.
-        val sinceTimestamp = oldLastReadAt ?: java.time.LocalDateTime.of(1970, 1, 1, 0, 0)
-        val newlyReadMessages = chatMessageRepository.findVisibleByChatRoomIdAndCreatedAtAfter(roomId, sinceTimestamp)
-
-        if (newlyReadMessages.isEmpty()) {
+        // ARCH-003: 읽음 처리와 unreadCount 재계산은 서비스가 한다. 컨트롤러는 브로드캐스트만.
+        val updates = chatService.markAsReadAndCollectUpdates(roomId, userDetails.id)
+        if (updates.isEmpty()) {
             return ResponseEntity.ok().build()
-        }
-
-        // Fetch updated participants (with new lastReadAt already persisted)
-        val participants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
-
-        // Compute per-message unreadCount using existing logic
-        val updates = newlyReadMessages.map { msg ->
-            mapOf(
-                "messageId" to msg.id,
-                "unreadCount" to ChatMessageResponse.computeUnreadCount(msg, participants)
-            )
         }
 
         // Broadcast enriched read event

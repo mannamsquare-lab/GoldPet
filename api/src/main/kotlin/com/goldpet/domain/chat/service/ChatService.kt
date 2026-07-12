@@ -2,6 +2,7 @@ package com.goldpet.domain.chat.service
 
 import com.goldpet.domain.chat.dto.ChatRoomCreateRequest
 import com.goldpet.domain.chat.dto.ChatMessageRequest
+import com.goldpet.domain.chat.dto.ChatMessageResponse
 import com.goldpet.domain.chat.entity.*
 import com.goldpet.domain.chat.event.ChatMessageSavedEvent
 import com.goldpet.domain.chat.repository.ChatMessageRepository
@@ -31,8 +32,20 @@ class ChatService(
     private val userBlockRepository: UserBlockRepository,
     private val chatRequestRepository: ChatRequestRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
+    private val chatMessageAssembler: ChatMessageAssembler,
     @Value("\${goldpet.chat.async.enabled:false}") private val asyncNotificationEnabled: Boolean,
 ) {
+    /** 발신 결과 — 조립된 응답과, 목록 갱신 알림을 보낼 참여자 id. 브로드캐스트는 커밋 후 컨트롤러가 한다. */
+    data class SentMessage(
+        val response: ChatMessageResponse,
+        val participantUserIds: List<Long>
+    )
+
+    /** 읽음 처리로 unreadCount 가 바뀐 메시지. WS payload 로 그대로 직렬화된다. */
+    data class ReadUpdate(
+        val messageId: Long,
+        val unreadCount: Int
+    )
 
     @Transactional
     fun createChatRoom(request: ChatRoomCreateRequest, creatorId: Long): ChatRoom {
@@ -258,6 +271,53 @@ class ChatService(
         val pageable = PageRequest.of(page, size)
         // V68 BLOCKER #5 — 사용자 노출 경로: visible 메서드 (hidden_at/deleted_at IS NULL).
         return chatMessageRepository.findVisibleByChatRoomIdOrderByCreatedAtDesc(roomId, pageable).content.reversed()
+    }
+
+    /**
+     * ARCH-003: 히스토리 조회 + 응답 조립을 서비스에서 완결한다.
+     * 이전에는 컨트롤러가 참여자·첨부·이모티콘 리포지토리를 직접 주입해 조립까지 수행했다.
+     */
+    @Transactional(readOnly = true)
+    fun getChatHistoryResponses(roomId: Long, viewerId: Long, page: Int, size: Int): List<ChatMessageResponse> {
+        val messages = getChatHistory(roomId, viewerId, page, size)
+        val participants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
+        return chatMessageAssembler.assemble(messages, participants)
+    }
+
+    /**
+     * ARCH-003: 메시지 저장 + 응답 조립. 브로드캐스트(WS)는 트랜잭션 커밋 뒤에 일어나야 하므로
+     * 컨트롤러가 이 메서드 반환 후에 수행한다.
+     */
+    @Transactional
+    fun sendMessage(request: ChatMessageRequest): SentMessage {
+        val message = saveChatMessage(request)
+        val participants = chatRoomParticipantRepository.findAllByChatRoomId(request.roomId)
+        return SentMessage(
+            response = chatMessageAssembler.assembleOne(message, participants, request.clientMsgId),
+            participantUserIds = participants.map { it.user.id }
+        )
+    }
+
+    /**
+     * ARCH-003: 읽음 처리 후, unreadCount 가 갱신된 메시지 목록을 계산해 돌려준다.
+     * 이전에는 컨트롤러가 chatMessageRepository 를 직접 뒤져 이 계산을 했다.
+     */
+    @Transactional
+    fun markAsReadAndCollectUpdates(roomId: Long, userId: Long): List<ReadUpdate> {
+        val oldLastReadAt = markAsRead(roomId, userId)
+
+        // V68 BLOCKER #5 — 사용자 read count 갱신은 visible 메시지만 (hidden/deleted 제외).
+        // 첫 read 시 oldLastReadAt=null → epoch(1970-01-01)로 통합 (모든 visible 메시지 fetch).
+        // LocalDateTime.MIN 은 pgjdbc 변환 시 오버플로되어 PG "timestamp out of range" 오류가 난다.
+        val since = oldLastReadAt ?: LocalDateTime.of(1970, 1, 1, 0, 0)
+        val newlyRead = chatMessageRepository.findVisibleByChatRoomIdAndCreatedAtAfter(roomId, since)
+        if (newlyRead.isEmpty()) return emptyList()
+
+        // 갱신된 lastReadAt 이 반영된 참여자로 계산한다.
+        val participants = chatRoomParticipantRepository.findAllByChatRoomId(roomId)
+        return newlyRead.map { msg ->
+            ReadUpdate(msg.id, ChatMessageResponse.computeUnreadCount(msg, participants))
+        }
     }
 
     @Transactional(readOnly = true)
