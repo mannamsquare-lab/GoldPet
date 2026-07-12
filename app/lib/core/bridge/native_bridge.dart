@@ -10,6 +10,8 @@ import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'bridge_protocol.dart';
+import 'bridge_url_guard.dart';
+import '../config/environment.dart';
 import '../services/location_service.dart';
 import '../services/camera_service.dart';
 import '../services/push_notification_service.dart';
@@ -213,8 +215,20 @@ class NativeBridge {
         // 파일 다운로드
         case 'downloadFile':
           final url = params?['url'] as String?;
-          final fileName = params?['fileName'] as String? ?? url?.split('/').last ?? 'download';
           if (url == null) throw Exception('URL parameter is required');
+
+          // SEC-007: 브리지 인자는 신뢰 경계 밖이다.
+          //  - url: 우리 인프라의 https 자원만 허용(임의 호스트에서 내려받아 저장 금지)
+          //  - fileName: 채팅 첨부의 originalFileName 은 업로더가 정하는 값이라 `../../` 로
+          //    수신자 기기의 샌드박스 밖에 쓸 수 있었다 → basename 으로 강제한다.
+          final env = EnvironmentConfig.fromEnv();
+          if (!BridgeUrlGuard.isAllowedDownloadUrl(url, env)) {
+            debugPrint('[Bridge] downloadFile rejected (host not allowed): $url');
+            throw Exception('Download from this URL is not allowed');
+          }
+          final fileName = BridgeUrlGuard.safeFileName(
+            params?['fileName'] as String? ?? Uri.tryParse(url)?.pathSegments.lastOrNull,
+          );
 
           try {
             final tempDir = await getTemporaryDirectory();
@@ -268,11 +282,15 @@ class NativeBridge {
         // 외부 URL 열기
         case 'openExternalUrl':
           final url = params?['url'] as String?;
-          if (url != null) {
-            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-            return {'success': true};
+          if (url == null) throw Exception('URL parameter is required');
+          // SEC-007: 커스텀 스킴(tel:, 앱 딥링크 등)을 그대로 launch 하면 페이지가 임의의
+          // 앱 동작을 트리거할 수 있다. 웹 링크만 허용한다.
+          if (!BridgeUrlGuard.isAllowedExternalUrl(url)) {
+            debugPrint('[Bridge] openExternalUrl rejected (scheme not allowed): $url');
+            throw Exception('This URL scheme is not allowed');
           }
-          throw Exception('URL parameter is required');
+          await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          return {'success': true};
 
         // 산책 (Walk Feature)
         case 'startWalk':
