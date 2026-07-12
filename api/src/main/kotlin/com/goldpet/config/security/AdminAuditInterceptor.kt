@@ -1,5 +1,6 @@
 package com.goldpet.config.security
 
+import com.goldpet.common.net.TrustedClientIpResolver
 import com.goldpet.domain.admin.audit.AuditTargetExtractor
 import com.goldpet.domain.admin.audit.CriticalAction
 import com.goldpet.domain.admin.service.AdminAuditService
@@ -13,7 +14,8 @@ import org.springframework.web.servlet.HandlerInterceptor
 
 @Component
 class AdminAuditInterceptor(
-    private val adminAuditService: AdminAuditService
+    private val adminAuditService: AdminAuditService,
+    private val trustedClientIpResolver: TrustedClientIpResolver
 ) : HandlerInterceptor {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -40,7 +42,7 @@ class AdminAuditInterceptor(
                 action = action,
                 targetType = targetType,
                 targetId = targetId,
-                ipAddress = request.remoteAddr,
+                ipAddress = trustedClientIpResolver.resolveOrNull(request),
                 requestPath = path,
                 requestMethod = request.method,
                 responseStatus = response.status,

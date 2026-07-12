@@ -1,5 +1,6 @@
 package com.goldpet.config.security
 
+import com.goldpet.common.net.TrustedClientIpResolver
 import com.goldpet.domain.admin.service.AdminAuditService
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
@@ -19,7 +20,7 @@ object AdminAccessDeniedAudit {
             adminAuditService.log(
                 adminUserId = principal.id,
                 action = "ACCESS_DENIED",
-                ipAddress = request.remoteAddr,
+                ipAddress = TrustedClientIpResolver.resolveOrNull(request),
                 requestPath = path,
                 requestMethod = request.method,
                 responseStatus = HttpStatus.FORBIDDEN.value()

@@ -1,5 +1,6 @@
 package com.goldpet.domain.admin.audit
 
+import com.goldpet.common.net.TrustedClientIpResolver
 import com.goldpet.config.security.AdminUserPrincipal
 import com.goldpet.domain.admin.service.AdminAuditService
 import com.goldpet.domain.common.exception.BadRequestException
@@ -34,7 +35,8 @@ import org.springframework.web.server.ResponseStatusException
 @Aspect
 @Component
 class CriticalActionAuditAspect(
-    private val adminAuditService: AdminAuditService
+    private val adminAuditService: AdminAuditService,
+    private val trustedClientIpResolver: TrustedClientIpResolver
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -89,7 +91,7 @@ class CriticalActionAuditAspect(
                 action = action,
                 target = target,
                 details = details,
-                ipAddress = request?.remoteAddr,
+                ipAddress = request?.let { trustedClientIpResolver.resolveOrNull(it) },
                 requestPath = request?.requestURI,
                 requestMethod = request?.method,
                 responseStatus = responseStatus,

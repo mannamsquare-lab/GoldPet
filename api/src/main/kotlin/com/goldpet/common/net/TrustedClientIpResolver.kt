@@ -27,22 +27,32 @@ import java.net.InetAddress
 @Component
 class TrustedClientIpResolver {
 
-    /** 신뢰 가능한 클라이언트 IP. 판정 불가면 null(= 호출부는 거부해야 한다). */
-    fun resolveOrNull(request: HttpServletRequest): String? {
-        val raw = request.getHeader(HEADER)?.trim()
-        if (raw.isNullOrEmpty()) return null
-        // nginx 는 항상 단일값으로 덮어쓴다. 콤마는 프록시 체인 이상 신호이므로 신뢰하지 않는다.
-        if (raw.contains(',')) return null
-
-        return try {
-            // IPv4-mapped IPv6(::ffff:1.2.3.4) 는 IPv4 로 정규화한다.
-            InetAddress.getByName(raw).hostAddress
-        } catch (_: Exception) {
-            null
-        }
-    }
+    /**
+     * 신뢰 가능한 클라이언트 IP. 판정 불가면 null.
+     *
+     * null 을 어떻게 다룰지는 **호출부의 성격**에 달렸다:
+     *  - 인증 통제(dev-login): 거부(fail-closed)
+     *  - 레이트리밋: 공용 버킷(가용성 우선, 우회는 여전히 불가)
+     *  - 감사·포렌식 기록: null 그대로 저장. 위조된 IP 를 사실처럼 남기느니 "모름"이 낫다.
+     */
+    fun resolveOrNull(request: HttpServletRequest): String? = Companion.resolveOrNull(request)
 
     companion object {
         const val HEADER = "X-Real-IP"
+
+        /** DI 를 쓸 수 없는 곳(object, static 컨텍스트)을 위한 동일 로직. 상태가 없다. */
+        fun resolveOrNull(request: HttpServletRequest): String? {
+            val raw = request.getHeader(HEADER)?.trim()
+            if (raw.isNullOrEmpty()) return null
+            // nginx 는 항상 단일값으로 덮어쓴다. 콤마는 프록시 체인 이상 신호이므로 신뢰하지 않는다.
+            if (raw.contains(',')) return null
+
+            return try {
+                // IPv4-mapped IPv6(::ffff:1.2.3.4) 는 IPv4 로 정규화한다.
+                InetAddress.getByName(raw).hostAddress
+            } catch (_: Exception) {
+                null
+            }
+        }
     }
 }

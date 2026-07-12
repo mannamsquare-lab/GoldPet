@@ -1,5 +1,6 @@
 package com.goldpet.domain.user.controller
 
+import com.goldpet.common.net.TrustedClientIpResolver
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.common.service.FileAttachmentLookupService
 import com.goldpet.domain.user.dto.ChangePasswordRequest
@@ -46,7 +47,8 @@ class UserController(
     private val userService: UserService,
     private val consentService: ConsentService,
     private val userDataExportService: UserDataExportService,
-    private val fileAttachmentLookupService: FileAttachmentLookupService
+    private val fileAttachmentLookupService: FileAttachmentLookupService,
+    private val trustedClientIpResolver: TrustedClientIpResolver
 ) {
     @Operation(summary = "내 프로필 조회")
     @GetMapping("/me")
@@ -274,7 +276,8 @@ class UserController(
             consentType = ConsentType.valueOf(request.consentType),
             isAgreed = request.isAgreed,
             version = request.version ?: "1.0",
-            ipAddress = httpRequest.remoteAddr
+            // 동의 이력은 법적 증빙이다. 위조 가능한 값을 사실처럼 남기느니 '모름'(null)이 낫다.
+            ipAddress = trustedClientIpResolver.resolveOrNull(httpRequest)
         )
         return ResponseEntity.ok(ConsentHistoryResponse.from(consent))
     }

@@ -1,5 +1,6 @@
 package com.goldpet.domain.auth.controller
 
+import com.goldpet.common.net.TrustedClientIpResolver
 import com.goldpet.domain.common.exception.*
 import com.goldpet.domain.auth.dto.AuthResponse
 import com.goldpet.domain.auth.dto.LoginRequest
@@ -41,6 +42,7 @@ class AuthController(
     private val socialLoginService: SocialLoginService,
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenRotationService: RefreshTokenRotationService,
+    private val trustedClientIpResolver: TrustedClientIpResolver,
 ) {
     @Operation(summary = "자체 회원가입")
     @PostMapping("/signup")
@@ -166,7 +168,8 @@ class AuthController(
             oldToken = request.refreshToken,
             deviceId = deviceId,
             userAgent = httpRequest.getHeader("User-Agent"),
-            ipAddress = httpRequest.remoteAddr,
+            // 재사용 탐지 포렌식 기록 — 위조 가능한 XFF/remoteAddr 대신 X-Real-IP 만 신뢰한다.
+            ipAddress = trustedClientIpResolver.resolveOrNull(httpRequest),
         )
         // ARCH-005: 리포지토리 직접 조회 → 서비스 계약
         val user = authService.getUserForRefresh(rotation.userId)
