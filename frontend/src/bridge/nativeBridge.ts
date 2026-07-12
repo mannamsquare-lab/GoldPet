@@ -3,7 +3,7 @@
  * Flutter WebView와 통신하는 JavaScript Bridge 구현
  */
 
-import type { BridgeMessage, BridgeResponse, NativeEventType } from './bridgeTypes';
+import type { BridgeMessage, BridgeResponse, NativeEventType, NativeMethod } from './bridgeTypes';
 
 interface PendingRequest {
   resolve: (value: unknown) => void;
@@ -67,7 +67,11 @@ class NativeBridge {
     console.log('NativeBridge initialized');
   }
 
-  async callMethod(method: string, params?: Record<string, unknown>): Promise<unknown> {
+  /**
+   * ARCH-001: method 를 `string` 으로 받으면 Flutter 가 모르는 메서드를 호출해도 컴파일타임에
+   * 걸리지 않는다(계약 drift 가 조용히 샌다). SSoT 유니온으로 좁혀 강제한다.
+   */
+  async callMethod(method: NativeMethod, params?: Record<string, unknown>): Promise<unknown> {
     if (!this.isInitialized) {
       throw new Error('NativeBridge not initialized');
     }

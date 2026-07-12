@@ -64,7 +64,7 @@ class NativeBridge {
     try {
       switch (method) {
         // 로그인
-        case 'login':
+        case BridgeProtocol.login:
           final provider = params?['provider'] as String?;
           String? token;
           Map<String, dynamic>? backendResult;
@@ -125,7 +125,7 @@ class NativeBridge {
           return {'success': false, 'message': 'Login failed'};
 
         // Auth 토큰 동기화 (React → Flutter secure storage)
-        case 'syncAuthToken':
+        case BridgeProtocol.syncAuthToken:
           final accessToken = params?['accessToken'] as String?;
           final refreshToken = params?['refreshToken'] as String?;
           if (accessToken != null) {
@@ -135,7 +135,7 @@ class NativeBridge {
           return {'success': true};
 
         // FCM 토큰 등록
-        case 'registerFcmToken':
+        case BridgeProtocol.registerFcmToken:
           final accessToken = params?['accessToken'] as String?;
           if (accessToken != null) {
             // Get stable deviceId before registering
@@ -213,7 +213,7 @@ class NativeBridge {
           };
 
         // 파일 다운로드
-        case 'downloadFile':
+        case BridgeProtocol.downloadFile:
           final url = params?['url'] as String?;
           if (url == null) throw Exception('URL parameter is required');
 
@@ -280,7 +280,7 @@ class NativeBridge {
           }
 
         // 외부 URL 열기
-        case 'openExternalUrl':
+        case BridgeProtocol.openExternalUrl:
           final url = params?['url'] as String?;
           if (url == null) throw Exception('URL parameter is required');
           // SEC-007: 커스텀 스킴(tel:, 앱 딥링크 등)을 그대로 launch 하면 페이지가 임의의
@@ -293,7 +293,7 @@ class NativeBridge {
           return {'success': true};
 
         // 산책 (Walk Feature)
-        case 'startWalk':
+        case BridgeProtocol.startWalk:
           // Singleton guard: don't push if WalkScreen already on stack
           if (WalkScreen.isOnStack) {
             return {'success': true, 'alreadyActive': true};
@@ -311,7 +311,7 @@ class NativeBridge {
           return {'success': true};
 
         // 코스 따라가기 (Course Walk Feature)
-        case 'startCourseWalk':
+        case BridgeProtocol.startCourseWalk:
           // Singleton guard
           if (CourseWalkScreen.isOnStack || WalkScreen.isOnStack) {
             return {'success': true, 'alreadyActive': true};
@@ -345,7 +345,7 @@ class NativeBridge {
           return {'success': true};
 
         // 로그아웃 시 Flutter 토큰 삭제
-        case 'clearAuthToken':
+        case BridgeProtocol.clearAuthToken:
           debugPrint('[NativeBridge] clearAuthToken started');
           // 현재 토큰 캡처 후 디바이스 비활성화 (네트워크 호출)
           const storage = FlutterSecureStorage(
@@ -368,7 +368,7 @@ class NativeBridge {
           return {'success': true};
 
         // 현재 채팅방 설정 (푸시 알림 필터링용)
-        case 'setCurrentChatRoom':
+        case BridgeProtocol.setCurrentChatRoom:
           final chatRoomId = params?['chatRoomId'] as String?;
           pushNotificationService.setCurrentChatRoom(chatRoomId);
           return {'success': true};
@@ -389,7 +389,7 @@ class NativeBridge {
           return {'success': true};
 
         // 콘텐츠 공유 (OS 네이티브 공유 시트)
-        case 'shareContent':
+        case BridgeProtocol.shareContent:
           final imageBase64 = params?['imageBase64'] as String?;
           final text = params?['text'] as String? ?? '';
           final subject = params?['subject'] as String?;

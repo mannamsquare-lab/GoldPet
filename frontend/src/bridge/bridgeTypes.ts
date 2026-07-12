@@ -32,29 +32,71 @@ export type NativeEventType =
   | 'walkCompleted'
   | 'deviceRegistered';
 
+/**
+ * ARCH-001: 브리지 계약의 단일 진실 소스는 `contracts/bridge-methods.json` 이다.
+ * 이 유니온과 아래 NATIVE_METHODS 가 그 JSON 과 일치하는지 bridgeContract 테스트가 강제한다.
+ * 예전에는 이 유니온이 Flutter 스위치와 어긋나 있었고(실제로 쓰는 syncAuthToken/startWalk/
+ * clearAuthToken 등이 누락), callMethod(method: string) 이라 아무도 잡지 못했다.
+ */
 export type NativeMethod =
-  // 푸시 알림
   | 'requestPushPermission'
   | 'getPushToken'
   | 'subscribeToTopic'
-  // 위치
+  | 'registerFcmToken'
   | 'requestLocationPermission'
   | 'getCurrentLocation'
   | 'startLocationTracking'
   | 'stopLocationTracking'
-  // 카메라/사진
   | 'requestCameraPermission'
   | 'requestPhotoPermission'
   | 'openCamera'
   | 'openPhotoLibrary'
   | 'pickImage'
-  // 앱 정보
   | 'getAppVersion'
   | 'getDeviceInfo'
-  // 권한 일괄 요청
   | 'requestAllPermissions'
-  // 공유
-  | 'shareContent';
+  | 'setOverlayColor'
+  | 'clearOverlayColor'
+  | 'login'
+  | 'syncAuthToken'
+  | 'clearAuthToken'
+  | 'startWalk'
+  | 'startCourseWalk'
+  | 'setCurrentChatRoom'
+  | 'shareContent'
+  | 'downloadFile'
+  | 'openExternalUrl';
+
+/** 런타임에서도 계약을 대조할 수 있게 같은 목록을 값으로 노출한다. */
+export const NATIVE_METHODS = [
+  'requestPushPermission',
+  'getPushToken',
+  'subscribeToTopic',
+  'registerFcmToken',
+  'requestLocationPermission',
+  'getCurrentLocation',
+  'startLocationTracking',
+  'stopLocationTracking',
+  'requestCameraPermission',
+  'requestPhotoPermission',
+  'openCamera',
+  'openPhotoLibrary',
+  'pickImage',
+  'getAppVersion',
+  'getDeviceInfo',
+  'requestAllPermissions',
+  'setOverlayColor',
+  'clearOverlayColor',
+  'login',
+  'syncAuthToken',
+  'clearAuthToken',
+  'startWalk',
+  'startCourseWalk',
+  'setCurrentChatRoom',
+  'shareContent',
+  'downloadFile',
+  'openExternalUrl',
+] as const satisfies readonly NativeMethod[];
 
 export interface Location {
   latitude: number;
