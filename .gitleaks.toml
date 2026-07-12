@@ -1,0 +1,27 @@
+# 새로 stage 되는 변경에서만 시크릿을 잡는다(재발방지). 기존 커밋값·히스토리는 대상 아님.
+# pre-commit 훅(frontend/.husky/pre-commit)이 `gitleaks protect --staged` 로 호출한다.
+#
+# 배경: 이 레포는 private 이고, .env 커밋은 의도된 정책이다(.gitignore:30).
+# 따라서 목표는 "기존에 알려진 시크릿 제거"가 아니라 "앞으로 소스에 새 키가 박히는 것 차단"이다.
+
+title = "GoldPet secret scan (staged-only, 재발방지)"
+
+[extend]
+# gitleaks 기본 룰셋(AWS/GCP/Google OAuth/Slack/JWT 등)을 그대로 사용한다.
+useDefault = true
+
+# ── 정책상 허용된 위치 ──────────────────────────────────────────────────────
+# gitleaks 8.x 최상위 allowlist 는 단일 [allowlist] 맵이다([[allowlist]] 배열이 아님).
+# .env 계열은 커밋 정책상 허용(private repo, 대부분 클라이언트 공개값 VITE_*).
+# 여기서 빼지 않으면 매 .env 수정이 훅에 걸려 정책과 충돌한다.
+[allowlist]
+description = "커밋 정책상 허용 위치 (.env, 예제/문서 placeholder)"
+paths = [
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\.[^/]+$''',
+  '''\.example$''',
+  '''\.sample$''',
+  '''\.template$''',
+  '''(^|/)code-review-report\.md$''',
+  '''(^|/)_workspace/''',
+]

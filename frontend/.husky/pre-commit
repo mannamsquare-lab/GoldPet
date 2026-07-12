@@ -30,4 +30,20 @@ if printf '%s\n' "$STAGED" | grep -qE '^api/src/main/.*(Controller|Dto|Dtos|Requ
   echo "[pre-commit]   (계속 진행 — CI verifyOpenApiSpec 이 최종 게이트)"
 fi
 
+# 3) 시크릿 재발방지 — 새로 stage 된 변경에서만 스캔한다(기존 커밋값·히스토리·.env 정책값은 제외).
+#    .gitleaks.toml 이 .env 등 정책상 허용 위치를 allowlist 한다.
+#    gitleaks 미설치면 skip(경고). 활성화:  brew install gitleaks
+if command -v gitleaks >/dev/null 2>&1; then
+  if gitleaks protect --staged --no-banner --redact --config .gitleaks.toml 2>/tmp/goldpet-gitleaks.err; then
+    echo "[pre-commit] ✓ gitleaks: staged 변경에 새 시크릿 없음"
+  else
+    echo "[pre-commit] ✗ staged 변경에서 새 시크릿이 감지됐습니다 — 커밋을 중단합니다."
+    cat /tmp/goldpet-gitleaks.err
+    echo "[pre-commit]   오탐이면 .gitleaks.toml allowlist 에 추가한 뒤 다시 커밋하세요."
+    exit 1
+  fi
+else
+  echo "[pre-commit] ⚠ gitleaks 미설치 — 시크릿 스캔 건너뜀 (brew install gitleaks 로 활성화)"
+fi
+
 exit 0
