@@ -23,7 +23,6 @@ import InviteGroupChatModal from './InviteGroupChatModal';
 import { GpImage } from '../../components/common/GpImage';
 import '../../styles/chat-detail.css';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 const OPTIMISTIC_ENABLED = import.meta.env.VITE_CHAT_OPTIMISTIC_ENABLED === 'true';
 
 // Component for expandable long messages (5 lines max when collapsed)
@@ -322,7 +321,7 @@ const ChatDetailPage = () => {
     const { sendTypingEvent, typingUsers } = useChatWebSocket({
         roomId: chatId,
         currentUserId,
-        enabled: !!chatId && !USE_MOCK,
+        enabled: !!chatId,
     });
 
     // Debounced typing event
@@ -520,7 +519,7 @@ const ChatDetailPage = () => {
     }, [messages, scrollToBottom]);
 
     useEffect(() => {
-        if (chatId && !USE_MOCK) {
+        if (chatId) {
             chatService.markAsRead(chatId).then(() => {
                 // Invalidate chatRooms to update unread count in the list
                 queryClient.invalidateQueries({ queryKey: ['chatRooms'] });

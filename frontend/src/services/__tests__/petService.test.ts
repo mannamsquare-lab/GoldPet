@@ -14,8 +14,6 @@ vi.mock('../api/client', () => {
   return { apiClient: client, default: client }
 })
 
-// Ensure USE_MOCK is false
-vi.stubEnv('VITE_USE_MOCK', 'false')
 
 import { apiClient } from '../api/client'
 import { petService } from '../petService'

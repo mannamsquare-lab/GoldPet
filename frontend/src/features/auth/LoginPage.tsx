@@ -136,14 +136,9 @@ export const LoginPage = () => {
           return;
       }
 
-      if (import.meta.env.VITE_USE_MOCK === 'true') {
-          const testEmail = prompt('테스트 로그인할 이메일을 입력하세요', 'sungchuli@test.com');
-          if (testEmail !== null) { // Cancel returns null
-               await executeLogin(testEmail);
-          }
-      } else {
-          await executeLogin();
-      }
+      // STYLE-003: VITE_USE_MOCK 은 4개 env 모두 'false' 고정이라 아래 분기의 mock 프롬프트 로그인은
+      // 도달 불가능한 죽은 코드였다.
+      await executeLogin();
     } finally {
       setIsLoading(false);
     }

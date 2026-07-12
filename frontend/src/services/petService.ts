@@ -21,49 +21,6 @@ export type UpdatePetRequest = UpdatePetRequestDto;
 export type AttributeOption = AttributeOptionDto;
 export type PetAttribute = PetAttributeResponse;
 
-// Mock data
-const mockSpecies: PetSpecies[] = [
-  { id: 1, code: 'DOG', name: '강아지', breedCount: 0 },
-  { id: 2, code: 'CAT', name: '고양이', breedCount: 0 },
-  { id: 3, code: 'OTHER', name: '기타', breedCount: 0 },
-];
-
-const mockBreeds: PetBreed[] = [
-  { id: 1, speciesId: 1, name: '골든 리트리버' },
-  { id: 2, speciesId: 1, name: '말티즈' },
-  { id: 3, speciesId: 1, name: '푸들' },
-  { id: 4, speciesId: 1, name: '시바견' },
-  { id: 5, speciesId: 1, name: '웰시코기' },
-  { id: 6, speciesId: 1, name: '포메라니안' },
-  { id: 7, speciesId: 1, name: '믹스견' },
-  { id: 10, speciesId: 2, name: '코리안숏헤어' },
-  { id: 11, speciesId: 2, name: '페르시안' },
-  { id: 12, speciesId: 2, name: '러시안블루' },
-  { id: 13, speciesId: 2, name: '스코티시폴드' },
-  { id: 14, speciesId: 2, name: '믹스묘' },
-];
-
-const mockPets: Pet[] = [
-  {
-    id: 1,
-    ownerId: 1,
-    name: 'Goldie',
-    species: '강아지',
-    speciesId: 1,
-    breed: '골든 리트리버',
-    breedId: 1,
-    gender: 'MALE',
-    birthDate: '2022-03-15',
-    weightKg: 32,
-    isNeutered: true,
-    profileImageUrl: '/assets/images/main/main_slide_img01.png',
-    profileImageUrls: ['/assets/images/main/main_slide_img01.png'],
-    temperamentTags: ['활발함', '친화적', '산책 좋아함'],
-  },
-];
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-
 // Fallback Schema to restore UI when backend data is missing or for display mapping
 export const FALLBACK_ATTRIBUTES_SCHEMA = [
     // TRAIT (Personality)
@@ -89,20 +46,12 @@ export const FALLBACK_ATTRIBUTES_SCHEMA = [
 export const petService = {
 
   getSpecies: async (): Promise<PetSpecies[]> => {
-    if (USE_MOCK) return mockSpecies;
 
     const response = await typedClient.get('/api/v1/pets/species');
     return response.data as PetSpecies[];
   },
 
   getBreeds: async (speciesId?: number): Promise<PetBreed[]> => {
-    if (USE_MOCK) {
-      if (speciesId) {
-        return mockBreeds.filter((b) => b.speciesId === speciesId);
-      }
-      return mockBreeds;
-    }
-
     const response = await typedClient.get('/api/v1/pets/breeds', {
       params: speciesId ? { speciesId } : undefined,
     });
@@ -110,26 +59,18 @@ export const petService = {
   },
 
   getMyPets: async (): Promise<Pet[]> => {
-    if (USE_MOCK) return mockPets;
 
     const response = await typedClient.get('/api/v1/pets/my');
     return response.data as Pet[];
   },
 
   getPetAttributes: async (): Promise<PetAttribute[]> => {
-    if (USE_MOCK) return []; // Or mock attributes if needed
 
     const response = await typedClient.get('/api/v1/pets/attributes');
     return response.data as PetAttribute[];
   },
 
   getPet: async (petId: number): Promise<Pet> => {
-    if (USE_MOCK) {
-      const pet = mockPets.find((p) => p.id === petId);
-      if (!pet) throw new Error('Pet not found');
-      return pet;
-    }
-
     try {
       const response = await typedClient.getPath('/api/v1/pets/{petId}', { petId });
       return response.data as Pet;
@@ -139,26 +80,6 @@ export const petService = {
   },
 
   createPet: async (data: CreatePetRequest): Promise<Pet> => {
-    if (USE_MOCK) {
-      console.log('Creating pet (mock):', data);
-      return {
-        id: Date.now(),
-        ownerId: 0,
-        name: data.name,
-        species: mockSpecies.find((s) => s.id === data.speciesId)?.name || '',
-        speciesId: data.speciesId,
-        breed: mockBreeds.find((b) => b.id === data.breedId)?.name,
-        breedId: data.breedId,
-        gender: data.gender,
-        birthDate: data.birthDate,
-        weightKg: data.weightKg,
-        isNeutered: data.isNeutered,
-        profileImageUrl: data.profileImageUrl,
-        profileImageUrls: data.profileImageUrl ? [data.profileImageUrl] : [],
-        temperamentTags: data.temperamentTags?.split(',') ?? [],
-      };
-    }
-
     try {
       const response = await typedClient.post('/api/v1/pets', data);
       return response.data as Pet;
@@ -168,12 +89,6 @@ export const petService = {
   },
 
   updatePet: async (petId: number, data: UpdatePetRequest): Promise<Pet> => {
-    if (USE_MOCK) {
-      console.log('Updating pet (mock):', petId, data);
-      const existing = mockPets.find((p) => p.id === petId);
-      return { ...existing, ...data } as Pet;
-    }
-
     try {
       const response = await typedClient.putPath('/api/v1/pets/{petId}', { petId }, data);
       return response.data as Pet;
@@ -183,11 +98,6 @@ export const petService = {
   },
 
   deletePet: async (petId: number): Promise<void> => {
-    if (USE_MOCK) {
-      console.log('Deleting pet (mock):', petId);
-      return;
-    }
-
     try {
       await typedClient.deletePath('/api/v1/pets/{petId}', { petId });
     } catch {
@@ -196,11 +106,6 @@ export const petService = {
   },
 
   uploadPetImage: async (file: File): Promise<string> => {
-    if (USE_MOCK) {
-      // Return a mock URL
-      return URL.createObjectURL(file);
-    }
-
     try {
       const { compressImage } = await import('../utils/imageCompression');
       const compressed = await compressImage(file);
