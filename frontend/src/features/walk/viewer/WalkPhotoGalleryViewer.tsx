@@ -62,6 +62,11 @@ type SlideProps = {
 };
 
 export function WalkPhotoViewerSlide({ photo, active = true, zoomed = false, onPresignedUrlExpired }: SlideProps) {
+  // medium 변형이 없는 구 사진(예: 2026-02 이전 업로드)은 파생된 `_medium` presigned URL 이 404 난다.
+  // medium 은 non-null 이라 `?? viewer` 폴백이 걸리지 않으므로, medium 로드 실패 시 viewer 로 폴백한다.
+  // (viewer 는 모든 사진에 존재.) 신 사진은 medium 정상 로드 → 메모리 이득 유지.
+  const [mediumFailed, setMediumFailed] = useState(false);
+
   // 윈도우 밖 슬라이드(active=false)는 placeholder만 렌더 — <img> 미마운트로 iOS 메모리 보호.
   // 백엔드 Option A 이후 photo.imageUrl은 HTTPS presigned URL; WKWebView 네이티브 이미지 캐시가
   // 디코딩·메모리를 직접 관리한다 (blob URL 불필요).
@@ -69,11 +74,11 @@ export function WalkPhotoViewerSlide({ photo, active = true, zoomed = false, onP
     return <div className="swiper-zoom-container"><div className="wpv_slide_placeholder" /></div>;
   }
   // iOS WKWebView 메모리 누적 방어: 스와이프 표시는 600px medium 을 기본으로 로드해 장당 디코딩
-  // 메모리를 ~86% 낮춘다. 줌인된 active 슬라이드에서만 1600px viewer 로 스왑해 선명도를 확보하고,
-  // 줌아웃 시 medium 으로 복귀 → 동시에 메모리에 올라가는 고해상 이미지를 최대 1장으로 제한.
-  const displaySrc = zoomed
-    ? (photo.imageUrlViewer ?? photo.imageUrlMedium ?? photo.imageUrl)
-    : (photo.imageUrlMedium ?? photo.imageUrlViewer ?? photo.imageUrl);
+  // 메모리를 ~86% 낮춘다. 줌인된 active 슬라이드에서만(또는 medium 실패 시) 1600px viewer 로 스왑한다.
+  const useMedium = !zoomed && !mediumFailed;
+  const displaySrc = useMedium
+    ? (photo.imageUrlMedium ?? photo.imageUrlViewer ?? photo.imageUrl)
+    : (photo.imageUrlViewer ?? photo.imageUrlMedium ?? photo.imageUrl);
   return (
     <div className="swiper-zoom-container">
       <img
@@ -84,10 +89,20 @@ export function WalkPhotoViewerSlide({ photo, active = true, zoomed = false, onP
         loading="lazy"
         decoding="async"
         onError={(e) => {
-          // presigned URL 만료(403) 또는 클록 스큐(400 RequestTimeTooSkewed) 감지:
-          // <img>는 HTTP 상태 코드를 노출하지 않으므로 URL에 X-Amz-Signature= 포함 여부로 판별.
-          // 조건 충족 시 피드 쿼리를 무효화하여 다음 렌더 시 서버에서 신규 URL을 발급받는다.
           const src = (e.currentTarget as HTMLImageElement).src;
+          // medium 변형 미생성(구 사진) → 404. `_medium` URL 이 실패했고 viewer 로 폴백 가능하면
+          // 무효화 없이 viewer 로 교체한다(재요청 루프 방지, 구 사진 blank 해소).
+          if (
+            !mediumFailed &&
+            src.includes('_medium') &&
+            photo.imageUrlViewer &&
+            photo.imageUrlViewer !== photo.imageUrlMedium
+          ) {
+            setMediumFailed(true);
+            return;
+          }
+          // 그 외(viewer 도 실패 등): presigned URL 만료(403)/클록 스큐(400) 감지 —
+          // <img>는 HTTP 상태를 노출하지 않으므로 X-Amz-Signature= 포함 여부로 판별해 피드를 무효화한다.
           if (src.includes('X-Amz-Signature=')) {
             onPresignedUrlExpired?.();
           }

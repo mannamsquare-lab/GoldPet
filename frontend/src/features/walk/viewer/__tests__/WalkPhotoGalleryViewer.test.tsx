@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalkPhotoGalleryViewer, WalkPhotoViewerSlide } from '../WalkPhotoGalleryViewer';
@@ -139,5 +139,30 @@ describe('WalkPhotoViewerSlide zoom swap', () => {
     const { container } = render(<WalkPhotoViewerSlide photo={noMedium} active zoomed={false} />);
     const src = container.querySelector('img.wpv_slide_img')?.getAttribute('src') ?? '';
     expect(src).toMatch(/_viewer\.jpg/);
+  });
+
+  // 회귀: medium 변형이 없는 구 사진은 파생 `_medium` presigned URL 이 404 난다(2026-02 이전 업로드).
+  // URL 자체는 non-null 이라 `?? viewer` 폴백이 안 걸려 큰 사진이 blank 로 남던 버그.
+  it('falls back to viewer when a present medium URL fails to load (404 on legacy photo)', () => {
+    const { container } = render(<WalkPhotoViewerSlide photo={photo} active zoomed={false} />);
+    const img = container.querySelector('img.wpv_slide_img') as HTMLImageElement;
+    expect(img.getAttribute('src')).toMatch(/_medium\.jpg/);
+
+    // medium 404 시뮬레이션
+    fireEvent.error(img);
+
+    const after = container.querySelector('img.wpv_slide_img')?.getAttribute('src') ?? '';
+    expect(after).toMatch(/_viewer\.jpg/);
+    expect(after).not.toMatch(/_medium\.jpg/);
+  });
+
+  it('does not invalidate the feed when falling back from a failed medium', () => {
+    const onExpired = vi.fn();
+    const { container } = render(
+      <WalkPhotoViewerSlide photo={photo} active zoomed={false} onPresignedUrlExpired={onExpired} />,
+    );
+    fireEvent.error(container.querySelector('img.wpv_slide_img') as HTMLImageElement);
+    // medium→viewer 폴백은 만료가 아니므로 쿼리 무효화(재요청 루프)를 트리거하지 않아야 한다.
+    expect(onExpired).not.toHaveBeenCalled();
   });
 });
