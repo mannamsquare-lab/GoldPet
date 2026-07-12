@@ -564,7 +564,8 @@ class WalkServiceTest {
     private fun buildPhotoSpot(
         imageKey: String,
         hiddenFromPublic: Boolean,
-        imageKeyViewer: String? = null
+        imageKeyViewer: String? = null,
+        imageKeyMedium: String? = null
     ): WalkSpot {
         val walk = Walk(
             id = 10L,
@@ -590,17 +591,18 @@ class WalkServiceTest {
             imageUrl = imageKey,
             note = null,
             hiddenFromPublic = hiddenFromPublic,
-            imageKeyViewer = imageKeyViewer
+            imageKeyViewer = imageKeyViewer,
+            imageKeyMedium = imageKeyMedium
         )
     }
 
     @Test
-    fun `getMyPhotos derives medium key from viewer key and signs it into imageUrlMedium`() {
+    fun `getMyPhotos signs the stored medium key into imageUrlMedium`() {
         val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
         val viewerKey = "a1b2c3d4-e5f6-7890-abcd-ef0123456789_viewer.jpg"
         val mediumKey = "a1b2c3d4-e5f6-7890-abcd-ef0123456789_medium.jpg"
         val signedMedium = "https://minio.example.com/goldpet-private/$mediumKey?X-Amz-Signature=med"
-        val spot = buildPhotoSpot(key, hiddenFromPublic = false, imageKeyViewer = viewerKey)
+        val spot = buildPhotoSpot(key, hiddenFromPublic = false, imageKeyViewer = viewerKey, imageKeyMedium = mediumKey)
 
         whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(null)
         whenever(photoUrlSigner.signedMediumUrlOrNull(mediumKey)).thenReturn(signedMedium)
@@ -609,9 +611,30 @@ class WalkServiceTest {
 
         val result = walkService.getMyPhotos(1L, null, PageRequest.of(0, 20))
 
-        val photo = result.content.first()
-        assertEquals(signedMedium, photo.imageUrlMedium, "medium URL derived from viewer key must be signed")
+        assertEquals(signedMedium, result.content.first().imageUrlMedium, "stored medium key must be signed")
         verify(photoUrlSigner).signedMediumUrlOrNull(mediumKey)
+    }
+
+    // 회귀: medium 변형이 없는 구 사진(viewer 는 있음)은 imageUrlMedium 이 null 이어야 한다.
+    // 이전에는 viewer 키에서 medium 을 파생해 객체 없는 404 URL 을 내보냈고, 클라의 `medium ?? viewer`
+    // 폴백이 non-null URL 이라 걸리지 않아 큰 사진이 blank 였다. 파생을 제거해 null 로 내보낸다.
+    @Test
+    fun `getMyPhotos leaves imageUrlMedium null for legacy photo without medium variant`() {
+        val key = "a1b2c3d4-e5f6-7890-abcd-ef0123456789.jpg"
+        val viewerKey = "a1b2c3d4-e5f6-7890-abcd-ef0123456789_viewer.jpg"
+        // 구 사진: viewer 는 있으나 medium 미생성(백필 전) → imageKeyMedium == null
+        val spot = buildPhotoSpot(key, hiddenFromPublic = false, imageKeyViewer = viewerKey, imageKeyMedium = null)
+
+        whenever(photoUrlSigner.signedUrlOrNull(key)).thenReturn(null)
+        whenever(photoUrlSigner.signedMediumUrlOrNull(null)).thenReturn(null)
+        whenever(walkSpotRepository.findPhotoSpotsByUserId(eq(1L), any()))
+            .thenReturn(PageImpl(listOf(spot)))
+
+        val result = walkService.getMyPhotos(1L, null, PageRequest.of(0, 20))
+
+        assertNull(result.content.first().imageUrlMedium, "medium 미생성 구 사진은 404 URL 대신 null 이어야 한다")
+        // viewer 키에서 파생한 `_medium` 키로 서명을 시도하면 안 된다(404 URL 생성 금지).
+        verify(photoUrlSigner, never()).signedMediumUrlOrNull("a1b2c3d4-e5f6-7890-abcd-ef0123456789_medium.jpg")
     }
 
     @Test

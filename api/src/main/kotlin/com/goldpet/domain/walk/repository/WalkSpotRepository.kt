@@ -82,11 +82,13 @@ interface WalkSpotRepository : JpaRepository<WalkSpot, Long> {
         pageable: Pageable,
     ): List<WalkSpot>
 
+    // viewer 또는 medium 이 없으면 대상. 구 사진은 예전 워커가 thumb/viewer 만 만들어 medium 이 비어 있어
+    // (파생 키 404 → 큰 사진 blank) 여기서 다시 잡아 medium 을 채운다.
     @Query("""
         SELECT ws FROM WalkSpot ws
         WHERE ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO
         AND ws.imageUrl IS NOT NULL
-        AND ws.imageKeyViewer IS NULL
+        AND (ws.imageKeyViewer IS NULL OR ws.imageKeyMedium IS NULL)
         ORDER BY ws.id ASC
     """)
     fun findSpotsWithoutVariantKeys(pageable: Pageable): Page<WalkSpot>
@@ -95,7 +97,7 @@ interface WalkSpotRepository : JpaRepository<WalkSpot, Long> {
         SELECT ws FROM WalkSpot ws
         WHERE ws.type = com.goldpet.domain.walk.entity.WalkSpotType.PHOTO
         AND ws.imageUrl IS NOT NULL
-        AND ws.imageKeyViewer IS NULL
+        AND (ws.imageKeyViewer IS NULL OR ws.imageKeyMedium IS NULL)
         AND ws.createdAt < :before
         ORDER BY ws.id ASC
     """)

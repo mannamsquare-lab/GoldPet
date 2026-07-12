@@ -43,8 +43,12 @@ class WalkSpotBackfillWorker(
         enum class Outcome { PROCESSED, SKIPPED, FAILED, NOT_FOUND }
     }
 
+    // `_medium`(600) 은 iOS WKWebView 메모리 완화용 스와이프 표시 변형. 이 워커가 예전에 thumb/viewer 만
+    // 생성해 구 사진에 medium 이 없었고(파생 키 404 → 큰 사진 blank), 그래서 여기에 추가한다.
+    // FileService.IMAGE_VARIANTS 와 동일 사이즈/품질을 유지한다.
     private val variants = listOf(
         Triple("_thumb", 200, 0.80),
+        Triple("_medium", 600, 0.85),
         Triple("_viewer", 1600, 0.82)
     )
 
@@ -61,7 +65,9 @@ class WalkSpotBackfillWorker(
         if (rawKey.isNullOrBlank() || spot.type != WalkSpotType.PHOTO) {
             return ProcessResult(ProcessResult.Outcome.SKIPPED)
         }
-        if (spot.imageKeyViewer != null) {
+        // viewer 와 medium 이 모두 있어야 완료. 구 사진은 viewer 만 있고 medium 이 없으므로(예전 워커가
+        // thumb/viewer 만 생성) 여기서 다시 잡혀 medium 을 채운다.
+        if (spot.imageKeyViewer != null && spot.imageKeyMedium != null) {
             return ProcessResult(ProcessResult.Outcome.SKIPPED)
         }
 
@@ -73,6 +79,7 @@ class WalkSpotBackfillWorker(
                     // Retry-prevention: pin to original key so the sweep does not re-pick this row.
                     spot.imageKeyViewer = rawKey
                     spot.imageKeyThumb = rawKey
+                    spot.imageKeyMedium = rawKey
                 }
                 return ProcessResult(ProcessResult.Outcome.SKIPPED)
             }
@@ -80,6 +87,7 @@ class WalkSpotBackfillWorker(
             val baseFilename = rawKey.substringBeforeLast(".")
             var viewerKey: String? = null
             var thumbKey: String? = null
+            var mediumKey: String? = null
             // Always generate both variants. Thumbnailator never upscales, so when the
             // source is already below maxDim the result preserves source dimensions —
             // the savings come from JPEG re-encoding a lossless PNG (e.g. 1200x900 PNG
@@ -88,6 +96,22 @@ class WalkSpotBackfillWorker(
             // produced the "swipe hangs on 10/51" lag on iOS WKWebView.
 
             for ((suffix, maxDim, quality) in variants) {
+                // 이미 키가 있는 변형(구 사진의 thumb/viewer)은 재생성하지 않는다 — medium 만 채우면 되므로
+                // 불필요한 S3 GET/PUT 을 피한다. 기존 키를 그대로 재사용한다.
+                val existingKey = when (suffix) {
+                    "_thumb" -> spot.imageKeyThumb
+                    "_medium" -> spot.imageKeyMedium
+                    else -> spot.imageKeyViewer
+                }
+                if (existingKey != null) {
+                    when (suffix) {
+                        "_thumb" -> thumbKey = existingKey
+                        "_medium" -> mediumKey = existingKey
+                        else -> viewerKey = existingKey
+                    }
+                    continue
+                }
+
                 val variantFilename = "$baseFilename$suffix.jpg"
                 val out = ByteArrayOutputStream()
                 Thumbnails.of(image)
@@ -106,6 +130,7 @@ class WalkSpotBackfillWorker(
                 }
                 when (suffix) {
                     "_thumb" -> thumbKey = variantFilename
+                    "_medium" -> mediumKey = variantFilename
                     "_viewer" -> viewerKey = variantFilename
                 }
             }
@@ -115,6 +140,7 @@ class WalkSpotBackfillWorker(
             // If short-side below every threshold, fall back to original key so we don't sweep forever.
             spot.imageKeyViewer = viewerKey ?: rawKey
             spot.imageKeyThumb = thumbKey ?: rawKey
+            spot.imageKeyMedium = mediumKey ?: rawKey
             return ProcessResult(ProcessResult.Outcome.PROCESSED)
         } catch (e: AmazonS3Exception) {
             // 404 NoSuchKey / 403 forbidden: the original object is permanently unreachable.
@@ -124,6 +150,7 @@ class WalkSpotBackfillWorker(
                 if (!dryRun) {
                     spot.imageKeyViewer = rawKey
                     spot.imageKeyThumb = rawKey
+                    spot.imageKeyMedium = rawKey
                 }
                 return ProcessResult(ProcessResult.Outcome.SKIPPED)
             }

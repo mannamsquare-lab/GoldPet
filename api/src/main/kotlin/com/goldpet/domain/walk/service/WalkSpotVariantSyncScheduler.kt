@@ -58,9 +58,13 @@ class WalkSpotVariantSyncScheduler(
             } ?: continue
             val viewer = attachment.viewerUrl
             val thumb = attachment.thumbnailUrl
+            // 변형 생성 실패 첨부는 mediumUrl 이 원본 키로 대체(degraded)돼 있으므로 실제 `_medium` 변형만 인정.
+            // 아니면 null 로 남겨 backfillStragglers 가 생성하도록 한다.
+            val medium = attachment.mediumUrl?.takeIf { it.contains("_medium") }
             if (viewer != null) spot.imageKeyViewer = viewer
             if (thumb != null) spot.imageKeyThumb = thumb
-            if (viewer != null || thumb != null) {
+            if (medium != null) spot.imageKeyMedium = medium
+            if (viewer != null || thumb != null || medium != null) {
                 reconciled++
                 meterRegistry.counter(
                     "walk_photo_variant_dlq_sweep_total",

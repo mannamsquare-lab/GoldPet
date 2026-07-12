@@ -210,6 +210,9 @@ class WalkService(
                 imageUrl = spotDto.imageUrl,
                 note = spotDto.note,
                 imageKeyViewer = attachment?.viewerUrl,
+                // 변형 생성이 실패한 첨부는 mediumUrl 이 원본 키로 대체(degraded)돼 있으므로, 실제 600px
+                // `_medium` 변형일 때만 채운다. 아니면 null → 백필 워커가 생성하며 채운다.
+                imageKeyMedium = attachment?.mediumUrl?.takeIf { it.contains("_medium") },
                 imageKeyThumb = attachment?.thumbnailUrl
             ))
         }
@@ -482,19 +485,13 @@ class WalkService(
             imageUrl = signed,
             imageKey = rawKey,
             imageUrlViewer = photoUrlSigner.signedViewerUrlOrNull(spot.imageKeyViewer),
-            imageUrlMedium = photoUrlSigner.signedMediumUrlOrNull(deriveMediumKey(spot.imageKeyViewer)),
+            imageUrlMedium = photoUrlSigner.signedMediumUrlOrNull(spot.imageKeyMedium),
             imageUrlThumb = photoUrlSigner.signedThumbUrlOrNull(spot.imageKeyThumb),
             imageKeyViewer = spot.imageKeyViewer,
             imageKeyThumb = spot.imageKeyThumb,
             expiresAt = java.time.LocalDateTime.now().plusMinutes(PhotoUrlSigner.PRESIGN_TTL_MINUTES)
         )
     }
-
-    // WalkSpot 은 viewer 키만 저장하고 medium 키는 저장하지 않는다. 두 변형 모두 동일 UUID 접두사에
-    // `_viewer.jpg`/`_medium.jpg` 접미사만 다르므로 viewer 키에서 파생한다(FileService IMAGE_VARIANTS 가
-    // 두 객체를 함께 생성하므로 medium 객체는 이미 S3 에 존재). viewer 키가 null 이면 medium 도 null.
-    private fun deriveMediumKey(viewerKey: String?): String? =
-        viewerKey?.replace("_viewer", "_medium")
 
     private fun toWalkPhotoResponse(
         spot: com.goldpet.domain.walk.entity.WalkSpot,
@@ -510,7 +507,9 @@ class WalkService(
             if (spot.hiddenFromPublic) hiddenPresignedServedCounter.increment()
         }
         val viewerUrl = if (suppressUrl) null else photoUrlSigner.signedViewerUrlOrNull(spot.imageKeyViewer)
-        val mediumUrl = if (suppressUrl) null else photoUrlSigner.signedMediumUrlOrNull(deriveMediumKey(spot.imageKeyViewer))
+        // 저장된 medium 키만 사용한다(파생 금지). 미생성 사진은 null → 응답 imageUrlMedium 도 null 이 되어
+        // 클라가 `medium ?? viewer` 폴백으로 viewer 를 쓴다(파생 시 객체 없는 구 사진에서 404 → blank 였음).
+        val mediumUrl = if (suppressUrl) null else photoUrlSigner.signedMediumUrlOrNull(spot.imageKeyMedium)
         val thumbUrl = if (suppressUrl) null else photoUrlSigner.signedThumbUrlOrNull(spot.imageKeyThumb)
         return WalkPhotoResponse(
             id = spot.id,
