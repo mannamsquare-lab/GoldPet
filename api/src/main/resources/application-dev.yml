@@ -65,7 +65,7 @@ google:
   maps:
     api-key: AIzaSyDKzJWAKYzLbq5ioILENkscpJNSem8MRDE
   ai:
-    api-key: ${GOOGLE_AI_API_KEY:AIzaSyBRpIPAYmGHogqxpGjmLspslPhaEKUZuPQ}
+    api-key: ${GOOGLE_AI_API_KEY:}
 
 # DeepL Translation
 deepl:
