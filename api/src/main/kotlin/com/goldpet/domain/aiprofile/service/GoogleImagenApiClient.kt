@@ -56,7 +56,9 @@ class GoogleImagenApiClient(
      * sourceImageUrl이 제공되면 참조 이미지로 함께 전송
      */
     fun generateImage(prompt: String, sourceImageUrl: String? = null): ByteArray {
-        val url = "$baseUrl/models/$model:generateContent?key=$apiKey"
+        check(apiKey.isNotBlank()) { "google.ai.api-key(GOOGLE_AI_API_KEY) is not configured" }
+        // API 키는 URL 쿼리(?key=)가 아닌 헤더로 전달 — 예외 메시지·로그에 URL과 함께 키가 남지 않도록
+        val url = "$baseUrl/models/$model:generateContent"
 
         val requestParts = mutableListOf<Map<String, Any>>()
 
@@ -99,6 +101,7 @@ class GoogleImagenApiClient(
 
         val headers = HttpHeaders().apply {
             contentType = MediaType.APPLICATION_JSON
+            set("x-goog-api-key", apiKey)
         }
 
         val entity = HttpEntity(body, headers)
